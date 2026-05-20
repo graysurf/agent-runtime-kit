@@ -108,6 +108,13 @@ Status: source document for the first implementation discussion
   cross-process determinism test (Red-team #1). Still deferred:
   Codex reality check (Red-team #2) and `min_version` Bump Ceremony
   (Red-team #3).
+- 2026-05-20 (specialist-review consistency sweep) — follow-up after
+  batches 1-3: Next Session Checklist item 5 subcommand stub list now
+  matches Resolved Decision #2 / Phase 1 (adds `restore-backups`,
+  `purge-state`); Open Questions marketplace bullet narrowed to
+  Claude-side only with a back-pointer to Decision #10; Doctor Checks
+  render-determinism-canary bullet cross-references Decision #9 so
+  the canary's relationship to the full guarantee is explicit.
 - 2026-05-20 (specialist-review batch 3) — reality + ceremony pass:
   hardened the Codex / Claude adapter asymmetry into a dedicated
   §Codex Activation Surface (Reality Check) subsection enumerating
@@ -1204,7 +1211,9 @@ without `--force`.
   own probe routine inside the same workspace; source of truth is
   `BINARY_DEPENDENCIES.md` in the installed nils-cli)
 - product CLIs on PATH (Codex CLI, Claude CLI) for live-home install paths
-- render determinism canary (re-render one skill, diff against `build/`)
+- render determinism canary (re-render one skill, diff against `build/`);
+  the full guarantee lives in Resolved Decision #9 and the render-golden
+  CI gate — this is the fast local sanity probe.
 - drift audit summary (delegates to `audit-drift`, surfaces top findings)
 - backup directory size and oldest entry age
 - optional `--check-project <path>` to inspect a consuming repo's
@@ -1892,8 +1901,10 @@ Longer-term, not POC-blocking:
   skill roots for some local-only workflows?
 - Should Claude flat root skills become generated adapters from plugin/core
   source, or stay hand-maintained?
-- Marketplace strategy: public marketplace.json published from this repo, or
-  remain local-only with publishing handled by per-product downstream repos?
+- Marketplace strategy (Claude-side only): public `marketplace.json`
+  published from this repo, or remain local-only with publishing
+  handled by per-product downstream repos? Codex has no marketplace
+  concept and is settled by Resolved Decision #10.
 - Public face: does any subset of `core/` eventually get extracted into a
   new public repo, or does `agent-runtime-kit` stay fully private?
 
@@ -1911,8 +1922,9 @@ Longer-term, not POC-blocking:
 5. Open `nils-cli/crates/agent-runtime-cli/` (cargo new from
    `crates/cli-template/`); register the binary in the workspace
    `Cargo.toml`; stub all subcommands (`render`, `install`, `uninstall`,
-   `doctor`, `audit-drift`, `gc-backups`) so the CLI contract is
-   reviewable before logic lands.
+   `doctor`, `audit-drift`, `gc-backups`, `restore-backups`,
+   `purge-state`) so the CLI contract is reviewable before logic lands.
+   Match the enumeration in Resolved Decision #2 and Phase 1.
 6. Inside `agent-runtime-cli`, register the Tera helpers (`script`,
    `skill_ref`, `state_out` with runtime/literal modes, `cli_ref`); wire
    them to `nils-common` paths and `agent-out` invocation.
