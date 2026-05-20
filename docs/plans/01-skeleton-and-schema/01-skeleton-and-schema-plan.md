@@ -7,8 +7,8 @@ end-state is a tracked source-of-truth bundle in this repo (skeleton
 directories, baseline `.gitignore`, drift allowlist seed, Bump Ceremony
 PR template), the five `manifests/*.yaml` source files at
 `schema_version: 1` with empty content lists, a stubbed `agent-runtime`
-binary opened inside `sympoies/nils-cli` and shipped as `0.0.1-dev`
-through `sympoies/homebrew-tap`, and a host bootstrap skeleton plus a
+binary opened inside `sympoies/nils-cli` and shipped as part of the
+`v0.12.0` coupled-workspace release through `sympoies/homebrew-tap`, and a host bootstrap skeleton plus a
 frozen nils-cli surface snapshot under `docs/source/`.
 
 This plan deliberately ships no render, install, or drift-audit body.
@@ -65,7 +65,7 @@ their Description so reviewers do not assume in-tree work.
     `uninstall`, `doctor`, `audit-drift`, `gc-backups`,
     `restore-backups`, `purge-state`), each printing
     `agent-runtime <subcommand>: not implemented` and exiting 1.
-    `--version` returns `0.0.1-dev`.
+    `--version` returns `0.12.0`.
   - Cross-repo formula bump in `sympoies/homebrew-tap` so
     `brew install sympoies/tap/nils-cli` resolves the stub release.
   - `scripts/setup.sh` skeleton (OS detect via `brew --prefix`, profile
@@ -430,7 +430,7 @@ gate hookup are explicitly deferred to Plan 02.
 ## Sprint 3: nils-cli stub crate and dev tap release
 
 **Goal**: Open the `agent-runtime-cli` crate inside `sympoies/nils-cli`
-with subcommand stubs, register it in the workspace, cut a `0.0.1-dev`
+with subcommand stubs, register it in the workspace, cut a `0.12.0`
 release, and bump the formula in `sympoies/homebrew-tap` so
 `brew install sympoies/tap/nils-cli` produces a working stub binary
 that exits 1 on every subcommand except `--version`. This sprint
@@ -443,7 +443,7 @@ touches three repos; each task names the owning repo.
   - `cd ~/Project/sympoies/nils-cli && cargo run -p agent-runtime-cli -- --version`
   - `cd ~/Project/sympoies/nils-cli && cargo run -p agent-runtime-cli -- render; echo exit=$?`
   - `brew update && brew install sympoies/tap/nils-cli && agent-runtime --version`
-- Verify: `agent-runtime --version` prints `0.0.1-dev`; every other
+- Verify: `agent-runtime --version` prints `0.12.0`; every other
   subcommand prints `agent-runtime <subcommand>: not implemented` to
   stderr and exits 1; `brew install` resolves the formula.
 
@@ -457,13 +457,14 @@ touches three repos; each task names the owning repo.
 - **Description**: Cross-repo task in `sympoies/nils-cli`. Inside
   `~/Project/sympoies/nils-cli/`, copy `crates/cli-template/` to a new
   `crates/agent-runtime-cli/`; rename the binary in `Cargo.toml` to
-  `agent-runtime`; set the crate version to `0.0.1-dev`; replace the
+  `agent-runtime`; set the crate version to `0.12.0` (matching the
+  workspace at the Task 3.3 release tag); replace the
   template's main entry point with a clap-derive parser that exposes
   the eight subcommands from Resolved Decision #2 (`render`, `install`,
   `uninstall`, `doctor`, `audit-drift`, `gc-backups`,
   `restore-backups`, `purge-state`). Each subcommand handler prints
   `agent-runtime <subcommand>: not implemented` to stderr and returns
-  a non-zero `ExitCode`. `--version` returns `0.0.1-dev` and exits 0.
+  a non-zero `ExitCode`. `--version` returns `0.12.0` and exits 0.
   No flags are wired beyond `--version` and `--help`. Record the
   cross-repo commit SHA in the execution-state ledger Notes column for
   this task. No file under the agent-runtime-kit repo is modified by
@@ -474,7 +475,7 @@ touches three repos; each task names the owning repo.
 - **Complexity**: 6
 - **Acceptance criteria**:
   - `cargo build -p agent-runtime-cli` succeeds in nils-cli workspace.
-  - `agent-runtime --version` prints `0.0.1-dev`.
+  - `agent-runtime --version` prints `0.12.0`.
   - Each of the eight subcommands prints
     `agent-runtime <subcommand>: not implemented` to stderr and exits 1.
   - The crate is added to the workspace `members` list.
@@ -508,30 +509,34 @@ touches three repos; each task names the owning repo.
   - `cd ~/Project/sympoies/nils-cli && cargo metadata --format-version 1 | jq -r '.packages[].name' | grep -Fx agent-runtime-cli`
   - `cd ~/Project/sympoies/nils-cli && cargo build --workspace`
 
-### Task 3.3: Cut `0.0.1-dev` nils-cli release
+### Task 3.3: Cut `v0.12.0` nils-cli release (workspace bump)
 
 - **Location**:
   - `docs/plans/01-skeleton-and-schema/`
-- **Description**: Cross-repo task in `sympoies/nils-cli`. Bump the
-  workspace package version metadata to `0.0.1-dev`, tag the commit as
-  `v0.0.1-dev`, push the tag, and publish the release artifacts the
-  homebrew-tap formula consumes (tarball + SHA256). Use the existing
-  nils-cli release flow (`/release` skill or the equivalent
-  `scripts/release.sh`) — this task does not invent a new release
-  pipeline. Record the release URL, tag SHA, and tarball SHA256 in
-  the execution-state ledger Notes column. No file under this repo is
-  modified.
+- **Description**: Cross-repo task in `sympoies/nils-cli`. nils-cli
+  uses a coupled-workspace release convention (`chore(release): bump
+  cli versions to X.Y.Z`) — every crate shares the same `version`
+  value. Bump every workspace crate from `0.11.0` (and the new
+  `agent-runtime-cli` stub from its placeholder `0.0.1-dev`) to
+  `0.12.0` in one commit. Regenerate `Cargo.lock` with `cargo build
+  --workspace --locked`. Tag the commit as `v0.12.0`, push the tag,
+  and publish the release artifacts the homebrew-tap formula consumes
+  (tarball + SHA256). Use the existing nils-cli release flow
+  (`/release` skill or the equivalent `scripts/release.sh`) — this
+  task does not invent a new release pipeline. Record the release
+  URL, tag SHA, and tarball SHA256 in the execution-state ledger
+  Notes column. No file under this repo is modified.
 - **Dependencies**:
   - Task 3.2
 - **Complexity**: 5
 - **Acceptance criteria**:
   - `git -C ~/Project/sympoies/nils-cli describe --tags` returns
-    `v0.0.1-dev` (or a `v0.0.1-dev`-rooted suffix).
+    `v0.12.0` (or a `v0.12.0`-rooted suffix).
   - Release artifact (tarball) published and reachable.
   - SHA256 of the tarball recorded in the execution-state ledger.
 - **Validation**:
-  - `git -C ~/Project/sympoies/nils-cli describe --tags | grep -F v0.0.1-dev`
-  - `git -C ~/Project/sympoies/nils-cli ls-remote --tags origin | grep -F refs/tags/v0.0.1-dev`
+  - `git -C ~/Project/sympoies/nils-cli describe --tags | grep -F v0.12.0`
+  - `git -C ~/Project/sympoies/nils-cli ls-remote --tags origin | grep -F refs/tags/v0.12.0`
 
 ### Task 3.4: Bump formula in `sympoies/homebrew-tap`
 
@@ -539,8 +544,8 @@ touches three repos; each task names the owning repo.
   - `docs/plans/01-skeleton-and-schema/`
 - **Description**: Cross-repo task in `sympoies/homebrew-tap`. Update
   `Formula/nils-cli.rb` so the `url` and `sha256` point at the
-  `v0.0.1-dev` artifact from Task 3.3, and bump the formula version
-  pin to `0.0.1-dev`. Run `brew audit --strict --new
+  `v0.12.0` artifact from Task 3.3, and bump the formula version
+  pin to `0.12.0`. Run `brew audit --strict --new
   sympoies/tap/nils-cli` locally and fix any warnings before merging.
   Verify a clean install path with
   `brew uninstall nils-cli && brew install sympoies/tap/nils-cli` on
@@ -552,11 +557,11 @@ touches three repos; each task names the owning repo.
 - **Complexity**: 4
 - **Acceptance criteria**:
   - `brew install sympoies/tap/nils-cli` installs without errors.
-  - `agent-runtime --version` (on PATH) returns `0.0.1-dev`.
+  - `agent-runtime --version` (on PATH) returns `0.12.0`.
   - Every subcommand stub exits 1 with the expected stderr line.
   - homebrew-tap commit SHA recorded in execution-state ledger.
 - **Validation**:
-  - `brew update && brew reinstall sympoies/tap/nils-cli && agent-runtime --version | grep -F 0.0.1-dev`
+  - `brew update && brew reinstall sympoies/tap/nils-cli && agent-runtime --version | grep -F 0.12.0`
   - `agent-runtime render 2>&1 | grep -F 'not implemented'`
 
 ## Sprint 4: Host bootstrap skeleton and docs snapshot
@@ -660,7 +665,7 @@ touches three repos; each task names the owning repo.
   `--dry-run` exit 0 in Sprint 4.
 - Cross-repo verification: after Sprint 3 lands, run `brew install
   sympoies/tap/nils-cli` on the development host and confirm
-  `agent-runtime --version` returns `0.0.1-dev` and every subcommand
+  `agent-runtime --version` returns `0.12.0` and every subcommand
   stub exits 1 with the expected stderr line.
 - Plan bundle: `plan-tooling validate --file
   docs/plans/01-skeleton-and-schema/01-skeleton-and-schema-plan.md
@@ -669,7 +674,7 @@ touches three repos; each task names the owning repo.
 ## Risks & gotchas
 
 - **Cross-repo Sprint 3 ordering**: the formula bump in
-  `sympoies/homebrew-tap` MUST follow the `v0.0.1-dev` release in
+  `sympoies/homebrew-tap` MUST follow the `v0.12.0` release in
   `sympoies/nils-cli`. Bumping the formula before the tarball exists
   breaks `brew install` for every other developer pulling the tap.
   The Task 3.3 → Task 3.4 dependency makes this explicit; do not

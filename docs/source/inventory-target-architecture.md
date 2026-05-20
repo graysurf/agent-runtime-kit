@@ -1665,7 +1665,7 @@ runtime-safe surfaces:
   stubs (`render`, `install`, `uninstall`, `doctor`, `audit-drift`,
   `gc-backups`, `restore-backups`, `purge-state`) returning
   "not implemented" so the CLI contract is fixed before any subcommand
-  logic lands. Cut a `0.0.1-dev` release on `sympoies/homebrew-tap` so
+  logic lands. Cut a `0.12.0` release on `sympoies/homebrew-tap` so
   the install ladder can be exercised end-to-end against the placeholder
   binary.
 
@@ -1936,7 +1936,7 @@ Longer-term, not POC-blocking:
    (which now ships `agent-runtime`) → clone agent-runtime-kit → install
    profile-selected CLI_TOOLS → invoke `agent-runtime install` per
    product.
-9. Cut a `0.0.1-dev` nils-cli release on `sympoies/homebrew-tap` with
+9. Cut a `0.12.0` nils-cli release on `sympoies/homebrew-tap` with
    the stub `agent-runtime` binary so the bootstrap path is verified
    before content migration starts.
 10. Import the current reporting-domain source files from `agent-kit`

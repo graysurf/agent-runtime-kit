@@ -9,7 +9,7 @@
   The end-state of this plan is a tracked source-of-truth bundle (skeleton
   directories, baseline `.gitignore`, drift allowlist seed, PR template),
   the five `manifests/*.yaml` source files at `schema_version: 1`, a
-  stubbed `agent-runtime` binary cut as `0.0.1-dev` through
+  stubbed `agent-runtime` binary cut as `0.12.0` through
   `sympoies/homebrew-tap`, and a host bootstrap skeleton + frozen
   nils-cli surface snapshot in `docs/source/`.
 
@@ -37,7 +37,7 @@ demonstrated independently:
    plugin entries yet — those land in Plan 03).
 3. `nils-cli/crates/agent-runtime-cli/` opened as a stub crate, all
    subcommands return "not implemented" with exit 1, and a
-   `0.0.1-dev` release bumped through `sympoies/homebrew-tap`.
+   `0.12.0` release bumped through `sympoies/homebrew-tap`.
 4. `scripts/setup.sh` skeleton (with `agent-runtime install` calls
    stubbed out) plus `docs/source/nils-cli-surface.md` snapshot.
 
@@ -64,7 +64,7 @@ demonstrated independently:
     828–988) — nils-cli ownership, `required_clis` contract,
     `<TBD: pin during Phase 1>` placeholder rule.
   - `## Install Channels` → Tap Layout + Brew-First Bootstrap (around
-    lines 989–1025) — Homebrew bootstrap, `0.0.1-dev` release context.
+    lines 989–1025) — Homebrew bootstrap, `0.12.0` release context.
   - `## Secrets And Sensitive Data` → Baseline `.gitignore` (around
     lines 1283–1300).
   - Resolved Decision #2 (no standalone CLI, subcommand enumeration).
@@ -91,7 +91,7 @@ demonstrated independently:
   YAML + JSON schema docs, policy doc, PR template, setup script,
   nils-cli surface snapshot.
 - nils-cli (`sympoies/nils-cli`): new `crates/agent-runtime-cli/` stub
-  crate, workspace registration, version `0.0.1-dev`.
+  crate, workspace registration, version `0.12.0`.
 - homebrew-tap (`sympoies/homebrew-tap`): formula bump so
   `brew install sympoies/tap/nils-cli` resolves to the stub.
 
