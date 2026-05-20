@@ -21,7 +21,7 @@ Status: source document for the first implementation discussion
   (`$CODEX_HOME`, `$CODEX_AGENT_STATE_HOME`) only.
 - 2026-05-20 (nils-cli pass) — `nils-cli`
   (`github.com/sympoies/nils-cli`) recorded as **upstream** capability
-  layer; new [CLI Boundary](#cli-boundary--nils-cli-owns-the-cli-surface)
+  layer; new [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface)
   section defines the ownership split; `required_clis` field added to
   `skills.yaml`; state paths default to runtime allocation via
   `agent-out`; doctor checks coverage of nils-cli binaries against
@@ -50,6 +50,44 @@ Status: source document for the first implementation discussion
   Phase 3 as the new CI gate 6). Open Questions trimmed of resolved
   items (`agent-out --state-home` superseded by arkit-drop;
   product-version minimum now pinned).
+- 2026-05-20 (specialist-review fixes pass) — folded in findings from a
+  multi-lens design review: collapsed all `graysurf/nils-cli` references
+  back to `sympoies/nils-cli` (single canonical repo); rewrote the local
+  tap recipe to use a `brew --prefix` Taps symlink instead of the
+  non-existent `brew tap --custom-remote`; switched render-golden CI gate
+  to `agent-runtime render --update-golden` so the subcommand list stays
+  closed; collapsed `gc-backups` to a single dedicated subcommand (no
+  install flag form); added `schema_version: 1` to the `runtime-roots.yaml`
+  example so it matches the mandatory rule; dropped the fictional umbrella
+  `nils-cli --version` probe and described per-binary probing only;
+  rebased Claude `state_home` XDG fallback onto `agent-runtime-kit/claude`
+  while keeping `CLAUDE_KIT_STATE_HOME` for env-var back-compat (plus a
+  migration note); promoted `meta` to Phase 4 position #2 so downstream
+  domains migrate against the new `agent-docs` / `semantic-commit` /
+  `agent-out` skill bodies; added a callout that `.codex-plugin/plugin.json`
+  is an agent-kit-inherited local convention rather than a Codex upstream
+  contract; inserted explicit Phase 1.5 covering the nils-cli render /
+  audit-drift implementation that must ship before Phase 2 can start.
+  Deferred to a future pass: heuristic directory rename, unsafe-drift
+  noise control, install-flag de-bloat, em-dash anchor risk,
+  `AGENT_RUNTIME_HOST_PROFILE` callout, `.private/` merge semantics, and
+  the three red-team threads (render determinism vs Tera context order,
+  Codex adapter symmetry over-spec, latest-stable no-back-compat
+  developer-pain).
+- 2026-05-20 (specialist-review batch 1) — document-only alignment pass:
+  collapsed the lingering `<state_home>/heuristic/...` paths back to
+  `<state_home>/heuristic-system/...` so state, policy, and skill driver
+  directories all share one name (M2); replaced every `">=0.X"`
+  placeholder in the `required_clis` examples with
+  `"<TBD: pin during Phase 1>"` and added a Manifest Layer note that any
+  surviving `<TBD>` is a Phase 1 gate failure (L1); renamed
+  `## CLI Boundary — nils-cli Owns The CLI Surface` to `:`-separated form
+  to stabilise the GitHub anchor and updated all six cross-references
+  (L3); added a Host profile env var callout in Cross-OS / Multi-Machine
+  Portability declaring `AGENT_RUNTIME_HOST_PROFILE` as a new design-owned
+  variable, its fallback rule, and doctor reporting expectation (L4).
+  Still deferred: M4 unsafe-drift scoring, L2 install-flag de-bloat,
+  L5 overlay merge semantics, and the three red-team threads.
 
 ## Purpose
 
@@ -199,7 +237,7 @@ Important existing contract:
   `plan-issue`, …) and the orchestration binary (`agent-runtime`, new
   crate `crates/agent-runtime-cli/`). Kept on its own release cadence.
   See [`nils-cli`](#nils-cli) above and
-  [CLI Boundary](#cli-boundary--nils-cli-owns-the-cli-surface) for the
+  [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface) for the
   ownership split.
 - `sympoies/homebrew-tap`: public, default branch `main`. Distribution
   channel for nils-cli (and any other sympoies Rust binaries, e.g.
@@ -240,9 +278,15 @@ Cross-repo discipline:
 - **Local development setup.** Contributors typically clone all three
   repos side-by-side under `~/Project/`. `agent-runtime doctor` accepts
   `--nils-cli-source <path>` to point at a local nils-cli checkout when
-  testing unreleased binaries. The brew tap can be pinned to a local
-  path via `brew tap --custom-remote sympoies/tap <local-path>` for
-  end-to-end install rehearsal.
+  testing unreleased binaries. For end-to-end install rehearsal against
+  a local tap checkout, symlink the working tree into Homebrew's taps
+  directory:
+  ```bash
+  ln -s ~/Project/sympoies/homebrew-tap \
+    "$(brew --prefix)/Library/Taps/sympoies/homebrew-tap"
+  ```
+  brew then resolves `brew install sympoies/tap/nils-cli` against the
+  local checkout. Remove the symlink to fall back to the published tap.
 
 ## Target Architecture
 
@@ -287,7 +331,7 @@ agent-runtime-kit/
 Note: there is **no** standalone CLI binary in this repo. The
 orchestration commands (`render`, `install`, `uninstall`, `doctor`,
 `audit-drift`, `gc-backups`) live in `nils-cli` as the `agent-runtime`
-binary. See [CLI Boundary](#cli-boundary--nils-cli-owns-the-cli-surface).
+binary. See [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface).
 
 ### Core Layer
 
@@ -333,13 +377,23 @@ resolve product paths; runtime resolution is the adapter's job.
 Product adapters may contain wrappers or compatibility shims, but durable
 workflow instructions should remain in `core/` whenever possible.
 
+> **Codex / Claude plugin-format asymmetry.** `.claude-plugin/plugin.json`
+> and the Claude marketplace are published upstream contracts. There is no
+> equivalent upstream Codex plugin manifest spec today;
+> `.codex-plugin/plugin.json`, Codex marketplace entries, and the Codex
+> plugin layout in this design are conventions inherited from `agent-kit`
+> and owned by this repo. Reviewers and implementers should treat the
+> Codex side as a local schema we maintain (and may need to revise if
+> Codex publishes an official plugin contract), not as a mirror of an
+> existing upstream format.
+
 ### Manifest Layer
 
 `manifests/` should make the source of truth machine-checkable:
 
 - `skills.yaml`: skill id, domain, source path, supported products, aliases,
   product-specific names, `required_clis` (per-binary nils-cli semver
-  floors — see [CLI Boundary](#cli-boundary--nils-cli-owns-the-cli-surface)),
+  floors — see [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface)),
   `state_out_mode` (default `runtime`), portability notes, and per-product
   `path_override` (see Cross-Product Domain Mapping below).
 - `plugins.yaml`: domain plugin metadata, contained skills, product manifests,
@@ -435,8 +489,16 @@ content is rewritten to product-native paths during render.
 | `source_root` | Versioned source checkout | `$HOME/.config/agent-runtime-kit` | `$HOME/.config/agent-runtime-kit` | Single canonical source; both products are downstream render targets. |
 | `live_home` | Product runtime home loaded by the agent product | `$CODEX_HOME` (default `$HOME/.codex`) | `$HOME/.claude` | Only approved rendered files, symlinks, or managed config blocks may be installed here. |
 | `docs_home` | Home-scope `agent-docs` policy root | `$CODEX_HOME` (so `$HOME/.codex`) | `$HOME/.claude` | Always render explicit `agent-docs --docs-home <path>` per product. Do not rely on ambient `AGENT_DOCS_HOME`. |
-| `state_home` | Writable runtime state, temporary output, local evidence, and backups | `${CODEX_AGENT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex}` | `${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/claude-kit}` | Product adapter chooses the default. Core workflows receive it as a parameter or rendered variable. |
+| `state_home` | Writable runtime state, temporary output, local evidence, and backups | `${CODEX_AGENT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex}` | `${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude}` | Product adapter chooses the default. Core workflows receive it as a parameter or rendered variable. |
 | `plugin_root` | Installed plugin package root, when the product supports plugin-scoped execution | `$CODEX_HOME/plugins/<domain>` (no dedicated env var assumed) | `$CLAUDE_PLUGIN_ROOT` | Core skills must not assume a plugin root. Product adapters render plugin-root-relative commands. |
+
+The Claude `state_home` keeps the legacy env var name `CLAUDE_KIT_STATE_HOME`
+for back-compat with existing shell config, hooks, and skill bodies, but the
+XDG fallback path is rebased onto the new repo namespace
+(`agent-runtime-kit/claude`) so both products share one parent directory
+under `$XDG_STATE_HOME`. Migration tooling moves any pre-existing
+`$XDG_STATE_HOME/claude-kit/` tree into the new path; users with
+`CLAUDE_KIT_STATE_HOME` explicitly exported are unaffected.
 
 `AGENT_DOCS_HOME` is rejected as a target-level default because it can leak
 from the shell and select the wrong home policy. Prefer explicit
@@ -460,6 +522,17 @@ remote dev boxes). Resolution order for any root:
 4. Cross-OS default (XDG on Linux/BSD, `~/Library/Application Support` on macOS
    only if the product expects it, otherwise XDG paths still apply because the
    user's setup runs XDG on macOS too).
+
+> **Host profile env var.** `AGENT_RUNTIME_HOST_PROFILE` is a new env var
+> introduced by this design (no upstream provider). When set, its value
+> selects the matching block in `runtime-roots.yaml`; when unset, the
+> installer falls back to `uname -s` (`Darwin` / `Linux`, or `WSL`
+> synthesized when `/proc/version` matches Microsoft's marker). Recommended
+> setup is to export it from the host's shell profile when one user
+> maintains multiple machine archetypes (laptop / corp box / remote dev
+> box / CI runner) with divergent paths or override needs. Doctor reports
+> the resolved profile name alongside the resolved roots so misconfigured
+> exports surface immediately.
 
 Hard-coded macOS paths (`$HOME/.codex`, `$HOME/.claude`) are acceptable as
 *defaults* because both products use them today; `runtime-roots.yaml` is the
@@ -595,8 +668,8 @@ core/target boundary:
 | --- | --- | --- |
 | Policy doc (`HEURISTIC_SYSTEM.md`) | `core/policies/heuristic-system/HEURISTIC_SYSTEM.md` | Product-independent routing rules |
 | Operation records | `core/policies/heuristic-system/operation-records/<slug>.md` | Cross-product reusable lessons |
-| Error inbox (active) | `<state_home>/heuristic/error-inbox/` | Per-product writable state, not tracked |
-| Error inbox (archive) | `<state_home>/heuristic/error-inbox/archive/YYYY/` | Pruned by retention policy |
+| Error inbox (active) | `<state_home>/heuristic-system/error-inbox/` | Per-product writable state, not tracked |
+| Error inbox (archive) | `<state_home>/heuristic-system/error-inbox/archive/YYYY/` | Pruned by retention policy |
 | Skill driver | `core/skills/meta/heuristic-error-inbox/` | Same skill body for both products |
 
 Rationale:
@@ -616,7 +689,7 @@ entries in `archive/YYYY/` are preserved as-is — the path moves, not the
 content. The CLI side moves to the `heuristic-inbox` nils-cli binary; the
 skill body wraps that binary rather than re-implementing inbox parsing.
 
-## CLI Boundary — nils-cli Owns The CLI Surface
+## CLI Boundary: nils-cli Owns The CLI Surface
 
 `nils-cli` is the durable, deterministic capability layer **and** the
 orchestration CLI. agent-runtime-kit is a pure content repo: skills, plugin
@@ -693,9 +766,9 @@ skills:
   - id: pr.deliver-feature-pr
     source: core/skills/pr/deliver-feature-pr
     required_clis:
-      forge-cli: ">=0.X"
-      git-scope: ">=0.X"
-      semantic-commit: ">=0.X"
+      forge-cli: "<TBD: pin during Phase 1>"
+      git-scope: "<TBD: pin during Phase 1>"
+      semantic-commit: "<TBD: pin during Phase 1>"
     products:
       codex:
         name: pr-deliver-feature
@@ -709,6 +782,13 @@ skills:
 for fallbacks). Drift audit cross-references `required_clis` against the
 nils-cli release manifest and fails on (a) missing binary, (b) version
 below the declared floor, (c) binary that has since been deleted upstream.
+
+`<TBD: pin during Phase 1>` is a placeholder used in this design document
+only. Real manifests pin every `required_clis` entry to a concrete semver
+range (e.g. `">=0.5.0"`) against the snapshot in
+`docs/source/nils-cli-surface.md`. Drift audit treats any literal `<TBD>`
+in a tracked manifest as a Phase 1 gate failure — no `<TBD>` may survive
+into Phase 2.
 
 ### State Path Allocation Via `agent-out`
 
@@ -744,8 +824,9 @@ needs to pin one mode; default is `runtime`.
 
 `agent-runtime doctor` includes a `nils-cli` check that:
 
-- runs `nils-cli --version` (or per-binary `--version`) for every binary
-  named in any tracked skill's `required_clis`.
+- runs `<binary> --version` for every binary named in any tracked skill's
+  `required_clis` (nils-cli ships as a workspace of independent binaries;
+  there is no umbrella `nils-cli` command).
 - compares against the declared minimum and reports `missing` / `outdated`
   / `ok` per binary.
 - defers third-party tool checks (`gh`, `glab`, `git`, `fzf`, `grpcurl`,
@@ -780,7 +861,7 @@ fallbacks exist for environments where brew cannot be installed.
 
 | Formula | Provides | Source repo |
 | --- | --- | --- |
-| `nils-cli` | All capability binaries **and** the `agent-runtime` orchestration binary | `sympoies/nils-cli` (releases attached to `graysurf/nils-cli`) |
+| `nils-cli` | All capability binaries **and** the `agent-runtime` orchestration binary | `sympoies/nils-cli` |
 | `agent-workspace-launcher` | Workspace lifecycle helper (unrelated to runtime kit core) | `graysurf/agent-workspace-launcher` |
 
 When `nils-cli` ships a new release, formula bump in the tap is the
@@ -822,7 +903,7 @@ Order of preference when Homebrew/Linuxbrew cannot be installed:
 1. **`cargo install --git`** for nils-cli binaries (requires Rust
    toolchain). `scripts/setup.sh --no-brew --with-cargo` chooses this
    path.
-2. **Direct release tarball** from `graysurf/nils-cli` GitHub releases —
+2. **Direct release tarball** from `sympoies/nils-cli` GitHub releases —
    downloaded, verified by SHA, extracted to `$HOME/.local/bin/`.
    `setup.sh --no-brew --tarball` chooses this path.
 3. **Source build** from a local `nils-cli` checkout (`cargo build
@@ -910,7 +991,8 @@ without `--force`.
 - Retention default: last 5 install runs per surface, plus any backup tagged
   manually via `agent-runtime install --tag <name>`.
 - Doctor reports backup directory size; aged backups beyond retention are
-  pruned by `agent-runtime install --gc-backups` (never silently by install itself).
+  pruned by the dedicated `agent-runtime gc-backups` subcommand (never
+  silently by `install` itself).
 
 ### Doctor Checks
 
@@ -949,6 +1031,7 @@ The installer must also render a product-specific root map before it renders
 skills, hooks, or docs. A minimal local machine map could look like:
 
 ```yaml
+schema_version: 1
 products:
   codex:
     live_home: "$CODEX_HOME"
@@ -961,7 +1044,7 @@ products:
   claude:
     live_home: "$HOME/.claude"
     docs_home: "$HOME/.claude"
-    state_home: "${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/claude-kit}"
+    state_home: "${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude}"
     plugin_root_env: "CLAUDE_PLUGIN_ROOT"
     hook_config_strategy: settings-json
     min_version: "1.0.45"
@@ -1085,8 +1168,9 @@ correctness is a separate stack and lives in `tests/`.
    canonical IDs. Runs on every commit.
 2. **Render golden files** — for each (skill, product) pair, a tiny snapshot
    under `tests/golden/<product>/<skill>/expected/` is the byte-exact render
-   target. CI fails if `render-target` produces a diff. Regenerated explicitly
-   via `agent-runtime render-target --update-golden` (review the diff before
+   target. CI fails if `agent-runtime render` produces a diff against the
+   pinned snapshots. Regenerated explicitly via
+   `agent-runtime render --update-golden` (review the diff before
    committing).
 3. **Hook adapter contract tests** — for each `targets/<product>/hooks/<name>`
    adapter, fixed payload fixtures in `tests/hooks/<product>/<name>/` exercise
@@ -1194,8 +1278,8 @@ skills:
   - id: reporting.daily-brief
     source: core/skills/reporting/daily-brief
     required_clis:
-      agent-out: ">=0.X"
-      git-scope: ">=0.X"
+      agent-out: "<TBD: pin during Phase 1>"
+      git-scope: "<TBD: pin during Phase 1>"
     state_out_mode: runtime
     products:
       codex:
@@ -1209,7 +1293,7 @@ skills:
   - id: reporting.topic-radar
     source: core/skills/reporting/topic-radar
     required_clis:
-      agent-out: ">=0.X"
+      agent-out: "<TBD: pin during Phase 1>"
     state_out_mode: runtime
     products:
       codex:
@@ -1283,7 +1367,7 @@ DRY render product=claude domain=reporting
   source core/skills/reporting/daily-brief
   -> build/claude/plugins/reporting/skills/daily-brief
   docs_home=$HOME/.claude
-  state_home=${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/claude-kit}
+  state_home=${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude}
   live target candidate: $HOME/.claude/plugins/reporting
 
 No live files changed. Re-run with --apply after drift audit passes.
@@ -1330,6 +1414,30 @@ runtime-safe surfaces:
   `sympoies/homebrew-tap` so the install ladder can be exercised
   end-to-end against the placeholder binary.
 
+### Phase 1.5: Upstream nils-cli Render Enablement
+
+Cross-repo dependency made explicit. Phase 2 cannot start until the
+following lands **inside `sympoies/nils-cli`** and is published through
+the tap:
+
+- Implement the body of `agent-runtime render` against the Phase 1
+  manifest schemas (`skills.yaml`, `plugins.yaml`,
+  `product-capabilities.yaml`, `runtime-roots.yaml`, `cli-tools.yaml`).
+- Register the Tera helpers (`script`, `skill_ref`, `state_out`,
+  `cli_ref`) wired to `nils-common` paths and the `agent-out`
+  invocation contract.
+- Implement the minimal body of `agent-runtime audit-drift` covering at
+  least source-manifest / rendered-target / `$AGENT_HOME` leak / docs-home
+  classes — enough for the Phase 2 reporting POC to be validated.
+- Cut a `0.1.0` nils-cli release; bump the formula in
+  `sympoies/homebrew-tap`; bump `required_clis` floors in this repo's
+  manifests to match.
+
+Phase 2 references `agent-runtime render` and `agent-runtime audit-drift`
+as if they exist. They only exist after Phase 1.5 ships; the
+agent-runtime-kit side of Phase 2 should not be planned in parallel with
+this work.
+
 ### Phase 2: Reporting POC
 
 - Migrate one low-risk domain.
@@ -1357,17 +1465,23 @@ runtime-safe surfaces:
 
 Suggested order:
 
-1. `reporting` (low coupling; mostly net-new bodies)
-2. `media` (wraps `image-processing`, `screen-record`)
-3. `browser` (wraps `browser-session`, `canary-check`)
-4. `evidence` (wraps `web-evidence`, `test-first-evidence`,
-   `review-evidence`, `skill-usage`, `docs-impact`, `model-cross-check`)
-5. `meta` (wraps `agent-docs`, `agent-scope-lock`, `agent-out`,
-   `heuristic-inbox`, `repo-retro`, `semantic-commit`)
-6. `pr` (wraps `forge-cli` end-to-end lifecycle, including `pr deliver`)
+1. `reporting` (low coupling; mostly net-new bodies; smoke-tests the
+   render + drift pipeline on a domain with no cross-skill dependencies).
+2. `meta` (wraps `agent-docs`, `agent-scope-lock`, `agent-out`,
+   `heuristic-inbox`, `repo-retro`, `semantic-commit`). Promoted ahead of
+   the heavier domains because every downstream migration relies on
+   `agent-docs` preflight, `agent-out` state allocation, and
+   `semantic-commit` for landing changes; migrating `meta` second means
+   subsequent domains rewrite against the new skill bodies instead of
+   the legacy claude-kit / agent-kit ones.
+3. `media` (wraps `image-processing`, `screen-record`).
+4. `browser` (wraps `browser-session`, `canary-check`).
+5. `evidence` (wraps `web-evidence`, `test-first-evidence`,
+   `review-evidence`, `skill-usage`, `docs-impact`, `model-cross-check`).
+6. `pr` (wraps `forge-cli` end-to-end lifecycle, including `pr deliver`).
 7. `dispatch` (wraps `plan-issue`, `plan-issue-local`, `plan-tooling`,
-   coordinates with `forge-cli` for issue / PR mirroring)
-8. project/company/private overlays
+   coordinates with `forge-cli` for issue / PR mirroring).
+8. project/company/private overlays.
 
 For each migrated domain, the per-skill checklist is:
 
@@ -1413,7 +1527,7 @@ Pinned for the rest of this document and Phase 1+ implementation:
    `brew install sympoies/tap/nils-cli`. Invocation pattern:
    `agent-runtime <subcommand>`. agent-runtime-kit itself ships only
    bootstrap scripts under `scripts/` for host setup. See
-   [CLI Boundary](#cli-boundary--nils-cli-owns-the-cli-surface).
+   [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface).
 3. **Repo relationship — replace both.** `agent-runtime-kit` (private)
    replaces `agent-kit` and `claude-kit` as sole source of truth after
    migration. Both legacy repos are archived. nils-cli stays separate
@@ -1429,7 +1543,7 @@ Pinned for the rest of this document and Phase 1+ implementation:
    `$AGENT_HOME` as a blocking error. Legacy `$AGENT_HOME/...` paths in
    inherited `agent-kit` content are migration inputs, rewritten in place.
 6. **nils-cli owns the entire CLI surface; agent-runtime-kit is pure
-   content.** See [CLI Boundary](#cli-boundary--nils-cli-owns-the-cli-surface)
+   content.** See [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface)
    for the ownership table. Render / install / doctor / drift audit live
    in `nils-cli/crates/agent-runtime-cli/` as the `agent-runtime` binary.
    Every skill declares `required_clis` with semver floors; doctor + drift
