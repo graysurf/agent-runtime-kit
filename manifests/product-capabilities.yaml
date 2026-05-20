@@ -1,0 +1,81 @@
+# Per-product capability matrix.
+#
+# Schema: ../core/docs/schemas/product-capabilities.schema.json
+# Architecture: docs/source/inventory-target-architecture.md
+#   `### Manifest Layer` and `### Codex Activation Surface (Reality Check)`
+#
+# This file is NOT empty in Plan 01: the capability matrix is settled
+# architecture. Plan 03 adds skill / plugin entries elsewhere; this file
+# only changes when a product itself changes (e.g. Codex publishes a real
+# plugin loader). Resolved Decision #10 governs the Codex side.
+schema_version: 1
+
+products:
+  codex:
+    # Nested skills are addressed via `$CODEX_HOME`-relative paths referenced
+    # from `AGENTS.md` or hook scripts. Codex itself does not "discover"
+    # plugins or nested skills — the path is whatever AGENTS.md points at.
+    nested_skill_support: true
+    plugin_manifest:
+      # Codex never opens `.codex-plugin/plugin.json` at runtime. The file
+      # exists as a source-organisation convention shared with the Claude
+      # side; render flattens domain content into AGENTS.md + config.toml
+      # managed block (see Codex Activation Surface Reality Check).
+      path_pattern: "$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json"
+      loaded_at_runtime: false
+      schema_ref: "core/docs/schemas/codex-plugin.schema.json"
+    hooks_model:
+      config_surface: "$CODEX_HOME/config.toml (agent-runtime-kit managed block)"
+      payload_shape: "codex-toml-managed-block"
+      supports_inline_python: false
+    config_activation:
+      - "$CODEX_HOME/AGENTS.md"
+      - "$CODEX_HOME/config.toml (managed block only)"
+      - "$CODEX_HOME/hooks/<name>/ (scripts referenced from managed block)"
+    runtime_state:
+      state_home_env: "CODEX_AGENT_STATE_HOME"
+      default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex"
+    marketplace_concept: false
+
+  claude:
+    nested_skill_support: true
+    plugin_manifest:
+      # Claude DOES load `.claude-plugin/plugin.json` at runtime through its
+      # plugin loader. Drift audit may compare against Claude's published
+      # plugin manifest contract when it stabilises; until then the local
+      # schema is the contract.
+      path_pattern: "${CLAUDE_PLUGIN_ROOT}/<plugin>/.claude-plugin/plugin.json"
+      loaded_at_runtime: true
+      schema_ref: "core/docs/schemas/claude-plugin.schema.json"
+    hooks_model:
+      config_surface: "$HOME/.claude/settings.json (hook block) + .claude/hooks/<name>.py"
+      payload_shape: "claude-pretool-v1"
+      supports_inline_python: true
+    config_activation:
+      - "$HOME/.claude/settings.json"
+      - "${CLAUDE_PLUGIN_ROOT}/<plugin>/.claude-plugin/plugin.json"
+      - "${CLAUDE_PLUGIN_ROOT}/<plugin>/skills/<skill>/"
+      - "$HOME/.claude/marketplace.json"
+    runtime_state:
+      state_home_env: "CLAUDE_KIT_STATE_HOME"
+      default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude"
+    marketplace_concept: true
+
+# Field-level diff between the two plugin manifests. Drift audit reads this
+# to know which divergences are intentional and which are drift. Plan 03
+# refines this list once concrete plugin.json files are written; for now
+# it captures the architecture-level intent.
+plugin_manifest_diff:
+  shared_fields:
+    - "schema_version"
+    - "name"
+    - "description"
+    - "version"
+    - "skills"
+  codex_only_fields:
+    - "agents_md_path"
+    - "config_toml_managed_block"
+  claude_only_fields:
+    - "marketplace_entry"
+    - "hooks"
+    - "mcp_servers"

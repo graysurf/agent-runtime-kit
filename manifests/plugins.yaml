@@ -1,0 +1,11 @@
+# Plugin manifest — Plan 01 ships this file empty. Real entries land in
+# Plan 03 (`03-domain-migration-reporting-pilot`).
+#
+# Schema: ../core/docs/schemas/plugins.schema.json
+# Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`
+#
+# Each entry MUST declare `id`, `domain`, `contained_skills`, and
+# `product_manifests`. Plugin `domain` cross-references skill `domain` fields
+# in `skills.yaml`; Plan 03 lands both together.
+schema_version: 1
+plugins: []

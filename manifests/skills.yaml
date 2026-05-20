@@ -1,0 +1,12 @@
+# Skill manifest — Plan 01 ships this file empty. Real entries land in
+# Plan 03 (`03-domain-migration-reporting-pilot`).
+#
+# Schema: ../core/docs/schemas/skills.schema.json
+# Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`
+#
+# Each entry MUST declare `id`, `domain`, `source`, `products`, and
+# `required_clis`. The literal placeholder `<TBD: pin during Phase 1>` is
+# allowed in `required_clis` values during Phase 1 only; Plan 02 lands the
+# validator and rejects any surviving `<TBD>` as a gate failure.
+schema_version: 1
+skills: []

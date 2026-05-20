@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/runtime-roots.schema.json",
+  "title": "runtime-roots.yaml",
+  "description": "Per-product runtime root resolution: command_root / config_path / state_home / plugin_root plus the version-floor ceremony fields (`min_version`, `recommended_version`, `min_version_effective_from`, `version_probe`) governed by Resolved Decision #7. See docs/source/inventory-target-architecture.md `### Runtime Root Model`. Plan 01 leaves version-pin fields as the literal placeholder `<TBD: pin during Phase 1>`; Plan 02 pins concrete values once a development-host snapshot is taken.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "products"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "products": {
+      "type": "object",
+      "description": "Runtime-root blocks keyed by product. Both `codex` and `claude` are required.",
+      "additionalProperties": false,
+      "required": ["codex", "claude"],
+      "properties": {
+        "codex": { "$ref": "#/$defs/productRoot" },
+        "claude": { "$ref": "#/$defs/productRoot" }
+      }
+    },
+    "host_profiles": {
+      "type": "object",
+      "description": "Optional per-host overrides keyed by `AGENT_RUNTIME_HOST_PROFILE` value (or `uname -s` fallback). When present, install / doctor merges the matching block over the product defaults.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "productRoot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_home",
+        "docs_home",
+        "state_home",
+        "min_version",
+        "recommended_version",
+        "min_version_effective_from",
+        "version_probe"
+      ],
+      "properties": {
+        "live_home": {
+          "type": "string",
+          "description": "Product runtime home loaded by the agent product (template form: `$CODEX_HOME` / `$HOME/.claude`).",
+          "minLength": 1
+        },
+        "docs_home": {
+          "type": "string",
+          "description": "Home-scope `agent-docs` policy root used by the product.",
+          "minLength": 1
+        },
+        "state_home": {
+          "type": "string",
+          "description": "Writable runtime state directory (template form, with env-var fallbacks).",
+          "minLength": 1
+        },
+        "plugin_root": {
+          "type": "string",
+          "description": "Plugin package root, when the product supports plugin-scoped execution (e.g. `$CODEX_HOME/plugins/<domain>`).",
+          "minLength": 1
+        },
+        "plugin_root_env": {
+          "type": "string",
+          "description": "Env var the product exposes for the plugin root (e.g. Claude's `CLAUDE_PLUGIN_ROOT`).",
+          "minLength": 1
+        },
+        "hook_config_strategy": {
+          "type": "string",
+          "description": "How hooks are activated (matches `product-capabilities.yaml`).",
+          "enum": ["settings-json", "managed-block"]
+        },
+        "min_version": {
+          "type": "string",
+          "description": "Blocking floor. Below this and past `min_version_effective_from` is a block. Plan 01 carries the literal `<TBD: pin during Phase 1>` placeholder; Plan 02 pins concrete semver ranges.",
+          "minLength": 1
+        },
+        "recommended_version": {
+          "type": "string",
+          "description": "Warn floor. Below this is a warn. Plan 01 carries the literal `<TBD: pin during Phase 1>` placeholder.",
+          "minLength": 1
+        },
+        "min_version_effective_from": {
+          "type": "string",
+          "description": "Forward-pin ISO date that gates when a `min_version` bump starts blocking instead of warning. Plan 01 carries the literal `<TBD: pin during Phase 1>` placeholder.",
+          "minLength": 1
+        },
+        "version_probe": {
+          "type": "string",
+          "description": "Command used by doctor / audit-drift to probe the installed product version. Output is parsed with a permissive semver matcher.",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
