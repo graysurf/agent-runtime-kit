@@ -1,0 +1,12 @@
+build/
+*.local.*
+.env
+.env.*
+secrets/
+secrets.*.yaml
+auth.json
+.credentials*
+**/sessions/
+**/history/
+**/cache/
+.private/

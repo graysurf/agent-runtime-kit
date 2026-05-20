@@ -1,0 +1,13 @@
+# Drift audit allowlist seed.
+#
+# Each `unsafe_allow` entry demotes a matching drift-audit finding by ONE
+# tier (block -> warn -> silent), never beyond. The composite-scoring rules
+# live in docs/source/inventory-target-architecture.md `## Drift Detection`
+# and the `unsafe` classification semantics live in the same doc under
+# `### Drift Audit `unsafe` Class`.
+#
+# Real entries land when Plan 02 (`02-nils-cli-render-and-drift-audit`)
+# enables `agent-runtime audit-drift` and concrete findings need a
+# documented demotion. This file ships intentionally empty.
+schema_version: 1
+unsafe_allow: []
