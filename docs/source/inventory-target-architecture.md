@@ -108,6 +108,28 @@ Status: source document for the first implementation discussion
   cross-process determinism test (Red-team #1). Still deferred:
   Codex reality check (Red-team #2) and `min_version` Bump Ceremony
   (Red-team #3).
+- 2026-05-20 (specialist-review batch 3) — reality + ceremony pass:
+  hardened the Codex / Claude adapter asymmetry into a dedicated
+  §Codex Activation Surface (Reality Check) subsection enumerating
+  what Codex actually loads (`AGENTS.md` + `config.toml` managed
+  block) vs. what the directory tree merely organises for authoring
+  (`.codex-plugin/plugin.json`, marketplace entries, plugin packaging);
+  tagged the Codex-side bullets in §Product Adapter Layer with
+  "local convention" / "local-only" markers; updated drift-detection
+  bullets to clarify Codex `plugin.json` is validated against the
+  local schema only; promoted the reality check to Resolved Decision
+  #10 with implications for `audit-drift`, `install`, PR review, and
+  Phase 4 scoping (Red-team #2). Layered a Bump Ceremony onto Decision
+  #7: added `recommended_version` and `min_version_effective_from`
+  fields to `runtime-roots.yaml`, rewrote the Doctor Checks version
+  bullet to report `ok` / `recommended-only` / `warn` / `outdated`
+  with effective-from gating, introduced `agent-runtime doctor
+  --suggest-upgrade` for copy-pasteable upgrade commands, and shipped
+  `.github/PULL_REQUEST_TEMPLATE/min-version-bump.md` as a reminder
+  template for impacted-environment listing, tested combinations,
+  rollback path, and team notice (Red-team #3). All M / L / Red-team
+  findings from the original specialist review are now landed; no
+  remaining deferred items.
 
 ## Purpose
 
@@ -382,7 +404,10 @@ resolve product paths; runtime resolution is the adapter's job.
 
 - `CODEX_AGENTS.md` / `AGENTS.md` rendering
 - `.codex-plugin/plugin.json` generation or storage
-- Codex plugin marketplace entries
+  *(local convention; not a Codex upstream contract — see
+  [Codex Activation Surface](#codex-activation-surface-reality-check) below)*
+- Codex plugin marketplace entries *(local-only; Codex has no published
+  marketplace API)*
 - managed hook block for `~/.codex/config.toml`
 - Codex-specific skill root or plugin path rules
 
@@ -406,6 +431,64 @@ workflow instructions should remain in `core/` whenever possible.
 > Codex side as a local schema we maintain (and may need to revise if
 > Codex publishes an official plugin contract), not as a mirror of an
 > existing upstream format.
+
+### Codex Activation Surface (Reality Check)
+
+The asymmetry callout above is important enough to spell out explicitly,
+because the directory tree under `targets/codex/` and the parallel
+bullets between the two products invite the assumption that Codex has a
+matching loader for each Claude concept. It does not.
+
+**What Codex actually reads at session start:**
+
+- `~/.codex/AGENTS.md` — primary agent prompt. Read on every session
+  start. Can be a symlink. This is the only file the runtime kit
+  positions to "activate" a domain on the Codex side.
+- `~/.codex/config.toml` — TOML config with custom hooks declared
+  inline. The runtime kit writes only into the
+  `# >>> agent-runtime-kit:hooks >>>` managed block; everything outside
+  is owned by the user.
+- File reads relative to `$CODEX_HOME` invoked from inside hooks or from
+  `AGENTS.md`-referenced scripts.
+
+**What Codex does NOT have (no matter how much the directory tree
+suggests otherwise):**
+
+- A `.codex-plugin/plugin.json` loader. Codex never opens these files.
+- A plugin marketplace API. There is no analogue of Claude's
+  `marketplace.json` discovery / install protocol.
+- A `settings.json`-equivalent hook registration. Hooks are TOML-only.
+- Plugin-scoped skill discovery the way Claude's `${CLAUDE_PLUGIN_ROOT}`
+  works. Skills are addressed by absolute `$CODEX_HOME`-relative paths
+  inside `AGENTS.md` or hook scripts.
+
+**Why the runtime kit still uses a `targets/codex/plugins/` layout:**
+
+`targets/codex/plugins/<domain>/` and `.codex-plugin/plugin.json` are
+purely a source-organisation convention so the same plugin abstraction
+can describe both products on the authoring side. At render time,
+`agent-runtime render` flattens these into the two real Codex surfaces
+(`AGENTS.md` + `config.toml` managed block); the rendered files are
+what Codex actually loads. `.codex-plugin/plugin.json` exists in
+`build/codex/` for our own audit and drift purposes only — Codex never
+opens it.
+
+**Implications for drift audit, install, and review:**
+
+- `audit-drift` validates `.codex-plugin/plugin.json` only against the
+  local schema in `core/docs/schemas/`. It does NOT compare against any
+  upstream Codex registry, because none exists. A Codex `plugin.json`
+  schema change is a local-only revision.
+- `install` for Codex never writes "plugin packages" anywhere. The
+  install plan reduces to: symlink `AGENTS.md`, sync the managed block
+  into `config.toml`, drop any hook scripts under
+  `$CODEX_HOME/hooks/<name>/`.
+- PR review must not flag "missing Codex marketplace entry" as a defect.
+  There is no such thing to be missing.
+
+If Codex eventually publishes an upstream plugin manifest spec,
+Resolved Decision #10 will need to be revisited. Until then, the
+contract above is the working assumption.
 
 ### Manifest Layer
 
@@ -1089,9 +1172,27 @@ without `--force`.
 - `runtime-roots.yaml` resolution against the current host (paths exist,
   permissions readable)
 - product runtime version: runs each product's `version_probe`, parses
-  the output, compares against the `min_version` floor declared in
-  `runtime-roots.yaml`; reports `ok` / `outdated` / `unparseable` per
-  product. `outdated` is a blocking finding
+  the output, and compares against three pinned values in
+  `runtime-roots.yaml`:
+  - `min_version` — installed version below this is **block** (today,
+    once `min_version_effective_from` has passed).
+  - `recommended_version` — installed version below this but at-or-above
+    `min_version` is **warn** (printed, non-blocking, exit `1`).
+  - `min_version_effective_from` — ISO date. Before this date, falling
+    below `min_version` produces a warn-only finding ("future-pinned
+    floor"); on or after this date the same finding flips to blocking.
+    Lets a `min_version` bump be merged with a forward-pinned grace
+    window instead of breaking every build on the merge commit.
+
+  Status values reported per product: `ok` / `recommended-only` / `warn`
+  / `outdated` / `unparseable`. Only `outdated` (when effective) is
+  blocking; the rest are reported with their disposition.
+- `agent-runtime doctor --suggest-upgrade` mode: prints the exact
+  `brew upgrade <formula>` commands needed to bring every probed
+  binary (product CLI + `required_clis` nils-cli binaries + cli-tools
+  catalog entries) to the declared `recommended_version` / latest
+  formula. Read-only — never executes the upgrade. CI gates and local
+  developers can copy-paste from the output.
 - nils-cli binary coverage: every `required_clis` entry across tracked
   skills is on PATH and at or above the declared minimum semver; reports
   `missing` / `outdated` / `ok` per binary
@@ -1125,6 +1226,8 @@ products:
     plugin_root: "$CODEX_HOME/plugins"
     hook_config_strategy: managed-block
     min_version: "0.18.0"
+    recommended_version: "0.19.0"
+    min_version_effective_from: "2026-06-01"
     version_probe: "codex --version"
   claude:
     live_home: "$HOME/.claude"
@@ -1133,14 +1236,20 @@ products:
     plugin_root_env: "CLAUDE_PLUGIN_ROOT"
     hook_config_strategy: settings-json
     min_version: "1.0.45"
+    recommended_version: "1.0.50"
+    min_version_effective_from: "2026-06-01"
     version_probe: "claude --version"
 ```
 
-`min_version` is the **only** policy floor. It pins to the latest stable at
-the time of the manifest update; nothing below is supported. Drift audit
-and doctor both probe `version_probe` and fail when the parsed version is
-below the floor. Bumping product versions on the host is therefore an
-in-band, audited action — never silent.
+`min_version` is the blocking policy floor; `recommended_version` is the
+warn floor; `min_version_effective_from` is the forward-pin date that
+gates when a `min_version` bump starts blocking instead of warning.
+Drift audit and doctor both probe `version_probe` and fail when the
+parsed version is below the blocking floor *and* the effective-from date
+has passed. Bumping product versions on the host is therefore an
+in-band, audited action — never silent — and a `min_version` bump in
+the manifest is itself an audited action with the ceremony described in
+[Resolved Decision #7](#resolved-decisions).
 
 The probe output is parsed with a permissive semver matcher to tolerate
 product-specific prefixes (`codex 0.18.2 (build abc1234)` etc.). Numbers
@@ -1226,7 +1335,12 @@ to evolve independently.
 
 - source manifest versus rendered target files
 - rendered target files versus live symlink destinations
-- product plugin manifests versus marketplace entries
+- product plugin manifests versus local plugin schema (Claude marketplace
+  entries compare against Claude's published plugin.json contract; Codex
+  `.codex-plugin/plugin.json` compares only against the local schema in
+  `core/docs/schemas/` — there is no upstream Codex registry to diff
+  against, see
+  [Codex Activation Surface](#codex-activation-surface-reality-check))
 - live runtime config managed blocks versus source blocks
 - skill inventory differences across products
 - local runtime paths that should never be tracked
@@ -1681,13 +1795,37 @@ Pinned for the rest of this document and Phase 1+ implementation:
    Every skill declares `required_clis` with semver floors; doctor + drift
    audit enforce coverage. State paths default to runtime allocation via
    `agent-out` rather than render-time string substitution.
-7. **Product version floor — latest-stable, no back-compat.** Each
-   product carries `min_version` + `version_probe` in
+7. **Product version floor — latest-stable, with explicit Bump
+   Ceremony.** Each product carries `min_version` + `recommended_version`
+   + `min_version_effective_from` + `version_probe` in
    `runtime-roots.yaml`. Initial values pinned during Phase 1 by reading
    the installed product versions on the development host. `doctor` and
-   `audit-drift` probe the product CLI and fail when the parsed version
-   falls below the floor. Bumping product versions is a deliberate,
-   audited action; no rolling support window, no per-feature floors.
+   `audit-drift` probe the product CLI; below `min_version` and past
+   the effective-from date is **block**, below `recommended_version` is
+   **warn**, before the effective-from date a sub-`min_version` finding
+   is **warn** ("future-pinned floor"). Bumping product versions is a
+   deliberate, audited action with four enforced gates:
+   - **`recommended_version` runway.** Bump `recommended_version`
+     ahead of `min_version` so doctor warns for at least one release
+     cycle before the floor moves.
+   - **`min_version_effective_from` forward-pin.** Every
+     `min_version` bump carries a future ISO date; doctor warns until
+     the date, blocks on and after. Default runway: 14 days.
+   - **`agent-runtime doctor --suggest-upgrade`** prints the exact
+     `brew upgrade <formula>` commands needed to clear the warning
+     before the cutover date.
+   - **PR template.** Bump PRs use
+     `.github/PULL_REQUEST_TEMPLATE/min-version-bump.md`, which
+     requires the author to enumerate impacted CI / local environments,
+     tested version combinations (old + old, new + new, mixed during
+     runway), the rollback path (revert PR + tap formula pin), and the
+     team-channel notification timestamp (24–48 h advance notice).
+     Reminder-shaped, not a required CI check — softer than a hard
+     gate but loud enough to make silent bumps obvious in review.
+
+   No rolling support window beyond the forward-pinned runway; no
+   per-feature floors. The runway exists to absorb host upgrade time,
+   not to maintain back-compat with older product releases.
 8. **Skill testing strength — render golden + sandbox install rehearsal.**
    Phase 1–2 ships render-golden + drift-audit fixtures only. Phase 3
    adds the sandbox install rehearsal: `agent-runtime install --product
@@ -1721,6 +1859,28 @@ Pinned for the rest of this document and Phase 1+ implementation:
 
    See [Build And Render Output](#build-and-render-output) for the
    downstream consumer (golden snapshots, install-time cache).
+10. **Codex adapter is source-organisation only.** `targets/codex/`
+    holds plugin / marketplace / `.codex-plugin/plugin.json` files
+    purely as an authoring abstraction shared with the Claude side.
+    Codex itself loads only `~/.codex/AGENTS.md` and the
+    `agent-runtime-kit` managed block inside `~/.codex/config.toml`;
+    `agent-runtime render` flattens everything else into those two
+    surfaces. Implications:
+    - `audit-drift` validates `.codex-plugin/plugin.json` against the
+      local schema only — there is no upstream Codex registry to diff
+      against.
+    - `install` for Codex never writes plugin packages anywhere; the
+      plan is `AGENTS.md` symlink + `config.toml` managed-block sync +
+      hook scripts under `$CODEX_HOME/hooks/<name>/`.
+    - PR review must not flag "missing Codex marketplace entry" as a
+      defect; the marketplace concept is local-only.
+    - Phase 4 estimates for Codex domains exclude any "plugin
+      packaging" work because there is no Codex-side packaging step.
+
+    Revisit this decision if Codex publishes an official plugin
+    manifest spec or marketplace API. Until then, see
+    [Codex Activation Surface](#codex-activation-surface-reality-check)
+    for the full reality check.
 
 ## Open Questions
 
