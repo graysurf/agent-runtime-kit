@@ -18,7 +18,7 @@ for the full ceremony.
 - Old value → new value:
 - Reason for the bump (feature dependency, security fix, EOL, etc.):
 
-## Impacted environments
+## Impacted Environments
 
 List every host class this bump affects. Use the table; add rows as needed.
 
@@ -35,7 +35,7 @@ path before `min_version_effective_from`, **either delay the
 effective-from date or call out the impact explicitly** (the runway is
 the lever, not the floor).
 
-## Tested combinations
+## Tested Version Combinations
 
 Tick each combination this PR has been exercised against. Untested
 combinations are not necessarily blockers, but reviewers should know
@@ -56,7 +56,7 @@ $ agent-runtime doctor --suggest-upgrade
 …
 ```
 
-## Rollback path
+## Rollback Path
 
 - Revert commit: <link or note>
 - Tap formula pin to revert to: `sympoies/tap/nils-cli@<previous>` (if
@@ -65,7 +65,7 @@ $ agent-runtime doctor --suggest-upgrade
   instead of reverting, if the bump itself is sound but the host
   upgrade timeline slipped
 
-## Team-channel notice
+## Team Notice Timestamp
 
 24–48 h advance notification posted in:
 
