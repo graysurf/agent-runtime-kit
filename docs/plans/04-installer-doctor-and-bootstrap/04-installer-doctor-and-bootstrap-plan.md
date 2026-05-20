@@ -94,7 +94,7 @@ install rehearsal harness, and wire CI gate position 6.
   - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/install.rs
   - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/install/plan.rs
   - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/tests/integration/install_pipeline.rs
-- **Description**: Replace the Plan 01 `0.0.1-dev` stub. Build the install plan by reading `manifests/runtime-roots.yaml` and the product's `targets/<product>/link-map.yaml`, applying overlay merge (deep-merge for runtime-roots, per-entry replace for link-map, profile-level for cli-tools), then enumerating the surfaces: symlinked files, managed-block edits, and backed-up originals. Emit the plan as a deterministic struct that both the dry-run printer and the apply executor consume. `--apply` walks the plan, writes symlinks, calls the Task 1.1 helper for managed blocks, and copies replaced originals to `<state_home>/backups/<product>/<timestamp>-<surface>/`. `--apply` is idempotent — a second run produces no changes.
+- **Description**: Replace the Plan 01 `0.12.0` stub. Build the install plan by reading `manifests/runtime-roots.yaml` and the product's `targets/<product>/link-map.yaml`, applying overlay merge (deep-merge for runtime-roots, per-entry replace for link-map, profile-level for cli-tools), then enumerating the surfaces: symlinked files, managed-block edits, and backed-up originals. Emit the plan as a deterministic struct that both the dry-run printer and the apply executor consume. `--apply` walks the plan, writes symlinks, calls the Task 1.1 helper for managed blocks, and copies replaced originals to `<state_home>/backups/<product>/<timestamp>-<surface>/`. `--apply` is idempotent — a second run produces no changes.
 - **Dependencies**:
   - Task 1.1
 - **Complexity**: 8
@@ -489,7 +489,7 @@ install rehearsal harness, and wire CI gate position 6.
 
 ## Rollback plan
 
-- Sprint 1 rollback: revert install body to the `0.0.1-dev` stub; reinstall the prior nils-cli release. No state damage because `--apply` writes are reversible via `restore-backups` once Sprint 2 ships, or via manual restore of backup directories created during testing.
+- Sprint 1 rollback: revert install body to the `0.12.0` stub; reinstall the prior nils-cli release. No state damage because `--apply` writes are reversible via `restore-backups` once Sprint 2 ships, or via manual restore of backup directories created during testing.
 - Sprint 2 rollback (per task): each subcommand is its own PR; reverting one leaves the others intact. `uninstall` and `restore-backups` are independent — neither depends on the other at the file-system level.
 - Sprint 3 rollback: doctor is read-only, so reverting its body only affects reporting. Drop the new Sprint 3 binary, fall back to the Plan 01 stub.
 - Sprint 4 rollback: if the `0.2.0` release has issues, yank the formula commit in homebrew-tap (back to the previous SHA), tag `v0.2.1` with the fix, and re-publish. Do not retag `v0.2.0`.
