@@ -88,6 +88,26 @@ Status: source document for the first implementation discussion
   variable, its fallback rule, and doctor reporting expectation (L4).
   Still deferred: M4 unsafe-drift scoring, L2 install-flag de-bloat,
   L5 overlay merge semantics, and the three red-team threads.
+- 2026-05-20 (specialist-review batch 2) — spec-depth pass:
+  rewrote Drift Detection with a composite `unsafe` score
+  (path / keyword / entropy at 0.4 each; block ≥ 0.8, warn at single
+  signal, suppressed below) plus a tracked `drift-audit.allow.yaml`
+  allowlist that demotes findings by exactly one tier (M4); split
+  `install --restore-backups` / `--purge-state` into dedicated
+  `restore-backups` / `purge-state` subcommands with required scope
+  args and confirmation rules, updated the Phase 1 stub list and
+  Decision #2 subcommand enumeration (L2); added §Overlay Merge
+  Semantics defining per-product deep merge for `.private/runtime-roots.yaml`,
+  per-entry replace for `.private/link-map.overrides.yaml`, and
+  union/replace rules for `profile.recommended.yaml`, plus the
+  contract that `agent-runtime install --dry-run` MUST print the
+  post-merge effective config (L5); promoted render-output
+  determinism to Resolved Decision #9 with the
+  `IndexMap`/`BTreeMap`-only context, no-wall-clock rule (only
+  commit-derived `%cI HEAD`), clippy-enforced lints, and the
+  cross-process determinism test (Red-team #1). Still deferred:
+  Codex reality check (Red-team #2) and `min_version` Bump Ceremony
+  (Red-team #3).
 
 ## Purpose
 
@@ -632,6 +652,39 @@ Rules:
 - Doctor includes an opt-in `--check-project <path>` mode that scans a target
   repo for declared overlays and reports which are wired.
 
+### Overlay Merge Semantics
+
+Three overlay files extend tracked manifests without forking the repo.
+Each has fixed merge rules and `agent-runtime install --dry-run` MUST
+print the post-merge "effective config" so reviewers see the resolved
+state, not the inputs.
+
+| Overlay file | Tracked counterpart | Merge rule |
+| --- | --- | --- |
+| `.private/runtime-roots.yaml` | `manifests/runtime-roots.yaml` | Per-product deep merge. Each top-level product key merges its sub-keys recursively; on collision the `.private/` value wins. A `null` value in `.private/` removes that key from the merged result. |
+| `.private/link-map.overrides.yaml` | `targets/<product>/link-map.yaml` | Per-entry override. Entry id is the key; the `.private/` entry **replaces** the tracked entry as a whole (no deep merge — avoids subtle drift in nested install metadata). `enabled: false` in an overlay entry drops that entry from the install plan. |
+| `profile.recommended.yaml` | `manifests/cli-tools.yaml` | Profile-level. New profile names are allowed verbatim. For existing profiles, list-valued keys (`profiles.recommended: [...]`) are **union**-merged; scalar / map-valued keys are **replaced**. Under `formulas.<name>`, the entire formula entry is replaced. A `null` formula entry removes that formula from the profile. |
+
+Merge ordering is fixed: tracked first, overlay second. `.private/` is
+read once per `install` / `audit-drift` / `doctor` invocation; in-memory
+mutations in one subcommand do not leak into another.
+
+Validation expectations:
+
+- Drift audit refuses to start if any overlay file fails its schema —
+  blocking finding, not a warning.
+- `agent-runtime install --dry-run` must print the resolved roots,
+  link map, and profile after merge. CI gates can `diff` this against
+  a pinned fixture to catch silent overlay drift.
+- `doctor` reports which overlay files were present, their schema
+  versions, and the effective config hash so multi-machine
+  configurations are reproducible.
+
+Adding a fourth overlay mechanism (e.g. `*.local.yaml` siblings) is
+explicitly out of scope. `.private/` is the only untracked overlay
+surface; everything else lives in tracked manifests so review history
+captures the change.
+
 ## Hook Portability
 
 Hook activation contracts differ between products: Codex syncs a managed block
@@ -949,13 +1002,20 @@ Product-specific examples:
 
 - `build/` is **gitignored**. Install always regenerates it from manifests +
   source. Two clean clones must produce byte-identical `build/` for the same
-  manifest commit — render determinism is a CI invariant.
+  manifest commit — render determinism is a CI invariant. The
+  implementation constraints that make this hold are in
+  [Resolved Decision #9](#resolved-decisions): no wall-clock, no
+  randomness, no HashMap iteration order, only commit-derived time
+  values, `IndexMap` / `BTreeMap` at Tera context entry points,
+  clippy-enforced.
 - Render reads only from `core/`, `targets/`, `manifests/`. It must not read
   `~/.codex`, `~/.claude`, or any runtime state.
 - Render is incremental: a per-skill hash (source + product capability hash)
   is stored in `build/<product>/.render-cache.json`; unchanged skills are
   copied verbatim from the previous build to keep install fast on large
-  inventories (160+ skills).
+  inventories (160+ skills). Cache hit and cache miss MUST produce
+  byte-identical output — this is verified by the cross-process
+  determinism test described in Decision #9.
 
 ### Managed-Block Contract
 
@@ -978,12 +1038,37 @@ without `--force`.
 - Default: remove only the symlinks/managed-blocks the install map currently
   owns. Backups, runtime state, secrets, and `~/.codex` / `~/.claude` history
   are never touched.
-- `--restore-backups` flag: restore the most recent backup of any pre-existing
-  file the installer replaced.
-- `--purge-state` flag: additionally remove `<state_home>/out/` and
-  `<state_home>/backups/`. Locked behind a confirmation prompt; never default.
 - Uninstall is idempotent. Running it twice on a clean home is a no-op, not an
   error.
+- Restoring previously-replaced files is **not** an `uninstall` mode — it
+  lives in the dedicated `agent-runtime restore-backups` subcommand (see
+  below). Purging writable state likewise lives in
+  `agent-runtime purge-state`. Keeping these out of `install` / `uninstall`
+  removes the foot-gun where a flag typo wipes state.
+
+### Restore-Backups Subcommand
+
+- `agent-runtime restore-backups --from <timestamp>|latest` restores the
+  named backup of any pre-existing file the installer replaced.
+- `--from` is required; running without it exits non-zero with a list of
+  available timestamps. The CI-friendly shorthand is `--from latest`.
+- Restore is per-product (`--product codex|claude`) and per-surface
+  (`--surface <name>`); both default to "all owned by the install map".
+- Dry-run first via `--dry-run` (no file mutation, prints planned
+  restores). `--apply` performs the restore.
+
+### Purge-State Subcommand
+
+- `agent-runtime purge-state --scope out|backups|all` removes writable
+  state under `<state_home>`. Scope values:
+  - `out` — clears `<state_home>/out/` only (runtime artifacts).
+  - `backups` — clears `<state_home>/backups/` only.
+  - `all` — both. Rejected if no scope value is passed; never defaults.
+- Always prompts for confirmation unless `--yes` is set; `--yes` is
+  reserved for CI / scripted contexts and is logged.
+- Does **not** touch product runtime homes (`~/.codex`, `~/.claude`),
+  auth, history, or sessions — those remain off-limits for any
+  `agent-runtime` subcommand.
 
 ### Backup Retention
 
@@ -1111,24 +1196,26 @@ preserved as an opt-in overlay:
 - `.private/` lives outside version control (top-level gitignore entry).
 - When present, install reads `.private/runtime-roots.yaml` and
   `.private/link-map.overrides.yaml` after the tracked versions, so private
-  hosts and overlays can ride on top without forking the repo.
+  hosts and overlays can ride on top without forking the repo. Merge
+  rules are defined in [Overlay Merge Semantics](#overlay-merge-semantics).
 - Drift audit treats `.private/` as a "tracked input, untracked source": it
   validates structure but never reports diffs against it.
 
 ### Drift Audit `unsafe` Class
 
-The `unsafe` classification ([Drift Detection](#drift-detection)) covers any
-sensitive-data leak into tracked surface. The check runs on:
+The `unsafe` classification covers any sensitive-data leak into tracked
+surface. Scope:
 
 - every file under `core/` and `targets/`
 - every rendered file in `build/`
 - every link target the installer would create
 
-Match heuristics: known credential filename patterns, high-entropy strings on
-lines that also match secret-prefix keywords (`token`, `api_key`, `password`,
-`bearer`), and any path under a product's auth/state/history directory.
-
-`unsafe` is a blocking finding — install and CI both fail until cleared.
+Disposition is driven by the composite scoring rules in
+[Unsafe Scoring](#unsafe-scoring) (signals, weights, thresholds,
+allowlist). The short version: two or more signals → block; one signal →
+warn; zero signals → not reported. Allowlist entries in
+`drift-audit.allow.yaml` may demote a finding by one tier but never
+silence it.
 
 ## Drift Detection
 
@@ -1154,6 +1241,50 @@ The audit should classify findings:
 - `extra`: live surface exists but is unmanaged
 - `intentional-difference`: documented divergence
 - `unsafe`: secret/runtime/cache/history material appears in a tracked surface
+
+### Unsafe Scoring
+
+Single-signal entropy detection produces too many false positives on
+synthetic fixtures (base64 test data, render-golden snapshots, mocked
+credentials). `unsafe` is therefore a **composite** score rather than a
+single match.
+
+Signal weights and threshold:
+
+| Signal | Weight |
+| --- | --- |
+| `path_match` — file path matches a known runtime / auth / state pattern (e.g. `**/auth.json`, `**/.credentials*`, `**/sessions/**`) | 0.4 |
+| `keyword_prefix` — line matches one of `token`, `api_key`, `password`, `bearer`, `secret`, `private_key` (case-insensitive) within 16 chars before a value-shaped token | 0.4 |
+| `entropy_above_threshold` — Shannon entropy ≥ 4.0 bits/byte over a contiguous ≥ 24-char run on the same line | 0.4 |
+
+Disposition:
+
+- `score >= 0.8` (any two signals or stronger) → **block**. Install and
+  CI both fail until the finding clears or is allowlisted.
+- `0.4 <= score < 0.8` → **warn**. Reported, `audit-drift` exits `1`,
+  but does not block. Treated as a backlog item to investigate.
+- `score < 0.4` → **suppressed**. Reachable only via `--verbose`.
+
+Allowlist:
+
+- Tracked file `drift-audit.allow.yaml` (top-level) carries the explicit
+  allowlist:
+  ```yaml
+  schema_version: 1
+  unsafe_allow:
+    - path: "tests/drift/fixtures/**"
+      reason: "Synthetic credentials by design"
+    - path: "tests/golden/**/*.snap"
+      reason: "Render golden snapshots may contain base64 binary"
+  ```
+- Each entry requires both `path` (glob) and `reason` (free text). Missing
+  `reason` is a schema error.
+- Allowlist entries demote a finding by exactly one tier (`block` → `warn`,
+  `warn` → `suppressed`). They never silence a finding outright — that
+  would make adding a legitimate secret to a fixture path invisible.
+- The allowlist is tracked so review history captures every relaxation;
+  putting `unsafe` allowances in `.private/` is intentionally not
+  supported.
 
 ## Testing And Validation
 
@@ -1409,10 +1540,11 @@ runtime-safe surfaces:
   where a target needs hand-written specifics).
 - Open new nils-cli crate `crates/agent-runtime-cli/` with subcommand
   stubs (`render`, `install`, `uninstall`, `doctor`, `audit-drift`,
-  `gc-backups`) returning "not implemented" so the CLI contract is fixed
-  before any subcommand logic lands. Cut a `0.0.1-dev` release on
-  `sympoies/homebrew-tap` so the install ladder can be exercised
-  end-to-end against the placeholder binary.
+  `gc-backups`, `restore-backups`, `purge-state`) returning
+  "not implemented" so the CLI contract is fixed before any subcommand
+  logic lands. Cut a `0.0.1-dev` release on `sympoies/homebrew-tap` so
+  the install ladder can be exercised end-to-end against the placeholder
+  binary.
 
 ### Phase 1.5: Upstream nils-cli Render Enablement
 
@@ -1521,9 +1653,9 @@ Pinned for the rest of this document and Phase 1+ implementation:
      install bootstrap), Go `text/template` (introduces a third language),
      hand-rolled substitution (reinvents escape and partial-include rules).
 2. **No standalone orchestration CLI in agent-runtime-kit.** Render /
-   install / uninstall / doctor / audit-drift / gc-backups live in
-   nils-cli as the `agent-runtime` binary (new crate
-   `nils-cli/crates/agent-runtime-cli/`). Distribution:
+   install / uninstall / doctor / audit-drift / gc-backups /
+   restore-backups / purge-state live in nils-cli as the `agent-runtime`
+   binary (new crate `nils-cli/crates/agent-runtime-cli/`). Distribution:
    `brew install sympoies/tap/nils-cli`. Invocation pattern:
    `agent-runtime <subcommand>`. agent-runtime-kit itself ships only
    bootstrap scripts under `scripts/` for host setup. See
@@ -1566,6 +1698,29 @@ Pinned for the rest of this document and Phase 1+ implementation:
    render-golden cannot see. No full execute-and-assert; that step is
    not on the roadmap because it requires mocking skill-side external
    dependencies.
+9. **Render output determinism.** `agent-runtime render` output MUST
+   NOT contain any per-run-varying value: no wall-clock timestamps, no
+   PIDs, no random numbers, no HashMap iteration order. Implementation
+   constraints:
+   - Tera context entry points use `IndexMap` (preserve-insertion-order)
+     or `BTreeMap` (lexicographic). Bare `HashMap` is rejected by a
+     clippy lint inside `agent-runtime-cli` and `nils-common`.
+     Iteration order leaks into render output, so the convention is
+     enforced at compile-time rather than by convention only.
+   - The only sanctioned time-shaped value in rendered output is the
+     source commit timestamp obtained from `git log -1 --format=%cI
+     HEAD` at render start; helpers never read `SystemTime::now()` or
+     `chrono::Utc::now()`. A clippy lint blocks those imports inside
+     helper modules.
+   - The render-golden CI gate doubles as a determinism check: any
+     helper that introduces non-deterministic output diffs the
+     pinned snapshots and fails the gate.
+   - Cross-process determinism is verified by a second test that
+     deletes `.render-cache.json` before re-render and asserts a
+     zero diff against the snapshot.
+
+   See [Build And Render Output](#build-and-render-output) for the
+   downstream consumer (golden snapshots, install-time cache).
 
 ## Open Questions
 
