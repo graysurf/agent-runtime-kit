@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/cli-tools.schema.json",
+  "title": "cli-tools.yaml",
+  "description": "Profile-keyed third-party CLI install catalog. Mirrors the narrative companion at `core/policies/cli-tools.md`. Consumed by `scripts/setup.sh` (install) and `agent-runtime doctor` (probe). Nils-cli binaries (`agent-out`, `agent-docs`, `semantic-commit`, etc.) are NOT listed here — they install via the `nils-cli` Homebrew formula and live in `docs/source/nils-cli-surface.md`. See docs/source/inventory-target-architecture.md `### Manifest Layer`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profiles", "formulas"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "profiles": {
+      "type": "object",
+      "description": "Profile name -> ordered list of formula keys. `core` is the minimum daily-use floor; `recommended` adds productivity tools; `full` adds every tool from the policy catalog.",
+      "additionalProperties": false,
+      "required": ["core", "recommended", "full"],
+      "properties": {
+        "core": { "$ref": "#/$defs/profileList" },
+        "recommended": { "$ref": "#/$defs/profileList" },
+        "full": { "$ref": "#/$defs/profileList" }
+      }
+    },
+    "formulas": {
+      "type": "object",
+      "description": "Formula entries keyed by the same name used in profile lists. Every formula referenced from any profile MUST have an entry here.",
+      "additionalProperties": { "$ref": "#/$defs/formula" }
+    }
+  },
+  "$defs": {
+    "profileList": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "formula": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["brew", "command", "categories"],
+      "properties": {
+        "brew": {
+          "type": "string",
+          "description": "Homebrew formula name (the value passed to `brew install`).",
+          "minLength": 1
+        },
+        "command": {
+          "type": "string",
+          "description": "Primary binary the formula installs (the binary `agent-runtime doctor` probes via `<command> --version`).",
+          "minLength": 1
+        },
+        "linux_only_alternative": {
+          "description": "Alternative formula name to install on Linux when the macOS formula does not apply (e.g. macOS-specific casks). `null` when the formula installs the same way on both, or when the formula has no Linux equivalent (the policy doc explains the omission).",
+          "type": ["string", "null"]
+        },
+        "categories": {
+          "type": "array",
+          "description": "One or more category tags matching `core/policies/cli-tools.md` section names (e.g. `search`, `docs`, `vcs`, `api`, `test`, `toolchain`, `media`, `ops`, `macos-automation`).",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-text notes for setup / doctor (e.g. `macOS only`, `requires homebrew/cask-fonts tap`)."
+        }
+      }
+    }
+  }
+}

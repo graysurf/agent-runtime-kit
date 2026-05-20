@@ -1,0 +1,325 @@
+# Third-party CLI catalog (brew-installable).
+#
+# Schema: ../core/docs/schemas/cli-tools.schema.json
+# Policy doc (narrative companion): ../core/policies/cli-tools.md
+# Architecture: docs/source/inventory-target-architecture.md `### Manifest Layer`
+#
+# Consumed by:
+#   - scripts/setup.sh — install the selected profile via brew.
+#   - agent-runtime doctor — probe `<command> --version` for every formula
+#     in the active profile and report ok / missing / outdated.
+#
+# Nils-cli binaries (agent-out, agent-docs, semantic-commit, plan-tooling,
+# git-cli, etc.) are NOT listed here. They ship as part of the `nils-cli`
+# Homebrew formula and are pinned in `docs/source/nils-cli-surface.md`.
+#
+# Profiles are list-of-formula-keys. Every key listed in any profile MUST
+# have an entry under `formulas:` below.
+schema_version: 1
+
+profiles:
+  core:
+    - ripgrep
+    - fd
+    - fzf
+    - jq
+    - yq
+    - gh
+    - bat
+
+  recommended:
+    - ripgrep
+    - fd
+    - fzf
+    - jq
+    - yq
+    - gh
+    - bat
+    - glow
+    - delta
+    - ast-grep
+    - watchexec
+    - tree
+    - eza
+    - httpie
+    - gitui
+    - ruff
+    - hyperfine
+
+  full:
+    - ripgrep
+    - fd
+    - fzf
+    - jq
+    - yq
+    - gh
+    - bat
+    - glow
+    - delta
+    - ast-grep
+    - watchexec
+    - tree
+    - eza
+    - httpie
+    - gitui
+    - ruff
+    - hyperfine
+    - xh
+    - grpcurl
+    - websocat
+    - mitmproxy
+    - hey
+    - ripgrep-all
+    - bat-extras
+    - repomix
+    - entr
+    - ipython
+    - node
+    - pnpm
+    - pipx
+    - direnv
+    - hammerspoon
+    - im-select
+    - imagemagick
+    - vips
+    - pngquant
+    - jpegoptim
+    - mozjpeg
+    - webp
+    - lnav
+    - tailspin
+    - tokei
+    - btop
+    - htop
+    - ncdu
+
+formulas:
+  ripgrep:
+    brew: ripgrep
+    command: rg
+    linux_only_alternative: null
+    categories: [search]
+  fd:
+    brew: fd
+    command: fd
+    linux_only_alternative: null
+    categories: [search]
+  fzf:
+    brew: fzf
+    command: fzf
+    linux_only_alternative: null
+    categories: [search]
+  jq:
+    brew: jq
+    command: jq
+    linux_only_alternative: null
+    categories: [api]
+  yq:
+    brew: yq
+    command: yq
+    linux_only_alternative: null
+    categories: [api]
+  gh:
+    brew: gh
+    command: gh
+    linux_only_alternative: null
+    categories: [vcs]
+  bat:
+    brew: bat
+    command: bat
+    linux_only_alternative: null
+    categories: [docs]
+  glow:
+    brew: glow
+    command: glow
+    linux_only_alternative: null
+    categories: [docs]
+  delta:
+    brew: git-delta
+    command: delta
+    linux_only_alternative: null
+    categories: [docs, vcs]
+  ast-grep:
+    brew: ast-grep
+    command: sg
+    linux_only_alternative: null
+    categories: [search]
+  watchexec:
+    brew: watchexec
+    command: watchexec
+    linux_only_alternative: null
+    categories: [test]
+  tree:
+    brew: tree
+    command: tree
+    linux_only_alternative: null
+    categories: [search]
+  eza:
+    brew: eza
+    command: eza
+    linux_only_alternative: null
+    categories: [search]
+  httpie:
+    brew: httpie
+    command: http
+    linux_only_alternative: null
+    categories: [api]
+  gitui:
+    brew: gitui
+    command: gitui
+    linux_only_alternative: null
+    categories: [vcs]
+  ruff:
+    brew: ruff
+    command: ruff
+    linux_only_alternative: null
+    categories: [test]
+  hyperfine:
+    brew: hyperfine
+    command: hyperfine
+    linux_only_alternative: null
+    categories: [test]
+  xh:
+    brew: xh
+    command: xh
+    linux_only_alternative: null
+    categories: [api]
+  grpcurl:
+    brew: grpcurl
+    command: grpcurl
+    linux_only_alternative: null
+    categories: [api]
+  websocat:
+    brew: websocat
+    command: websocat
+    linux_only_alternative: null
+    categories: [api]
+  mitmproxy:
+    brew: mitmproxy
+    command: mitmproxy
+    linux_only_alternative: null
+    categories: [api]
+  hey:
+    brew: hey
+    command: hey
+    linux_only_alternative: null
+    categories: [api]
+  ripgrep-all:
+    brew: ripgrep-all
+    command: rga
+    linux_only_alternative: null
+    categories: [search]
+  bat-extras:
+    brew: bat-extras
+    command: batgrep
+    linux_only_alternative: null
+    categories: [docs]
+    notes: "Installs batgrep / batdiff / batman / prettybat as a bat-styled UX wrapper set."
+  repomix:
+    brew: repomix
+    command: repomix
+    linux_only_alternative: null
+    categories: [docs]
+  entr:
+    brew: entr
+    command: entr
+    linux_only_alternative: null
+    categories: [test]
+  ipython:
+    brew: ipython
+    command: ipython
+    linux_only_alternative: null
+    categories: [test]
+  node:
+    brew: node
+    command: node
+    linux_only_alternative: null
+    categories: [toolchain]
+  pnpm:
+    brew: pnpm
+    command: pnpm
+    linux_only_alternative: null
+    categories: [toolchain]
+  pipx:
+    brew: pipx
+    command: pipx
+    linux_only_alternative: null
+    categories: [toolchain]
+  direnv:
+    brew: direnv
+    command: direnv
+    linux_only_alternative: null
+    categories: [toolchain]
+  hammerspoon:
+    brew: hammerspoon
+    command: hs
+    linux_only_alternative: null
+    categories: [macos-automation]
+    notes: "macOS only — no Linux equivalent; setup.sh should skip on non-Darwin hosts."
+  im-select:
+    brew: im-select
+    command: im-select
+    linux_only_alternative: null
+    categories: [macos-automation]
+    notes: "macOS only — no Linux equivalent; setup.sh should skip on non-Darwin hosts."
+  imagemagick:
+    brew: imagemagick
+    command: magick
+    linux_only_alternative: null
+    categories: [media]
+  vips:
+    brew: vips
+    command: vips
+    linux_only_alternative: null
+    categories: [media]
+  pngquant:
+    brew: pngquant
+    command: pngquant
+    linux_only_alternative: null
+    categories: [media]
+  jpegoptim:
+    brew: jpegoptim
+    command: jpegoptim
+    linux_only_alternative: null
+    categories: [media]
+  mozjpeg:
+    brew: mozjpeg
+    command: cjpeg
+    linux_only_alternative: null
+    categories: [media]
+    notes: "Installs cjpeg/djpeg under mozjpeg's keg-only prefix; doctor probes cjpeg."
+  webp:
+    brew: webp
+    command: cwebp
+    linux_only_alternative: null
+    categories: [media]
+  lnav:
+    brew: lnav
+    command: lnav
+    linux_only_alternative: null
+    categories: [ops]
+  tailspin:
+    brew: tailspin
+    command: tspin
+    linux_only_alternative: null
+    categories: [ops]
+  tokei:
+    brew: tokei
+    command: tokei
+    linux_only_alternative: null
+    categories: [ops]
+  btop:
+    brew: btop
+    command: btop
+    linux_only_alternative: null
+    categories: [ops]
+  htop:
+    brew: htop
+    command: htop
+    linux_only_alternative: null
+    categories: [ops]
+  ncdu:
+    brew: ncdu
+    command: ncdu
+    linux_only_alternative: null
+    categories: [ops]
