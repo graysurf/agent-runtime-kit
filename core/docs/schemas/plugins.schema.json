@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/plugins.schema.json",
+  "title": "plugins.yaml",
+  "description": "Plugin manifest. Each entry groups skills under a domain plugin with per-product manifest paths, dependencies, and install policy. See docs/source/inventory-target-architecture.md `## Manifest Layer`; Plan 03 populates the `plugins:` list — Plan 01 leaves it empty.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "plugins"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version. Drift audit uses this to pick the validator."
+    },
+    "plugins": {
+      "type": "array",
+      "description": "List of plugin entries. Empty in Plan 01.",
+      "items": { "$ref": "#/$defs/plugin" }
+    }
+  },
+  "$defs": {
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "domain", "contained_skills", "product_manifests"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Plugin identifier, normally equal to the owning domain (`<domain>`).",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain this plugin owns. Cross-references skill `domain` fields in `skills.yaml`.",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "contained_skills": {
+          "type": "array",
+          "description": "Canonical skill IDs (`<domain>.<skill>`) contained in this plugin.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9-]*$"
+          },
+          "uniqueItems": true
+        },
+        "product_manifests": {
+          "type": "object",
+          "description": "Per-product manifest paths. Codex `.codex-plugin/plugin.json` is source-organisation only (Codex does not load it at runtime — see Resolved Decision #10); Claude `.claude-plugin/plugin.json` IS loaded.",
+          "additionalProperties": false,
+          "properties": {
+            "codex": {
+              "type": "string",
+              "description": "Path to `.codex-plugin/plugin.json` under `targets/codex/`.",
+              "minLength": 1
+            },
+            "claude": {
+              "type": "string",
+              "description": "Path to `.claude-plugin/plugin.json` under `targets/claude/`.",
+              "minLength": 1
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "Other plugin IDs this plugin depends on.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "install_policy": {
+          "type": "string",
+          "description": "How install handles this plugin. `always` installs on every host; `opt-in` requires explicit profile / flag; `experimental` warns on install.",
+          "enum": ["always", "opt-in", "experimental"],
+          "default": "always"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/skills.schema.json",
+  "title": "skills.yaml",
+  "description": "Skill manifest. Each entry declares a canonical skill ID, source path, supported products, required nils-cli binaries with semver floors, optional aliases, and per-product path overrides. See docs/source/inventory-target-architecture.md `## Manifest Layer` for the spec; Plan 03 (`03-domain-migration-reporting-pilot`) populates the `skills:` list — Plan 01 leaves it empty.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "skills"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version. Drift audit uses this to pick the validator."
+    },
+    "skills": {
+      "type": "array",
+      "description": "List of skill entries. Empty in Plan 01.",
+      "items": { "$ref": "#/$defs/skill" }
+    }
+  },
+  "$defs": {
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "domain", "source", "products", "required_clis"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Canonical `<domain>.<skill>` identifier (lowercase, hyphenated within each segment, dot-separated).",
+          "pattern": "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9-]*$"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Owning domain (matches the first segment of `id`).",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source path under `core/skills/<domain>/<skill>/` (or `core/skills/<domain>/<skill>/{shared,codex,claude}/` when `divergent: true`).",
+          "minLength": 1
+        },
+        "products": {
+          "type": "object",
+          "description": "Per-product render configuration. Each entry maps a supported product (`codex` / `claude`) to its product-native name and rendered output path.",
+          "additionalProperties": false,
+          "properties": {
+            "codex": { "$ref": "#/$defs/productRender" },
+            "claude": { "$ref": "#/$defs/productRender" }
+          }
+        },
+        "required_clis": {
+          "type": "object",
+          "description": "Map of nils-cli binary name to a semver range (e.g. `\">=0.5.0\"`). The literal placeholder `<TBD: pin during Phase 1>` is allowed only during Phase 1; Plan 02 onwards treats any surviving `<TBD>` as a gate failure.",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "state_out_mode": {
+          "type": "string",
+          "description": "Default `runtime` (agent-out resolves the path at execution); `literal` only when the consuming context cannot exec.",
+          "enum": ["runtime", "literal"],
+          "default": "runtime"
+        },
+        "aliases": {
+          "type": "object",
+          "description": "Optional aliases keyed by product, used when a skill has different invocation names per product but the same behaviour.",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "divergent": {
+          "type": "boolean",
+          "description": "Set to `true` when a skill exists in both products but with divergent behaviour. Drift audit warns on every divergent entry.",
+          "default": false
+        },
+        "portability_notes": {
+          "type": "string",
+          "description": "Free-text notes about portability constraints, host requirements, or migration provenance."
+        }
+      }
+    },
+    "productRender": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["render_to"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Product-native invocation name (e.g. Claude's `<plugin>:<skill>`, Codex's slash variant).",
+          "minLength": 1
+        },
+        "render_to": {
+          "type": "string",
+          "description": "Rendered output path under `build/<product>/`.",
+          "minLength": 1
+        },
+        "path_override": {
+          "type": "string",
+          "description": "Optional override for the product-native source path (e.g. legacy `tools/market-research/<x>` placement).",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

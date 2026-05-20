@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/product-capabilities.schema.json",
+  "title": "product-capabilities.yaml",
+  "description": "Per-product capability matrix. Records the differences between Codex and Claude that source authoring needs to know: nested skill support, plugin manifest schema reality, hooks model, config activation surfaces, runtime state boundaries, and the explicit field-level diff between `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. See docs/source/inventory-target-architecture.md `### Manifest Layer` and `### Codex Activation Surface (Reality Check)`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "products"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "products": {
+      "type": "object",
+      "description": "Capability blocks keyed by product. Both `codex` and `claude` are required.",
+      "additionalProperties": false,
+      "required": ["codex", "claude"],
+      "properties": {
+        "codex": { "$ref": "#/$defs/product" },
+        "claude": { "$ref": "#/$defs/product" }
+      }
+    },
+    "plugin_manifest_diff": {
+      "type": "object",
+      "description": "Explicit field-level diff between `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. Drift audit reads this to know which fields are intentionally divergent vs. drift.",
+      "additionalProperties": false,
+      "properties": {
+        "shared_fields": {
+          "type": "array",
+          "description": "Field names that both manifests carry.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "codex_only_fields": {
+          "type": "array",
+          "description": "Field names that only appear in `.codex-plugin/plugin.json`. Remember Codex never loads this file at runtime — these fields are source-organisation only.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "claude_only_fields": {
+          "type": "array",
+          "description": "Field names that only appear in `.claude-plugin/plugin.json`. These ARE loaded by Claude's plugin runtime.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nested_skill_support",
+        "plugin_manifest",
+        "hooks_model",
+        "config_activation",
+        "runtime_state"
+      ],
+      "properties": {
+        "nested_skill_support": {
+          "type": "boolean",
+          "description": "Whether the product can address skills nested under multi-level directories (Claude: yes via plugin root; Codex: yes via $CODEX_HOME-relative paths referenced from AGENTS.md / hooks)."
+        },
+        "plugin_manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path_pattern", "loaded_at_runtime", "schema_ref"],
+          "properties": {
+            "path_pattern": {
+              "type": "string",
+              "description": "Where the product looks for its plugin manifest, in template form (e.g. `${CLAUDE_PLUGIN_ROOT}/<plugin>/.claude-plugin/plugin.json`).",
+              "minLength": 1
+            },
+            "loaded_at_runtime": {
+              "type": "boolean",
+              "description": "Whether the product actually loads this file. Codex `.codex-plugin/plugin.json` is `false` (source-organisation only)."
+            },
+            "schema_ref": {
+              "type": "string",
+              "description": "Reference to the schema used to validate this manifest (`core/docs/schemas/...` or upstream URL).",
+              "minLength": 1
+            }
+          }
+        },
+        "hooks_model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["config_surface", "payload_shape"],
+          "properties": {
+            "config_surface": {
+              "type": "string",
+              "description": "How hooks are registered with the product (e.g. `settings.json` block, `config.toml` managed block).",
+              "minLength": 1
+            },
+            "payload_shape": {
+              "type": "string",
+              "description": "Short name for the hook payload schema (e.g. `claude-pretool-v1`, `codex-toml-managed-block`). Cross-references the schema files in `core/docs/schemas/hooks/` when those land.",
+              "minLength": 1
+            },
+            "supports_inline_python": {
+              "type": "boolean",
+              "description": "Whether the product's hook surface supports inline Python (Claude's `.claude/hooks/*.py` pattern). Codex hooks are shell-only via TOML managed block.",
+              "default": false
+            }
+          }
+        },
+        "config_activation": {
+          "type": "array",
+          "description": "Ordered list of files / surfaces the product reads at session start to activate a domain. Listed top-down (most-authoritative first).",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime_state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state_home_env", "default_path"],
+          "properties": {
+            "state_home_env": {
+              "type": "string",
+              "description": "Env var the product (or this kit) consults for writable runtime state.",
+              "minLength": 1
+            },
+            "default_path": {
+              "type": "string",
+              "description": "Default state home when the env var is unset, in template form.",
+              "minLength": 1
+            }
+          }
+        },
+        "marketplace_concept": {
+          "type": "boolean",
+          "description": "Whether the product has an upstream plugin marketplace / discovery API. Codex: false. Claude: true.",
+          "default": false
+        }
+      }
+    }
+  }
+}
