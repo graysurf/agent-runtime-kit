@@ -3,14 +3,15 @@
 - Snapshot date: 2026-05-20
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls ~/Project/sympoies/nils-cli/crates/`
-- Active `git describe --tags` output: `v0.11.0-5-g181340a`
-- Head commit: `181340a` (squash-merge of [`sympoies/nils-cli#402`](https://github.com/sympoies/nils-cli/pull/402))
+- Active `git describe --tags` output: `v0.12.0`
+- Head commit: `5a5a25e` (`chore(release): bump cli versions to 0.12.0` — the coupled-workspace bump that landed Plan 01 Sprint 3 Tasks 3.3 + 3.4)
+- Prior pin: `v0.11.0-5-g181340a` at `181340a` (squash-merge of [`sympoies/nils-cli#402`](https://github.com/sympoies/nils-cli/pull/402))
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli minor
-release (the next bump after `v0.11.0`).
+release (the next bump after `v0.12.0`).
 
 Notes on derivation:
 
@@ -28,7 +29,7 @@ Notes on derivation:
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight.                                                                                                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
-| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | **Plan 01 stub** for this repo. Every subcommand exits `1` with `agent-runtime <subcommand>: not implemented`. Crate ships at the same workspace version as every other nils-cli crate (the next workspace release is `v0.12.0` per Plan 01 Task 3.3); real subcommand bodies land in Plan 02 (`render` / `audit-drift`) and Plan 04 (`install` / `uninstall` / `doctor` / `gc-backups` / `restore-backups` / `purge-state`). |
+| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | **Plan 01 stub** for this repo. Every subcommand exits `1` with `agent-runtime <subcommand>: not implemented`. Crate ships at the same workspace version as every other nils-cli crate (currently `0.12.0`); real subcommand bodies land in Plan 02 (`render` / `audit-drift`) and Plan 04 (`install` / `uninstall` / `doctor` / `gc-backups` / `restore-backups` / `purge-state`). |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
 | `agent-workflow-primitives` | `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `repo-retro`, `skill-usage` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate.                                                                                                                                                      |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
