@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: Sprint 2 Task 2.1 complete; Sprint 2 active
+- Status: Sprint 2 Task 2.2 complete; Sprint 2 active
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 2.2
-- Next task: Task 2.3
+- Current task: Task 2.3
+- Next task: Task 2.4
 - Last updated: 2026-05-21
-- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`; Sprint 2 Task 2.2 merged at nils-cli `2ae3075`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -21,7 +21,7 @@
 | Task 1.2 | complete | Wire render to link to managed-block sync pipeline | PR A [graysurf/agent-runtime-kit#18](https://github.com/graysurf/agent-runtime-kit/pull/18) merged `f89eec1`; PR B [sympoies/nils-cli#416](https://github.com/sympoies/nils-cli/pull/416) merged `5d351bb` | 4 entry kinds in schema (`symlinked-file` / `plugin-manifest-copy` / `managed-block` / `backed-up-on-replace`); install pipeline ships with 13 unit + 6 integration tests; second `--apply` is byte-identical no-op; `/code-review-specialists` pass on PR B landed F-1 (HIGH path-traversal rejection) + F-3 (managed-block e2e coverage) |
 | Task 1.3 | complete | Add `--live-home`, `--tag`, and overlay merge flags | [sympoies/nils-cli#418](https://github.com/sympoies/nils-cli/pull/418) merged `cee0903` | renames `--home` → `--live-home` (absolute-only); adds `--tag <name>` writing `tag-<name>` marker at backup-run root; ships `.private/link-map.overrides.yaml` overlay merge applied pre-plan-generation; `InstallOptions` + `InstallOutcome` + `OverlaySummary`; 12 install_flags + 8 overlay unit + 3 executor tag tests; `/code-review-specialists` pass landed F-1 (defense-in-depth tag validation) + F-2 (operator-visible overlay-merge notice) |
 | Task 2.1 | complete | Implement `agent-runtime uninstall` | [sympoies/nils-cli#419](https://github.com/sympoies/nils-cli/pull/419) merged `6bf6102` | idempotent reversal of link-map symlinks + managed-block surfaces; second uninstall on a clean home is exit-0 NoOp; foreign symlinks and regular files at install destinations are skipped (not deleted); never touches `<state_home>/backups/` or `auth*`/`history*`/`sessions*`/`cache*`/`projects*` under the runtime home; new `uninstall::{run, UninstallOptions, UninstallError, UninstallOutcome}` + `uninstall::plan` + `uninstall::executor` + `commands::uninstall`; 16 new tests (8 integration + 7 executor unit + 1 plan unit); `/code-review-specialists` pass landed F-1 (red-team medium: thread `expected_source` through `SymlinkSkippedForeign` for operator recovery context) |
-| Task 2.2 | pending | Implement `agent-runtime restore-backups` | n/a | `--from` required; dry-run before apply |
+| Task 2.2 | complete | Implement `agent-runtime restore-backups` | [sympoies/nils-cli#423](https://github.com/sympoies/nils-cli/pull/423) merged `2ae3075` | walks `<state_home>/backups/<product>/<ts>/` and reverses the `FileBackedUpThenSymlinked` arm of install; matches each backup file to its install destination via a regenerated InstallPlan; refuses to clobber operator-retargeted symlinks (read_link(dest) == expected_install_source check); fs::rename with EXDEV → fs::copy + set_permissions fallback; no chown; new `restore_backups::{run, RestoreOptions, RestoreError, RestoreOutcome, BackupRunSelector { Latest, Exact(u64) }}` + `restore_backups::plan` + `restore_backups::executor` + `commands::restore_backups`; 12 new tests (10 integration + 2 executor unit + 3 plan unit); `/code-review-specialists` pass landed R-1 (medium red-team: foreign-symlink protection — same F-1 shape as Task 2.1, brought into byte-for-byte parity with uninstall) |
 | Task 2.3 | pending | Implement `agent-runtime purge-state` | n/a | `--scope` required; prompts unless `--yes` |
 | Task 2.4 | pending | Implement `agent-runtime gc-backups` | n/a | retention default 5; respect `--tag` markers |
 | Task 3.1 | pending | Symlink + managed-block + runtime-roots probes | n/a | filesystem-level findings; exit 0 / 1 / 2 |
@@ -54,6 +54,107 @@
   has real fodder to pin against.
 
 ## Session Log
+
+### 2026-05-21 — Sprint 2 Task 2.2 closed; restore-backups body lands
+
+- Sprint 2 Task 2.2 merged at `sympoies/nils-cli` commit `2ae3075`. Two
+  GPG-signed commits: feature `a831295` + specialist-fix `e652bdf`.
+- New surface area:
+  - `agent-runtime restore-backups --product <p> --live-home <abs>
+    --state-home <abs> --from <unix-ts|latest> [--source-root <p>]
+    [--surface <entry-id>] [--no-overlay | --overlay-path <p>]
+    (--dry-run | --apply)`.
+  - Walks `<state_home>/backups/<product>/<unix-seconds>/` and reverses
+    only the `FileBackedUpThenSymlinked` arm of `install::executor`
+    (managed-block surfaces have no per-run snapshot — `uninstall`
+    owns them).
+  - Each backup file at `<run>/<entry_id>/<basename>` is matched to a
+    `PlanAction::Symlink` in a regenerated `InstallPlan` via
+    `(entry_id, dest.file_name())`. Exactly-one match → restore;
+    zero → `SkippedNoMatch`; multiple → `SkippedAmbiguous`
+    (recursive-tree basename collision, since install's
+    `move_to_backup` drops the relative subpath).
+  - Apply path: if the post-install symlink at `dest` still points at
+    the install source, remove it and `fs::rename` (or `fs::copy` +
+    `set_permissions` + delete on EXDEV) the backup over it. If the
+    symlink points anywhere else (operator retargeted), emit
+    `SkippedSymlinkForeign` with `actual_target` + `expected_install_source` — backup preserved.
+  - Missing `--from`: print the available timestamp list under
+    `<state_home>/backups/<product>/` and exit non-zero.
+  - `tag-*` markers at the run root are skipped (positional filter —
+    inherits Task 1.3 F-3 namespace overlap; revisit when Task 2.4
+    gc-backups lands a canonical helper).
+- New Rust API: `restore_backups::{run, RestoreOptions { selector,
+  surface, overlay_enabled, overlay_path }, RestoreError { LinkMap,
+  Plan, RestorePlan, Apply, NoBackupRun }, RestoreOutcome { plan,
+  changes, overlay, backup_run }, BackupRunSelector { Latest,
+  Exact(u64) }, list_available_timestamps}`. `RestoreOptions::Default`
+  is hand-rolled to keep `overlay_enabled = true` (same defensive
+  pattern as Task 1.3's `InstallOptions` and Task 2.1's
+  `UninstallOptions`).
+- `/code-review-specialists` pass surfaced one material finding,
+  landed pre-merge in commit `e652bdf`:
+  - R-1 (medium, security + red-team consensus): the original
+    executor blindly removed any symlink at `dest`, regressing the
+    operator-safety contract `uninstall` already enforces. Resolved
+    by threading `expected_install_source: PathBuf` from
+    `PlanAction::Symlink.source` through `RestoreAction::RestoreFile`,
+    adding a new `RestoredChange::SkippedSymlinkForeign { entry_id,
+    dest, actual_target, expected_install_source, from_backup }`,
+    and adding both an executor unit test and an integration test
+    that pin the operator-retargeted symlink survives. CLI printer
+    matches uninstall byte-for-byte:
+    `? skip <dest> (foreign target: <actual>; expected: <source>; <entry_id>)`.
+- Fourteen advisory findings deferred (synthesis at
+  `~/.local/state/claude-kit/out/task-2-2-review/SYNTHESIS.md`):
+  - R-2 (maintainability low) — `merge_overlay`, `Mode { DryRun,
+    Apply }`, and `ensure_parent_dir` are now duplicated 3x across
+    install / uninstall / restore. Roll into the Sprint 4 shared-
+    helpers refactor already tracked from Task 2.1 F-2 (LinkMapPlan
+    extraction).
+  - R-3 (red-team low) — tag-marker filter is positional only
+    (top-level files); a hypothetical link-map entry id `tag-foo`
+    would be walked as a real entry dir. Inherits Task 1.3 F-3
+    namespace overlap; Task 2.4 owns the canonical helper.
+  - R-4 (api-contract low) — `--surface <name>` with an unknown
+    entry id silently exits 0 with zero restores. UX gap; resolve
+    when doctor (Sprint 3) gains a list-available-surfaces probe.
+  - R-5 (api-contract low) — `list_available_timestamps` swallows
+    IO errors as an empty list. Rename to make the swallow explicit,
+    or surface the error; deferred.
+  - R-6 (security low) — backup walk trusts arbitrary entry_id
+    directory names; defense-in-depth check for `..` / `/` would
+    keep malformed backup trees from injecting log path components.
+  - R-7 / R-8 / R-9 (testing low/info) — no integration test for
+    `SkippedNoMatch` (link-map entry removed between install and
+    restore); second-`--apply` idempotence implied by the regular-
+    file skip test but not pinned; `--no-overlay` flag has no
+    integration coverage (cross-task gap — install / uninstall miss
+    it too).
+  - R-10 (maintainability info) — `Mode` enum triplicated; lift to
+    `crate::common::execution::Mode` during Sprint 4 sweep.
+  - R-11 (maintainability info) — `ensure_parent_dir` duplicated
+    install ↔ restore; same Sprint 4 sweep.
+  - R-12 (red-team info) — `copy_then_remove` partial-failure
+    leaves dest restored AND backup file present; gc-backups will
+    age the duplicate out. Document the recovery story; no code
+    change.
+  - R-13 (security info) — TOCTOU between `symlink_metadata` and
+    `remove_file`; bounded threat model (single-operator, user-space
+    scope), document in module header.
+  - R-14 (api-contract info) — `RestorePlanError` is single-variant
+    without `#[non_exhaustive]`; apply across all Plan 04 error
+    enums in Sprint 4 release prep.
+  - R-15 (performance info) — `walk_backup_dir` is O(M*N) candidate
+    matching; M and N both <100 for current link-maps, pinned as
+    bounded.
+- Cross-task inheritance reminder: Task 2.4 (gc-backups) now
+  inherits Task 1.3 F-3 (tag-marker / entry_id namespace overlap),
+  Task 2.1 F-2 (LinkMapPlan extraction), and Task 2.2 R-2 / R-3
+  / R-10 / R-11 (helper-duplication sweep). Sprint 3 Task 3.1
+  doctor inherits Task 2.1 F-3 (orphaned-symlink probe).
+- Next pickup: Sprint 2 Task 2.3 (`agent-runtime purge-state`),
+  no upstream dependencies.
 
 ### 2026-05-21 — Sprint 2 Task 2.1 closed; uninstall body lands
 
