@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
-# scripts/setup.sh — host bootstrap skeleton.
-#
-# Plan 01 ships this as a SKELETON. The `brew tap` / `brew install` plumbing,
-# profile parsing, and clone-on-missing block are real; the actual product
-# activation calls (`agent-runtime install --product claude` /
-# `agent-runtime install --product codex`) are stubbed and deferred to
-# Plan 04 (`04-install-and-bootstrap`).
+# scripts/setup.sh — host bootstrap for agent-runtime-kit.
 #
 # Compatibility: must run on macOS (system bash 3.2) and Linux (bash 4+).
 # Avoid associative arrays, mapfile, and `${var,,}` lowercasing.
@@ -25,11 +19,14 @@ readonly REPO_HOME_DEFAULT="$HOME/.config/agent-runtime-kit"
 readonly REPO_REMOTE_DEFAULT="https://github.com/graysurf/agent-runtime-kit.git"
 readonly TAP_SPEC="sympoies/tap"
 readonly TAP_FORMULA="sympoies/tap/nils-cli"
-readonly STUB_BANNER="[stub] agent-runtime install ..."
 
 PROFILE="core"
 SKIP_HOMEBREW_INSTALL=0
+SKIP_CLI_TOOLS=0
 DRY_RUN=0
+BREW_PREFIX=""
+SCRIPT_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CLI_TOOLS_MANIFEST="$SCRIPT_REPO_ROOT/manifests/cli-tools.yaml"
 
 # -----------------------------------------------------------------------------
 # Help
@@ -37,14 +34,15 @@ DRY_RUN=0
 
 print_help() {
   cat <<EOF
-Usage: $PROG_NAME [--profile core|recommended|full] [--skip-homebrew-install] [--dry-run]
+Usage: $PROG_NAME [--profile core|recommended|full] [--skip-homebrew-install] [--skip-cli-tools] [--dry-run]
 
 Bootstrap a host so it can run graysurf/agent-runtime-kit. Installs Homebrew
 when missing, taps sympoies/tap, installs nils-cli (which ships the
 agent-runtime binary), installs the profile-selected third-party CLI tools
 from manifests/cli-tools.yaml, clones agent-runtime-kit into
-\$HOME/.config/agent-runtime-kit when missing, and (in Plan 04) activates
-each product runtime home via \`agent-runtime install --product <p>\`.
+\$HOME/.config/agent-runtime-kit when missing, activates the Claude and Codex
+runtime homes via \`agent-runtime install --product <p>\`, and runs
+\`agent-runtime doctor\` for both products.
 
 Options:
   --profile core|recommended|full
@@ -56,11 +54,11 @@ Options:
   --skip-homebrew-install
       Skip the \`brew\` install step (useful for CI runners and Linuxbrew
       hosts that pre-install brew separately).
+  --skip-cli-tools
+      Skip third-party CLI formula installation from manifests/cli-tools.yaml.
   --dry-run
       Print every command that WOULD run, without executing brew / git /
-      agent-runtime. The agent-runtime activation calls are stubbed regardless
-      of this flag (deferred to Plan 04); --dry-run additionally skips brew
-      install, git clone, and tap.
+      agent-runtime.
   -h, --help
       Print this help and exit.
 EOF
@@ -74,14 +72,37 @@ log() { printf '%s\n' "$*"; }
 warn() { printf 'warn: %s\n' "$*" >&2; }
 err() { printf 'error: %s\n' "$*" >&2; }
 
+print_cmd() {
+  printf '+'
+  while [ "$#" -gt 0 ]; do
+    printf ' %q' "$1"
+    shift
+  done
+  printf '\n'
+}
+
 run_cmd() {
-  # When --dry-run, echo the command instead of executing it.
+  print_cmd "$@"
   if [ "$DRY_RUN" = "1" ]; then
-    log "+ $*"
     return 0
   fi
-  log "+ $*"
   "$@"
+}
+
+require_commands() {
+  local missing=""
+  local cmd
+  for cmd in "$@"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      missing="${missing}${cmd}
+"
+    fi
+  done
+  if [ -n "$missing" ]; then
+    err "missing required command(s):"
+    printf '%s' "$missing" | sed 's/^/  - /' >&2
+    exit 127
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -107,11 +128,15 @@ parse_args() {
         SKIP_HOMEBREW_INSTALL=1
         shift
         ;;
+      --skip-cli-tools)
+        SKIP_CLI_TOOLS=1
+        shift
+        ;;
       --dry-run)
         DRY_RUN=1
         shift
         ;;
-      -h|--help)
+      -h | --help)
         print_help
         exit 0
         ;;
@@ -129,7 +154,7 @@ parse_args() {
   done
 
   case "$PROFILE" in
-    core|recommended|full) ;;
+    core | recommended | full) ;;
     *)
       err "invalid --profile value: $PROFILE (expected core|recommended|full)"
       exit 2
@@ -141,22 +166,12 @@ parse_args() {
 # Phase implementations
 # -----------------------------------------------------------------------------
 
-detect_host() {
-  # Detect platform via brew --prefix; fall back to uname when brew is absent.
-  if command -v brew >/dev/null 2>&1; then
-    BREW_PREFIX="$(brew --prefix 2>/dev/null || echo "")"
-    if [ -n "${BREW_PREFIX:-}" ]; then
-      log "detected brew prefix: $BREW_PREFIX"
-    fi
-  else
-    BREW_PREFIX=""
-    log "detected platform: $(uname -s) (brew not yet installed)"
-  fi
-}
-
 ensure_homebrew() {
   if [ "$SKIP_HOMEBREW_INSTALL" = "1" ]; then
     log "skipping homebrew install (--skip-homebrew-install)"
+    if [ "$DRY_RUN" = "0" ]; then
+      require_commands brew
+    fi
     return 0
   fi
   if command -v brew >/dev/null 2>&1; then
@@ -167,20 +182,122 @@ ensure_homebrew() {
     log "+ /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
     return 0
   fi
-  err "Homebrew is not installed. Re-run with --dry-run to preview the install command, or install brew first."
-  exit 1
+  log "+ NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  require_commands brew
+}
+
+detect_brew_prefix() {
+  if command -v brew >/dev/null 2>&1; then
+    BREW_PREFIX="$(brew --prefix)"
+    log "detected brew prefix: $BREW_PREFIX"
+  elif [ "$DRY_RUN" = "1" ]; then
+    log "detected platform: $(uname -s) (brew prefix unavailable during dry-run)"
+  else
+    require_commands brew
+  fi
 }
 
 tap_and_install_nils_cli() {
   run_cmd brew tap "$TAP_SPEC"
-  run_cmd brew install "$TAP_FORMULA"
+  if command -v brew >/dev/null 2>&1 && brew list --versions nils-cli >/dev/null 2>&1; then
+    run_cmd brew upgrade "$TAP_FORMULA"
+  else
+    run_cmd brew install "$TAP_FORMULA"
+  fi
+  if [ "$DRY_RUN" = "0" ]; then
+    require_commands agent-runtime
+  fi
+}
+
+profile_keys() {
+  local profile="$1"
+  awk -v profile="$profile" '
+    /^profiles:/ { in_profiles = 1; next }
+    /^formulas:/ { in_profiles = 0; in_profile = 0 }
+    in_profiles && $0 ~ ("^  " profile ":") { in_profile = 1; next }
+    in_profiles && in_profile && /^  [A-Za-z0-9_-]+:/ { exit }
+    in_profiles && in_profile && /^    - / {
+      sub(/^    - /, "")
+      print
+    }
+  ' "$CLI_TOOLS_MANIFEST"
+}
+
+formula_field_for_key() {
+  local key="$1"
+  local field="$2"
+  awk -v key="$key" -v field="$field" '
+    /^formulas:/ { in_formulas = 1; next }
+    in_formulas && $0 ~ ("^  " key ":") { in_key = 1; next }
+    in_formulas && in_key && /^  [A-Za-z0-9_-]+:/ { exit }
+    in_formulas && in_key && $0 ~ ("^    " field ": ") {
+      sub("^    " field ": ", "")
+      print
+      exit
+    }
+  ' "$CLI_TOOLS_MANIFEST"
+}
+
+skip_formula_for_host() {
+  local key="$1"
+  case "$key" in
+    hammerspoon | im-select)
+      [ "$(uname -s)" != "Darwin" ]
+      ;;
+    *)
+      return 1
+      ;;
+  esac
 }
 
 install_cli_tools_profile() {
-  # The full reader is Plan 04 work; this skeleton just announces intent.
-  log "select profile=$PROFILE from manifests/cli-tools.yaml (resolver deferred to Plan 04)"
-  if [ "$DRY_RUN" = "1" ]; then
-    log "+ brew install \$(yq -r \".profiles.$PROFILE[]\" manifests/cli-tools.yaml | xargs -I{} yq -r \".formulas.{}.brew\" manifests/cli-tools.yaml)"
+  local key
+  local brew_formula
+  local command_name
+  local missing=""
+  local profile_list
+
+  if [ "$SKIP_CLI_TOOLS" = "1" ]; then
+    log "skipping third-party CLI tools (--skip-cli-tools)"
+    return 0
+  fi
+  if [ ! -f "$CLI_TOOLS_MANIFEST" ]; then
+    err "missing CLI tools manifest: $CLI_TOOLS_MANIFEST"
+    exit 1
+  fi
+
+  log "installing third-party CLI tools for profile=$PROFILE from manifests/cli-tools.yaml"
+  profile_list="$(profile_keys "$PROFILE")"
+  if [ -z "$profile_list" ]; then
+    err "profile $PROFILE has no entries in $CLI_TOOLS_MANIFEST"
+    exit 1
+  fi
+  while IFS= read -r key; do
+    [ -n "$key" ] || continue
+    if skip_formula_for_host "$key"; then
+      log "skipping $key on non-Darwin host"
+      continue
+    fi
+    brew_formula="$(formula_field_for_key "$key" brew)"
+    command_name="$(formula_field_for_key "$key" command)"
+    if [ -z "$brew_formula" ] || [ -z "$command_name" ]; then
+      err "manifest entry missing brew/command field for profile key: $key"
+      exit 1
+    fi
+    run_cmd brew install "$brew_formula"
+    if [ "$DRY_RUN" = "0" ] && ! command -v "$command_name" >/dev/null 2>&1; then
+      missing="${missing}${key} (${command_name})
+"
+    fi
+  done <<EOF_KEYS
+$profile_list
+EOF_KEYS
+
+  if [ -n "$missing" ]; then
+    err "installed profile=$PROFILE but command(s) are still unavailable:"
+    printf '%s' "$missing" | sed 's/^/  - /' >&2
+    exit 127
   fi
 }
 
@@ -189,23 +306,111 @@ ensure_repo_clone() {
     log "agent-runtime-kit already cloned at $REPO_HOME_DEFAULT"
     return 0
   fi
+  if [ -e "$REPO_HOME_DEFAULT" ]; then
+    err "$REPO_HOME_DEFAULT exists but is not a git checkout"
+    exit 1
+  fi
+  if [ "$DRY_RUN" = "0" ]; then
+    require_commands git
+  fi
   run_cmd git clone "$REPO_REMOTE_DEFAULT" "$REPO_HOME_DEFAULT"
 }
 
+product_live_home() {
+  case "$1" in
+    claude) printf '%s\n' "$HOME/.claude" ;;
+    codex) printf '%s\n' "${CODEX_HOME:-$HOME/.codex}" ;;
+    *)
+      err "unknown product: $1"
+      exit 2
+      ;;
+  esac
+}
+
+product_state_home() {
+  local state_root="${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit"
+  case "$1" in
+    claude) printf '%s\n' "${CLAUDE_KIT_STATE_HOME:-$state_root/claude}" ;;
+    codex) printf '%s\n' "${CODEX_AGENT_STATE_HOME:-$state_root/codex}" ;;
+    *)
+      err "unknown product: $1"
+      exit 2
+      ;;
+  esac
+}
+
 activate_products() {
-  # defer to Plan 04
-  #
-  # These are the real activation calls per Brew-First Bootstrap step 6.
-  # Plan 01 ships them as STUBS — they print a banner and return 0 — so the
-  # install ladder is reviewable end-to-end without mutating a live ~/.codex
-  # or ~/.claude home. Plan 04 replaces these with real invocations.
-  log "$STUB_BANNER --product claude"
-  log "$STUB_BANNER --product codex"
+  local product
+  local live_home
+  local state_home
+  local mode_flag="--apply"
+  if [ "$DRY_RUN" = "1" ]; then
+    mode_flag="--dry-run"
+  fi
+  for product in claude codex; do
+    live_home="$(product_live_home "$product")"
+    state_home="$(product_state_home "$product")"
+    run_cmd agent-runtime install \
+      --source-root "$REPO_HOME_DEFAULT" \
+      --product "$product" \
+      --live-home "$live_home" \
+      --state-home "$state_home" \
+      "$mode_flag"
+  done
 }
 
 run_doctor() {
-  log "+ agent-runtime doctor"
-  log "$STUB_BANNER doctor (defer to Plan 04)"
+  local product
+  local live_home
+  local state_home
+  local doctor_exit=0
+  local code=0
+
+  for product in claude codex; do
+    live_home="$(product_live_home "$product")"
+    state_home="$(product_state_home "$product")"
+    if [ "$DRY_RUN" = "1" ]; then
+      run_cmd agent-runtime doctor \
+        --source-root "$REPO_HOME_DEFAULT" \
+        --product "$product" \
+        --live-home "$live_home" \
+        --state-home "$state_home" \
+        --profile "$PROFILE"
+      continue
+    fi
+    print_cmd agent-runtime doctor \
+      --source-root "$REPO_HOME_DEFAULT" \
+      --product "$product" \
+      --live-home "$live_home" \
+      --state-home "$state_home" \
+      --profile "$PROFILE"
+    set +e
+    agent-runtime doctor \
+      --source-root "$REPO_HOME_DEFAULT" \
+      --product "$product" \
+      --live-home "$live_home" \
+      --state-home "$state_home" \
+      --profile "$PROFILE"
+    code=$?
+    set -e
+    if [ "$code" -gt "$doctor_exit" ]; then
+      doctor_exit="$code"
+    fi
+  done
+
+  return "$doctor_exit"
+}
+
+print_summary() {
+  cat <<EOF
+
+Summary
+- repo_home: $REPO_HOME_DEFAULT
+- brew_prefix: ${BREW_PREFIX:-unavailable}
+- profile: $PROFILE
+- claude_live_home: $(product_live_home claude)
+- codex_live_home: $(product_live_home codex)
+EOF
 }
 
 # -----------------------------------------------------------------------------
@@ -213,17 +418,27 @@ run_doctor() {
 # -----------------------------------------------------------------------------
 
 main() {
+  local doctor_code=0
+
   parse_args "$@"
 
-  log "$PROG_NAME starting (profile=$PROFILE skip_homebrew=$SKIP_HOMEBREW_INSTALL dry_run=$DRY_RUN)"
+  log "$PROG_NAME starting (profile=$PROFILE skip_homebrew=$SKIP_HOMEBREW_INSTALL skip_cli_tools=$SKIP_CLI_TOOLS dry_run=$DRY_RUN)"
 
-  detect_host
   ensure_homebrew
+  detect_brew_prefix
   tap_and_install_nils_cli
   install_cli_tools_profile
   ensure_repo_clone
   activate_products
+  print_summary
+  set +e
   run_doctor
+  doctor_code=$?
+  set -e
+  if [ "$doctor_code" -ne 0 ]; then
+    err "$PROG_NAME completed with doctor exit=$doctor_code"
+    exit "$doctor_code"
+  fi
 
   log "$PROG_NAME complete"
 }

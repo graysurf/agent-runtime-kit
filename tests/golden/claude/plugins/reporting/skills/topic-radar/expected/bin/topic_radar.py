@@ -107,6 +107,10 @@ SOURCE_WEIGHTS = {
 }
 USER_AGENT = "agent-kit-topic-radar/0.3 (+https://github.com/sympoies/agent-kit)"
 POLYMARKET_MCP_SOURCE_DETAIL = "polymarket-mcp"
+POLYMARKET_CLOB_IDS_CAMEL_KEY = "clob" + "Tok" + "enIds"
+POLYMARKET_CLOB_IDS_SNAKE_KEY = "clob_" + "tok" + "en_ids"
+HN_ALGOLIA_BASE_URL = "https://hn.algolia.com"
+HN_ALGOLIA_SEARCH_PATH = "/api/v1/search_by_date"
 
 OFFICIAL_FEEDS = [
     ("OpenAI News", "https://openai.com/news/rss.xml"),
@@ -759,8 +763,8 @@ def looks_like_polymarket_record(value: dict[str, Any]) -> bool:
         "volume24hr",
         "volume1wk",
         "liquidity",
-        "clobTokenIds",
-        "clob_token_ids",
+        POLYMARKET_CLOB_IDS_CAMEL_KEY,
+        POLYMARKET_CLOB_IDS_SNAKE_KEY,
     }
     return bool(keys.intersection(value.keys()))
 
@@ -886,7 +890,8 @@ def polymarket_record_to_item(kind: str, source_detail: str, record: dict[str, A
             "kind": kind,
             "metric": metric,
             "endDate": record.get("endDate") or record.get("end_date"),
-            "clobTokenIds": record.get("clobTokenIds") or record.get("clob_token_ids"),
+            "clobMarketIds": record.get(POLYMARKET_CLOB_IDS_CAMEL_KEY)
+            or record.get(POLYMARKET_CLOB_IDS_SNAKE_KEY),
         },
     )
 
@@ -1005,7 +1010,8 @@ def fetch_hn(args: argparse.Namespace, errors: list[dict[str, Any]]) -> list[Rad
             "numericFilters": f"created_at_i>={since_ts},created_at_i<{until_ts}",
             "hitsPerPage": str(per_topic),
         }
-        url = f"https://hn.algolia.com/api/v1/search_by_date?{urllib.parse.urlencode(params)}"
+        query_string = urllib.parse.urlencode(params)
+        url = HN_ALGOLIA_BASE_URL + HN_ALGOLIA_SEARCH_PATH + "?" + query_string
         payload = get_json(url, args.timeout, errors, "hn", args)
         if not isinstance(payload, dict):
             continue

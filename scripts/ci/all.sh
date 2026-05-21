@@ -2,15 +2,12 @@
 # scripts/ci/all.sh — agent-runtime-kit CI gate stack.
 #
 # Linear, ordered gate stack — do not parallelize. Each position prints a
-# banner, runs its check, and exits non-zero on the first failure. Position 6
-# (sandbox install rehearsal) lands with Plan 04 Sprint 5 Task 5.3; until then,
-# the script ends after position 5.
+# banner, runs its check, and exits non-zero on the first failure.
 #
 # Compatibility: must run on macOS (system bash 3.2) and Linux runners.
 # Avoid associative arrays, mapfile, and `${var,,}` lowercasing.
 #
-# Required on PATH (installed via `brew install sympoies/tap/nils-cli` and
-# `sympoies/tap/plan-tooling`):
+# Required on PATH (installed via `brew install sympoies/tap/nils-cli`):
 #   - agent-runtime  (subcommands: render, audit-drift)
 #   - plan-tooling   (subcommand: validate)
 
@@ -101,6 +98,10 @@ for fixture in "${drift_fixtures[@]}"; do
   fi
 done
 
-# Position 6 (sandbox install rehearsal) ships with Plan 04 Sprint 5 Task 5.3.
+# -----------------------------------------------------------------------------
+# Position 6 — sandbox install rehearsal
+# -----------------------------------------------------------------------------
+banner 6 "sandbox install rehearsal (dry-run skill-list diff)"
+bash scripts/ci/sandbox-install-rehearsal.sh
 
-printf '\nci/all.sh: positions 1-5 OK\n'
+printf '\nci/all.sh: positions 1-6 OK\n'
