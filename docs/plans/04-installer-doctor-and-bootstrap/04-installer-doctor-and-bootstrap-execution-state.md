@@ -17,7 +17,7 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| Task 1.1 | pending | Implement managed-block helper module | n/a | paired-marker contract; refuse re-add without `--force` |
+| Task 1.1 | in progress | Implement managed-block helper module | [sympoies/nils-cli#414](https://github.com/sympoies/nils-cli/pull/414) (draft) | paired-marker contract; refuse re-add without `force=true`; 15 unit + 6 integration tests green locally; full `nils-cli-verify-required-checks` stack green |
 | Task 1.2 | pending | Wire render to link to managed-block sync pipeline | n/a | depends on 1.1; idempotent `--apply` |
 | Task 1.3 | pending | Add `--live-home`, `--tag`, and overlay merge flags | n/a | reject relative `--live-home`; tags survive gc |
 | Task 2.1 | pending | Implement `agent-runtime uninstall` | n/a | idempotent; never touch auth / history / sessions |
@@ -103,6 +103,15 @@ suggested defaults:
   (rendered=0 cached=3 skipped=0); all four drift fixtures reproduce
   `expected.txt` + `expected.exit` hermetically.
 - Opened housekeeping PR on `feat/plan-04-prework-ci-infra-and-doc-fixes`
-  to deliver the gap resolutions above. Plan 04 Sprint 1 Task 1.1 (managed
-  block helper) starts on `sympoies/nils-cli` once the housekeeping PR
-  merges.
+  to deliver the gap resolutions above. First-ever CI run on the repo
+  surfaced a hermeticity defect in the Plan 03 drift fixtures — the
+  top-level `build/` gitignore pattern was masking the per-fixture
+  `tests/drift/<scenario>/build/` trees, so the CI runner saw 1 finding
+  instead of 3 for `agent-home-leak`. Fixed forward by carving out
+  `!tests/drift/*/build/` and committing the 12 pre-rendered build files.
+  PR #16 merged at SHA `31c79e9` (run `26209007414`, 26s).
+- Sprint 1 Task 1.1 (managed-block helper) opened against `sympoies/nils-cli`
+  on branch `feat/managed-block-helper` as draft PR #414. 15 in-crate unit
+  tests + 6 file-system integration tests pass; full
+  `nils-cli-verify-required-checks` gate stack green locally. Paused for
+  review before continuing to Task 1.2 (install pipeline).
