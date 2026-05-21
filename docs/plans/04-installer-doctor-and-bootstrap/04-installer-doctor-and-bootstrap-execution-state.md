@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: Sprint 2 Task 2.3 complete; Sprint 2 active
+- Status: Sprint 2 Task 2.4 complete; Sprint 2 closed; Sprint 3 active
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 2.4
-- Next task: Task 3.1
+- Current task: Task 3.1
+- Next task: Task 3.2
 - Last updated: 2026-05-21
-- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`; Sprint 2 Task 2.2 merged at nils-cli `2ae3075`; Sprint 2 Task 2.3 merged at nils-cli `4799169`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`; Sprint 2 Task 2.2 merged at nils-cli `2ae3075`; Sprint 2 Task 2.3 merged at nils-cli `4799169`; Sprint 2 Task 2.4 merged at nils-cli `4339c8d`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -23,7 +23,7 @@
 | Task 2.1 | complete | Implement `agent-runtime uninstall` | [sympoies/nils-cli#419](https://github.com/sympoies/nils-cli/pull/419) merged `6bf6102` | idempotent reversal of link-map symlinks + managed-block surfaces; second uninstall on a clean home is exit-0 NoOp; foreign symlinks and regular files at install destinations are skipped (not deleted); never touches `<state_home>/backups/` or `auth*`/`history*`/`sessions*`/`cache*`/`projects*` under the runtime home; new `uninstall::{run, UninstallOptions, UninstallError, UninstallOutcome}` + `uninstall::plan` + `uninstall::executor` + `commands::uninstall`; 16 new tests (8 integration + 7 executor unit + 1 plan unit); `/code-review-specialists` pass landed F-1 (red-team medium: thread `expected_source` through `SymlinkSkippedForeign` for operator recovery context) |
 | Task 2.2 | complete | Implement `agent-runtime restore-backups` | [sympoies/nils-cli#423](https://github.com/sympoies/nils-cli/pull/423) merged `2ae3075` | walks `<state_home>/backups/<product>/<ts>/` and reverses the `FileBackedUpThenSymlinked` arm of install; matches each backup file to its install destination via a regenerated InstallPlan; refuses to clobber operator-retargeted symlinks (read_link(dest) == expected_install_source check); fs::rename with EXDEV → fs::copy + set_permissions fallback; no chown; new `restore_backups::{run, RestoreOptions, RestoreError, RestoreOutcome, BackupRunSelector { Latest, Exact(u64) }}` + `restore_backups::plan` + `restore_backups::executor` + `commands::restore_backups`; 12 new tests (10 integration + 2 executor unit + 3 plan unit); `/code-review-specialists` pass landed R-1 (medium red-team: foreign-symlink protection — same F-1 shape as Task 2.1, brought into byte-for-byte parity with uninstall) |
 | Task 2.3 | complete | Implement `agent-runtime purge-state` | [sympoies/nils-cli#424](https://github.com/sympoies/nils-cli/pull/424) merged `4799169` | clears writable state under `<state_home>` per required `--scope out\|backups\|all` (no default); prompts on stdin unless `--yes`; `--yes` emits one stderr audit line containing the scope BEFORE any FS mutation; symlink at the scope path refused (`Err(InvalidData)`); cleared subtree recreated as empty dir for stable shape on next install/render; no `--live-home` flag exists, so runtime homes / auth / history / sessions / cache / projects are unreachable by construction; new `purge_state::{run, Scope { Out, Backups, All }, Confirm { Yes, Prompt }, PurgeError { Io, Cancelled }, PurgeOutcome { scope, cleared }}` + `commands::purge_state`; 15 new tests (8 integration + 7 unit); `/code-review-specialists` pass landed R-1 (stdout discipline) + R-2 (prompt clarity) — both low; piggybacked a `docs(plan)` commit silencing MD013 on an inherited regression in `code-review-specialist-primitives-plan.md` so CI could pass |
-| Task 2.4 | pending | Implement `agent-runtime gc-backups` | n/a | retention default 5; respect `--tag` markers |
+| Task 2.4 | complete | Implement `agent-runtime gc-backups` | [sympoies/nils-cli#430](https://github.com/sympoies/nils-cli/pull/430) merged `4339c8d` | retention default 5 per (product, surface) bucket; `--retention <N>` overrides; `install --tag <name>` markers preserve their run regardless of retention; `--product codex\|claude` default both; `--surface <name>` filters runs containing the named entry_id subdir; `--dry-run` produces zero mutations; `--apply` performs `fs::remove_dir_all`; install never prunes silently; canonical `is_tag_marker(path)` helper (regular-file + `tag-` prefix per `symlink_metadata`) resolves Task 1.3 F-3 namespace overlap; symlinked `<state_home>/backups/<product>` refused via `symlink_metadata` guard so `remove_dir_all` cannot be redirected outside state_home; new `gc_backups::{run, Mode { DryRun, Apply }, ProductFilter { All, One }, GcOptions, GcError { Io, InvalidSurface }, GcChange { Retained, PreservedByTag, Deleted, WouldDelete }, GcOutcome { mode, retention, changes }, is_tag_marker, ALL_PRODUCTS, DEFAULT_RETENTION}` + `commands::gc_backups`; 23 new tests (12 unit + 11 integration); `/code-review-specialists` pass over 1153 diff lines (single-agent + auto red-team) landed S-1 / R-2 (defense-in-depth symlinked product_root guard) + T-4 + T-6 (stream-discipline + symlink-spoof regression pins) — 12 advisories deferred to Sprint 3 / 4 |
 | Task 3.1 | pending | Symlink + managed-block + runtime-roots probes | n/a | filesystem-level findings; exit 0 / 1 / 2 |
 | Task 3.2 | pending | Version probes with 5-status output | n/a | `ok` / `recommended-only` / `warn` / `outdated` / `unparseable` |
 | Task 3.3 | pending | `--suggest-upgrade`, `--check-project`, and CLI coverage probes | n/a | read-only; feeds Bump Ceremony PR |
@@ -54,6 +54,85 @@
   has real fodder to pin against.
 
 ## Session Log
+
+### 2026-05-21 — Sprint 2 closed; Task 2.4 gc-backups body lands
+
+- Sprint 2 Task 2.4 merged at `sympoies/nils-cli` commit `4339c8d`. Two
+  GPG-signed commits on the feature branch: feature `7f79442` +
+  specialist-fix `e5cfdf0` (S-1 / R-2 defense-in-depth symlinked
+  `<state_home>/backups/<product>` guard + T-4 symlink tag-marker spoof
+  regression pin + T-6 stream-discipline regression pin).
+- New surface area:
+  - `agent-runtime gc-backups --state-home <abs> [--product claude|codex] [--surface <entry_id>] [--retention <N>] (--dry-run | --apply)`.
+  - Walks `<state_home>/backups/<product>/<unix_seconds>/`. Default
+    `--product` = both `claude` + `codex`; default `--retention` = 5.
+  - A run is preserved by tag iff it contains a regular FILE child whose
+    basename starts with `tag-` — the canonical `is_tag_marker(path)`
+    helper uses `symlink_metadata().file_type().is_file()` so an
+    entry-id subdir whose name starts with `tag-` (Task 1.3 F-3 namespace
+    overlap) falls through to the retention sort, and a symlink at the
+    run root (even one whose target is a regular file) is NOT classified
+    as a marker. This resolves Task 1.3 F-3.
+  - Untagged runs sort by ts descending; first `--retention` become
+    `Retained`, remainder become `Deleted` (Apply) or `WouldDelete`
+    (DryRun). Tagged runs land as `PreservedByTag` regardless of
+    position.
+  - `--surface <name>` filters at run level: only runs containing
+    `<run>/<name>/` subdir are considered for retention; runs without
+    the surface are entirely skipped (never deleted). `validate_surface`
+    rejects `/`, `\`, `..`, `.`, leading `.`, and empty strings.
+  - Defense-in-depth: `<state_home>/backups/<product>` is gated by
+    `symlink_metadata` before `enumerate_runs`, so a symlinked
+    product_root is refused (otherwise `fs::remove_dir_all` could be
+    redirected outside state_home).
+- New Rust API: `gc_backups::{run, Mode { DryRun, Apply }, ProductFilter
+  { All, One(String) }, GcOptions { product, surface, retention },
+  GcError { Io, InvalidSurface }, GcChange { Retained,
+  PreservedByTag { ..., marker }, Deleted, WouldDelete }, GcOutcome {
+  mode, retention, changes }, is_tag_marker, ALL_PRODUCTS,
+  DEFAULT_RETENTION}` + `commands::gc_backups::GcBackupsArgs`. CLI
+  rejects relative `--state-home`, missing `--dry-run`/`--apply`,
+  invalid `--product`, and path-traversal `--surface`.
+- gc-backups deliberately uses NO link-map / NO overlay / NO
+  managed-block machinery — sidesteps Task 2.1 F-2 (LinkMapPlan
+  extraction), Task 2.2 R-2 (`merge_overlay` dedup), and Task 2.2 R-11
+  (`ensure_parent_dir` dedup). Sprint 4 helper-duplication sweep is
+  unaffected.
+- `/code-review-specialists` pass surfaced 15 findings over 1153 diff
+  lines (single-agent + auto red-team). Three pre-merge fixes landed in
+  commit `e5cfdf0`:
+  - S-1 / R-2 (security medium + red-team medium confirmation):
+    `<state_home>/backups/<product>` could redirect `remove_dir_all`
+    outside state_home when the product_root is a symlink. Added
+    `symlink_metadata` guard before `enumerate_runs`. Regression-pinned
+    by `product_root_symlink_is_refused_not_followed` unit test.
+  - T-4 (testing low): pinned the positive control that
+    `is_tag_marker` refuses symlink-to-file spoofs via a new
+    `is_tag_marker_symlink_to_file_is_not_marker` unit test.
+  - T-6 (testing low): added stream-discipline assertion to
+    `seven_runs_with_default_retention_five_keeps_five_in_apply` so the
+    summary + per-change report cannot leak from stderr to stdout.
+- 12 advisory findings deferred (4 low + 8 info), grouped by sprint:
+  - Sprint 3 doctor: orphan-symlink probe (Task 2.1 F-3 inheritance);
+    list-available-surfaces probe surfacing `GcOutcome.mode/retention`
+    consumer; tag-DoS observability counter (red-team R-1 by-design).
+  - Sprint 4 sweep: `GcChange` accessor methods dead code; `--product`
+    allowlist DRY against `ALL_PRODUCTS`; `validate_surface` allowlist
+    tightening to `install::is_trusted_tag` shape; `PreservedByTag`
+    type-design tightening (eliminate `RunRow.marker.expect()`); shared
+    `Mode { DryRun, Apply }` extraction across install / uninstall /
+    restore / gc (Task 2.2 R-10 inheritance); audit-line emission
+    before destructive mutation (Task 2.3 R-3 inheritance);
+    retention=0 / retention >> N test coverage; combined
+    `--product` × `--surface` test coverage.
+- Test count delta on `sympoies/nils-cli` agent-runtime-cli: 259/259 →
+  261/261 (added 2 unit tests in the specialist-fix commit) plus 21
+  new tests from the feature commit. New `gc_backups` suite: 23/23
+  pass (12 unit + 11 integration). Full crate suite: 261/261.
+- Sprint 2 is now CLOSED. Current task flips to Sprint 3 Task 3.1
+  (`agent-runtime doctor` symlink + managed-block + runtime-roots
+  probes). Task 3.1 inherits Task 2.1 F-3 (orphaned-symlink probe) and
+  Task 2.4 info-2 (`GcOutcome.mode/retention` doctor consumer).
 
 ### 2026-05-21 — Sprint 2 Task 2.3 closed; purge-state body lands
 
