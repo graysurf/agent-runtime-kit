@@ -36,6 +36,7 @@ agent-docs --docs-home "$AGENT_HOME" resolve --context project-dev --strict --fo
 - `targets/`: Codex and Claude adapter surfaces.
 - `manifests/`: machine-checkable source of truth for skills, plugins,
   products, runtime roots, and CLI tools.
+- `AGENT_DOCS.toml`: project-local `agent-docs` dispatch entries.
 - `docs/source/`: repo-wide architecture, policy, specs, and source-of-truth
   references.
 - `docs/plans/`: coordination plan bundles with discussion source, plan, and
@@ -47,20 +48,10 @@ agent-docs --docs-home "$AGENT_HOME" resolve --context project-dev --strict --fo
 
 ## Documentation Changes
 
-Before adding or modifying `docs/**` or a repository-root `*.md` file, read
-`docs/source/docs-placement-retention-policy-v1.md` after the normal
-`agent-docs` project preflight.
-
-Default to the narrowest maintained owner:
-
-- repo-wide architecture, policy, and source references go in `docs/source/`;
-- active execution coordination goes in `docs/plans/<slug>/`;
-- skill-owned material stays under `core/skills/<domain>/<skill>/`;
-- product-specific activation notes stay under `targets/<product>/`;
-- new root Markdown files require a tool-loaded or human entrypoint reason.
-
-Do not mix historical docs cleanup into unrelated documentation changes unless
-the cleanup is explicitly in scope.
+`AGENT_DOCS.toml` registers
+`docs/source/docs-placement-retention-policy-v1.md` as required `project-dev`
+context. Before adding or modifying `docs/**` or a repository-root `*.md` file,
+resolve the normal `agent-docs` preflight and follow that policy.
 
 ## Coupled nils-cli Work
 

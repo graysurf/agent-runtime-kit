@@ -1,0 +1,7 @@
+[[document]]
+context = "project-dev"
+scope = "project"
+path = "docs/source/docs-placement-retention-policy-v1.md"
+required = true
+when = "always"
+notes = "Docs placement and retention policy for docs/** and repository-root Markdown changes"
