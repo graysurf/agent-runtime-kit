@@ -29,8 +29,8 @@ inventory. Track repo-scoped third-party license obligations in
   fallback
 - Structured config/data: `yq`/`jq` (avoid regex parsing for YAML/JSON)
 - Agent artifacts: `agent-out` for canonical product `state_home/out/` project
-  run directories and layout audits (replaces the legacy `$AGENT_HOME/out/`
-  path from `agent-kit`)
+  run directories and layout audits (replaces the legacy `agent-kit`-internal
+  out path; the env var that anchored it was removed in Resolved Decision #5)
 
 ---
 
