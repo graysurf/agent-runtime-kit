@@ -1,11 +1,22 @@
-# Plugin manifest — Plan 01 ships this file empty. Real entries land in
-# Plan 03 (`03-reporting-poc`).
+# Plugin manifest — Plan 03 lands the reporting plugin entry here. Other
+# domain plugins follow in Plan 05.
 #
 # Schema: ../core/docs/schemas/plugins.schema.json
 # Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`
 #
 # Each entry MUST declare `id`, `domain`, `contained_skills`, and
-# `product_manifests`. Plugin `domain` cross-references skill `domain` fields
-# in `skills.yaml`; Plan 03 lands both together.
+# `product_manifests`. Plugin `domain` cross-references skill `domain`
+# fields in `skills.yaml`.
 schema_version: 1
-plugins: []
+
+plugins:
+  - id: reporting
+    domain: reporting
+    contained_skills:
+      - reporting.daily-brief
+      - reporting.project-retro
+      - reporting.topic-radar
+    product_manifests:
+      codex: targets/codex/plugins/reporting/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/reporting/.claude-plugin/plugin.json
+    install_policy: always
