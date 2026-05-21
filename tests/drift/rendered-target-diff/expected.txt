@@ -1,0 +1,2 @@
+audit-drift [rendered-target/warn/codex] build/codex/skills/sample/SKILL.md: rendered output drifted from source for skills/sample/SKILL.md
+audit-drift: 1 finding(s); highest-severity exit=1

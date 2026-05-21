@@ -1,0 +1,2 @@
+audit-drift [docs-home/block/codex] build/codex/skills/sample/SKILL.md: --docs-home "$HOME/.claude" at line 7; expected "$CODEX_HOME" for product `codex`
+audit-drift: 1 finding(s); highest-severity exit=2
