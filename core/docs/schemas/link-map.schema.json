@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/link-map.schema.json",
+  "title": "targets/<product>/link-map.yaml",
+  "description": "Per-product install link map. Drives `agent-runtime install` plan generation (Plan 04 Sprint 1 Task 1.2): which build / target paths land where under the product runtime home, what gets symlinked, what gets copied, what edits a config file via a managed block, and what existing files must be backed up before replacement. Overlay merge for link maps is per-entry replace (keyed by `id`); see plan 04 Sprint 1 Task 1.2 acceptance criteria. The four entry kinds match Plan 04 Gap #1 resolution: symlinked-file (build/), plugin-manifest-copy (targets/), managed-block, backed-up-on-replace.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "description": "Install entries in execution order. `id` is unique within the file and is the key for overlay merge `per-entry replace` semantics.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "destination"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable identifier (`<plugin>.<surface>` recommended). Used by overlay merge to replace a single entry without touching its siblings.",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "symlinked-file",
+            "plugin-manifest-copy",
+            "managed-block",
+            "backed-up-on-replace"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "Path relative to the source root (the agent-runtime-kit checkout). Required for symlinked-file / plugin-manifest-copy / backed-up-on-replace. Forbidden for managed-block (which carries inline content via `body_template` or a `surface` keyed to a renderer fragment).",
+          "minLength": 1
+        },
+        "destination": {
+          "type": "string",
+          "description": "Path relative to the product's `live_home` (resolved from manifests/runtime-roots.yaml). For managed-block entries this is the file the block lives in.",
+          "minLength": 1
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "When `kind=symlinked-file` and `source` resolves to a directory, install the tree symlink-by-symlink. Defaults to `false` — entries must be single files unless explicitly opted-in.",
+          "default": false
+        },
+        "surface": {
+          "type": "string",
+          "description": "Required for `kind=managed-block`. Passed to the Task 1.1 `ManagedBlock::new(surface, ...)` helper. ASCII alphanumeric / `-` / `_` only.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "minLength": 1
+        },
+        "comment_style": {
+          "type": "string",
+          "description": "Required for `kind=managed-block`. Selects the marker prefix the Task 1.1 helper applies (`#` for TOML, `//` for JSONC).",
+          "enum": ["hash", "double-slash"]
+        },
+        "body_template": {
+          "type": "string",
+          "description": "Required for `kind=managed-block`. Inline content placed between the markers. Plan 04 Sprint 1 ships only static bodies; future templating (env vars, render fragments) is plan-scoped to later sprints.",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "symlinked-file" } }
+          },
+          "then": {
+            "required": ["source"],
+            "not": {
+              "anyOf": [
+                { "required": ["surface"] },
+                { "required": ["comment_style"] },
+                { "required": ["body_template"] }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "plugin-manifest-copy" } }
+          },
+          "then": {
+            "required": ["source"],
+            "not": {
+              "anyOf": [
+                { "required": ["recursive"] },
+                { "required": ["surface"] },
+                { "required": ["comment_style"] },
+                { "required": ["body_template"] }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "backed-up-on-replace" } }
+          },
+          "then": {
+            "required": ["source"],
+            "not": {
+              "anyOf": [
+                { "required": ["surface"] },
+                { "required": ["comment_style"] },
+                { "required": ["body_template"] }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "managed-block" } }
+          },
+          "then": {
+            "required": ["surface", "comment_style", "body_template"],
+            "not": {
+              "anyOf": [
+                { "required": ["source"] },
+                { "required": ["recursive"] }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
