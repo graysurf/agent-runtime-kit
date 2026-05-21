@@ -1,0 +1,24 @@
+# Codex install link map.
+#
+# Schema: ../../core/docs/schemas/link-map.schema.json
+# Plan:   docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
+#         Sprint 1 Task 1.2 — install pipeline body.
+#
+# Overlay merge for this file is per-entry replace, keyed by `id`. The
+# install plan walks `entries` in order; `recursive: true` expands a
+# directory into one symlink per file at plan time, so each rendered
+# skill file lands as its own surface in the dry-run output.
+
+schema_version: 1
+
+entries:
+  - id: reporting.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/reporting/.codex-plugin/plugin.json
+    destination: plugins/reporting/.codex-plugin/plugin.json
+
+  - id: reporting.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/reporting/skills
+    destination: plugins/reporting/skills
+    recursive: true

@@ -6,10 +6,10 @@
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 1.1
-- Next task: Task 1.2
+- Current task: Task 1.2
+- Next task: Task 1.3
 - Last updated: 2026-05-21
-- Branch/commit: pre-work on `feat/plan-04-prework-ci-infra-and-doc-fixes`; Sprint 1 Task 1.1 on nils-cli `feat/managed-block-helper`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 link-map schema on agent-runtime-kit `feat/plan-04-link-map-schema`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -17,8 +17,8 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| Task 1.1 | in progress | Implement managed-block helper module | [sympoies/nils-cli#414](https://github.com/sympoies/nils-cli/pull/414) (draft) | paired-marker contract; refuse re-add without `force=true`; 15 unit + 6 integration tests green locally; full `nils-cli-verify-required-checks` stack green |
-| Task 1.2 | pending | Wire render to link to managed-block sync pipeline | n/a | depends on 1.1; idempotent `--apply` |
+| Task 1.1 | complete | Implement managed-block helper module | [sympoies/nils-cli#414](https://github.com/sympoies/nils-cli/pull/414) merged `3309c3e` | paired-marker contract + `BodyContainsMarker` body validation; `is_trusted_surface` invariant; 19 unit + 7 integration tests; `/code-review-specialists` pass landed F-2 hardening fix |
+| Task 1.2 | in progress | Wire render to link to managed-block sync pipeline | link-map schema PR on `feat/plan-04-link-map-schema` | split into PR A (schema + initial yaml on agent-runtime-kit) → PR B (install pipeline on nils-cli); idempotent `--apply` |
 | Task 1.3 | pending | Add `--live-home`, `--tag`, and overlay merge flags | n/a | reject relative `--live-home`; tags survive gc |
 | Task 2.1 | pending | Implement `agent-runtime uninstall` | n/a | idempotent; never touch auth / history / sessions |
 | Task 2.2 | pending | Implement `agent-runtime restore-backups` | n/a | `--from` required; dry-run before apply |
@@ -93,6 +93,39 @@ suggested defaults:
   Sprint 5 Task 5.3 does not exercise `--apply` against tmp.
 - **Open Q3 — WSL `AGENT_RUNTIME_HOST_PROFILE`.** Deferred to Sprint 3
   entry. Not actionable in Sprint 1 or Sprint 2.
+
+### 2026-05-21 — Sprint 1 Task 1.1 closed; Task 1.2 (schema phase) opened
+
+- Sprint 1 Task 1.1 merged at `sympoies/nils-cli` commit `3309c3e` after a
+  `/code-review-specialists` pass surfaced two material findings, both
+  resolved before merge in fix commit `67edbe6`:
+  - F-2 (medium, security/red-team): `write()` did not validate `body`
+    against the surface's own markers; resolved by adding
+    `ManagedBlockError::BodyContainsMarker` with a column-0 anchored
+    rejection path covering both append (force=true) and replace flows.
+  - F-1 (medium → documented invariant): surface names accepted
+    arbitrary bytes; resolved by `is_trusted_surface` (ASCII
+    alphanumeric / `-` / `_`) plus a `debug_assert!` in `new()` and an
+    explicit module-doc contract.
+  - F-3 (testing): LF-only line-ending assumption documented; CRLF
+    support deferred to a later sprint.
+- Final shape: 19 unit + 7 integration tests, full
+  `nils-cli-verify-required-checks` stack green, GPG-signed commits.
+- Sprint 1 Task 1.2 is split into two PRs to keep cross-repo scope clean:
+  - **PR A (this repo)** — `core/docs/schemas/link-map.schema.json`
+    (JSON Schema draft 2020-12), `targets/codex/link-map.yaml`,
+    `targets/claude/link-map.yaml`. Initial entries cover the Plan 03
+    reporting plugin via one `plugin-manifest-copy` (manifest under
+    `targets/`) and one `recursive: true` `symlinked-file` entry for
+    the rendered skills tree under `build/`. Schema validates both
+    initial yaml files; rejects 6 representative malformed cases
+    (missing required fields, kind / required-field mismatches, bad
+    id pattern, forbidden fields per-kind).
+  - **PR B (nils-cli)** — install pipeline body in
+    `crates/agent-runtime-cli/src/install.rs` +
+    `src/install/plan.rs`, consuming the link-map schema landed in PR
+    A, with a `tests/integration/install_pipeline.rs` byte-identical
+    idempotence test. Opens once PR A merges.
 
 ### 2026-05-21 — Pre-work + Sprint 1 Task 1.1 kickoff
 
