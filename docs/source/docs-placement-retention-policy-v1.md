@@ -1,0 +1,82 @@
+# Docs Placement And Retention Policy V1
+
+## Purpose
+
+This policy defines where documentation belongs in `agent-runtime-kit`, how long
+it should be retained, and what contributors should read before adding or
+changing Markdown files.
+
+Before adding or modifying `docs/**` or a repository-root `*.md` file, read this
+policy after the normal project preflight:
+
+```bash
+agent-docs --docs-home "$AGENT_HOME" resolve --context startup --strict --format checklist
+agent-docs --docs-home "$AGENT_HOME" resolve --context project-dev --strict --format checklist
+```
+
+## Placement Rules
+
+Use the narrowest owner that can maintain the document.
+
+| Location | Use for | Retention |
+| --- | --- | --- |
+| `README.md` | Short repository orientation and stable entrypoints | Canonical |
+| `DEVELOPMENT.md` | Current setup, edit preflight, validation, and release boundaries | Canonical |
+| `docs/source/` | Repository-wide architecture, specs, source-of-truth references, and policies | Canonical until superseded |
+| `docs/plans/<slug>/` | Plan bundles: discussion source, plan, and execution state | Coordination; cleanup-eligible after execution unless promoted |
+| `core/docs/` | Product-independent schemas, ADRs, contributor guides, and policy explainers used by runtime source | Canonical source content |
+| `core/policies/` | Portable agent/runtime policy consumed by product adapters | Canonical source content |
+| `core/skills/<domain>/<skill>/` | Skill-owned docs, examples, references, assets, and local helper notes | Domain-local |
+| `targets/<product>/` | Product adapter docs, templates, link maps, and activation notes | Product-local |
+| `manifests/` | Machine-checkable runtime inventory; narrative belongs in adjacent source docs | Canonical data |
+| `tests/**` | Fixture-local documentation required to understand or validate a test fixture | Test-local |
+
+Do not add a new root-level Markdown file unless it is a recognized entrypoint
+loaded by tools or humans at the repository root. Prefer `docs/source/` for
+repo-wide durable material and the owning folder for domain-local material.
+
+## Ownership Classes
+
+- `repo-wide`: Material that explains cross-domain architecture, repository
+  policy, runtime roots, validation, release boundaries, or source inventory.
+- `domain-local`: Material owned by one skill, hook area, script area, target
+  adapter, manifest family, or test fixture.
+- `coordination`: Temporary planning, execution, handoff, or status material.
+- `retained-record`: Evidence, audit, or curated history that remains useful
+  after execution and should not be treated as stale coordination material.
+
+## Lifecycle Classes
+
+- `canonical`: Current source of truth. Keep it updated when behavior changes.
+- `coordination`: Useful while planning or execution is active. Revisit after
+  completion.
+- `promoted`: Former coordination material rewritten into a maintained canonical
+  document.
+- `retained-record`: Preserved for audit, evidence, or historical context.
+- `rehome`: Move to a narrower owner when a clearer owner exists.
+- `delete`: Remove after reference checks when the material is stale and not a
+  retained record.
+
+Historical cleanup should be a separate change from policy landing or feature
+work unless the user explicitly asks for a cleanup pass.
+
+## Naming
+
+- New topic Markdown under `docs/**` should use lowercase kebab-case.
+- Plan bundle files should use the plan slug prefix when possible:
+  `<slug>-discussion-source.md`, `<slug>-plan.md`, and
+  `<slug>-execution-state.md`.
+- Root entrypoints may keep established uppercase names such as `README.md` and
+  `DEVELOPMENT.md`.
+- Generated or fixture files may follow the naming required by the renderer,
+  product, or test scenario.
+
+## Agent-Docs Reminder
+
+`agent-docs` is the project preflight that makes this policy visible through
+`DEVELOPMENT.md`. If a task adds or edits documentation, the contributor should
+resolve `startup` and `project-dev`, then read this policy before choosing a
+path or creating a new Markdown file.
+
+If the correct placement is unclear, document the assumption in the change
+summary rather than adding another top-level document.
