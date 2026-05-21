@@ -36,7 +36,7 @@
 
 | Command | Status | Summary | Artifact |
 | --- | --- | --- | --- |
-| `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --strict --format text` | pending | run before first commit | n/a |
+| `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --format text --explain` | pending | run before first commit | n/a |
 | `agent-runtime render --check` | pending | end of Sprint 2 | n/a |
 | `agent-runtime render --update-golden --domain reporting` | pending | Sprint 3 Task 3.1 | tests/golden/ |
 | `git diff --exit-code tests/golden/` | pending | Sprint 3 Task 3.1 | n/a |

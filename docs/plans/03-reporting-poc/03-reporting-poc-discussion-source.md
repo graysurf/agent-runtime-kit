@@ -156,7 +156,7 @@ Three rules constrain the work:
 
 ## Validation Gate
 
-- `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --strict --format text`
+- `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --format text --explain`
 - `agent-runtime render --check`
 - `agent-runtime render --update-golden && git diff --exit-code tests/golden/`
 - `agent-runtime audit-drift --format text`
@@ -180,13 +180,25 @@ Three rules constrain the work:
 
 ## Open Questions
 
-- Domain-mapping decision for `topic-radar`: it currently lives under
-  `tools/market-research/` in agent-kit but moves under `reporting/` in
-  the new canonical tree per the source doc example. Recommended
-  default: declare `path_override` keys per product so existing
-  invocation paths keep working. Reviewer must confirm before Sprint 2
-  is committed.
-- Whether to capture the rendered `topic-radar.sh` script as-is or
-  migrate it to a nils-cli binary. Recommended default: defer to the
-  extraction backlog and ship the shell script as-is in Plan 03 so
-  Phase 2 stays scoped to migration mechanics.
+- ~~Domain-mapping decision for `topic-radar`~~ — **Resolved
+  2026-05-21 (reviewer: terry, Option A)**: adopt
+  `docs/source/inventory-target-architecture.md` L555–566 verbatim,
+  declaring both
+  `products.codex.path_override: skills/tools/market-research/topic-radar`
+  and
+  `products.claude.path_override: plugins/reporting/skills/topic-radar`
+  on `reporting.topic-radar`. Rationale: matches the canonical source
+  doc example byte-for-byte, preserves current invocation paths on
+  both products, pins the override explicitly on both sides so drift
+  audit does not depend on Claude's natural-derivation rule.
+  Cross-product domain unification is deferred to Plan 05 (Domain
+  Migration Sweep) where it has review budget and migration PR
+  templates.
+- ~~Whether to capture the rendered `topic-radar.sh` script as-is or
+  migrate it to a nils-cli binary~~ — **Resolved 2026-05-21
+  (reviewer: terry)**: ship `topic-radar.sh` as-is in Plan 03; do not
+  extract to a nils-cli binary yet. Rationale: `topic-radar` is still
+  actively gaining features and its usage shape is not yet stable;
+  extracting now would lock in an interface that has to be re-cut
+  shortly. The extraction backlog entry stays open for revisit after
+  the skill stabilises.
