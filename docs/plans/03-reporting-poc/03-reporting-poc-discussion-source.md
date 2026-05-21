@@ -68,21 +68,28 @@ Three rules constrain the work:
   `min_version_effective_from` date is set to `2026-06-03` (14 days
   after the Phase 2 PR merge target on `2026-05-20`) so existing hosts
   have a runway before the floor starts blocking.
-- `required_clis` floors are pinned to the `0.1.0` nils-cli release
+- `required_clis` floors are pinned to the `v0.13.0` nils-cli release
   cut by Phase 1.5 (the release that ships the real `agent-runtime
-  render` body and the four Tera helpers); no `<TBD>` placeholders are
+  render` body and the four Tera helpers); no placeholder strings are
   permitted in Plan 03 manifests.
-- Sprint 3 commits the golden snapshots produced by `agent-runtime
-  render --update-golden`. The diff is reviewed before commit per the
-  Test Layer 2 contract in the source doc.
-- Sprint 3 covers four drift classes: `source-manifest`,
+- Sprint 2 (formerly Sprint 3 before the 2026-05-21 rev) commits the
+  golden snapshots produced by `agent-runtime render --product <p>
+  --update-golden` (per-product; no `--domain` filter in v0.13.0).
+  The diff is reviewed before commit per the Test Layer 2 contract in
+  the source doc; only the reporting subdirectories are added to the
+  commit.
+- Sprint 2 covers four drift classes: `source-manifest`,
   `rendered-target` diff, `$AGENT_HOME` leak, `docs-home`. The full
   five-class set (`missing` / `stale` / `extra` /
   `intentional-difference` / `unsafe`) lands with the full
-  `audit-drift` body in Plan 05.
-- Sprint 4 pins `agent-runtime install --dry-run` output for both
-  products. The expected shape is the "Dry-run install output" example
-  in the source doc (lines 1610–1628).
+  `audit-drift` body in Plan 04 Sprint 4.
+- The original Sprint 4 ("Pin `agent-runtime install --dry-run` output
+  for both products") was deferred to Plan 04 Sprint 5 on 2026-05-21:
+  v0.13.0 ships no `install --dry-run` surface (Plan 02 listed
+  `install` body as out-of-scope, "later phases"), and Plan 04
+  already plans `tests/sandbox/<product>/expected-skills.txt` pins
+  through the same surface. The original expected shape (source doc
+  lines 1610–1628) is preserved verbatim in the Plan 04 reference.
 
 ## Source References
 
