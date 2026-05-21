@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: Sprint 1 complete; Sprint 2 active
+- Status: Sprint 2 Task 2.1 complete; Sprint 2 active
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 2.1
-- Next task: Task 2.2
+- Current task: Task 2.2
+- Next task: Task 2.3
 - Last updated: 2026-05-21
-- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -20,7 +20,7 @@
 | Task 1.1 | complete | Implement managed-block helper module | [sympoies/nils-cli#414](https://github.com/sympoies/nils-cli/pull/414) merged `3309c3e` | paired-marker contract + `BodyContainsMarker` body validation; `is_trusted_surface` invariant; 19 unit + 7 integration tests; `/code-review-specialists` pass landed F-2 hardening fix |
 | Task 1.2 | complete | Wire render to link to managed-block sync pipeline | PR A [graysurf/agent-runtime-kit#18](https://github.com/graysurf/agent-runtime-kit/pull/18) merged `f89eec1`; PR B [sympoies/nils-cli#416](https://github.com/sympoies/nils-cli/pull/416) merged `5d351bb` | 4 entry kinds in schema (`symlinked-file` / `plugin-manifest-copy` / `managed-block` / `backed-up-on-replace`); install pipeline ships with 13 unit + 6 integration tests; second `--apply` is byte-identical no-op; `/code-review-specialists` pass on PR B landed F-1 (HIGH path-traversal rejection) + F-3 (managed-block e2e coverage) |
 | Task 1.3 | complete | Add `--live-home`, `--tag`, and overlay merge flags | [sympoies/nils-cli#418](https://github.com/sympoies/nils-cli/pull/418) merged `cee0903` | renames `--home` → `--live-home` (absolute-only); adds `--tag <name>` writing `tag-<name>` marker at backup-run root; ships `.private/link-map.overrides.yaml` overlay merge applied pre-plan-generation; `InstallOptions` + `InstallOutcome` + `OverlaySummary`; 12 install_flags + 8 overlay unit + 3 executor tag tests; `/code-review-specialists` pass landed F-1 (defense-in-depth tag validation) + F-2 (operator-visible overlay-merge notice) |
-| Task 2.1 | pending | Implement `agent-runtime uninstall` | n/a | idempotent; never touch auth / history / sessions |
+| Task 2.1 | complete | Implement `agent-runtime uninstall` | [sympoies/nils-cli#419](https://github.com/sympoies/nils-cli/pull/419) merged `6bf6102` | idempotent reversal of link-map symlinks + managed-block surfaces; second uninstall on a clean home is exit-0 NoOp; foreign symlinks and regular files at install destinations are skipped (not deleted); never touches `<state_home>/backups/` or `auth*`/`history*`/`sessions*`/`cache*`/`projects*` under the runtime home; new `uninstall::{run, UninstallOptions, UninstallError, UninstallOutcome}` + `uninstall::plan` + `uninstall::executor` + `commands::uninstall`; 16 new tests (8 integration + 7 executor unit + 1 plan unit); `/code-review-specialists` pass landed F-1 (red-team medium: thread `expected_source` through `SymlinkSkippedForeign` for operator recovery context) |
 | Task 2.2 | pending | Implement `agent-runtime restore-backups` | n/a | `--from` required; dry-run before apply |
 | Task 2.3 | pending | Implement `agent-runtime purge-state` | n/a | `--scope` required; prompts unless `--yes` |
 | Task 2.4 | pending | Implement `agent-runtime gc-backups` | n/a | retention default 5; respect `--tag` markers |
@@ -54,6 +54,81 @@
   has real fodder to pin against.
 
 ## Session Log
+
+### 2026-05-21 — Sprint 2 Task 2.1 closed; uninstall body lands
+
+- Sprint 2 Task 2.1 merged at `sympoies/nils-cli` commit `6bf6102`. Two
+  GPG-signed commits: feature `41f85c1` + specialist-fix `556b841`.
+- New surface area:
+  - `agent-runtime uninstall --product <p> --live-home <abs> [--source-root
+    <p>] [--no-overlay | --overlay-path <p>] (--dry-run | --apply)`.
+  - Reverses the same link-map artifacts the installer placed: symlinks
+    only when `read_link(dest) == expected_source`; managed-block
+    surfaces via the Task 1.1 helper's `ManagedBlock::remove` (bytes
+    outside the marker pair preserved verbatim).
+  - Idempotent: second uninstall on a clean home walks every action,
+    sees the destination is already absent or already free of the
+    managed block, emits `NoOp` for each, exits 0 without mutating the
+    filesystem.
+  - Foreign symlinks (operator repointed) → `SymlinkSkippedForeign`,
+    not deleted. Regular files at install destinations →
+    `SymlinkSkippedRegularFile`, not deleted (restore-backups owns that
+    territory).
+  - Never reads or writes `<state_home>/backups/` — `uninstall::run`
+    has no `state_home` parameter at all. Never touches `auth*` /
+    `history*` / `sessions*` / `cache*` / `projects*` under the runtime
+    home (link-map references none of those trees).
+- New Rust API: `uninstall::{run, UninstallOptions { overlay_enabled,
+  overlay_path }, UninstallError, UninstallOutcome { plan, changes,
+  overlay }}`. `UninstallOptions::Default` is hand-rolled to keep
+  `overlay_enabled = true` (same defensive pattern as Task 1.3's
+  `InstallOptions` — `derive(Default)` would silently flip overlay off).
+- `/code-review-specialists` pass surfaced one material finding, landed
+  pre-merge in commit `556b841`:
+  - F-1 (medium, red-team): `SymlinkSkippedForeign` printer lacked the
+    `expected_source` the executor was comparing against, so an
+    operator who rebased their kit checkout had no recovery context.
+    Resolved by threading `expected_source: PathBuf` through the
+    change variant + CLI printer + new integration assertion in
+    `foreign_symlink_at_install_dest_is_skipped`. The printer now
+    emits `? skip <dest> (foreign target: <actual>; expected: <source>; <entry_id>)`.
+- Thirteen advisory findings deferred (synthesis at
+  `~/.local/state/claude-kit/out/task-2-1-review/SYNTHESIS.md`):
+  - F-2 (api-contract low) — `InstallPlan::build` is called with an
+    empty `state_home` placeholder. Sprint 4 candidate: extract a
+    `LinkMapPlan` that drops state_home so doctor and uninstall do not
+    have to thread a stub.
+  - F-3 (red-team low) — uninstall cannot detect orphaned link-map
+    artifacts when the link-map shrinks between install and uninstall.
+    Long-term home: Sprint 3 Task 3.1 doctor must walk the runtime
+    home for `agent-runtime-kit`-shaped symlinks absent from the
+    current link-map.
+  - F-4 (security low) — managed-block uninstall follows symlinks at
+    `config_file` via `fs::read_to_string`. Symmetric with install;
+    optional `fs::symlink_metadata` gate in Sprint 4 if architectural
+    sign-off lands.
+  - F-5 (red-team low) — source_root deletion between install and
+    uninstall blocks uninstall entirely (`PlanError::MissingSource`).
+    Symmetric with install; Sprint 4 restore-backups may need a
+    'force-uninstall-by-installed-marker' mode.
+  - F-6 / F-7 / F-8 (testing info) — no integration test for
+    `--no-overlay` skipping overlay-discovered entries on uninstall;
+    unbalanced managed-block markers not integration-tested;
+    regular-file-at-dest skip is unit-tested but not integration-tested.
+  - F-9 (maintainability info) — `uninstall::executor::ApplyError`
+    shares its name with `install::executor::ApplyError`. Symmetry
+    intentional; revisit in Sprint 3.
+  - F-10 (maintainability info) — `UninstallOptions::Default` hand-roll
+    pairs with Task 1.3 F-7. Move both sites in lockstep if a future
+    sprint refactors to a builder.
+  - F-11 / F-12 (security info) — `overlay_path` library trust mirrors
+    Task 1.3; byte-for-byte symlink target compare is the fail-safe
+    direction (no canonicalisation).
+  - F-13 / F-14 (api-contract info) — `UninstallError` shape parity
+    with `InstallError`; CLI surface drops `--state-home` and `--tag`
+    by design.
+- Next pickup: Sprint 2 Task 2.2 (`agent-runtime restore-backups`),
+  blocked-by Task 2.1 — now cleared.
 
 ### 2026-05-21 — Pre-work decisions resolved at defaults
 
