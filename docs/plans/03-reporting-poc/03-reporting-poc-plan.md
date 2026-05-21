@@ -20,14 +20,23 @@ contract (lines 1505–1643).
 - Primary source: docs/plans/03-reporting-poc/03-reporting-poc-discussion-source.md
 - Source type: discussion-to-implementation-doc
 - Open questions carried into execution:
-  - Domain-mapping decision for `topic-radar` (lived under
-    `tools/market-research/` in agent-kit; lives under `reporting/`
-    here per the source doc example). Default: declare `path_override`
-    keys per product so existing invocation paths keep working;
-    reviewer must confirm before committing Sprint 2.
-  - Whether to capture the rendered `topic-radar.sh` script as-is or
-    migrate it to a nils-cli binary. Default: defer to the extraction
-    backlog and ship the shell script as-is in Plan 03.
+  - ~~Domain-mapping decision for `topic-radar`~~ — **Resolved
+    2026-05-21 (reviewer: terry)**: adopt the source doc canonical
+    example at `docs/source/inventory-target-architecture.md`
+    L555–566 verbatim — declare both
+    `products.codex.path_override: skills/tools/market-research/topic-radar`
+    and
+    `products.claude.path_override: plugins/reporting/skills/topic-radar`
+    on `reporting.topic-radar` so existing invocation paths on both
+    products keep resolving and drift audit pins the override
+    explicitly on both sides. Domain unification deferred to Plan 05.
+  - ~~Whether to capture the rendered `topic-radar.sh` script as-is
+    or migrate it to a nils-cli binary~~ — **Resolved 2026-05-21
+    (reviewer: terry)**: ship as-is in Plan 03; do not extract to a
+    nils-cli binary yet. `topic-radar` is still actively gaining
+    features and its usage shape is not stable, so early extraction
+    would lock an interface that would need to be re-cut shortly.
+    Backlog entry stays open for revisit after the skill stabilises.
 
 ## Scope
 
@@ -296,8 +305,11 @@ release.
   release. Set `state_out_mode: runtime` on all three. For
   `reporting.topic-radar`, set
   `products.codex.path_override: skills/tools/market-research/topic-radar`
-  per the open question default so legacy Codex invocation continues
-  to resolve.
+  and
+  `products.claude.path_override: plugins/reporting/skills/topic-radar`
+  per the resolved open question (2026-05-21, Option A — source doc
+  canonical L555–566) so legacy invocation paths on both products
+  keep resolving.
 - **Dependencies**:
   - Task 1.1
   - Task 1.2
@@ -307,8 +319,10 @@ release.
   - Three reporting entries present under `skills:`.
   - Every `required_clis` value is a concrete semver range; no
     `<TBD>` strings remain in the file.
-  - `reporting.topic-radar` carries `products.codex.path_override`
-    pointing at the legacy Codex path.
+  - `reporting.topic-radar` carries both
+    `products.codex.path_override` and `products.claude.path_override`
+    pointing at the legacy invocation paths on each product,
+    matching source doc canonical L555–566 verbatim.
   - `schema_version: 1` is preserved at the file top.
 - **Validation**:
   - `yq '.skills[] | select(.id | startswith("reporting")) | .required_clis' manifests/skills.yaml`
@@ -646,9 +660,12 @@ map). No live-home mutation in this sprint — apply mode is Plan 04.
   `agent-runtime-kit` source repo. Apply mode (Plan 04) is the only
   path that touches live homes.
 - `path_override` for `reporting.topic-radar` is the only legacy
-  mapping in this domain. If the reviewer rejects the default in the
-  open question, every render snapshot in Sprint 3 must be
-  regenerated. Treat that as a Sprint 2 gate before locking goldens.
+  mapping in this domain. The open question was resolved on
+  2026-05-21 (Option A — source doc canonical L555–566 with both
+  `codex` and `claude` overrides). If a later decision unifies the
+  domain (e.g. Plan 05 cross-domain sweep) every render snapshot in
+  Sprint 3 must be regenerated. Treat any post-lock change as a
+  Sprint 2 gate before unfreezing goldens.
 - `min_version` for Codex and Claude is pinned to the planning host's
   installed versions. A host running an older product will see
   `audit-drift` warn (and, after `2026-06-03`, block) on
