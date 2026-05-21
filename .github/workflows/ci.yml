@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-stack:
+    name: scripts/ci/all.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Homebrew
+        id: setup-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Tap sympoies/tap
+        run: brew tap sympoies/tap
+
+      - name: Install nils-cli (ships agent-runtime + plan-tooling)
+        run: brew install sympoies/tap/nils-cli
+
+      - name: Print toolchain versions
+        run: |
+          set -euo pipefail
+          echo "bash: $(bash --version | head -1)"
+          echo "git: $(git --version)"
+          echo "agent-runtime: $(agent-runtime --version || true)"
+          echo "plan-tooling: $(plan-tooling --version || true)"
+
+      - name: Run scripts/ci/all.sh
+        run: bash scripts/ci/all.sh

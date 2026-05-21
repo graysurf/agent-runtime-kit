@@ -10,3 +10,5 @@ auth.json
 **/history/
 **/cache/
 .private/
+.claude/
+backup-*.zip

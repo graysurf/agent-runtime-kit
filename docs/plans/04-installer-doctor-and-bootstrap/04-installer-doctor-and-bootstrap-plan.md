@@ -299,8 +299,8 @@ install rehearsal harness, and wire CI gate position 6.
 **Demo/Validation**:
 
 - Command(s):
-  - `cargo test -p audit-drift unsafe_score`
-  - `cargo test -p audit-drift extra_intentional`
+  - `cargo test -p agent-runtime-cli audit_drift::unsafe_score`
+  - `cargo test -p agent-runtime-cli audit_drift::classes`
   - `cargo test --workspace` (nils-cli)
   - `git tag v0.2.0 && git push origin v0.2.0` (nils-cli; performed by the release task)
   - `brew install --build-from-source sympoies/tap/nils-cli` (post formula bump)
@@ -316,9 +316,9 @@ install rehearsal harness, and wire CI gate position 6.
 ### Task 4.1: Implement composite `unsafe` scoring
 
 - **Location**:
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/src/unsafe_score.rs
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/tests/integration/unsafe_score.rs
-- **Description**: Implement the three signals (path_match, keyword_prefix, entropy_above_threshold) with weights 0.4 each. Sum signals per finding and apply thresholds: `>= 0.8` → block, `0.4..0.8` → warn, `< 0.4` → suppressed (visible only with `--verbose`). Path patterns include `**/auth.json`, `**/.credentials*`, `**/sessions/**`. Keywords include `token`, `api_key`, `password`, `bearer`, `secret`, `private_key` (case-insensitive). Entropy uses Shannon entropy ≥ 4.0 bits/byte over a contiguous ≥ 24-char run on the same line.
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/audit_drift/unsafe_score.rs
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/tests/integration/audit_drift_unsafe_score.rs
+- **Description**: Implement the three signals (path_match, keyword_prefix, entropy_above_threshold) with weights 0.4 each as a new module inside the existing `audit_drift` module tree (audit-drift is not a standalone crate; it lives at `crates/agent-runtime-cli/src/audit_drift/`). Sum signals per finding and apply thresholds: `>= 0.8` → block, `0.4..0.8` → warn, `< 0.4` → suppressed (visible only with `--verbose`). Path patterns include `**/auth.json`, `**/.credentials*`, `**/sessions/**`. Keywords include `token`, `api_key`, `password`, `bearer`, `secret`, `private_key` (case-insensitive). Entropy uses Shannon entropy ≥ 4.0 bits/byte over a contiguous ≥ 24-char run on the same line.
 - **Dependencies**:
   - none
 - **Complexity**: 7
@@ -329,14 +329,14 @@ install rehearsal harness, and wire CI gate position 6.
   - A keyword without a value-shaped token nearby scores < 0.4 and reports `suppressed`.
   - Fixture tests cover all three signal combinations and the three disposition tiers.
 - **Validation**:
-  - `cargo test -p audit-drift unsafe_score`
+  - `cargo test -p agent-runtime-cli audit_drift::unsafe_score`
 
 ### Task 4.2: Implement `drift-audit.allow.yaml` allowlist
 
 - **Location**:
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/src/allowlist.rs
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/tests/integration/allowlist.rs
-- **Description**: Read `drift-audit.allow.yaml` (top-level) for the schema `{ schema_version: 1, unsafe_allow: [{ path: <glob>, reason: <text> }, ...] }`. Each entry requires both `path` and `reason`; missing `reason` is a schema error. Allowlist matches demote a finding by exactly one tier (`block` → `warn`, `warn` → `suppressed`). Allowlist never silences a finding outright. Putting `unsafe` allowances in `.private/` is intentionally not supported and rejected at config-load time.
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/audit_drift/allowlist.rs
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/tests/integration/audit_drift_allowlist.rs
+- **Description**: Read `drift-audit.allow.yaml` (top-level) for the schema `{ schema_version: 1, unsafe_allow: [{ path: <glob>, reason: <text> }, ...] }` as a new sibling module under `audit_drift/`. Each entry requires both `path` and `reason`; missing `reason` is a schema error. Allowlist matches demote a finding by exactly one tier (`block` → `warn`, `warn` → `suppressed`). Allowlist never silences a finding outright. Putting `unsafe` allowances in `.private/` is intentionally not supported and rejected at config-load time.
 - **Dependencies**:
   - Task 4.1
 - **Complexity**: 5
@@ -346,15 +346,15 @@ install rehearsal harness, and wire CI gate position 6.
   - An allowlist entry without `reason` exits non-zero at audit start with a schema error.
   - An allowlist file under `.private/` is rejected at config-load time.
 - **Validation**:
-  - `cargo test -p audit-drift allowlist`
+  - `cargo test -p agent-runtime-cli audit_drift::allowlist`
 
 ### Task 4.3: Implement `intentional-difference` and `extra` finding classes
 
 - **Location**:
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/src/classes/intentional.rs
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/src/classes/extra.rs
-  - ~/Project/sympoies/nils-cli/crates/audit-drift/tests/integration/extra_intentional.rs
-- **Description**: `intentional-difference` reads documented divergences from `manifests/product-capabilities.yaml` and reports the differing surface as informational (exit 0). `extra` reports a live surface that exists in the runtime home but is not tracked in the install map (default: `warn`). Both classes flow through the same finding pipeline as `missing` / `stale` / `unsafe` and respect the allowlist.
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/audit_drift/classes/intentional.rs
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/audit_drift/classes/extra.rs
+  - ~/Project/sympoies/nils-cli/crates/agent-runtime-cli/tests/integration/audit_drift_extra_intentional.rs
+- **Description**: `intentional-difference` reads documented divergences from `manifests/product-capabilities.yaml` and reports the differing surface as informational (exit 0). `extra` reports a live surface that exists in the runtime home but is not tracked in the install map (default: `warn`). Both classes flow through the same finding pipeline as `missing` / `stale` / `unsafe` and respect the allowlist. Both ship as new `classes/` submodules under the existing `audit_drift` module tree.
 - **Dependencies**:
   - Task 4.2
 - **Complexity**: 5
@@ -363,7 +363,7 @@ install rehearsal harness, and wire CI gate position 6.
   - An untracked file in `~/.claude` outside the install map reports `extra` and exits `1`.
   - Fixture tests pin both classes' text reports and exit codes.
 - **Validation**:
-  - `cargo test -p audit-drift extra_intentional`
+  - `cargo test -p agent-runtime-cli audit_drift::classes`
 
 ### Task 4.4: Cut `0.2.0` release and bump formula
 
@@ -371,7 +371,7 @@ install rehearsal harness, and wire CI gate position 6.
   - ~/Project/sympoies/nils-cli/Cargo.toml
   - ~/Project/sympoies/nils-cli/CHANGELOG.md
   - ~/Project/sympoies/homebrew-tap/Formula/nils-cli.rb
-- **Description**: Bump the nils-cli workspace version to `0.2.0`, update `CHANGELOG.md` with the install / uninstall / restore-backups / purge-state / gc-backups / doctor / audit-drift entries, push the annotated tag `v0.2.0`, wait for the release pipeline, then bump the homebrew-tap formula's `url` / `sha256` to the new release artifact. Follow the Bump Ceremony PR template from Plan 01 Sprint 1.
+- **Description**: Bump the nils-cli workspace version to `0.2.0`, create `CHANGELOG.md` (the file does not exist yet — add only the `0.2.0` entry covering install / uninstall / restore-backups / purge-state / gc-backups / doctor / audit-drift; do not retro-fill earlier releases, point to "Earlier releases: see GitHub Releases" as a single line), push the annotated tag `v0.2.0`, wait for the release pipeline, then bump the homebrew-tap formula's `url` / `sha256` to the new release artifact. Follow the Bump Ceremony PR template from Plan 01 Sprint 1.
 - **Dependencies**:
   - Task 4.3
 - **Complexity**: 4
@@ -474,7 +474,7 @@ install rehearsal harness, and wire CI gate position 6.
 
 - Unit: in-tree tests for managed-block helper, install plan struct, overlay merge, version-probe parser, and audit-drift scoring signals.
 - Integration: per-task `tests/integration/` files in nils-cli for install pipeline, uninstall, restore-backups, purge-state, gc-backups, each doctor probe family, and the three new audit-drift classes.
-- Cross-repo: `cargo test --workspace` in nils-cli after each sprint; `cargo test -p audit-drift unsafe_score` is the focused gate for Sprint 4.
+- Cross-repo: `cargo test --workspace` in nils-cli after each sprint; `cargo test -p agent-runtime-cli audit_drift::unsafe_score` is the focused gate for Sprint 4.
 - In-repo: `bash -n scripts/setup.sh`, `bash scripts/ci/sandbox-install-rehearsal.sh`, and the full `bash scripts/ci/all.sh` gate stack after Sprint 5.
 - Sandbox: end-to-end `agent-runtime install --product <p> --live-home /tmp/<p>-sandbox --dry-run` round trip plus `doctor` on the sandbox home.
 

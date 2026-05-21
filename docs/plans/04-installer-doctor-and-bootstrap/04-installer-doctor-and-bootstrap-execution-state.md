@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: not started
+- Status: pre-work complete; Sprint 1 active
 - Target scope: whole plan
-- Execution window: undecided
+- Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
 - Current task: Task 1.1
-- Next task: Task 1.1
-- Last updated: 2026-05-20
-- Branch/commit: not started
+- Next task: Task 1.2
+- Last updated: 2026-05-21
+- Branch/commit: pre-work on `feat/plan-04-prework-ci-infra-and-doc-fixes`; Sprint 1 Task 1.1 on nils-cli `feat/managed-block-helper`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -49,8 +49,60 @@
 
 ## Blockers
 
-- Cross-plan: blocked by Plan 03 (`03-reporting-poc`). Sandbox rehearsal needs a populated `manifests/skills.yaml` with the reporting domain pinned to diff against; without it the `expected-skills.txt` would be empty.
+- Cross-plan: cleared on 2026-05-21. Plan 03 merged (PRs #14, #15) with the
+  reporting domain populated in `manifests/skills.yaml`. Sprint 5 Task 5.2 now
+  has real fodder to pin against.
 
 ## Session Log
 
-(none yet)
+### 2026-05-21 — Pre-work decisions resolved at defaults
+
+Four plan-doc gaps surfaced before Sprint 1 could start. Each was resolved at
+its suggested default — no design dialogue, no rework. Captured here so the
+next session does not re-debate them.
+
+- **Gap #1 — `targets/<product>/link-map.yaml` absent.** Resolved: design
+  the schema + initial files inside Sprint 1 Task 1.2 PR. Schema must cover
+  symlinked-file entries, managed-block entries, backed-up-on-replace
+  entries, and plugin manifest copy entries (since
+  `.<product>-plugin/plugin.json` lives under `targets/` not `build/`).
+- **Gap #2 — `audit-drift` is not a standalone crate.** Resolved: keep it
+  as the `audit_drift` module of `agent-runtime-cli`. Sprint 4 task
+  locations and validation commands rewritten to point at
+  `crates/agent-runtime-cli/src/audit_drift/{unsafe_score,allowlist,classes/*}.rs`
+  and `cargo test -p agent-runtime-cli audit_drift::<name>`.
+- **Gap #3 — nils-cli `CHANGELOG.md` does not exist.** Resolved: create
+  the file in Sprint 4 Task 4.4 with only the `0.2.0` entry. Earlier
+  releases point to GitHub Releases as a single line — no retro-fill.
+- **Gap #4 — agent-runtime-kit lacks CI.** Resolved in this pre-work PR
+  (`feat/plan-04-prework-ci-infra-and-doc-fixes`): `scripts/ci/all.sh`
+  encodes the five existing local gates (`plan-tooling validate`, render
+  codex, render claude, golden diff, audit-drift root + four fixtures);
+  `.github/workflows/ci.yml` wraps it on `pull_request` + `push:main`;
+  `.gitignore` gains `.claude/` and `backup-*.zip`. Sprint 5 Task 5.3 only
+  needs to add position 6 (sandbox rehearsal).
+
+Three open questions from the plan source were also resolved at their
+suggested defaults:
+
+- **Open Q1 — `--live-home` relative paths.** Reject relative; require
+  absolute. Implemented in Sprint 1 Task 1.3 from day one, not as a
+  follow-up.
+- **Open Q2 — sandbox rehearsal depth.** Stop at dry-run +
+  `--list-skills` diff until Codex / Claude CLIs accept `--home <dir>`.
+  Sprint 5 Task 5.3 does not exercise `--apply` against tmp.
+- **Open Q3 — WSL `AGENT_RUNTIME_HOST_PROFILE`.** Deferred to Sprint 3
+  entry. Not actionable in Sprint 1 or Sprint 2.
+
+### 2026-05-21 — Pre-work + Sprint 1 Task 1.1 kickoff
+
+- Validation on `main` at `ccfa7cc` confirmed clean:
+  `plan-tooling validate --format text --explain` exit 0;
+  `agent-runtime audit-drift` clean (0 findings);
+  `agent-runtime render --product {codex,claude}` cache round-trip clean
+  (rendered=0 cached=3 skipped=0); all four drift fixtures reproduce
+  `expected.txt` + `expected.exit` hermetically.
+- Opened housekeeping PR on `feat/plan-04-prework-ci-infra-and-doc-fixes`
+  to deliver the gap resolutions above. Plan 04 Sprint 1 Task 1.1 (managed
+  block helper) starts on `sympoies/nils-cli` once the housekeeping PR
+  merges.
