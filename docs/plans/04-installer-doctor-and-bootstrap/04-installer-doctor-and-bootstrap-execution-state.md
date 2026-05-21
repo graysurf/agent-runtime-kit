@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: Sprint 2 Task 2.2 complete; Sprint 2 active
+- Status: Sprint 2 Task 2.3 complete; Sprint 2 active
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 2.3
-- Next task: Task 2.4
+- Current task: Task 2.4
+- Next task: Task 3.1
 - Last updated: 2026-05-21
-- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`; Sprint 2 Task 2.2 merged at nils-cli `2ae3075`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`; Sprint 2 Task 2.2 merged at nils-cli `2ae3075`; Sprint 2 Task 2.3 merged at nils-cli `4799169`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -22,7 +22,7 @@
 | Task 1.3 | complete | Add `--live-home`, `--tag`, and overlay merge flags | [sympoies/nils-cli#418](https://github.com/sympoies/nils-cli/pull/418) merged `cee0903` | renames `--home` → `--live-home` (absolute-only); adds `--tag <name>` writing `tag-<name>` marker at backup-run root; ships `.private/link-map.overrides.yaml` overlay merge applied pre-plan-generation; `InstallOptions` + `InstallOutcome` + `OverlaySummary`; 12 install_flags + 8 overlay unit + 3 executor tag tests; `/code-review-specialists` pass landed F-1 (defense-in-depth tag validation) + F-2 (operator-visible overlay-merge notice) |
 | Task 2.1 | complete | Implement `agent-runtime uninstall` | [sympoies/nils-cli#419](https://github.com/sympoies/nils-cli/pull/419) merged `6bf6102` | idempotent reversal of link-map symlinks + managed-block surfaces; second uninstall on a clean home is exit-0 NoOp; foreign symlinks and regular files at install destinations are skipped (not deleted); never touches `<state_home>/backups/` or `auth*`/`history*`/`sessions*`/`cache*`/`projects*` under the runtime home; new `uninstall::{run, UninstallOptions, UninstallError, UninstallOutcome}` + `uninstall::plan` + `uninstall::executor` + `commands::uninstall`; 16 new tests (8 integration + 7 executor unit + 1 plan unit); `/code-review-specialists` pass landed F-1 (red-team medium: thread `expected_source` through `SymlinkSkippedForeign` for operator recovery context) |
 | Task 2.2 | complete | Implement `agent-runtime restore-backups` | [sympoies/nils-cli#423](https://github.com/sympoies/nils-cli/pull/423) merged `2ae3075` | walks `<state_home>/backups/<product>/<ts>/` and reverses the `FileBackedUpThenSymlinked` arm of install; matches each backup file to its install destination via a regenerated InstallPlan; refuses to clobber operator-retargeted symlinks (read_link(dest) == expected_install_source check); fs::rename with EXDEV → fs::copy + set_permissions fallback; no chown; new `restore_backups::{run, RestoreOptions, RestoreError, RestoreOutcome, BackupRunSelector { Latest, Exact(u64) }}` + `restore_backups::plan` + `restore_backups::executor` + `commands::restore_backups`; 12 new tests (10 integration + 2 executor unit + 3 plan unit); `/code-review-specialists` pass landed R-1 (medium red-team: foreign-symlink protection — same F-1 shape as Task 2.1, brought into byte-for-byte parity with uninstall) |
-| Task 2.3 | pending | Implement `agent-runtime purge-state` | n/a | `--scope` required; prompts unless `--yes` |
+| Task 2.3 | complete | Implement `agent-runtime purge-state` | [sympoies/nils-cli#424](https://github.com/sympoies/nils-cli/pull/424) merged `4799169` | clears writable state under `<state_home>` per required `--scope out\|backups\|all` (no default); prompts on stdin unless `--yes`; `--yes` emits one stderr audit line containing the scope BEFORE any FS mutation; symlink at the scope path refused (`Err(InvalidData)`); cleared subtree recreated as empty dir for stable shape on next install/render; no `--live-home` flag exists, so runtime homes / auth / history / sessions / cache / projects are unreachable by construction; new `purge_state::{run, Scope { Out, Backups, All }, Confirm { Yes, Prompt }, PurgeError { Io, Cancelled }, PurgeOutcome { scope, cleared }}` + `commands::purge_state`; 15 new tests (8 integration + 7 unit); `/code-review-specialists` pass landed R-1 (stdout discipline) + R-2 (prompt clarity) — both low; piggybacked a `docs(plan)` commit silencing MD013 on an inherited regression in `code-review-specialist-primitives-plan.md` so CI could pass |
 | Task 2.4 | pending | Implement `agent-runtime gc-backups` | n/a | retention default 5; respect `--tag` markers |
 | Task 3.1 | pending | Symlink + managed-block + runtime-roots probes | n/a | filesystem-level findings; exit 0 / 1 / 2 |
 | Task 3.2 | pending | Version probes with 5-status output | n/a | `ok` / `recommended-only` / `warn` / `outdated` / `unparseable` |
@@ -54,6 +54,79 @@
   has real fodder to pin against.
 
 ## Session Log
+
+### 2026-05-21 — Sprint 2 Task 2.3 closed; purge-state body lands
+
+- Sprint 2 Task 2.3 merged at `sympoies/nils-cli` commit `4799169`. Three
+  GPG-signed commits: feature `7575b0d` + specialist-fix `088ec06`
+  (R-1 stdout discipline + R-2 prompt clarity) + ride-along
+  `fca11e3` (silence inherited MD013 regression in
+  `code-review-specialist-primitives-plan.md` so GitHub CI's
+  required-checks markdown-lint gate could pass).
+- New surface area:
+  - `agent-runtime purge-state --state-home <abs> --scope <out|backups|all> [--yes]`.
+  - Clears writable state under `<state_home>` per the required
+    `--scope`; missing or invalid `--scope` exits non-zero with the
+    three valid values named in the error.
+  - Prompt-on-stdin is the default; `--yes` bypasses the prompt and
+    emits one stderr audit line containing the scope and state_home
+    BEFORE any filesystem mutation, so the trace lands even on
+    partial failure.
+  - Symlink at the scope path is refused (`Err(InvalidData)`);
+    `fs::remove_dir_all` is the Rust 1.58+ symlink-safe variant; the
+    cleared subtree is recreated as an empty dir so subsequent
+    install / render calls find a stable `<state_home>` shape.
+  - No `--live-home` flag exists, so the command cannot reach a
+    runtime home by construction (`auth*`, `history*`, `sessions*`,
+    `cache*`, `projects*` all live under the runtime home, not
+    `<state_home>`).
+- New Rust API: `purge_state::{run, Scope { Out, Backups, All },
+  Confirm { Yes, Prompt { reader: &mut dyn BufRead, writer: &mut dyn
+  Write } }, PurgeError { Io, Cancelled }, PurgeOutcome { scope,
+  cleared: Vec<PathBuf> }}`. `Confirm` is the explicit-injection
+  shape so the integration tests can drive both prompt branches
+  without spawning a TTY.
+- `/code-review-specialists` pass surfaced two low findings, both
+  landed pre-merge in commit `088ec06`:
+  - R-1 (testing low): added stdout-discipline assertion to
+    `scope_out_yes_removes_only_out_subtree_and_emits_audit_line` so a
+    future regression that mistakenly printed the audit line to stdout
+    cannot slide through.
+  - R-2 (red-team low): reworded the confirmation prompt from
+    `proceed? [y/N] ` to `type \`y\` or \`yes\` to confirm (anything
+    else cancels): ` so the narrow accept-set is unambiguous.
+- Thirteen advisory findings deferred (synthesis at
+  `~/.local/state/claude-kit/out/task-2-3-review/SYNTHESIS.md`).
+  **None above `low` severity** — this is the lowest-risk Plan 04
+  task body shipped so far. Notable deferrals:
+  - R-3 (security + red-team agreement, low) — `--yes` audit goes
+    only to stderr; under cron with `2>/dev/null` no trace persists.
+    Sprint 4 candidate: also append a JSON line to
+    `<state_home>/audit.log` for durable record-keeping.
+  - R-4 (api-contract low) — no `--dry-run` mode. Operators cannot
+    preview clear plans. Spec does not require it; Sprint 3 polish.
+  - R-5 (api-contract low) — `--scope` is `Option<String>` rather
+    than clap's `value_enum`; custom error message covers the actual
+    UX gap, but `--help` does not auto-emit the value list.
+- Sprint 4 helpers refactor now also inherits from Task 2.3:
+  audit-line format string + `Mode` enum absence (purge-state has
+  no dry-run) + `Confirm<'a>` lifetime ergonomics. Track alongside
+  the install/uninstall/restore helper duplications already on the
+  refactor docket.
+- Inherited-regression callout: `e642f38` on main added
+  `docs/plans/code-review-specialist-primitives/code-review-specialist-primitives-plan.md`
+  with 7 lines that fail the strict MD013 lint. PR #424's first CI
+  run failed on that file. Resolved by inserting one
+  `<!-- markdownlint-disable MD013 -->` comment near the top of
+  the offending plan doc (commit `fca11e3`); the long lines are
+  inline CLI command examples that fundamentally exceed 140 chars.
+  Future PRs against `main` should now pass the markdown gate
+  cleanly.
+- Next pickup: Sprint 2 Task 2.4 (`agent-runtime gc-backups`),
+  blocked-by Task 1.3 (already merged). Task 2.4 inherits Task
+  1.3 F-3 (tag-* / entry_id namespace overlap), Task 2.1 F-2
+  (LinkMapPlan extraction), and Task 2.2 R-2 / R-3 / R-10 / R-11
+  (helper-duplication sweep) as Sprint 4 refactor candidates.
 
 ### 2026-05-21 — Sprint 2 Task 2.2 closed; restore-backups body lands
 
