@@ -19,10 +19,10 @@
 | -------- | --------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Task 1.1 | drafted, blocked on nils-cli#409/#410   | Write portable `daily-brief/SKILL.md`                                             | `d890b11`                                      | body present; rendered output is host-specific (script() leak) and missing siblings (multi-file render)|
 | Task 1.2 | drafted, blocked on nils-cli#409/#410   | Write portable `project-retro/SKILL.md`                                           | `d890b11`                                      | body present; same render shape concerns                                                               |
-| Task 1.3 | drafted, blocked on nils-cli#409/#410   | Write portable `topic-radar/SKILL.md` and migrate `topic-radar.sh`                | `d890b11`                                      | SKILL.md + bin/ + scripts/ + references/ present in source; build/ omits sibling files                 |
+| Task 1.3 | drafted, blocked on nils-cli#409/#410   | Write portable `topic-radar/SKILL.md` and migrate `topic-radar.sh`                | `d890b11`                                      | SKILL.md.tera + bin/ + scripts/ + references/ present in source; build/ omits sibling files            |
 | Task 1.4 | drafted                                 | Write Codex adapter metadata                                                      | `d890b11`                                      | `targets/codex/plugins/reporting/.codex-plugin/plugin.json`, valid JSON                                |
 | Task 1.5 | drafted                                 | Write Claude adapter metadata                                                     | `d890b11`                                      | `targets/claude/plugins/reporting/.claude-plugin/plugin.json`, valid JSON                              |
-| Task 1.6 | drafted                                 | Fill `manifests/skills.yaml` with reporting entries                               | `d890b11`                                      | 3 entries; `required_clis: ">=0.13.0"` concrete; `state_out_mode: runtime`; topic-radar path_override  |
+| Task 1.6 | drafted, blocked on nils-cli#411        | Fill `manifests/skills.yaml` with reporting entries                               | `d890b11`                                      | 3 entries; `required_clis: ">=0.13.0"` concrete; `state_out_mode: runtime`; topic-radar path_override; `render_to` values pending #411 resolution |
 | Task 1.7 | drafted                                 | Fill `manifests/plugins.yaml` with the reporting plugin entry                     | `d890b11`                                      | one `reporting` plugin; contained_skills enumerates the three                                          |
 | Task 1.8 | drafted                                 | Fill `manifests/product-capabilities.yaml`                                        | `d890b11`                                      | `plugin_manifest_diff` block refined against the concrete adapter `plugin.json` files                  |
 | Task 1.9 | done                                    | Verify `manifests/runtime-roots.yaml` root-map block                              | `d890b11` (verify only)                        | pins still current (codex 0.130.0 / claude 2.1.145, host claude 2.1.146 ≥ pin → no re-snapshot needed) |
@@ -34,12 +34,12 @@
 
 | Command                                                                                                                                                                                                                       | Status  | Summary                                | Artifact                                  |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------------------------------------- | ----------------------------------------- |
-| `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --format text --explain`                                                                                                                   | pending | run before first commit                | n/a                                       |
-| `agent-runtime render --product codex`                                                                                                                                                                                        | pending | Sprint 1 end-of-sprint gate            | `build/codex/plugins/reporting/`          |
-| `agent-runtime render --product claude`                                                                                                                                                                                       | pending | Sprint 1 end-of-sprint gate            | `build/claude/plugins/reporting/`         |
-| `agent-runtime audit-drift`                                                                                                                                                                                                   | pending | Sprint 1 + Sprint 2 baseline gate      | n/a                                       |
-| `agent-runtime render --product codex --update-golden && agent-runtime render --product claude --update-golden && git diff --exit-code tests/golden/codex/plugins/reporting/ tests/golden/claude/plugins/reporting/`          | pending | Sprint 2 Task 2.1                      | `tests/golden/{codex,claude}/plugins/reporting/` |
-| `agent-runtime audit-drift --source-root tests/drift/<scenario>/` for each of source-manifest-missing / rendered-target-diff / agent-home-leak / docs-home-mismatch                                                            | pending | Sprint 2 Task 2.2                      | `tests/drift/<scenario>/expected.{txt,exit}` |
+| `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --format text --explain`                                                                                                                   | pending                  | re-run before resume PR                              | n/a                                              |
+| `agent-runtime render --product codex`                                                                                                                                                                                        | passed on `d890b11`      | Sprint 1 attempt 2026-05-21 (exit 0, rendered=3); re-run under v0.14.0 | `build/codex/plugins/reporting/`                 |
+| `agent-runtime render --product claude`                                                                                                                                                                                       | passed on `d890b11`      | Sprint 1 attempt 2026-05-21 (exit 0, rendered=3); re-run under v0.14.0 | `build/claude/plugins/reporting/`                |
+| `agent-runtime audit-drift`                                                                                                                                                                                                   | passed on `d890b11`      | Sprint 1 attempt 2026-05-21 (exit 0, 0 findings); re-run under v0.14.0 | n/a                                              |
+| `agent-runtime render --product codex --update-golden && agent-runtime render --product claude --update-golden && git diff --exit-code tests/golden/codex/plugins/reporting/ tests/golden/claude/plugins/reporting/`          | blocked on Sprint 1      | Sprint 2 Task 2.1                                    | `tests/golden/{codex,claude}/plugins/reporting/` |
+| `agent-runtime audit-drift --source-root tests/drift/<scenario>/` for each of source-manifest-missing / rendered-target-diff / agent-home-leak / docs-home-mismatch                                                            | blocked on Sprint 1      | Sprint 2 Task 2.2                                    | `tests/drift/<scenario>/expected.{txt,exit}`     |
 
 ## Blockers
 
@@ -76,9 +76,10 @@
 - `brew upgrade nils-cli` on the dev host pulls v0.14.0.
 - Re-pull the parked branch
   `feat/plan-03-sprint-1-reporting-bodies-and-manifests`, re-run
-  `agent-runtime render --product codex && --product claude`, confirm
-  build tree mirrors source layout (full subtree per skill,
-  host-portable script paths, single `build/<product>/` prefix).
+  `agent-runtime render --product codex && agent-runtime render
+  --product claude`, confirm build tree mirrors source layout (full
+  subtree per skill, host-portable script paths, single
+  `build/<product>/` prefix).
 - Re-verify Sprint 1 gates (grep clean, render exit 0, audit-drift
   exit 0). Open PR for Sprint 1.
 
