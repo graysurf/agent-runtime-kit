@@ -1,0 +1,27 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: whitespace
+      run: git diff --check --cached
+
+    - name: shellcheck
+      glob: "*.sh"
+      run: shellcheck {staged_files}
+
+    - name: shfmt
+      glob: "*.sh"
+      run: shfmt -i 2 -ci -d {staged_files}
+
+    - name: yaml-parse
+      glob: "*.{yml,yaml}"
+      run: "yamllint -d '{extends: default, rules: {document-start: disable, line-length: disable, truthy: disable}}' {staged_files}"
+
+    - name: json-parse
+      glob: "*.json"
+      run: jq empty {staged_files}
+
+pre-push:
+  commands:
+    ci-gate-stack:
+      files: echo README.md
+      run: bash -c 'bash scripts/ci/all.sh' -- {files}
