@@ -401,7 +401,7 @@ agent-runtime-kit/
     skills/<domain>/<skill>/  # skill bodies, assets, scripts
     hooks/                    # portable hook logic (activation lives in targets/)
     docs/                     # ADRs, schema specs, contributor guides
-    scripts/                  # helpers used by skills/policies (not the install CLI)
+    scripts/                  # skill/policy helper shims, not orchestration CLI
   targets/                    # product adapter surfaces
     codex/
       AGENTS.md.template
@@ -424,7 +424,7 @@ agent-runtime-kit/
   build/                      # render output (gitignored, regenerated)
     codex/...
     claude/...
-  scripts/                    # host bootstrap (brew tap, formula install, profile)
+  scripts/                    # Bash host bootstrap and CI glue
     setup.sh                  # macOS + Linux unified bootstrap (OS detect)
     profile.recommended.yaml  # optional override of manifests/cli-tools.yaml
 ```
@@ -448,8 +448,9 @@ binary. See [CLI Boundary](#cli-boundary-nils-cli-owns-the-cli-surface).
 - `core/docs/` — architecture decisions (ADRs), schema specs, contributor
   guides, and policy explainers. Not product-facing runtime docs.
 - `core/scripts/` — helpers consumed *inside* skills/policies (e.g. shared
-  shell libs, template helpers). Distinct from top-level `scripts/` which holds
-  the install/uninstall/doctor/render CLI itself.
+  shell libs, template helpers). Distinct from top-level `scripts/`, which
+  contains Bash host bootstrap and CI glue. The install/render/doctor/drift
+  orchestration CLI lives in nils-cli.
 - canonical domain grouping (see Manifest Layer for cross-product domain
   mapping).
 
@@ -929,7 +930,29 @@ changes to skill bodies.
 | Hook activation (settings.json, config.toml managed blocks) | Yes (`agent-runtime install`) | Wiring declared in `manifests/` |
 | Slash commands, subagent definitions | No | Yes |
 | Install / render / drift audit / doctor | Yes (`agent-runtime` binary) | No |
+| Repo bootstrap / CI glue | No | Yes (Bash scripts that invoke released CLIs) |
+| Skill-local data helpers | Extract when shared or contract-bearing | Yes, only when owned by one skill |
 | "When to use which CLI and how to compose them" | No | Yes (skill prose) |
+
+### Script And Helper Boundary
+
+Scripts in this repo are allowed, but they are not a second product runtime.
+
+- Top-level `scripts/` uses Bash for host bootstrap, CI sequencing, fixture
+  comparison, and other repository glue. These scripts must stay compatible with
+  macOS system Bash 3.2 and Linux Bash unless a script states a narrower host
+  contract.
+- Skill-local wrappers under `core/skills/**/scripts/` should stay thin: resolve
+  paths, adapt product invocation shape, and call a nils-cli binary or a
+  skill-owned helper.
+- Python may live under `core/skills/**/bin/` for skill-owned data processing or
+  source aggregation, but not for repo-wide orchestration. If Python logic
+  becomes a shared capability, stable machine-output producer, parser, or
+  exit-code contract, move it to nils-cli and declare the binary in
+  `required_clis`.
+- New network, filesystem, parsing, install, render, doctor, audit, or lifecycle
+  behavior defaults to nils-cli. This repo should hold the source content,
+  manifests, fixtures, and shell glue needed to exercise that released behavior.
 
 ### Skill Anatomy After The Split
 

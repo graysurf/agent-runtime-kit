@@ -1,13 +1,13 @@
 # Drift audit allowlist seed.
 #
 # Each `unsafe_allow` entry demotes a matching drift-audit finding by ONE
-# tier (block -> warn -> silent), never beyond. The composite-scoring rules
+# tier (block -> warn, warn -> suppressed), never beyond. The composite-scoring rules
 # live in docs/source/inventory-target-architecture.md `## Drift Detection`
 # and the `unsafe` classification semantics live in the same doc under
-# `### Drift Audit `unsafe` Class`.
+# `### Drift Audit Unsafe Class`.
 #
-# Real entries land when Plan 02 (`02-nils-cli-render-and-drift-audit`)
-# enables `agent-runtime audit-drift` and concrete findings need a
-# documented demotion. This file ships intentionally empty.
+# Entries must document why a matched public identifier is safe to demote.
 schema_version: 1
-unsafe_allow: []
+unsafe_allow:
+  - path: "core/docs/schemas/*.schema.json"
+    reason: "Schema files contain public JSON Schema and local schema identifier URIs, not host secrets."

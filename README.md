@@ -27,7 +27,8 @@ product adapters:
   render` and compared against committed golden snapshots.
 - `tests/golden/` pins expected rendered product output.
 - `tests/drift/` contains hermetic fixtures for drift-audit behavior.
-- `scripts/` contains repository bootstrap and CI helpers.
+- `scripts/` contains Bash repository bootstrap and CI helpers. Durable
+  runtime behavior stays in nils-cli.
 
 ## Runtime Model
 
@@ -54,6 +55,11 @@ Skills and manifests declare the nils-cli binaries they require through
 `required_clis`. Local development may use an unreleased debug build from a
 local nils-cli checkout, but released contracts are pinned only after the
 nils-cli release and tap update complete.
+
+Shell and Python helpers are allowed only as glue: repo bootstrap, CI gates,
+fixture checks, thin skill wrappers, or skill-local data helpers. Any stable
+machine contract, parser, exit-code contract, cross-product behavior, or shared
+capability belongs in nils-cli and is consumed here through `required_clis`.
 
 ## Development
 
