@@ -327,9 +327,61 @@ Cross-repo discipline:
 - **Local development setup.** Contributors typically clone all three
   repos side-by-side under `~/Project/`. `agent-runtime doctor` accepts
   `--nils-cli-source <path>` to point at a local nils-cli checkout when
-  testing unreleased binaries. For end-to-end install rehearsal against
-  a local tap checkout, symlink the working tree into Homebrew's taps
-  directory:
+  testing unreleased binaries.
+
+#### Local nils-cli Development Loop
+
+Active agent-runtime-kit work often discovers missing nils-cli behavior.
+That should not block content work on a release cycle. The local loop is:
+
+1. Keep a fresh nils-cli checkout at `$HOME/Project/sympoies/nils-cli`.
+   Start each coupled task from latest `main`:
+   ```bash
+   if [ ! -d "$HOME/Project/sympoies/nils-cli/.git" ]; then
+     git clone https://github.com/sympoies/nils-cli \
+       "$HOME/Project/sympoies/nils-cli"
+   fi
+   git -C "$HOME/Project/sympoies/nils-cli" fetch origin
+   git -C "$HOME/Project/sympoies/nils-cli" switch main
+   git -C "$HOME/Project/sympoies/nils-cli" pull --ff-only origin main
+   ```
+2. For task isolation, create nils-cli worktrees under
+   `$HOME/Project/sympoies/nils-cli-worktrees/<topic>`, not inside the
+   agent-runtime-kit repo, `build/`, or test fixture trees:
+   ```bash
+   TOPIC="agent-runtime-topic"
+   mkdir -p "$HOME/Project/sympoies/nils-cli-worktrees"
+   git -C "$HOME/Project/sympoies/nils-cli" worktree add \
+     -b "$TOPIC" "$HOME/Project/sympoies/nils-cli-worktrees/$TOPIC" origin/main
+   ```
+3. Build debug binaries locally and invoke them by absolute path while
+   editing agent-runtime-kit:
+   ```bash
+   cargo build -p agent-runtime-cli \
+     --manifest-path "$HOME/Project/sympoies/nils-cli/Cargo.toml"
+
+   AGENT_RUNTIME="$HOME/Project/sympoies/nils-cli/target/debug/agent-runtime"
+   "$AGENT_RUNTIME" render --product codex
+   "$AGENT_RUNTIME" render --product claude
+   "$AGENT_RUNTIME" audit-drift
+   ```
+   If a full repo gate needs the unreleased binary, put `target/debug`
+   first only for that shell command:
+   ```bash
+   PATH="$HOME/Project/sympoies/nils-cli/target/debug:$PATH" \
+     bash scripts/ci/all.sh
+   ```
+4. Do not overwrite the Homebrew-installed `agent-runtime` during normal
+   development. The brew binary represents the released consumer contract;
+   debug binaries represent provisional nils-cli work.
+5. When the agent-runtime-kit and nils-cli changes are both validated,
+   land the nils-cli PR, cut the nils-cli release, bump the tap, then
+   return to agent-runtime-kit to refresh `docs/source/nils-cli-surface.md`
+   and bump any affected `required_clis` floors. Local debug validation is
+   useful development evidence, but it is not a released version contract.
+
+For end-to-end install rehearsal against a local tap checkout, symlink the
+working tree into Homebrew's taps directory:
   ```bash
   ln -s ~/Project/sympoies/homebrew-tap \
     "$(brew --prefix)/Library/Taps/sympoies/homebrew-tap"
