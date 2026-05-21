@@ -766,7 +766,7 @@ remove the `$HOME/.agents` symlink, and migrate any pre-existing
 - Commands:
   - `agent-runtime install --product claude --dry-run --print-effective-config`
   - `agent-runtime install --product codex --dry-run --print-effective-config`
-  - `agent-runtime doctor --product claude --check-project /Users/terry/Project/graysurf/agent-runtime-kit`
+  - `agent-runtime doctor --product claude --check-project $HOME/Project/graysurf/agent-runtime-kit`
   - `gh repo view graysurf/agent-kit --json isArchived,name`
   - `gh repo view graysurf/claude-kit --json isArchived,name`
   - `test ! -L "$HOME/.agents"`
@@ -828,7 +828,7 @@ remove the `$HOME/.agents` symlink, and migrate any pre-existing
   to `<repo>/.agents/scripts/<name>.sh` only when the script exists and
   is executable, and exit non-zero with the documented "no project-local
   implementation" message otherwise. Use this repo itself
-  (`/Users/terry/Project/graysurf/agent-runtime-kit`) as the consumer
+  (`$HOME/Project/graysurf/agent-runtime-kit`) as the consumer
   for any script it implements.
 - **Dependencies**:
   - Task 5.1
@@ -839,11 +839,11 @@ remove the `$HOME/.agents` symlink, and migrate any pre-existing
     target script exists and is executable; missing scripts produce a
     non-zero exit with the documented message.
   - `agent-runtime doctor --product claude --check-project
-    /Users/terry/Project/graysurf/agent-runtime-kit` reports each
+    $HOME/Project/graysurf/agent-runtime-kit` reports each
     overlay as wired or missing as expected.
 - **Validation**:
   - `bash tests/sandbox/project-local/run.sh`
-  - `agent-runtime doctor --product claude --check-project /Users/terry/Project/graysurf/agent-runtime-kit`
+  - `agent-runtime doctor --product claude --check-project $HOME/Project/graysurf/agent-runtime-kit`
 
 ### Task 5.3: Archive `graysurf/agent-kit` and `graysurf/claude-kit`
 

@@ -64,7 +64,7 @@
 | `agent-runtime install --product claude --dry-run --print-effective-config`                                   | pending | Task 5.1                                      | n/a      |
 | `agent-runtime install --product codex --dry-run --print-effective-config`                                    | pending | Task 5.1                                      | n/a      |
 | `bash tests/sandbox/project-local/run.sh`                                                                     | pending | Task 5.2                                      | n/a      |
-| `agent-runtime doctor --product claude --check-project /Users/terry/Project/graysurf/agent-runtime-kit`       | pending | Task 5.2                                      | n/a      |
+| `agent-runtime doctor --product claude --check-project $HOME/Project/graysurf/agent-runtime-kit`       | pending | Task 5.2                                      | n/a      |
 | `gh repo view graysurf/agent-kit --json isArchived,name`                                                      | pending | Task 5.3                                      | n/a      |
 | `gh repo view graysurf/claude-kit --json isArchived,name`                                                     | pending | Task 5.3                                      | n/a      |
 | `test ! -L "$HOME/.agents"`                                                                                   | pending | Task 5.4                                      | n/a      |
