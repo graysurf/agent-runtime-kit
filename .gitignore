@@ -1,4 +1,8 @@
 build/
+# Drift fixtures must ship their pre-rendered build/ trees so they reproduce
+# hermetically on fresh clones (CI included).
+!tests/drift/*/build/
+!tests/drift/*/build/**
 *.local.*
 .env
 .env.*
@@ -10,3 +14,5 @@ auth.json
 **/history/
 **/cache/
 .private/
+.claude/
+backup-*.zip
