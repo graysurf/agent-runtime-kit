@@ -6,10 +6,10 @@
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 1.2
-- Next task: Task 1.3
+- Current task: Task 1.3
+- Next task: Task 2.1
 - Last updated: 2026-05-21
-- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 link-map schema on agent-runtime-kit `feat/plan-04-link-map-schema`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -18,8 +18,8 @@
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
 | Task 1.1 | complete | Implement managed-block helper module | [sympoies/nils-cli#414](https://github.com/sympoies/nils-cli/pull/414) merged `3309c3e` | paired-marker contract + `BodyContainsMarker` body validation; `is_trusted_surface` invariant; 19 unit + 7 integration tests; `/code-review-specialists` pass landed F-2 hardening fix |
-| Task 1.2 | in progress | Wire render to link to managed-block sync pipeline | link-map schema PR on `feat/plan-04-link-map-schema` | split into PR A (schema + initial yaml on agent-runtime-kit) → PR B (install pipeline on nils-cli); idempotent `--apply` |
-| Task 1.3 | pending | Add `--live-home`, `--tag`, and overlay merge flags | n/a | reject relative `--live-home`; tags survive gc |
+| Task 1.2 | complete | Wire render to link to managed-block sync pipeline | PR A [graysurf/agent-runtime-kit#18](https://github.com/graysurf/agent-runtime-kit/pull/18) merged `f89eec1`; PR B [sympoies/nils-cli#416](https://github.com/sympoies/nils-cli/pull/416) merged `5d351bb` | 4 entry kinds in schema (`symlinked-file` / `plugin-manifest-copy` / `managed-block` / `backed-up-on-replace`); install pipeline ships with 13 unit + 6 integration tests; second `--apply` is byte-identical no-op; `/code-review-specialists` pass on PR B landed F-1 (HIGH path-traversal rejection) + F-3 (managed-block e2e coverage) |
+| Task 1.3 | in progress | Add `--live-home`, `--tag`, and overlay merge flags | n/a | reject relative `--live-home`; tags survive gc; layers on top of Task 1.2's `--home` / `--state-home` Rust API |
 | Task 2.1 | pending | Implement `agent-runtime uninstall` | n/a | idempotent; never touch auth / history / sessions |
 | Task 2.2 | pending | Implement `agent-runtime restore-backups` | n/a | `--from` required; dry-run before apply |
 | Task 2.3 | pending | Implement `agent-runtime purge-state` | n/a | `--scope` required; prompts unless `--yes` |
@@ -93,6 +93,37 @@ suggested defaults:
   Sprint 5 Task 5.3 does not exercise `--apply` against tmp.
 - **Open Q3 — WSL `AGENT_RUNTIME_HOST_PROFILE`.** Deferred to Sprint 3
   entry. Not actionable in Sprint 1 or Sprint 2.
+
+### 2026-05-21 — Sprint 1 Task 1.2 closed across both repos
+
+- PR A merged at agent-runtime-kit `f89eec1`: schema + initial codex/claude
+  link-maps. Schema validates initial yaml and rejects 6 representative
+  malformed cases (missing `schema_version`, per-kind required/forbidden
+  field violations, bad `id` pattern, forbidden `recursive` on
+  `managed-block`).
+- PR B merged at nils-cli `5d351bb`: install pipeline body. New module
+  `install::{link_map, plan, executor}` plus `commands::install`
+  wrapper. Replaces the `Install` stub with `InstallArgs (--source-root
+  --product --home --state-home --dry-run|--apply)`. Apply executor
+  reconciles symlinks (with backup to
+  `<state_home>/backups/<product>/<unix-seconds>/<entry_id>/<filename>`)
+  and managed blocks (calling the Task 1.1 helper). 13 unit + 6
+  integration tests; full `nils-cli-verify-required-checks` stack green.
+- `/code-review-specialists` pass on PR B surfaced two material findings,
+  both landed pre-merge in fix commit `c9befcf`:
+  - F-1 (HIGH, security/red-team) — `home.join(destination)` and
+    `source_root.join(source)` did not reject `..` traversal. Added
+    `PlanError::DestinationTraversal` / `SourceTraversal` plus a
+    `has_parent_dir_component` walker. 5 new plan-builder unit tests pin
+    the rejection.
+  - F-3 (medium, testing) — managed-block executor had no end-to-end
+    test through `install::run`. Added
+    `managed_block_entry_writes_block_and_is_idempotent_on_second_apply`
+    driving the full pipeline against a managed-block-only link-map.
+- Task 1.3 is the immediate next pickup: layer `--live-home`,
+  `--tag`, and overlay merge flags on top of Task 1.2's `--home` /
+  `--state-home` Rust API. Open question Q1's default (reject relative
+  `--live-home`) ships from day one.
 
 ### 2026-05-21 — Sprint 1 Task 1.1 closed; Task 1.2 (schema phase) opened
 
