@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: pre-work complete; Sprint 1 active
+- Status: Sprint 1 complete; Sprint 2 active
 - Target scope: whole plan
 - Execution window: 2026-05-21 → TBD
 - Staged execution confirmation: not applicable
-- Current task: Task 1.3
-- Next task: Task 2.1
+- Current task: Task 2.1
+- Next task: Task 2.2
 - Last updated: 2026-05-21
-- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`
+- Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`
 - Source document: docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -19,7 +19,7 @@
 | --- | --- | --- | --- | --- |
 | Task 1.1 | complete | Implement managed-block helper module | [sympoies/nils-cli#414](https://github.com/sympoies/nils-cli/pull/414) merged `3309c3e` | paired-marker contract + `BodyContainsMarker` body validation; `is_trusted_surface` invariant; 19 unit + 7 integration tests; `/code-review-specialists` pass landed F-2 hardening fix |
 | Task 1.2 | complete | Wire render to link to managed-block sync pipeline | PR A [graysurf/agent-runtime-kit#18](https://github.com/graysurf/agent-runtime-kit/pull/18) merged `f89eec1`; PR B [sympoies/nils-cli#416](https://github.com/sympoies/nils-cli/pull/416) merged `5d351bb` | 4 entry kinds in schema (`symlinked-file` / `plugin-manifest-copy` / `managed-block` / `backed-up-on-replace`); install pipeline ships with 13 unit + 6 integration tests; second `--apply` is byte-identical no-op; `/code-review-specialists` pass on PR B landed F-1 (HIGH path-traversal rejection) + F-3 (managed-block e2e coverage) |
-| Task 1.3 | in progress | Add `--live-home`, `--tag`, and overlay merge flags | n/a | reject relative `--live-home`; tags survive gc; layers on top of Task 1.2's `--home` / `--state-home` Rust API |
+| Task 1.3 | complete | Add `--live-home`, `--tag`, and overlay merge flags | [sympoies/nils-cli#418](https://github.com/sympoies/nils-cli/pull/418) merged `cee0903` | renames `--home` → `--live-home` (absolute-only); adds `--tag <name>` writing `tag-<name>` marker at backup-run root; ships `.private/link-map.overrides.yaml` overlay merge applied pre-plan-generation; `InstallOptions` + `InstallOutcome` + `OverlaySummary`; 12 install_flags + 8 overlay unit + 3 executor tag tests; `/code-review-specialists` pass landed F-1 (defense-in-depth tag validation) + F-2 (operator-visible overlay-merge notice) |
 | Task 2.1 | pending | Implement `agent-runtime uninstall` | n/a | idempotent; never touch auth / history / sessions |
 | Task 2.2 | pending | Implement `agent-runtime restore-backups` | n/a | `--from` required; dry-run before apply |
 | Task 2.3 | pending | Implement `agent-runtime purge-state` | n/a | `--scope` required; prompts unless `--yes` |
@@ -93,6 +93,66 @@ suggested defaults:
   Sprint 5 Task 5.3 does not exercise `--apply` against tmp.
 - **Open Q3 — WSL `AGENT_RUNTIME_HOST_PROFILE`.** Deferred to Sprint 3
   entry. Not actionable in Sprint 1 or Sprint 2.
+
+### 2026-05-21 — Sprint 1 Task 1.3 closed; Sprint 1 complete
+
+- Sprint 1 Task 1.3 merged at `sympoies/nils-cli` commit `cee0903`. Two
+  GPG-signed commits: feature `27607b8` + specialist-fix `e340719`.
+- New surface area:
+  - `--home` renamed to `--live-home` (absolute path required; Open Q1
+    resolved-default shipped from day one; relative paths exit non-zero
+    with a usage error naming the flag).
+  - `--tag <name>` writes a `tag-<name>` marker file at
+    `<state_home>/backups/<product>/<unix-seconds>/tag-<name>` whenever
+    at least one backup is created during apply. ASCII-alphanumeric /
+    `-` / `_` trust contract enforced at both the CLI boundary and the
+    executor entry (defense in depth — see F-1 below).
+  - New `.private/link-map.overrides.yaml` overlay merge runs before
+    plan generation. Per-entry replace; `enabled: false` drops; new
+    entries are added. Schema gated by the same
+    `link-map.schema.json` contract as the tracked link-map. `--no-overlay`
+    skips the merge; `--overlay-path` redirects the read.
+- New Rust API: `InstallOptions { tag, overlay_enabled,
+  overlay_path }` with a custom `Default` impl (overlay-on by default —
+  `derive(Default)` would silently flip it off); `InstallOutcome
+  { plan, changes, overlay: Option<OverlaySummary> }`;
+  `OverlaySummary { dropped, replaced, added }`.
+- `/code-review-specialists` pass surfaced two material findings, both
+  landed pre-merge in commit `e340719`:
+  - F-1 (medium, security/red-team): tag validation only happened at
+    the CLI boundary. Moved `is_trusted_tag` into
+    `install::executor` and re-validated at executor entry; library
+    callers using `InstallOptions { tag, .. }` directly now hit
+    `ApplyError::InvalidTag { value }`.
+  - F-2 (medium, red-team): `.private/link-map.overrides.yaml` was
+    consumed silently. Added `OverlaySummary` returned from
+    `overlay::apply` and threaded through `InstallOutcome`; CLI now
+    prints `agent-runtime install: overlay merged (dropped=N
+    replaced=N added=N)` whenever an overlay is consumed, satisfying
+    the `inventory-target-architecture.md` `### Overlay Merge
+    Semantics` requirement that dry-run expose the post-merge
+    effective config.
+- Six advisory findings deferred (synthesis at
+  `~/.local/state/claude-kit/out/task-1-3-review/SYNTHESIS.md`):
+  - F-3 (api-contract low) — `tag-<name>` marker filename and
+    `<entry_id>/` backup subdir share the same path namespace at the
+    backup-run root. Pin in Sprint 2 Task 2.4 (`gc-backups`): test
+    file-type before treating a path as a tag marker, OR reserve
+    `tag-*` prefix in the link-map schema's `id` pattern.
+  - F-4 (api-contract info) — `--home` → `--live-home` rename is
+    breaking relative to Task 1.2's `5d351bb`. No release shipped
+    `--home`; add a `### Breaking changes` line to the 0.2.0
+    CHANGELOG when Sprint 4 Task 4.4 lands.
+  - F-5 / F-6 (testing info) — no integration test exercises overlay
+    adding a brand-new entry through `install::run` (only the
+    in-memory unit test); tag-marker idempotence on a second
+    `--apply` is not asserted (current behaviour is correct, just
+    unpinned).
+  - F-7 (maintainability info) — `InstallOptions` overrides
+    `Default::default()` manually so `overlay_enabled` stays `true`.
+    Consider a builder pattern when Sprint 2 grows the struct.
+- Sprint 1 is now closed. Next pickup: Sprint 2 Task 2.1
+  (`agent-runtime uninstall`), serial after Task 1.3.
 
 ### 2026-05-21 — Sprint 1 Task 1.2 closed across both repos
 
