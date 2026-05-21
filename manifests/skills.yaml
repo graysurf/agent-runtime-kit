@@ -1,12 +1,57 @@
-# Skill manifest — Plan 01 ships this file empty. Real entries land in
-# Plan 03 (`03-reporting-poc`).
+# Skill manifest — Plan 03 lands the reporting domain entries here. Other
+# domains follow in Plan 05.
 #
 # Schema: ../core/docs/schemas/skills.schema.json
 # Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`
 #
 # Each entry MUST declare `id`, `domain`, `source`, `products`, and
-# `required_clis`. Phase 1 may temporarily use placeholder values in
-# `required_clis`; the audit-drift gate rejects any surviving placeholder
-# at the Phase 2 floor.
+# `required_clis`. Concrete semver floors against the v0.13.0 nils-cli
+# release; the audit-drift gate rejects any surviving placeholder.
 schema_version: 1
-skills: []
+
+skills:
+  - id: reporting.daily-brief
+    domain: reporting
+    source: core/skills/reporting/daily-brief
+    products:
+      codex:
+        name: daily-brief
+        render_to: plugins/reporting/skills/daily-brief/SKILL.md
+      claude:
+        name: daily-brief
+        render_to: plugins/reporting/skills/daily-brief/SKILL.md
+    required_clis:
+      agent-out: ">=0.13.0"
+      git-scope: ">=0.13.0"
+    state_out_mode: runtime
+
+  - id: reporting.project-retro
+    domain: reporting
+    source: core/skills/reporting/project-retro
+    products:
+      codex:
+        name: project-retro
+        render_to: plugins/reporting/skills/project-retro/SKILL.md
+      claude:
+        name: project-retro
+        render_to: plugins/reporting/skills/project-retro/SKILL.md
+    required_clis:
+      repo-retro: ">=0.13.0"
+      agent-out: ">=0.13.0"
+    state_out_mode: runtime
+
+  - id: reporting.topic-radar
+    domain: reporting
+    source: core/skills/reporting/topic-radar
+    products:
+      codex:
+        name: topic-radar
+        render_to: plugins/reporting/skills/topic-radar/SKILL.md
+        path_override: skills/tools/market-research/topic-radar
+      claude:
+        name: topic-radar
+        render_to: plugins/reporting/skills/topic-radar/SKILL.md
+        path_override: plugins/reporting/skills/topic-radar
+    required_clis:
+      agent-out: ">=0.13.0"
+    state_out_mode: runtime

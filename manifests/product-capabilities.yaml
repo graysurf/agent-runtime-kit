@@ -61,21 +61,22 @@ products:
       default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude"
     marketplace_concept: true
 
-# Field-level diff between the two plugin manifests. Drift audit reads this
-# to know which divergences are intentional and which are drift. Plan 03
-# refines this list once concrete plugin.json files are written; for now
-# it captures the architecture-level intent.
+# Field-level diff between the two plugin manifests. Plan 03 refined this
+# block against the concrete adapter plugin.json files landed in the
+# reporting POC (`targets/{codex,claude}/plugins/reporting/`). Drift audit
+# reads this to know which divergences are intentional and which are drift.
 plugin_manifest_diff:
   shared_fields:
-    - "schema_version"
     - "name"
-    - "description"
     - "version"
-    - "skills"
+    - "description"
+    - "author"
   codex_only_fields:
-    - "agents_md_path"
-    - "config_toml_managed_block"
+    # Codex `.codex-plugin/plugin.json` is source-organisation only; the
+    # `skills` array is a co-located inventory for audit-drift's
+    # source-manifest class and is NOT loaded by Codex at runtime.
+    - "skills"
   claude_only_fields:
-    - "marketplace_entry"
-    - "hooks"
-    - "mcp_servers"
+    # `homepage` points at the published plugin repo for Claude's plugin
+    # discovery UI. Codex has no equivalent surface.
+    - "homepage"
