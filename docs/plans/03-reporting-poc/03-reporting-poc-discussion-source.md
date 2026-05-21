@@ -68,21 +68,28 @@ Three rules constrain the work:
   `min_version_effective_from` date is set to `2026-06-03` (14 days
   after the Phase 2 PR merge target on `2026-05-20`) so existing hosts
   have a runway before the floor starts blocking.
-- `required_clis` floors are pinned to the `0.1.0` nils-cli release
+- `required_clis` floors are pinned to the `v0.13.0` nils-cli release
   cut by Phase 1.5 (the release that ships the real `agent-runtime
-  render` body and the four Tera helpers); no `<TBD>` placeholders are
+  render` body and the four Tera helpers); no placeholder strings are
   permitted in Plan 03 manifests.
-- Sprint 3 commits the golden snapshots produced by `agent-runtime
-  render --update-golden`. The diff is reviewed before commit per the
-  Test Layer 2 contract in the source doc.
-- Sprint 3 covers four drift classes: `source-manifest`,
+- Sprint 2 (formerly Sprint 3 before the 2026-05-21 rev) commits the
+  golden snapshots produced by `agent-runtime render --product <p>
+  --update-golden` (per-product; no `--domain` filter in v0.13.0).
+  The diff is reviewed before commit per the Test Layer 2 contract in
+  the source doc; only the reporting subdirectories are added to the
+  commit.
+- Sprint 2 covers four drift classes: `source-manifest`,
   `rendered-target` diff, `$AGENT_HOME` leak, `docs-home`. The full
   five-class set (`missing` / `stale` / `extra` /
   `intentional-difference` / `unsafe`) lands with the full
-  `audit-drift` body in Plan 05.
-- Sprint 4 pins `agent-runtime install --dry-run` output for both
-  products. The expected shape is the "Dry-run install output" example
-  in the source doc (lines 1610–1628).
+  `audit-drift` body in Plan 04 Sprint 4.
+- The original Sprint 4 ("Pin `agent-runtime install --dry-run` output
+  for both products") was deferred to Plan 04 Sprint 5 on 2026-05-21:
+  v0.13.0 ships no `install --dry-run` surface (Plan 02 listed
+  `install` body as out-of-scope, "later phases"), and Plan 04
+  already plans `tests/sandbox/<product>/expected-skills.txt` pins
+  through the same surface. The original expected shape (source doc
+  lines 1610–1628) is preserved verbatim in the Plan 04 reference.
 
 ## Source References
 
@@ -115,10 +122,10 @@ Three rules constrain the work:
 | --- | --- | --- | --- | --- | --- |
 | high | R1 | No portable canonical reporting bodies exist; current sources still bake `$AGENT_HOME` references and product-specific paths. | `$HOME/.config/agent-kit/skills/workflows/reporting/daily-brief/SKILL.md`; `$HOME/.config/agent-kit/skills/workflows/reporting/project-retro/SKILL.md`; `$HOME/.config/agent-kit/skills/tools/market-research/topic-radar/SKILL.md`; `$HOME/.config/claude/plugins/reporting/skills/daily-brief/SKILL.md`; `$HOME/.config/claude/plugins/reporting/skills/project-retro/SKILL.md`. | `core/skills/reporting/daily-brief/SKILL.md`, `core/skills/reporting/project-retro/SKILL.md`, `core/skills/reporting/topic-radar/SKILL.md`, `core/skills/reporting/topic-radar/scripts/topic-radar.sh`. | Rendered Codex/Claude outputs match the snippets in the source doc lines 1577–1603 byte-exact. |
 | high | R2 | No Codex or Claude adapter metadata for reporting; render cannot fan source out into product-specific surfaces. | `docs/source/inventory-target-architecture.md` lines 1518–1524. | `targets/codex/plugins/reporting/.codex-plugin/plugin.json`, `targets/claude/plugins/reporting/.claude-plugin/plugin.json`. | Codex metadata validates against the local schema only (Resolved Decision #10); Claude metadata matches upstream Claude plugin schema. |
-| high | R3 | `manifests/skills.yaml`, `plugins.yaml`, `product-capabilities.yaml`, `runtime-roots.yaml` carry no domain entries yet; render and drift cannot run. | Plan 01 deliverables; example slice in source doc lines 1520–1554. | `manifests/skills.yaml`, `manifests/plugins.yaml`, `manifests/product-capabilities.yaml`, `manifests/runtime-roots.yaml`. | All four manifests carry the reporting entries with concrete `required_clis: ">=0.1.0"` floors (no `<TBD>`); `runtime-roots.yaml` pins the development host's product versions; `schema_version: 1` everywhere. |
-| high | R4 | No render-golden snapshots exist for the reporting domain; render determinism is not enforced. | `docs/source/inventory-target-architecture.md` test layer 2 (lines 1423–1428). | `tests/golden/codex/reporting/*/expected/`, `tests/golden/claude/reporting/*/expected/`. | `agent-runtime render` produces zero diff against committed snapshots on a clean tree. |
-| medium | R5 | No drift fixtures exercise the four POC drift classes against the reporting tree. | `docs/source/inventory-target-architecture.md` test layer 5 (lines 1436–1439). | `tests/drift/<scenario>/` for source-manifest / rendered-target diff / `$AGENT_HOME` leak / docs-home. | Each fixture pins both report text and exit code; `audit-drift` exits 0 on the clean POC. |
-| medium | R6 | No dry-run install snapshot pins the deterministic plan shape; install scope expansion would slip through review. | `docs/source/inventory-target-architecture.md` test layer 4 (lines 1432–1435) and dry-run example (lines 1610–1628). | `tests/install/codex/expected.txt`, `tests/install/claude/expected.txt`. | Dry-run plans touch only `AGENTS.md` (Codex), the managed `config.toml` block, `settings.json` (Claude), and link-map files; never auth / history / sessions / cache. |
+| high | R3 | `manifests/skills.yaml`, `plugins.yaml`, `product-capabilities.yaml`, `runtime-roots.yaml` carry no domain entries yet; render and drift cannot run. | Plan 01 deliverables; example slice in source doc lines 1520–1554. | `manifests/skills.yaml`, `manifests/plugins.yaml`, `manifests/product-capabilities.yaml`, `manifests/runtime-roots.yaml`. | All four manifests carry the reporting entries with concrete `required_clis: ">=0.13.0"` floors (no placeholder strings); `runtime-roots.yaml` carries pinned version-floor values landed by the Plan 01 cleanup PR; `schema_version: 1` everywhere. |
+| high | R4 | No render-golden snapshots exist for the reporting domain; render determinism is not enforced. | `docs/source/inventory-target-architecture.md` test layer 2 (lines 1423–1428). | `tests/golden/codex/plugins/reporting/*/expected/`, `tests/golden/claude/plugins/reporting/*/expected/`. | `agent-runtime render --product <p>` produces zero diff against committed snapshots on a clean tree. |
+| medium | R5 | No drift fixtures exercise the four POC drift classes against the reporting tree. | `docs/source/inventory-target-architecture.md` test layer 5 (lines 1436–1439). | `tests/drift/<scenario>/` for source-manifest / rendered-target diff / `$AGENT_HOME` leak / docs-home. | Each fixture is a self-contained mini source root invoked through `agent-runtime audit-drift --source-root <fixture>` (v0.13.0 has no `--fixture` flag); pins both report text and exit code; `audit-drift` exits 0 on the clean POC. |
+| medium | R6 | No dry-run install snapshot pins the deterministic plan shape; install scope expansion would slip through review. | `docs/source/inventory-target-architecture.md` test layer 4 (lines 1432–1435) and dry-run example (lines 1610–1628). | **Deferred to Plan 04 Sprint 5** (`tests/sandbox/<product>/expected-skills.txt`). `agent-runtime install --dry-run` does not exist in v0.13.0; Plan 02 listed install body as out-of-scope ("later phases"). Plan 04 Sprint 1 lands the install body and Plan 04 Sprint 5 pins the snapshots through the same surface. | Dry-run plans touch only `AGENTS.md` (Codex), the managed `config.toml` block, `settings.json` (Claude), and link-map files; never auth / history / sessions / cache. Acceptance now owned by Plan 04. |
 
 ## Ownership Boundary
 
@@ -131,37 +138,60 @@ Three rules constrain the work:
   `manifests/product-capabilities.yaml`,
   `manifests/runtime-roots.yaml` — Phase 1 seeded the files; Phase 2
   fills in the reporting entries.
-- Tests: `tests/golden/`, `tests/drift/`, `tests/install/` — all
-  pinned in-tree; CI gates added in Plan 02 enforce them.
+- Tests: `tests/golden/` and `tests/drift/` are pinned in-tree by
+  this plan (Sprint 2). `tests/install/` and
+  `tests/sandbox/<product>/expected-skills.txt` are deferred to
+  Plan 04 because v0.13.0 has no `agent-runtime install --dry-run`
+  surface. CI gates added in Plan 02 enforce the in-tree artifacts.
 
 ## Backlog / Next Fixes
 
-1. Plan 04 — Apply mode lands the `agent-runtime install --apply`
-   path on top of the dry-run snapshots pinned here.
-2. Plan 05 — Migrate the remaining seven domains using the same
-   four-sprint shape established here.
-3. Migrate `topic-radar.sh` to a nils-cli binary (extraction backlog;
-   see open question below).
-4. Add the remaining drift classes (`missing` / `stale` / `extra` /
-   `intentional-difference` / `unsafe`) once Plan 05 lands the full
-   `audit-drift` body.
+1. Plan 04 Sprint 1 — Lands the `agent-runtime install` body
+   (render → link → managed-block sync → backup) with `--dry-run` /
+   `--apply` / `--live-home` flags. Plan 03's original Sprint 4
+   (dry-run install snapshots) is absorbed into Plan 04 Sprint 5
+   where the snapshots become `tests/sandbox/<product>/expected-skills.txt`
+   pins driven by the new install body.
+2. Plan 04 Sprint 4 — Extends `audit-drift` with the composite
+   `unsafe` score plus `intentional-difference` and `extra` finding
+   classes and lands the `drift-audit.allow.yaml` allowlist
+   mechanism for one-tier demotion of legitimate but
+   audit-trigger-worthy patterns.
+3. Plan 05 — Migrate the remaining seven domains using the
+   two-sprint shape established here (after Plan 04 lands the full
+   install / audit-drift surface).
+4. Migrate `topic-radar.sh` to a nils-cli binary (extraction backlog;
+   resolved on 2026-05-21 to defer until the skill stabilises — see
+   open questions below).
+5. nils-cli quality-of-life follow-ups discovered during Plan 03 rev
+   (track separately, non-blocking for Plan 03 execution):
+   - `audit-drift` false-positive on `<TBD>` literal strings inside
+     YAML comments — the lexer should skip `#`-prefixed lines.
+   - Consider `agent-runtime render --check` (re-render into
+     `tempdir/` and diff against `build/`) as a CI-friendly gate;
+     today consumers compose `render` + `git diff --exit-code build/`.
+   - Consider `agent-runtime audit-drift --format json` for
+     CI machine-parseable output once Plan 04 expands the class
+     surface.
 
 ## Retention Intent
 
 - This source doc is execution coordination — delete after plan
   completes.
 - The canonical bodies under `core/skills/reporting/`, the manifests,
-  the render-golden snapshots, the drift fixtures, and the dry-run
-  install snapshots stay as durable contract.
+  the render-golden snapshots, and the drift fixtures stay as durable
+  contract. (The dry-run install snapshots that were originally part
+  of this durable surface are now owned by Plan 04 Sprint 5.)
 
 ## Validation Gate
 
-- `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --format text --explain`
-- `agent-runtime render --check`
-- `agent-runtime render --update-golden && git diff --exit-code tests/golden/`
-- `agent-runtime audit-drift --format text`
-- `agent-runtime install --product codex --dry-run` (diff against `tests/install/codex/expected.txt`)
-- `agent-runtime install --product claude --dry-run` (diff against `tests/install/claude/expected.txt`)
+- `plan-tooling validate --file docs/plans/03-reporting-poc/03-reporting-poc-plan.md --format text --explain` (exit 0)
+- `agent-runtime render --product codex` (exit 0; populates `build/codex/plugins/reporting/`)
+- `agent-runtime render --product claude` (exit 0; populates `build/claude/plugins/reporting/`)
+- `agent-runtime render --product codex --update-golden && agent-runtime render --product claude --update-golden && git diff --exit-code tests/golden/codex/plugins/reporting/ tests/golden/claude/plugins/reporting/` (Sprint 2 gate)
+- `agent-runtime audit-drift` (exit 0; default text output — v0.13.0 has no `--format` flag)
+- Each Sprint 2 drift fixture: `agent-runtime audit-drift --source-root tests/drift/<scenario>/` produces a report that diffs cleanly against `tests/drift/<scenario>/expected.txt` and exits with the value in `tests/drift/<scenario>/expected.exit`.
+- (Dry-run install snapshot gate moved to Plan 04 Sprint 5: `bash scripts/ci/sandbox-install-rehearsal.sh`.)
 
 ## Do Not Do
 
@@ -172,9 +202,9 @@ Three rules constrain the work:
   every leak as an error.
 - Do not invent a Codex marketplace step. Resolved Decision #10 is
   binding — `.codex-plugin/plugin.json` is local-only.
-- Do not leave any `required_clis` value as `<TBD>`. Phase 2 pins
-  concrete `>=0.1.0` floors (or higher) against the Phase 1.5 nils-cli
-  release.
+- Do not leave any `required_clis` value as a placeholder string.
+  Phase 2 pins concrete `>=0.13.0` floors (or higher) against the
+  Phase 1.5 nils-cli release.
 - Do not rewrite `topic-radar.sh` into a nils-cli binary in this plan;
   carry it as-is and defer the extraction to the backlog.
 
@@ -202,3 +232,23 @@ Three rules constrain the work:
   extracting now would lock in an interface that has to be re-cut
   shortly. The extraction backlog entry stays open for revisit after
   the skill stabilises.
+- ~~CLI surface alignment between v0.13.0 and Plan 03 validation
+  gates~~ — **Resolved 2026-05-21 (reviewer: terry)**: rev Plan 03
+  to the actual v0.13.0 `agent-runtime` surface (no `--check` /
+  `--domain` / `--skill` / `--format` / `--fixture` flags) — Plan 03
+  originally pinned validation gates against an aspirational CLI
+  that neither the source doc nor Plan 02 plan ever committed to;
+  Plan 02 plan explicitly listed `install` body and the surface
+  refinements as out-of-scope. Specific consequences: (1) merge
+  Sprint 1 + Sprint 2 into one PR because render byte-exact
+  validation requires manifests to be present (no `--domain` /
+  `--skill` filter exists); (2) move Sprint 4 (dry-run install
+  snapshots) entirely to Plan 04 Sprint 5 alongside the install body
+  that produces them; (3) drift fixtures invoke
+  `audit-drift --source-root <fixture>` against self-contained mini
+  source roots; (4) golden snapshots come from
+  `render --product <p> --update-golden` and commit only the
+  reporting subdirs. The Plan 01 cleanup PR (merged 2026-05-21)
+  pinned `runtime-roots.yaml` versions and removed the residual
+  `$AGENT_HOME` literal in `core/policies/cli-tools.md` so the
+  baseline `audit-drift` exits 0.

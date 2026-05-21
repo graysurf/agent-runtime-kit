@@ -1,5 +1,5 @@
 # Plugin manifest — Plan 01 ships this file empty. Real entries land in
-# Plan 03 (`03-domain-migration-reporting-pilot`).
+# Plan 03 (`03-reporting-poc`).
 #
 # Schema: ../core/docs/schemas/plugins.schema.json
 # Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`

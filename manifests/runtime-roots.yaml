@@ -5,12 +5,13 @@
 #   `### Runtime Root Model` and Resolved Decision #7
 #
 # Version-pin fields (`min_version`, `recommended_version`,
-# `min_version_effective_from`) carry the literal placeholder
-# `<TBD: pin during Phase 1>` per the architecture doc. Plan 02
-# (`02-nils-cli-render-and-drift-audit`) lands the schema validator AND
-# pins concrete values by snapshotting the installed product CLIs on
-# the development host. Any literal `<TBD>` surviving Plan 02 is a gate
-# failure.
+# `min_version_effective_from`) were Phase 1 placeholders, pinned to
+# concrete values from a development-host snapshot on 2026-05-21
+# during the Plan 01 cleanup PR (the Plan 03 plan reserves `0.130.0`
+# and `2.1.145` as the Codex / Claude snapshot baselines).
+# `min_version_effective_from` is set 14 days after the Phase 2 PR
+# merge target so existing hosts have a runway before the floor
+# starts blocking.
 schema_version: 1
 
 products:
@@ -20,9 +21,9 @@ products:
     state_home: "${CODEX_AGENT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex}"
     plugin_root: "$CODEX_HOME/plugins"
     hook_config_strategy: "managed-block"
-    min_version: "<TBD: pin during Phase 1>"
-    recommended_version: "<TBD: pin during Phase 1>"
-    min_version_effective_from: "<TBD: pin during Phase 1>"
+    min_version: "0.130.0"
+    recommended_version: "0.130.0"
+    min_version_effective_from: "2026-06-03"
     version_probe: "codex --version"
 
   claude:
@@ -31,7 +32,7 @@ products:
     state_home: "${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude}"
     plugin_root_env: "CLAUDE_PLUGIN_ROOT"
     hook_config_strategy: "settings-json"
-    min_version: "<TBD: pin during Phase 1>"
-    recommended_version: "<TBD: pin during Phase 1>"
-    min_version_effective_from: "<TBD: pin during Phase 1>"
+    min_version: "2.1.145"
+    recommended_version: "2.1.145"
+    min_version_effective_from: "2026-06-03"
     version_probe: "claude --version"
