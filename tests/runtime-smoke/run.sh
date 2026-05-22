@@ -155,8 +155,9 @@ validate_matrix_contract() {
   local expected_codex="$REPO_ROOT/tests/sandbox/codex/expected-skills.txt"
   local expected_claude="$REPO_ROOT/tests/sandbox/claude/expected-skills.txt"
   local case_ids="$ARTIFACTS_DIR/matrix.case-ids.txt"
+  local case_ids_unique="$ARTIFACTS_DIR/matrix.case-ids.unique"
   local skill_ids="$ARTIFACTS_DIR/matrix.skill-ids.txt"
-  local skill_ids_sorted="$ARTIFACTS_DIR/matrix.skill-ids.sorted"
+  local skill_ids_unique="$ARTIFACTS_DIR/matrix.skill-ids.unique"
   local dispositions="$ARTIFACTS_DIR/matrix.dispositions.txt"
   local case_count key key_count
 
@@ -169,6 +170,11 @@ validate_matrix_contract() {
   case_count="$(count_lines "$case_ids")"
   if [ "$case_count" -eq 0 ]; then
     echo "runtime-smoke: matrix has no cases" >&2
+    return 1
+  fi
+  sort -u "$case_ids" >"$case_ids_unique"
+  if [ "$(count_lines "$case_ids_unique")" != "$case_count" ]; then
+    echo "runtime-smoke: matrix case id values must be unique" >&2
     return 1
   fi
 
@@ -184,23 +190,18 @@ validate_matrix_contract() {
     fi
   done
 
-  sed -n 's/^    skill_id:[[:space:]]*//p' "$matrix" | sort -u >"$skill_ids"
-  if [ "$(count_lines "$skill_ids")" != "$case_count" ]; then
-    echo "runtime-smoke: matrix skill_id values must be unique and one-per-case" >&2
+  sed -n 's/^    skill_id:[[:space:]]*//p' "$matrix" >"$skill_ids"
+  sort -u "$skill_ids" >"$skill_ids_unique"
+  if [ "$(count_lines "$skill_ids_unique")" != "$(count_lines "$expected_codex")" ]; then
+    echo "runtime-smoke: matrix skill_id unique set count does not match expected skills" >&2
     return 1
   fi
-  sort "$skill_ids" >"$skill_ids_sorted"
-  if ! diff -u "$skill_ids" "$skill_ids_sorted" >"$ARTIFACTS_DIR/matrix.skill-sort.diff" 2>&1; then
-    echo "runtime-smoke: matrix skill_id values are not sorted/unique after extraction" >&2
-    cat "$ARTIFACTS_DIR/matrix.skill-sort.diff" >&2
-    return 1
-  fi
-  if ! diff -u "$expected_codex" "$skill_ids" >"$ARTIFACTS_DIR/matrix.codex-skills.diff" 2>&1; then
+  if ! diff -u "$expected_codex" "$skill_ids_unique" >"$ARTIFACTS_DIR/matrix.codex-skills.diff" 2>&1; then
     echo "runtime-smoke: matrix skill_id set does not match codex expected skills" >&2
     cat "$ARTIFACTS_DIR/matrix.codex-skills.diff" >&2
     return 1
   fi
-  if ! diff -u "$expected_claude" "$skill_ids" >"$ARTIFACTS_DIR/matrix.claude-skills.diff" 2>&1; then
+  if ! diff -u "$expected_claude" "$skill_ids_unique" >"$ARTIFACTS_DIR/matrix.claude-skills.diff" 2>&1; then
     echo "runtime-smoke: matrix skill_id set does not match claude expected skills" >&2
     cat "$ARTIFACTS_DIR/matrix.claude-skills.diff" >&2
     return 1
