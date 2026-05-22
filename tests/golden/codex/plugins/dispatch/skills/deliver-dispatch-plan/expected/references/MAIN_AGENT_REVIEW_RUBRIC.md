@@ -8,7 +8,7 @@ reviewing unless an explicit corrective-fix exception is documented.
 
 ## Inputs
 
-- Runtime-truth task row from `Task Decomposition`
+- Runtime-truth dispatch ledger row and latest dispatch state comment
 - Assigned task prompt, plan task snippet, and dispatch record
 - PR diff and PR body
 - Validation evidence and provider checks
@@ -22,7 +22,7 @@ reviewing unless an explicit corrective-fix exception is documented.
    required checks.
 3. Compare the diff against assigned task fidelity and acceptance intent.
 4. Review correctness, regression risk, failure paths, and test adequacy.
-5. Confirm integration readiness against current sprint and plan gates.
+5. Confirm integration readiness against current dispatch lifecycle gates.
 6. Record decision-scoped review evidence with file/check/issue anchors.
 
 ## Decisions

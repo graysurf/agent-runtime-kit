@@ -54,7 +54,7 @@ Failure modes:
 - Delivery review outcome comment posting fails.
 - Review findings or issue-backed completion gates are unresolved.
 - An MR would close a plan-tracking or dispatch issue before
-  `tracking-issue-closeout`, `dispatch-issue-closeout`, or `plan-issue`
+  `plan-tracking-issue-closeout`, `dispatch-plan-closeout`, or `plan-issue`
   completion gates have passed.
 - Merge strategy, source-branch cleanup, or non-default base requirements are
   ambiguous.
@@ -105,7 +105,7 @@ forge-cli --provider gitlab pr merge "$MR_NUMBER" --method squash
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
 8. For lightweight tracking issues, verify the latest issue-hosted state is
    complete and closeout-ready before allowing auto-close. For dispatch issues,
-   verify `plan-issue` sprint/plan gates or use `dispatch-issue-closeout`.
+   verify `plan-issue` sprint/plan gates or use `dispatch-plan-closeout`.
 9. Merge with `forge-cli --provider gitlab pr merge "$MR_NUMBER"` unless
    `--no-merge` is the requested final stop.
 10. Record the MR URL, pipeline or check evidence, review outcome, merge commit,

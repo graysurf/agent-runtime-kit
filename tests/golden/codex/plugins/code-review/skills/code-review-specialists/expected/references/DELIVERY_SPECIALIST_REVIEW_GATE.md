@@ -10,10 +10,10 @@ without making low-level close skills mandatory review orchestrators.
   end-to-end delivery.
 - `close-github-pr` and `close-gitlab-mr` keep their optional user-requested
   review gate for direct close or merge requests.
-- `deliver-tracking-issue` relies on this delivery gate for each PR, then adds
+- `deliver-plan-tracking-issue` relies on this delivery gate for each PR, then adds
   issue-visible evidence, runtime-finding disposition, lifecycle completion, and
   closeout requirements.
-- `dispatch-pr-review` may use `code-review-specialists` before a main-agent
+- `review-dispatch-lane-pr` may use `code-review-specialists` before a main-agent
   decision for broad, high-risk, security-sensitive, migration-heavy, or
   API-contract-heavy dispatch PRs.
 - `code-review-specialists` remains read-only. It supplies scope detection,

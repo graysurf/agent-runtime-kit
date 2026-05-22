@@ -12,7 +12,7 @@ Disposition vocabulary and reason/evidence rules are canonical in
 
 - `deliver-github-pr` posts the outcome on the PR before merging.
 - `deliver-gitlab-mr` posts the outcome on the MR before merging.
-- `deliver-tracking-issue` records the PR/MR outcome comment URL in
+- `deliver-plan-tracking-issue` records the PR/MR outcome comment URL in
   issue-hosted session or validation evidence instead of duplicating the full
   report.
 - `code-review-specialists` supplies review evidence only. It must not post or

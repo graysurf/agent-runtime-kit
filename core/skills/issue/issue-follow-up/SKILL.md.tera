@@ -63,10 +63,10 @@ lower-level issue or PR/MR tools.
 - Use `create-plan-tracking-issue` for plan-bundle tracking issue creation.
 - Use normal implementation and PR/MR workflows when code/docs changes are
   ready.
-- Use `dispatch-pr-review` when PR review decisions or review follow-up must be
+- Use `review-dispatch-lane-pr` when PR review decisions or review follow-up must be
   mirrored back to a plan issue.
-- Use `tracking-issue-closeout` for lightweight plan-tracking closeout.
-- Use `dispatch-issue-closeout` for heavyweight `plan-issue` dispatch runtimes
+- Use `plan-tracking-issue-closeout` for lightweight plan-tracking closeout.
+- Use `dispatch-plan-closeout` for heavyweight `plan-issue` dispatch runtimes
   with subagent lanes and close gates.
 
 ## Modes

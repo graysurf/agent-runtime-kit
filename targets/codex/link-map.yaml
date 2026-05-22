@@ -352,40 +352,40 @@ entries:
     destination: skills/dispatch/deliver-dispatch-plan
     recursive: false
 
-  - id: dispatch.dispatch-issue-closeout.codex-skill-dir
+  - id: dispatch.dispatch-plan-closeout.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/dispatch-issue-closeout
-    destination: skills/dispatch/dispatch-issue-closeout
+    source: build/codex/plugins/dispatch/skills/dispatch-plan-closeout
+    destination: skills/dispatch/dispatch-plan-closeout
     recursive: false
 
-  - id: dispatch.tracking-issue-closeout.codex-skill-dir
+  - id: dispatch.plan-tracking-issue-closeout.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/tracking-issue-closeout
-    destination: skills/dispatch/tracking-issue-closeout
+    source: build/codex/plugins/dispatch/skills/plan-tracking-issue-closeout
+    destination: skills/dispatch/plan-tracking-issue-closeout
     recursive: false
 
-  - id: dispatch.execute-from-tracking-issue.codex-skill-dir
+  - id: dispatch.execute-plan-tracking-issue.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/execute-from-tracking-issue
-    destination: skills/dispatch/execute-from-tracking-issue
+    source: build/codex/plugins/dispatch/skills/execute-plan-tracking-issue
+    destination: skills/dispatch/execute-plan-tracking-issue
     recursive: false
 
-  - id: dispatch.deliver-tracking-issue.codex-skill-dir
+  - id: dispatch.deliver-plan-tracking-issue.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/deliver-tracking-issue
-    destination: skills/dispatch/deliver-tracking-issue
+    source: build/codex/plugins/dispatch/skills/deliver-plan-tracking-issue
+    destination: skills/dispatch/deliver-plan-tracking-issue
     recursive: false
 
-  - id: dispatch.dispatch-pr-review.codex-skill-dir
+  - id: dispatch.review-dispatch-lane-pr.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/dispatch-pr-review
-    destination: skills/dispatch/dispatch-pr-review
+    source: build/codex/plugins/dispatch/skills/review-dispatch-lane-pr
+    destination: skills/dispatch/review-dispatch-lane-pr
     recursive: false
 
-  - id: dispatch.dispatch-subagent-pr.codex-skill-dir
+  - id: dispatch.execute-dispatch-lane.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/dispatch-subagent-pr
-    destination: skills/dispatch/dispatch-subagent-pr
+    source: build/codex/plugins/dispatch/skills/execute-dispatch-lane
+    destination: skills/dispatch/execute-dispatch-lane
     recursive: false
 
   - id: hooks.shared-scripts

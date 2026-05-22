@@ -123,12 +123,12 @@ plugins:
     contained_skills:
       - dispatch.create-plan-tracking-issue
       - dispatch.deliver-dispatch-plan
-      - dispatch.dispatch-issue-closeout
-      - dispatch.tracking-issue-closeout
-      - dispatch.execute-from-tracking-issue
-      - dispatch.deliver-tracking-issue
-      - dispatch.dispatch-pr-review
-      - dispatch.dispatch-subagent-pr
+      - dispatch.dispatch-plan-closeout
+      - dispatch.plan-tracking-issue-closeout
+      - dispatch.execute-plan-tracking-issue
+      - dispatch.deliver-plan-tracking-issue
+      - dispatch.review-dispatch-lane-pr
+      - dispatch.execute-dispatch-lane
     product_manifests:
       codex: targets/codex/plugins/dispatch/.codex-plugin/plugin.json
       claude: targets/claude/plugins/dispatch/.claude-plugin/plugin.json

@@ -80,6 +80,18 @@ Runtime smoke validates the forge-cli PR create dry-run contract.
 BODY
 }
 
+write_dispatch_session_record() {
+  local path="$1"
+  cat >"$path" <<'BODY'
+## Dispatch Lane PR
+
+- Lane: L1
+- PR: https://github.com/graysurf/agent-runtime-kit/pull/123
+- Status: draft PR created
+- Validation: forge-cli dry-run (pass)
+BODY
+}
+
 run_specialist_scope_probe() {
   local workspace="$1"
   local out="$2"
@@ -148,7 +160,12 @@ run_create_dispatch_lane_probe() {
   local workspace="$PR_WORKSPACE/create-dispatch"
   local body="$PR_ARTIFACTS_DIR/create-dispatch-body.md"
   local out="$PR_ARTIFACTS_DIR/create-dispatch.json"
+  local session="$PR_ARTIFACTS_DIR/create-dispatch-session.md"
+  local comment="$PR_ARTIFACTS_DIR/create-dispatch-comment.md"
+  local render_out="$PR_ARTIFACTS_DIR/create-dispatch-comment-render.json"
+  local issue_comment_out="$PR_ARTIFACTS_DIR/create-dispatch-issue-comment.json"
   require_pr_bin forge-cli || return 1
+  require_pr_bin plan-issue || return 1
   mkdir -p "$workspace"
   cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$workspace"
   init_pushed_branch_fixture "$workspace" "feat/dispatch-lane-runtime-smoke" \
@@ -165,9 +182,24 @@ run_create_dispatch_lane_probe() {
       --body-file "$body" \
       --label dispatch
   ) >"$out" 2>&1
+  write_dispatch_session_record "$session"
+  plan-issue record render-comment \
+    --profile dispatch \
+    --marker-family shared \
+    --kind session \
+    --content-file "$session" \
+    --out "$comment" \
+    --format json >"$render_out" 2>&1
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    issue comment 50 \
+    --body-file "$comment" >"$issue_comment_out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$out"
   grep -q '"provider":"github"' "$out"
   grep -q '"dispatch"' "$out"
+  grep -q '"schema_version":"plan-issue-cli.record.render.comment.v1"' "$render_out"
+  grep -q '<!-- issue-backed-plan:session:v1 profile=dispatch -->' "$comment"
+  grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$issue_comment_out"
 }
 
 run_close_github_probe() {

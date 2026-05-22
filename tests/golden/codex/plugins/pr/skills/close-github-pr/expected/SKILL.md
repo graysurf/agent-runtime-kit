@@ -90,7 +90,7 @@ forge-cli --provider github pr close "$PR_NUMBER"
    required provider checks.
 5. For plan-tracking issues, require complete issue-backed state and closeout
    readiness before merging a PR that closes or finalizes the issue. For
-   dispatch issues, require `plan-issue` / `dispatch-issue-closeout` gates.
+   dispatch issues, require `plan-issue` / `dispatch-plan-closeout` gates.
 6. Run `forge-cli --provider github pr ready "$PR_NUMBER"` if the PR is still
    draft and is ready to merge.
 7. Run `forge-cli --provider github pr merge "$PR_NUMBER"` with the repository's
