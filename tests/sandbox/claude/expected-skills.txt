@@ -19,6 +19,8 @@ pr.close-gitlab-mr
 pr.create-dispatch-lane-pr
 pr.create-github-pr
 pr.create-gitlab-mr
+pr.deliver-github-pr
+pr.deliver-gitlab-mr
 reporting.daily-brief
 reporting.project-retro
 reporting.topic-radar

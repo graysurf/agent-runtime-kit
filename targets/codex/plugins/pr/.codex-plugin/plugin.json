@@ -1,7 +1,7 @@
 {
   "name": "pr",
   "version": "0.1.0",
-  "description": "Provider PR and MR creation, review-gated closeout, and dispatch lane PR workflows backed by forge-cli.",
+  "description": "Provider PR and MR creation, review-gated closeout, delivery macros, and dispatch lane PR workflows backed by forge-cli.",
   "author": {
     "name": "graysurf"
   },
@@ -25,6 +25,14 @@
     {
       "id": "close-gitlab-mr",
       "source": "core/skills/pr/close-gitlab-mr"
+    },
+    {
+      "id": "deliver-github-pr",
+      "source": "core/skills/pr/deliver-github-pr"
+    },
+    {
+      "id": "deliver-gitlab-mr",
+      "source": "core/skills/pr/deliver-gitlab-mr"
     }
   ]
 }

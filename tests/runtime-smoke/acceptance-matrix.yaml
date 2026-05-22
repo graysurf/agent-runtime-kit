@@ -339,6 +339,32 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: pr.deliver-github-pr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.deliver-github-pr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git workspace with pushed upstream branch metadata
+    invocation: forge-cli github pr deliver dry-run validates macro command plan
+    expected_exit_code: 0
+    expected_artifacts: forge-cli deliver dry-run provider command
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: pr.deliver-gitlab-mr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.deliver-gitlab-mr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git workspace with pushed upstream branch metadata
+    invocation: forge-cli gitlab pr deliver dry-run validates macro command plan
+    expected_exit_code: 0
+    expected_artifacts: forge-cli deliver dry-run provider command
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.agent-docs.codex.product-prompt
     product: codex
     domain: meta

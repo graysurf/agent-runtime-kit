@@ -182,6 +182,8 @@ bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only
 bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only
 bash tests/runtime-smoke/run.sh --mode product --format json > /tmp/runtime-smoke-product-summary.json
 diff -u tests/runtime-smoke/product/expected/product-summary.json /tmp/runtime-smoke-product-summary.json
+if bash tests/smoke/deliver-lifecycle.sh; then exit 1; else test $? -ne 0; fi
+bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke
 ```
 
 Runtime smoke install mode creates temporary Codex and Claude `live_home` and
@@ -197,6 +199,11 @@ Current deterministic coverage includes the `meta`, `media`, `browser`,
 `screen-record` is host-sensitive: the deterministic media probe records a pass
 when `screen-record --preflight` succeeds and records `skip-host-capability`
 when the host capture prerequisites are unavailable.
+
+`tests/smoke/deliver-lifecycle.sh` is a controlled Sprint 6 PR delivery smoke.
+It refuses to run without a scratch fork and branch, and its default mode is a
+credential-free `forge-cli pr deliver --dry-run`. Use `--execute-live` only for
+an intentional scratch-repository PR lifecycle run.
 
 Runtime smoke product mode is quarantined outside the default CI gate. Use
 `--probe-only` to validate that Codex and Claude can be invoked with temporary
