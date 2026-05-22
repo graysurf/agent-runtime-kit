@@ -51,7 +51,7 @@
         },
         "recursive": {
           "type": "boolean",
-          "description": "When `kind=symlinked-file` and `source` resolves to a directory, install the tree symlink-by-symlink. Defaults to `false` — entries must be single files unless explicitly opted-in.",
+          "description": "When `kind=symlinked-file` and `source` resolves to a directory, `recursive: true` installs the tree symlink-by-symlink; the default `false` installs the directory itself as one symlink.",
           "default": false
         },
         "surface": {

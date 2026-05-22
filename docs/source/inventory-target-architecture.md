@@ -145,9 +145,11 @@ Status: source document for the first implementation discussion
   checked-out docs home explicitly until those runbooks migrate.
 - 2026-05-23 (Codex skill discovery cutover pass) — updated the Codex reality
   check from prompt/config-only activation to the verified local skill root:
-  runtime-kit skills are installed under `$CODEX_HOME/skills/<domain>/<skill>/`
-  for Codex discovery, while `$CODEX_HOME/plugins` remains audit/compatibility
-  metadata rather than a plugin loader.
+  runtime-kit skills are installed as domain-nested symlinked skill folders
+  under `$CODEX_HOME/skills/<domain>/<skill>/` for Codex discovery, while
+  `$CODEX_HOME/plugins` remains audit/compatibility metadata rather than a
+  plugin loader. Do not expose individual `SKILL.md` file symlinks as the
+  active Codex discovery surface.
 
 ## Purpose
 
@@ -547,10 +549,12 @@ suggests otherwise):**
 purely a source-organisation convention so the same plugin abstraction
 can describe both products on the authoring side. At render time,
 `agent-runtime render` keeps deterministic plugin-organized build output, and
-`agent-runtime install` exposes the skill files under the active
-`$CODEX_HOME/skills/<domain>/<skill>/SKILL.md` root. `.codex-plugin/plugin.json`
-exists in `build/codex/` and `$CODEX_HOME/plugins/` for our own audit and drift
-purposes only — Codex never opens it.
+`agent-runtime install` exposes each active skill as a domain-nested symlinked
+folder under `$CODEX_HOME/skills/<domain>/<skill>/`. The symlink target remains
+the plugin-organized rendered folder under
+`build/codex/plugins/<domain>/skills/<skill>/`. `.codex-plugin/plugin.json`
+exists in `build/codex/` and `$CODEX_HOME/plugins/` for our own audit and
+drift purposes only — Codex never opens it.
 
 **Home-scope prompt source invariant:**
 
@@ -2010,8 +2014,9 @@ Pinned for the rest of this document and Phase 1+ implementation:
     holds plugin / marketplace / `.codex-plugin/plugin.json` files
     purely as an authoring abstraction shared with the Claude side.
     Runtime-kit plugin metadata is not loaded by Codex; active local skills
-    are exposed under `~/.codex/skills`, alongside `~/.codex/AGENTS.md` and
-    the `agent-runtime-kit` managed block inside `~/.codex/config.toml`.
+    are exposed as domain-nested folders under `~/.codex/skills`, alongside
+    `~/.codex/AGENTS.md` and the `agent-runtime-kit` managed block inside
+    `~/.codex/config.toml`.
     Implications:
     - `audit-drift` validates `.codex-plugin/plugin.json` against the
       local schema only — there is no upstream Codex registry to diff

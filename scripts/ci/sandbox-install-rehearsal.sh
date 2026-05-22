@@ -4,7 +4,8 @@
 # The product CLIs do not yet expose a stable `--home <dir> --list-skills`
 # contract, so this gate uses the released `agent-runtime install --dry-run`
 # plan as the skill-list source. It extracts canonical skill ids from planned
-# SKILL.md symlink surfaces and diffs them against committed pins.
+# skill directory or legacy SKILL.md symlink surfaces and diffs them against
+# committed pins.
 
 set -euo pipefail
 
@@ -48,7 +49,10 @@ extract_skill_ids() {
 
   case "$product" in
     codex)
-      sed -n 's#.* /.*skills/\([^/][^/]*\)/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u
+      {
+        sed -n 's#.* (\([a-z0-9][a-z0-9._-]*\)\.codex-skill-dir)#\1#p' "$dry_run_output"
+        sed -n 's#.* /.*skills/\([^/][^/]*\)/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output"
+      } | sort -u
       ;;
     *)
       sed -n 's#.* /.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u

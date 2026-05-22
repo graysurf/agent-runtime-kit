@@ -40,11 +40,16 @@ runtime_collect_installed_skills() {
 
   case "$product" in
     codex)
-      find "$live_home/skills" -path '*/SKILL.md' -print 2>/dev/null |
-        sed "s#^$live_home/skills/##" |
-        sed 's#/SKILL\.md$##' |
-        sed 's#/#.#' |
-        sort -u
+      {
+        find "$live_home/skills" -mindepth 1 -maxdepth 2 -type l -print 2>/dev/null |
+          while IFS= read -r skill_dir; do
+            readlink "$skill_dir" |
+              sed -n 's#^.*/build/codex/plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)$#\1.\2#p'
+          done
+        find "$live_home/skills" -path '*/SKILL.md' -print 2>/dev/null |
+          sed "s#^$live_home/skills/##" |
+          sed -n 's#^\([^/][^/]*\)/\([^/][^/]*\)/SKILL\.md$#\1.\2#p'
+      } | sort -u
       ;;
     *)
       find "$live_home/plugins" -path '*/skills/*/SKILL.md' -print |
