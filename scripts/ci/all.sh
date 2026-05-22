@@ -17,6 +17,14 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
+# Git hooks export repo-local GIT_* variables. They are correct for the hook
+# process, but they leak into temp git repositories used by runtime smoke tests.
+if git_local_env="$(git rev-parse --local-env-vars 2>/dev/null)"; then
+  while IFS= read -r env_name; do
+    [[ -n "$env_name" ]] && unset "$env_name"
+  done <<<"$git_local_env"
+fi
+
 banner() {
   local position="$1"
   local title="$2"
