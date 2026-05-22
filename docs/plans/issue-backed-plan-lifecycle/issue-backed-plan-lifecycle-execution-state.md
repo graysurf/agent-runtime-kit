@@ -3,10 +3,13 @@
 ## Current State
 
 - Source document: `docs/plans/issue-backed-plan-lifecycle/issue-backed-plan-lifecycle-plan.md`
-- Status: in-progress
-- Current task: Task 4.1
-- Next task: Task 4.1
+- Status: complete
+- Current task: Task 4.3
+- Next task: PR review, nils-cli release handoff, and user acceptance
 - Branch: `feat/issue-backed-plan-lifecycle`
+- Runtime-kit PR: pending
+- Nils-cli branch: `feat/issue-backed-plan-lifecycle-cli`
+- Nils-cli PR: https://github.com/sympoies/nils-cli/pull/445
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/50
 - Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522439331
 - Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522439477
@@ -28,9 +31,9 @@
 | Task 3.1 | done | Update tracking-plan skill bodies | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | `create-plan-tracking-issue`, `execute-plan-tracking-issue`, `deliver-plan-tracking-issue`, and `plan-tracking-issue-closeout` now use `plan-issue record` dashboard/comment/audit/closeout primitives with issue #43-compatible markers. |
 | Task 3.2 | done | Update dispatch-plan skill bodies | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | `deliver-dispatch-plan`, `execute-dispatch-lane`, `review-dispatch-lane-pr`, and `dispatch-plan-closeout` now use the same dashboard/comment model with dispatch profile markers and provider mutation through `forge-cli`. |
 | Task 3.3 | done | Update smoke coverage and manifests | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | Manifests, product link maps, rendered outputs, golden snapshots, sandbox skill lists, and PR/dispatch smoke probes now cover the shared record lifecycle. |
-| Task 4.1 | in-progress | Run cross-repo validation | current session | nils-cli lane passed full local gate; agent-runtime-kit targeted render/smoke gates pass and full CI is next after committing intended golden changes. |
-| Task 4.2 | todo | Run specialist review and fix findings | pending | code-review-specialists required before final delivery. |
-| Task 4.3 | todo | Decide release/floor and close plan | pending | Final closeout. |
+| Task 4.1 | done | Run cross-repo validation | nils-cli local-fast; agent-runtime-kit `scripts/ci/all.sh` | Cross-repo validation passed with the nils-cli debug binary first on `PATH`. |
+| Task 4.2 | done | Run specialist review and fix findings | `/Users/terry/.config/agent-kit/out/projects/graysurf__agent-runtime-kit/20260523-050234-issue-backed-plan-lifecycle-review/specialist-review-report-final.md` | code-review-specialists found and fixed one runtime-kit CLI contract issue and one nils-cli closeout evidence issue. |
+| Task 4.3 | done | Decide release/floor and close plan | nils-cli PR #445; runtime-kit PR pending | Runtime-kit keeps the `plan-issue >=0.17.4` floor; integration used the nils-cli debug binary until release. Tracking issue closeout remains gated on PR review/user acceptance rather than automatic merge. |
 
 ## Validation Ledger
 
@@ -67,6 +70,19 @@
 | `bash tests/runtime-smoke/run.sh --mode matrix` | pass | current session | Acceptance matrix covers 54 expected skill IDs after renames. |
 | `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | current session | Sandbox install rehearsal passed for Claude and Codex. |
 | `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | current session | Full deterministic runtime smoke passed 44/44. |
+| `review-specialists scope --base origin/main --testing --maintainability --api-contract` | pass | review artifacts | Runtime-kit diff required api-contract, maintainability, testing, and red-team review because diff lines exceeded 200. |
+| `review-specialists validate --input .../findings.jsonl --repo /Users/terry/Project/graysurf/agent-runtime-kit --validate-paths` | pass | review artifacts | Runtime-kit finding normalized and path-validated. |
+| `review-specialists scope --base origin/main --testing --maintainability --api-contract` | pass | review artifacts | Nils-cli diff required api-contract, maintainability, testing, and red-team review because diff lines exceeded 200. |
+| `review-specialists validate --input .../nils-cli/findings.jsonl --repo /Users/terry/Project/sympoies/nils-cli-issue-backed-plan-lifecycle --validate-paths --validate-lines` | pass | review artifacts | Nils-cli finding normalized and line-validated. |
+| `cargo test -p nils-plan-issue-cli issue_backed_lifecycle_closeout_gate_filters_linked_prs_by_profile -- --nocapture` | pass | nils-cli commit `cdd8f76` | Regression for cross-profile linked PR evidence filtering passed. |
+| `cargo test -p nils-plan-issue-cli issue_backed_lifecycle --no-fail-fast` | pass | nils-cli commit `cdd8f76` | Focused lifecycle tests passed after review fix. |
+| `cargo test -p nils-plan-issue-cli` | pass | nils-cli commit `cdd8f76` | Full plan-issue-cli suite passed after review fix. |
+| `git diff --check` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | No whitespace errors after review fix. |
+| `bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast` | pass | nils-cli commit `cdd8f76` | Workspace gate passed after review fix: 3525 nextest tests and doctests. |
+| `PATH="/Users/terry/Project/sympoies/nils-cli-issue-backed-plan-lifecycle/target/debug:$PATH" tests/runtime-smoke/run.sh --mode deterministic --domain dispatch` | pass | current session | Dispatch smoke passed 8/8 against updated debug binary. |
+| `PATH="/Users/terry/Project/sympoies/nils-cli-issue-backed-plan-lifecycle/target/debug:$PATH" bash scripts/ci/all.sh` | pass | current session | Runtime-kit CI positions 1-9 passed against updated debug binary. |
+| `semantic-commit commit --automation --summary git-show ...` | pass | nils-cli commit `cdd8f76` | Review fix committed as `fix(plan-issue): filter closeout evidence by profile`. |
+| `forge-cli --provider github --repo sympoies/nils-cli --format json pr create ...` | pass | https://github.com/sympoies/nils-cli/pull/445 | Opened draft nils-cli PR for the unreleased CLI side. |
 
 ## Notes
 
