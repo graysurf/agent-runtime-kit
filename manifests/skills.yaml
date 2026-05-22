@@ -384,6 +384,35 @@ skills:
       model-cross-check: ">=0.16.0"
     state_out_mode: runtime
 
+  - id: issue.issue-follow-up
+    domain: issue
+    source: core/skills/issue/issue-follow-up
+    products:
+      codex:
+        name: issue-follow-up
+        render_to: plugins/issue/skills/issue-follow-up/SKILL.md
+      claude:
+        name: issue-follow-up
+        render_to: plugins/issue/skills/issue-follow-up/SKILL.md
+    required_clis:
+      forge-cli: ">=0.17.1"
+      web-evidence: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: code-review.code-review-specialists
+    domain: code-review
+    source: core/skills/code-review/code-review-specialists
+    products:
+      codex:
+        name: code-review-specialists
+        render_to: plugins/code-review/skills/code-review-specialists/SKILL.md
+      claude:
+        name: code-review-specialists
+        render_to: plugins/code-review/skills/code-review-specialists/SKILL.md
+    required_clis:
+      review-specialists: ">=0.17.1"
+    state_out_mode: runtime
+
   - id: pr.create-github-pr
     domain: pr
     source: core/skills/pr/create-github-pr
@@ -438,6 +467,7 @@ skills:
         render_to: plugins/pr/skills/close-github-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.17.1"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.close-gitlab-mr
@@ -452,6 +482,7 @@ skills:
         render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
     required_clis:
       forge-cli: ">=0.17.1"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.deliver-github-pr
@@ -466,6 +497,7 @@ skills:
         render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.17.1"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.deliver-gitlab-mr
@@ -480,35 +512,21 @@ skills:
         render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
     required_clis:
       forge-cli: ">=0.17.1"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
-  - id: dispatch.plan-tracking-issue
+  - id: dispatch.create-plan-tracking-issue
     domain: dispatch
-    source: core/skills/dispatch/plan-tracking-issue
+    source: core/skills/dispatch/create-plan-tracking-issue
     products:
       codex:
-        name: plan-tracking-issue
-        render_to: plugins/dispatch/skills/plan-tracking-issue/SKILL.md
+        name: create-plan-tracking-issue
+        render_to: plugins/dispatch/skills/create-plan-tracking-issue/SKILL.md
       claude:
-        name: plan-tracking-issue
-        render_to: plugins/dispatch/skills/plan-tracking-issue/SKILL.md
+        name: create-plan-tracking-issue
+        render_to: plugins/dispatch/skills/create-plan-tracking-issue/SKILL.md
     required_clis:
       plan-tooling: ">=0.17.1"
-      plan-issue: ">=0.17.1"
-      plan-issue-local: ">=0.17.1"
-    state_out_mode: runtime
-
-  - id: dispatch.issue-lifecycle
-    domain: dispatch
-    source: core/skills/dispatch/issue-lifecycle
-    products:
-      codex:
-        name: issue-lifecycle
-        render_to: plugins/dispatch/skills/issue-lifecycle/SKILL.md
-      claude:
-        name: issue-lifecycle
-        render_to: plugins/dispatch/skills/issue-lifecycle/SKILL.md
-    required_clis:
       plan-issue: ">=0.17.1"
       plan-issue-local: ">=0.17.1"
     state_out_mode: runtime
@@ -559,6 +577,7 @@ skills:
       plan-issue: ">=0.17.1"
       forge-cli: ">=0.17.1"
       review-evidence: ">=0.16.0"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: dispatch.dispatch-pr-review
@@ -575,6 +594,7 @@ skills:
       forge-cli: ">=0.17.1"
       plan-issue: ">=0.17.1"
       review-evidence: ">=0.16.0"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: dispatch.dispatch-subagent-pr

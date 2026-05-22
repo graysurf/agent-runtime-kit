@@ -1,0 +1,14 @@
+{
+  "name": "code-review",
+  "version": "0.1.0",
+  "description": "Read-only specialist code review workflows backed by review-specialists.",
+  "author": {
+    "name": "graysurf"
+  },
+  "skills": [
+    {
+      "id": "code-review-specialists",
+      "source": "core/skills/code-review/code-review-specialists"
+    }
+  ]
+}

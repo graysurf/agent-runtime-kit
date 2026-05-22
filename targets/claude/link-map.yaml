@@ -78,6 +78,28 @@ entries:
     destination: plugins/evidence/skills
     recursive: true
 
+  - id: issue.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/claude/plugins/issue/.claude-plugin/plugin.json
+    destination: plugins/issue/.claude-plugin/plugin.json
+
+  - id: issue.skills-tree
+    kind: symlinked-file
+    source: build/claude/plugins/issue/skills
+    destination: plugins/issue/skills
+    recursive: true
+
+  - id: code-review.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/claude/plugins/code-review/.claude-plugin/plugin.json
+    destination: plugins/code-review/.claude-plugin/plugin.json
+
+  - id: code-review.skills-tree
+    kind: symlinked-file
+    source: build/claude/plugins/code-review/skills
+    destination: plugins/code-review/skills
+    recursive: true
+
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/claude/plugins/pr/.claude-plugin/plugin.json
