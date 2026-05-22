@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: validating
-- Target scope: Sprint 1 through Sprint 7 complete locally
-- Execution window: Sprint 7 dispatch domain migration
+- Status: ready-for-sprint-8
+- Target scope: Sprint 1 through Sprint 7 complete; Sprint 8 not started
+- Execution window: Sprint 7 dispatch domain migration closeout / pre-Sprint 8 checkpoint
 - Staged execution confirmation: not applicable
-- Current task: Sprint 7 validation and PR delivery
-- Next task: Open and deliver Sprint 7 PR
-- Last updated: 2026-05-22 22:02 CST
-- Branch/commit/PR: feat/plan-05-dispatch-domain; PR pending
+- Current task: Pre-Sprint 8 checkpoint complete
+- Next task: Stop before Sprint 8 overlay gates until the owner starts it
+- Last updated: 2026-05-22 22:07 CST
+- Branch/commit/PR: main; merge commit 47ab356327a70e3d1ef1ef1aab4e223c3fa1631f; PR #39 merged
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -112,6 +112,10 @@ result must be recorded before migration proceeds past the affected surface.
 | `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | Dry-run install skill-list diff passed for Claude and Codex with dispatch pins. | n/a |
 | `agent-runtime audit-drift` | pass | Root audit clean; only documented product manifest info differences including dispatch plugin metadata. | n/a |
 | `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed after Sprint 7 edits, including deterministic runtime smoke `total=33 pass=33`. | n/a |
+| `gh pr checks 39 --watch --interval 10 --fail-fast` | pass | PR #39 remote `scripts/ci/all.sh` check passed. | https://github.com/graysurf/agent-runtime-kit/actions/runs/26292428029/job/77395930874 |
+| `/Users/terry/.config/agent-kit/skills/workflows/code-review/code-review-specialists/scripts/review_specialists.py scope --base origin/main --testing --maintainability` | pass | Specialist review scope selected testing and maintainability; red-team review applied due broad diff; no displayed findings remained. | n/a |
+| `gh pr comment 39 --body-file <delivery-review-outcome>` | pass | Posted delivery review outcome comment with merge decision and no blocking findings. | https://github.com/graysurf/agent-runtime-kit/pull/39#issuecomment-4519412557 |
+| `/Users/terry/.config/agent-kit/skills/workflows/pr/github/close-github-pr/scripts/close-github-pr.sh --kind feature --pr 39` | pass | PR #39 marked ready, merged, remote branch deleted, local branch cleaned up, and `main` fast-forwarded to merge commit `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`. | https://github.com/graysurf/agent-runtime-kit/pull/39 |
 | `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `bash tests/projects/project-local-smoke/run.sh` | pending | Sprint 8 project-local overlay smoke | n/a |
@@ -125,13 +129,14 @@ result must be recorded before migration proceeds past the affected surface.
 
 - Any missing nils-cli binary or required flag blocks the affected skill body
   and must be logged in `docs/source/extraction-backlog.md`.
-- Plan 06 deterministic acceptance is satisfied through Sprint 6 by the current
+- Plan 06 deterministic acceptance is satisfied through Sprint 7 by the current
   `matrix`, `deterministic`, and `scripts/ci/all.sh` validation; rerun the
   same gate before future sprint merges.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
-- Sprint 7 dispatch migration is locally complete and awaiting PR delivery on
-  `feat/plan-05-dispatch-domain`.
+- Sprint 7 dispatch migration is merged in PR #39 at
+  `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`.
+- Sprint 8 overlay gates have not been started.
 - Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
   `graysurf/claude-kit`.
 - Local cutover should use the recommended 2026-06-30 date unless the execution
@@ -151,3 +156,4 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Started Sprint 7 dispatch domain migration on `feat/plan-05-dispatch-domain`; Sprint 7 split-prs readiness passed and Task 7.1 is in progress.
 - 2026-05-22: Completed Sprint 7 dispatch source migration, manifests, product plugin metadata, link maps, golden snapshots, sandbox pins, and deterministic dispatch runtime smoke; local CI passed with `total=33 pass=33`.
 - 2026-05-22: Fixed a small Sprint 7 usage bug before commit: removed unsupported `forge-cli pr create --draft` guidance from `dispatch-subagent-pr` because draft PRs are the default in released `forge-cli 0.17.1`.
+- 2026-05-22: Merged Plan 05 Sprint 7 PR #39 at `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`; issue #26 dashboard, state, validation, and session comments should now mark Sprint 7 complete and Sprint 8 intentionally not started.
