@@ -8,8 +8,8 @@
 - Execution window: Sprint 1 foundation tasks 1.1-1.3
 - Current task: Sprint 1 PR checkpoint
 - Next task: Task 2.1 add meta skill probes
-- Last updated: 2026-05-22 14:54 CST
-- Branch/commit/PR: feat/runtime-skill-smoke-foundation; commit pending; PR pending
+- Last updated: 2026-05-22 14:59 CST
+- Branch/commit/PR: feat/runtime-skill-smoke-foundation; `b151e4e`; https://github.com/graysurf/agent-runtime-kit/pull/29
 - Source document: docs/plans/06-runtime-skill-acceptance-harness/06-runtime-skill-acceptance-harness-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/28
@@ -40,6 +40,7 @@
 
 - 2026-05-22 14:43 CST: Initialized Sprint 1 execution from issue #28 source and plan snapshots.
 - 2026-05-22 14:54 CST: Implemented Sprint 1 runtime smoke foundation and validated targeted harness modes plus `bash scripts/ci/all.sh`.
+- 2026-05-22 14:59 CST: Opened ready PR https://github.com/graysurf/agent-runtime-kit/pull/29 for Sprint 1 review/checks.
 
 ## Validation
 
