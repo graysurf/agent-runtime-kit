@@ -24,7 +24,7 @@ or close gates layered on top.
     keep old tracking markers. Default: parse legacy markers and emit shared
     markers for new artifacts.
   - Whether dispatch closeout remains a separate skill or becomes
-    `tracking-issue-closeout` with `profile=dispatch`. Default: keep separate
+    `plan-tracking-issue-closeout` with `profile=dispatch`. Default: keep separate
     public skill names but call the same lower-level CLI gates.
 
 ## Scope
@@ -272,11 +272,11 @@ shared lifecycle contract and debug-binary validated CLI behavior.
 
 - **Location**:
   - core/skills/dispatch/create-plan-tracking-issue/SKILL.md.tera
-  - core/skills/dispatch/execute-from-tracking-issue/SKILL.md.tera
-  - core/skills/dispatch/tracking-issue-closeout/SKILL.md.tera
+  - core/skills/dispatch/execute-plan-tracking-issue/SKILL.md.tera
+  - core/skills/dispatch/plan-tracking-issue-closeout/SKILL.md.tera
   - tests/golden/codex/plugins/dispatch/skills/create-plan-tracking-issue/expected/SKILL.md
-  - tests/golden/codex/plugins/dispatch/skills/execute-from-tracking-issue/expected/SKILL.md
-  - tests/golden/codex/plugins/dispatch/skills/tracking-issue-closeout/expected/SKILL.md
+  - tests/golden/codex/plugins/dispatch/skills/execute-plan-tracking-issue/expected/SKILL.md
+  - tests/golden/codex/plugins/dispatch/skills/plan-tracking-issue-closeout/expected/SKILL.md
 - **Description**: Rewrite tracking-plan skills around the shared lifecycle CLI
   and dashboard/comment contract while preserving current names. Remove
   guidance that makes `plan-issue start-plan` / `Task Decomposition` the
@@ -287,8 +287,8 @@ shared lifecycle contract and debug-binary validated CLI behavior.
 - **Acceptance criteria**:
   - `create-plan-tracking-issue` describes lightweight dashboard and snapshot
     comment creation.
-  - `execute-from-tracking-issue` uses issue comments as durable state.
-  - `tracking-issue-closeout` gates on shared lifecycle comments and approval.
+  - `execute-plan-tracking-issue` uses issue comments as durable state.
+  - `plan-tracking-issue-closeout` gates on shared lifecycle comments and approval.
   - Golden output matches rendered source.
 - **Validation**:
   - `PATH=/Users/terry/Project/sympoies/nils-cli/target/debug:$PATH agent-runtime render --product codex --update-golden`
@@ -297,11 +297,11 @@ shared lifecycle contract and debug-binary validated CLI behavior.
 
 - **Location**:
   - core/skills/dispatch/deliver-dispatch-plan/SKILL.md.tera
-  - core/skills/dispatch/dispatch-subagent-pr/SKILL.md.tera
-  - core/skills/dispatch/dispatch-pr-review/SKILL.md.tera
-  - core/skills/dispatch/dispatch-issue-closeout/SKILL.md.tera
+  - core/skills/dispatch/execute-dispatch-lane/SKILL.md.tera
+  - core/skills/dispatch/review-dispatch-lane-pr/SKILL.md.tera
+  - core/skills/dispatch/dispatch-plan-closeout/SKILL.md.tera
   - core/skills/dispatch/deliver-dispatch-plan/references/
-  - core/skills/dispatch/dispatch-issue-closeout/references/
+  - core/skills/dispatch/dispatch-plan-closeout/references/
 - **Description**: Reframe dispatch as the shared issue-backed lifecycle with
   subagent lanes. Keep lane dispatch, PR grouping, review, and close gates, but
   move durable task decomposition into dispatch ledger comments instead of a

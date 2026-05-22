@@ -1,7 +1,7 @@
 ---
 name: deliver-dispatch-plan
 description:
-  Deliver a dispatch-ready plan by creating one plan issue, dispatching sprint task lanes, enforcing review and acceptance gates, and closing the plan through plan-issue.
+  Deliver a dispatch-ready plan by creating one shared issue-backed plan record, dispatching task lanes, reviewing PRs, and closing through lifecycle gates.
 ---
 
 # Deliver Dispatch Plan
@@ -10,13 +10,14 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue`, `plan-issue-local`, `forge-cli`,
-  `review-evidence`, and `review-specialists` are installed from released
-  nils-cli packages and available on `PATH`.
-- The target repository, default branch, plan file, and provider repository
-  slug are known before live mutation.
+- `plan-tooling`, `plan-issue`, `forge-cli`, `review-evidence`, and
+  `review-specialists` are available on `PATH`. The lifecycle record commands
+  require `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli
+  debug binary directory to `PATH`.
+- The target repository, default branch, plan file, grouping strategy, and
+  provider repository slug are known before live mutation.
 - In live mode, provider auth is available and the repository can create or use
-  the `issue` and `plan` labels.
+  the `issue`, `plan`, and `dispatch` labels.
 - The main agent owns orchestration, review, issue synchronization, and final
   integration. Subagents own implementation lanes.
 
@@ -24,130 +25,133 @@ Inputs:
 
 - Plan path, repository slug, default branch, grouping strategy, and optional
   deterministic `--pr-group` mappings.
-- One plan issue number after `start-plan` succeeds.
+- One provider issue number after `forge-cli issue create` succeeds.
 - `PLAN_BRANCH`, created from the default branch and used as the base for every
-  sprint lane PR.
-- Sprint number, sprint approval comment URL, and final plan approval comment
-  URL.
+  dispatch lane PR.
 - Mandatory dispatch bundle per assigned lane:
   `TASK_PROMPT_PATH`, `PLAN_SNAPSHOT_PATH`, `DISPATCH_RECORD_PATH`, selected
   `workflow_role`, `PLAN_BRANCH`, and exact plan task context.
-- Final integration PR from `PLAN_BRANCH` to the default branch, plus
-  conformance, required-check, delivery-outcome, and issue-mention evidence.
+- Sprint/lane approval comment URLs, review evidence, and final plan approval
+  comment URL.
 
 Outputs:
 
-- Exactly one provider issue for the whole plan (`1 plan = 1 issue`) with a
-  `Task Decomposition` table as runtime truth.
-- Issue-hosted source and plan snapshots, plus dispatch state/session/
-  validation/closeout checkpoints using `deliver-dispatch-plan:*` markers.
-- Sprint task specs, subagent prompt artifacts, and dispatch records generated
-  from issue/runtime truth.
-- Draft sprint lane PRs targeting `PLAN_BRANCH`, linked back through
-  `plan-issue link-pr`.
-- Main-agent review evidence for sprint PR decisions and final integration.
-- Final close through `plan-issue close-plan` only after sprint PRs, final
-  integration PR, approval, issue mention, conformance, checks, and cleanup
-  gates pass.
+- Exactly one provider issue for the whole plan (`1 plan = 1 issue`) whose body
+  uses the same shared dashboard shape as lightweight tracking issues.
+- Source, plan, dispatch ledger, state, session, validation, review, and
+  closeout comments rendered through `plan-issue record`.
+- Dispatch ledger table with task, owner/subagent, branch, worktree,
+  execution-mode, PR group, PR, status, validation, review, and notes columns.
+- Draft lane PRs targeting `PLAN_BRANCH`, with lane status reflected in the
+  latest dispatch state/session comments.
+- Final close only after lane PRs, final integration PR, approval, issue
+  mention, validation, review, and cleanup gates pass.
 
 Failure modes:
 
-- Plan validation, grouping, or task decomposition is ambiguous.
-- `PLAN_BRANCH` is missing, stale, or not used as the base for sprint PRs.
-- A dispatch lane lacks the mandatory bundle or changes task-lane facts without
-  explicit reassignment.
-- Main agent starts implementing task-lane code instead of routing work to the
+- Plan validation, grouping, or dispatch ledger generation is ambiguous.
+- `PLAN_BRANCH` is missing, stale, or not used as the base for lane PRs.
+- A lane lacks the mandatory bundle or changes task-lane facts without explicit
+  reassignment.
+- Main agent starts implementing lane code instead of routing work to the
   assigned subagent.
-- Review evidence, specialist review, provider checks, sprint acceptance, final
-  integration, issue mention, or close gates fail.
-- Local runtime artifacts are missing or provider issue state cannot be
-  recovered from issue-hosted records.
+- Review evidence, specialist review, provider checks, final integration,
+  issue mention, approval, or lifecycle closeout gates fail.
 
 ## Entrypoint
 
-Validate the plan and create one plan issue:
+Validate the plan and render the shared dashboard:
 
 ```bash
 plan-tooling validate --file "$PLAN" --format text --explain
-plan-issue start-plan \
+
+plan-issue record render-dashboard \
+  --profile dispatch \
+  --status in-progress \
+  --target-scope "$TARGET_SCOPE" \
+  --current "$CURRENT_GATE" \
+  --next-action "$NEXT_ACTION" \
+  --validation pending \
+  --approval pending \
+  --title "$TITLE" \
+  --out "$ISSUE_BODY"
+```
+
+Render the dispatch ledger and lifecycle comments:
+
+```bash
+plan-issue record build-dispatch-ledger \
   --plan "$PLAN" \
-  --repo "$OWNER_REPO" \
   --strategy auto \
   --default-pr-grouping group \
-  --format json
+  --out "$DISPATCH_LEDGER"
+
+plan-issue record render-comment --profile dispatch --marker-family shared --kind plan \
+  --path "$PLAN" \
+  --commit "$(git rev-parse HEAD)" \
+  --content-file "$PLAN" \
+  --out "$PLAN_COMMENT"
+
+plan-issue record render-comment --profile dispatch --marker-family shared --kind state \
+  --content-file "$DISPATCH_STATE" \
+  --out "$STATE_COMMENT"
 ```
 
-Start a sprint and emit dispatch artifacts:
+Create the provider issue and post records through `forge-cli`:
 
 ```bash
-plan-issue start-sprint \
-  --plan "$PLAN" \
+forge-cli issue create \
+  --provider github \
   --repo "$OWNER_REPO" \
-  --issue "$ISSUE" \
-  --sprint "$SPRINT" \
-  --strategy auto \
-  --default-pr-grouping group \
-  --subagent-prompts-out "$SPRINT_ROOT/prompts" \
+  --title "$TITLE" \
+  --body-file "$ISSUE_BODY" \
+  --label plan \
+  --label dispatch \
   --format json
+
+forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$PLAN_COMMENT" --format json
+forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$STATE_COMMENT" --format json
+forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$UPDATED_DASHBOARD" --format json
 ```
 
-Synchronize sprint PRs and gates:
-
-```bash
-plan-issue link-pr --issue "$ISSUE" --repo "$OWNER_REPO" --task "$TASK_ID" --pr "#$PR_NUMBER" --status in-progress --format json
-plan-issue ready-sprint --plan "$PLAN" --issue "$ISSUE" --repo "$OWNER_REPO" --sprint "$SPRINT" --format json
-plan-issue accept-sprint --plan "$PLAN" --issue "$ISSUE" --repo "$OWNER_REPO" --sprint "$SPRINT" --approved-comment-url "$SPRINT_APPROVAL_URL" --format json
-```
-
-Close the plan after final integration:
-
-```bash
-plan-issue ready-plan --issue "$ISSUE" --repo "$OWNER_REPO" --summary-file "$PLAN_REVIEW_SUMMARY" --format json
-plan-issue close-plan --issue "$ISSUE" --repo "$OWNER_REPO" --approved-comment-url "$PLAN_APPROVAL_URL" --format json
-```
-
-Use `plan-issue-local` only for explicit offline rehearsal; see
-`references/LOCAL_REHEARSAL.md`.
+Use `plan-tooling split-prs` for PR grouping analysis only. Do not create a
+`Task Decomposition` issue body for new dispatch plans.
 
 ## Workflow
 
 1. Resolve repository, default branch, plan path, issue labels, grouping
    strategy, and validation commands.
-2. Validate the plan with `plan-tooling`; stop on plan syntax or grouping
-   ambiguity.
-3. Run `plan-issue start-plan` to create or prepare one plan issue. Persist the
-   issue number and `PLAN_BRANCH`.
-4. Verify issue-hosted source and plan snapshots. Keep `Task Decomposition` as
-   runtime truth; dispatch checkpoints are derived evidence.
-5. For each sprint, run `start-sprint` only after the previous sprint is
-   accepted and synchronized.
-6. Dispatch subagents with the full lane bundle. Ad-hoc prompts that omit
-   `TASK_PROMPT_PATH`, `PLAN_SNAPSHOT_PATH`, `DISPATCH_RECORD_PATH`, task
-   context, or `PLAN_BRANCH` are invalid.
-7. Require lane PRs to target `PLAN_BRANCH`; open them through
-   `create-dispatch-lane-pr` or `dispatch-subagent-pr`, then synchronize rows
-   with `plan-issue link-pr`.
-8. Review sprint PRs through `dispatch-pr-review`. Use
+2. Validate the plan with `plan-tooling`; stop on syntax or grouping ambiguity.
+3. Render the shared dashboard, source snapshot, plan snapshot, dispatch ledger,
+   and initial dispatch state through `plan-issue record`.
+4. Create one provider issue through `forge-cli`, post the comments, then
+   re-render/edit the dashboard with exact durable-record URLs.
+5. Create `PLAN_BRANCH` from the default branch.
+6. For each lane, write a mandatory dispatch bundle and route implementation to
+   `execute-dispatch-lane`.
+7. Require lane PRs to target `PLAN_BRANCH`; record PR URLs and status in the
+   next dispatch state/session comment.
+8. Review lane PRs through `review-dispatch-lane-pr`. Use
    `code-review-specialists` as supplemental read-only evidence when risk
    warrants it, and force `testing` plus `maintainability` for delivery PRs.
-9. Run `ready-sprint` before merge decisions and `accept-sprint` only after the
-   sprint PRs are merged into `PLAN_BRANCH`.
-10. After the final sprint, open a final integration PR from `PLAN_BRANCH` to
-    the default branch. Before merge, record plan conformance, required checks,
-    and a delivery review outcome comment URL.
-11. Post or verify a plan-issue comment that mentions the final integration PR.
-12. Run `ready-plan`, then `close-plan` with the final approval comment URL.
-13. Verify one `deliver-dispatch-plan:closeout:v1` checkpoint, current dashboard
-    links, worktree cleanup, and local branch synchronization.
+9. Append dispatch validation and review comments after each gate; dashboard
+   edits should only summarize and link durable comments.
+10. After all lanes are accepted, open the final integration PR from
+    `PLAN_BRANCH` to the default branch and record conformance, required checks,
+    and delivery review outcome evidence.
+11. Run `plan-issue record audit --profile dispatch` and
+    `plan-issue record closeout-gate --profile dispatch` before closeout.
+12. Close through `dispatch-plan-closeout` after final approval.
 
 ## Boundary
 
-`plan-tooling` owns plan parsing. `plan-issue` owns the issue task table,
-sprint gates, plan gates, comments, and close operation. `forge-cli` owns
-provider PR lifecycle. `review-evidence` owns retained review records.
+`plan-tooling` owns plan validation, batching, and PR split modeling only.
+`plan-issue record` owns dashboard/comment rendering, dispatch ledger
+generation, marker audit, and closeout-gate evidence. `forge-cli` owns provider
+issue and PR lifecycle. `review-evidence` owns retained review records.
 `code-review-specialists` is read-only. This skill owns orchestration judgment,
-lane assignment, review decisions, issue evidence completeness, final
-integration readiness, and stop/continue decisions.
+lane assignment, review decisions, issue evidence completeness, and stop/continue
+decisions.
 
 ## References
 

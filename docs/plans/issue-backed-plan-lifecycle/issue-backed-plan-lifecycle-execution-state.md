@@ -3,27 +3,32 @@
 ## Current State
 
 - Source document: `docs/plans/issue-backed-plan-lifecycle/issue-backed-plan-lifecycle-plan.md`
-- Status: not-started
-- Current task: Task 1.1
-- Next task: Task 1.1
+- Status: in-progress
+- Current task: Task 4.1
+- Next task: Task 4.1
 - Branch: `feat/issue-backed-plan-lifecycle`
-- Tracking issue: pending
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/50
+- Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522439331
+- Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522439477
+- Latest execution state: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522550747
+- Latest execution session: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522551275
+- Latest validation evidence: https://github.com/graysurf/agent-runtime-kit/issues/50#issuecomment-4522552006
 
 ## Task Ledger
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| Task 1.1 | todo | Define lifecycle contract fixtures | pending | Cross-repo nils-cli fixture work. |
-| Task 1.2 | todo | Preserve plan-tooling boundary | pending | Keep provider UI out of plan-tooling. |
-| Task 1.3 | todo | Choose CLI surface and compatibility policy | pending | Decide command shape after code inspection. |
-| Task 2.1 | todo | Implement shared dashboard and comment renderer | pending | nils-cli implementation. |
-| Task 2.2 | todo | Implement marker audit and dashboard repair | pending | nils-cli implementation. |
-| Task 2.3 | todo | Implement dispatch ledger and gate support | pending | nils-cli implementation. |
-| Task 2.4 | todo | Build and expose debug binaries for integration | pending | Debug binary path only for scoped validation. |
-| Task 3.1 | todo | Update tracking-plan skill bodies | pending | agent-runtime-kit integration. |
-| Task 3.2 | todo | Update dispatch-plan skill bodies | pending | agent-runtime-kit integration. |
-| Task 3.3 | todo | Update smoke coverage and manifests | pending | agent-runtime-kit integration. |
-| Task 4.1 | todo | Run cross-repo validation | pending | nils-cli and agent-runtime-kit gates. |
+| Task 1.1 | done | Define lifecycle contract fixtures | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | Contract docs and integration fixtures added. |
+| Task 1.2 | done | Preserve plan-tooling boundary | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | `plan-tooling` remains plan parsing, validation, batching, and split modeling only. |
+| Task 1.3 | done | Choose CLI surface and compatibility policy | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | Added `plan-issue record` with `compat` and `shared` marker families. |
+| Task 2.1 | done | Implement shared dashboard and comment renderer | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | Added deterministic `record render-dashboard` and `record render-comment`. |
+| Task 2.2 | done | Implement marker audit and dashboard repair | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | Added `record audit` and `record closeout-gate`. |
+| Task 2.3 | done | Implement dispatch ledger and gate support | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | Added `record build-dispatch-ledger`. |
+| Task 2.4 | done | Build and expose debug binaries for integration | `/Users/terry/Project/sympoies/nils-cli-issue-backed-plan-lifecycle/target/debug/plan-issue` | Debug binary validates and exposes `plan-issue record`. |
+| Task 3.1 | done | Update tracking-plan skill bodies | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | `create-plan-tracking-issue`, `execute-plan-tracking-issue`, `deliver-plan-tracking-issue`, and `plan-tracking-issue-closeout` now use `plan-issue record` dashboard/comment/audit/closeout primitives with issue #43-compatible markers. |
+| Task 3.2 | done | Update dispatch-plan skill bodies | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | `deliver-dispatch-plan`, `execute-dispatch-lane`, `review-dispatch-lane-pr`, and `dispatch-plan-closeout` now use the same dashboard/comment model with dispatch profile markers and provider mutation through `forge-cli`. |
+| Task 3.3 | done | Update smoke coverage and manifests | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | Manifests, product link maps, rendered outputs, golden snapshots, sandbox skill lists, and PR/dispatch smoke probes now cover the shared record lifecycle. |
+| Task 4.1 | in-progress | Run cross-repo validation | current session | nils-cli lane passed full local gate; agent-runtime-kit targeted render/smoke gates pass and full CI is next after committing intended golden changes. |
 | Task 4.2 | todo | Run specialist review and fix findings | pending | code-review-specialists required before final delivery. |
 | Task 4.3 | todo | Decide release/floor and close plan | pending | Final closeout. |
 
@@ -38,6 +43,30 @@
 | `for n in 1 2 3 4; do plan-tooling batches --file docs/plans/issue-backed-plan-lifecycle/issue-backed-plan-lifecycle-plan.md --sprint "$n" --format json; done` | pass | current session | Sprints 1-4 batch analysis passed. |
 | `plan-tooling split-prs ...` for Sprints 1-4 | pass | current session | Sprints 1-3 use auto group; Sprint 4 uses per-sprint deterministic. |
 | `/Users/terry/.config/agent-kit/skills/workflows/plan/plan-tracking-issue/scripts/plan-tracking-issue.sh --plan docs/plans/issue-backed-plan-lifecycle/issue-backed-plan-lifecycle-plan.md --provider github --repo graysurf/agent-runtime-kit --dry-run --label plan` | pass | current session | Dry-run rendered lightweight issue body at `/tmp/issue-backed-plan-lifecycle-issue-body.md`. |
+| `/Users/terry/.config/agent-kit/skills/workflows/plan/plan-tracking-issue/scripts/plan-tracking-issue.sh --plan docs/plans/issue-backed-plan-lifecycle/issue-backed-plan-lifecycle-plan.md --provider github --repo graysurf/agent-runtime-kit --label plan` | pass | https://github.com/graysurf/agent-runtime-kit/issues/50 | Created the live tracking issue. |
+| `gh issue comment 50 ...` source, plan, and state comments | pass | issue #50 comments | Posted source snapshot, plan snapshot, and initial execution state with compatibility markers matching issue #43. |
+| `cargo test -p nils-plan-issue-cli issue_backed_lifecycle --no-fail-fast` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Focused lifecycle record integration coverage passed. |
+| `cargo test -p nils-plan-issue-cli` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Full plan-issue-cli tests passed before final compat rename. |
+| `cargo test -p nils-plan-tooling` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Confirmed plan-tooling boundary still passes its own tests. |
+| `cargo test -p nils-forge-cli` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Confirmed provider CRUD wrapper tests remain passing. |
+| `cargo build -p nils-plan-issue-cli -p nils-forge-cli -p nils-plan-tooling` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Built the affected binaries and libraries. |
+| `bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Workspace gate passed: docs placement/hygiene, markdown lint, plan-bundle validation, CLI output contract, fixture lint, fmt, clippy, 3524 nextest tests, and doctests. |
+| `bash -n completions/bash/plan-issue && bash -n completions/bash/plan-issue-local && zsh -n completions/zsh/_plan-issue && zsh -n completions/zsh/_plan-issue-local` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | Generated completion scripts parse successfully. |
+| `git diff --check` | pass | nils-cli worktree `feat/issue-backed-plan-lifecycle-cli` | No whitespace errors before commit. |
+| `semantic-commit commit --automation --summary git-show ...` | pass | nils-cli commit `257742a2a2a65198626870b1e49b1d72b8944501` | CLI lane committed as `feat(plan-issue): add issue-backed record lifecycle`. |
+| `plan-issue record render-comment --kind state/session/validation --marker-family compat ...` | pass | issue #50 comments | Debug binary rendered issue #43-compatible durable comments. |
+| `plan-issue record render-dashboard ...` | pass | https://github.com/graysurf/agent-runtime-kit/issues/50 | Debug binary rendered the mutable issue dashboard and `gh issue edit` applied it. |
+| `agent-runtime render --product codex --update-golden` | pass | current session | Regenerated Codex build output and golden snapshots after skill/manifest changes. |
+| `agent-runtime render --product claude --update-golden` | pass | current session | Regenerated Claude build output and golden snapshots after skill/manifest changes. |
+| `agent-runtime render --product codex` | pass | current session | Render cache confirms Codex output is current. |
+| `agent-runtime render --product claude` | pass | current session | Render cache confirms Claude output is current. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain pr` | pass | current session | PR domain smoke passed 7/7, including dispatch-lane PR session comment rendering. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch` | pass | current session | Dispatch domain smoke passed 8/8 with tracking and dispatch record comments. |
+| `git diff --check` | pass | current session | No whitespace errors in the agent-runtime-kit diff. |
+| `agent-runtime audit-drift` | pass | current session | Drift audit is clean except documented intentional Codex/Claude plugin manifest differences. |
+| `bash tests/runtime-smoke/run.sh --mode matrix` | pass | current session | Acceptance matrix covers 54 expected skill IDs after renames. |
+| `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | current session | Sandbox install rehearsal passed for Claude and Codex. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | current session | Full deterministic runtime smoke passed 44/44. |
 
 ## Notes
 

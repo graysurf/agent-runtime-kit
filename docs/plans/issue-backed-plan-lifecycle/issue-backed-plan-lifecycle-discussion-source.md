@@ -34,9 +34,9 @@ outputs, and move deterministic rendering, audit, and gate logic into
 ## Confirmed Facts
 
 - [U1] Current public skill names should remain in use, including
-  `create-plan-tracking-issue`, `execute-from-tracking-issue`,
-  `tracking-issue-closeout`, `deliver-dispatch-plan`, `dispatch-subagent-pr`,
-  `dispatch-pr-review`, and `dispatch-issue-closeout`.
+  `create-plan-tracking-issue`, `execute-plan-tracking-issue`,
+  `plan-tracking-issue-closeout`, `deliver-dispatch-plan`, `execute-dispatch-lane`,
+  `review-dispatch-lane-pr`, and `dispatch-plan-closeout`.
 - [U2] Dispatch plan workflows are conceptually tracking plan workflows plus
   subagent lane dispatch, task splitting, review confirmation, PR grouping, and
   close gates.
@@ -51,12 +51,12 @@ outputs, and move deterministic rendering, audit, and gate logic into
   lightweight provider issue body that links the primary source, plan, inferred
   execution state, provider, and next action, and it posts source/plan
   snapshots as append-only comments.
-- [F2] The legacy `agent-kit` `execute-from-tracking-issue` workflow treats
+- [F2] The legacy `agent-kit` `execute-plan-tracking-issue` workflow treats
   issue-hosted source and plan snapshots plus
   `execute-from-tracking-issue:state:v1` comments as the durable execution
   record; local execution-state Markdown is only scratchpad or recovery input
   once issue-backed execution begins.
-- [F3] The legacy `agent-kit` `tracking-issue-closeout` workflow gates closeout
+- [F3] The legacy `agent-kit` `plan-tracking-issue-closeout` workflow gates closeout
   on source snapshot, plan snapshot, complete state, session evidence,
   validation evidence, explicit approval, and merged PR evidence, then repairs
   the final dashboard and posts a `tracking-issue-closeout:v1` comment.
@@ -97,11 +97,11 @@ In scope:
 
 - Define and implement shared issue body/dashboard and append-only comment
   templates for issue-backed plan lifecycle workflows.
-- Rework `create-plan-tracking-issue`, `execute-from-tracking-issue`, and
-  `tracking-issue-closeout` to match the tracking profile while keeping their
+- Rework `create-plan-tracking-issue`, `execute-plan-tracking-issue`, and
+  `plan-tracking-issue-closeout` to match the tracking profile while keeping their
   current names.
-- Rework `deliver-dispatch-plan`, `dispatch-subagent-pr`,
-  `dispatch-pr-review`, and `dispatch-issue-closeout` to use the shared issue
+- Rework `deliver-dispatch-plan`, `execute-dispatch-lane`,
+  `review-dispatch-lane-pr`, and `dispatch-plan-closeout` to use the shared issue
   record contract while preserving dispatch-only subagent features.
 - Add or refactor `nils-cli` commands for lifecycle rendering, marker audit,
   dashboard repair, state validation, dispatch ledger generation, and closeout
@@ -165,14 +165,14 @@ Requirements:
 
 1. `create-plan-tracking-issue` creates or previews a lightweight dashboard
    body and source/plan snapshot comments.
-2. `execute-from-tracking-issue` recovers source, plan, state, session,
+2. `execute-plan-tracking-issue` recovers source, plan, state, session,
    validation, PR links, and blockers from issue comments, not chat history.
 3. The state ledger can stay close to the legacy
    `ID | Status | Task | Evidence | Notes` shape.
 4. Completion gates require complete state, done/deferred task rows,
    validation evidence, PR evidence when PRs exist, and current dashboard
    links.
-5. `tracking-issue-closeout` handles final dashboard repair, closeout comment,
+5. `plan-tracking-issue-closeout` handles final dashboard repair, closeout comment,
    and close gate after explicit approval.
 
 ## Dispatch Profile
@@ -189,9 +189,9 @@ Requirements:
 3. Dispatch state must include task id, summary, sprint, owner/subagent,
    branch, worktree, execution mode, PR group, PR, status, validation, review
    state, and notes.
-4. `dispatch-subagent-pr` and `dispatch-pr-review` update the dispatch state
+4. `execute-dispatch-lane` and `review-dispatch-lane-pr` update the dispatch state
    through the lifecycle CLI, preserving lane continuity and review evidence.
-5. `dispatch-issue-closeout` enforces dispatch-specific gates: every lane
+5. `dispatch-plan-closeout` enforces dispatch-specific gates: every lane
    complete or deferred, required reviews complete, linked PRs merged or
    explicitly waived, final validation present, approval present, and dashboard
    current.
@@ -258,13 +258,13 @@ Do not wait for a `nils-cli` release before integrating.
 - `create-plan-tracking-issue` dry-run renders a lightweight dashboard body and
   source/plan snapshot comment artifacts, not a `Task Decomposition` issue
   body.
-- `execute-from-tracking-issue` guidance and smoke tests recover issue state
+- `execute-plan-tracking-issue` guidance and smoke tests recover issue state
   from shared snapshot/state/session/validation comments.
-- `tracking-issue-closeout` guidance and smoke tests gate on shared comments
+- `plan-tracking-issue-closeout` guidance and smoke tests gate on shared comments
   and repair the dashboard.
 - `deliver-dispatch-plan` guidance and smoke tests create a shared dashboard
   body plus dispatch ledger comments that include subagent lane data.
-- `dispatch-subagent-pr`, `dispatch-pr-review`, and `dispatch-issue-closeout`
+- `execute-dispatch-lane`, `review-dispatch-lane-pr`, and `dispatch-plan-closeout`
   update or validate dispatch ledger comments through the shared CLI contract.
 - `plan-tooling validate`, `batches`, and `split-prs` still pass for the plan
   bundle.
@@ -316,7 +316,7 @@ Do not wait for a `nils-cli` release before integrating.
   shared `issue-backed-plan:*` marker family while parsing old names?
 - How much of the old `agent-kit` Python helper behavior should be ported
   exactly, and how much should be normalized during the Rust CLI migration?
-- Should dispatch closeout reuse `tracking-issue-closeout` with
+- Should dispatch closeout reuse `plan-tracking-issue-closeout` with
   `profile=dispatch`, or remain a separate skill that calls the same lower-level
   CLI gates?
 
@@ -324,17 +324,17 @@ Do not wait for a `nils-cli` release before integrating.
 
 - `/Users/terry/.config/agent-kit/skills/workflows/plan/plan-tracking-issue/SKILL.md`
 - `/Users/terry/.config/agent-kit/skills/workflows/plan/plan-tracking-issue/scripts/plan-tracking-issue.sh`
-- `/Users/terry/.config/agent-kit/skills/workflows/issue/execute-from-tracking-issue/SKILL.md`
-- `/Users/terry/.config/agent-kit/skills/workflows/issue/execute-from-tracking-issue/bin/tracking_issue_lifecycle.py`
-- `/Users/terry/.config/agent-kit/skills/workflows/issue/tracking-issue-closeout/SKILL.md`
-- `/Users/terry/.config/agent-kit/skills/workflows/issue/tracking-issue-closeout/bin/tracking_issue_closeout.py`
+- `/Users/terry/.config/agent-kit/skills/workflows/issue/execute-plan-tracking-issue/SKILL.md`
+- `/Users/terry/.config/agent-kit/skills/workflows/issue/execute-plan-tracking-issue/bin/tracking_issue_lifecycle.py`
+- `/Users/terry/.config/agent-kit/skills/workflows/issue/plan-tracking-issue-closeout/SKILL.md`
+- `/Users/terry/.config/agent-kit/skills/workflows/issue/plan-tracking-issue-closeout/bin/tracking_issue_closeout.py`
 - `core/skills/dispatch/create-plan-tracking-issue/SKILL.md.tera`
-- `core/skills/dispatch/execute-from-tracking-issue/SKILL.md.tera`
-- `core/skills/dispatch/tracking-issue-closeout/SKILL.md.tera`
+- `core/skills/dispatch/execute-plan-tracking-issue/SKILL.md.tera`
+- `core/skills/dispatch/plan-tracking-issue-closeout/SKILL.md.tera`
 - `core/skills/dispatch/deliver-dispatch-plan/SKILL.md.tera`
-- `core/skills/dispatch/dispatch-subagent-pr/SKILL.md.tera`
-- `core/skills/dispatch/dispatch-pr-review/SKILL.md.tera`
-- `core/skills/dispatch/dispatch-issue-closeout/SKILL.md.tera`
+- `core/skills/dispatch/execute-dispatch-lane/SKILL.md.tera`
+- `core/skills/dispatch/review-dispatch-lane-pr/SKILL.md.tera`
+- `core/skills/dispatch/dispatch-plan-closeout/SKILL.md.tera`
 - `/Users/terry/Project/sympoies/nils-cli/crates/plan-tooling`
 - `/Users/terry/Project/sympoies/nils-cli/crates/plan-issue-cli`
 - `/Users/terry/Project/sympoies/nils-cli/crates/forge-cli`

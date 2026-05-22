@@ -120,26 +120,26 @@
     "record_when": "The workflow opens, updates, or continues a GitHub issue for durable follow-up."
   },
   {
-    "skill": "dispatch-pr-review",
+    "skill": "review-dispatch-lane-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["dispatch-pr-review", "dispatch pr review"],
+    "aliases": ["review-dispatch-lane-pr", "dispatch-pr-review", "dispatch pr review"],
     "reason": "Dispatch PR review ties provider comments, findings, issue state, and merge decisions together.",
     "record_when": "The workflow reviews a PR through issue-linked evidence, comments, or merge decisions."
   },
   {
-    "skill": "dispatch-issue-closeout",
+    "skill": "dispatch-plan-closeout",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["dispatch-issue-closeout", "dispatch issue closeout"],
+    "aliases": ["dispatch-plan-closeout", "dispatch-issue-closeout", "dispatch issue closeout"],
     "reason": "Dispatch issue closeout reviews subagent lanes, merges PRs, and closes plan-issue runtime work.",
     "record_when": "The workflow reviews, merges, or closes existing issue-backed dispatch work."
   },
   {
-    "skill": "dispatch-subagent-pr",
+    "skill": "execute-dispatch-lane",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["dispatch-subagent-pr", "dispatch subagent pr"],
+    "aliases": ["execute-dispatch-lane", "dispatch-subagent-pr", "execute dispatch lane", "dispatch subagent pr"],
     "reason": "Dispatch subagent PR work owns an implementation lane and provider PR handoff.",
     "record_when": "The workflow implements an assigned lane, creates a draft PR, or responds to review."
   },

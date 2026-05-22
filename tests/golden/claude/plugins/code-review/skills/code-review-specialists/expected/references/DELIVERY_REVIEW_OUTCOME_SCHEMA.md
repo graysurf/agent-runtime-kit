@@ -1,7 +1,7 @@
 # Delivery Review Outcome Schema
 
 Purpose: one shared disposition vocabulary for delivery review outcome comments
-and dispatch PR review evidence.
+and dispatch lane PR review evidence.
 
 ## Dispositions
 

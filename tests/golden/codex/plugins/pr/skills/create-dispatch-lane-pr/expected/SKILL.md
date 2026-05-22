@@ -10,8 +10,8 @@ description:
 
 Prereqs:
 
-- `forge-cli` is installed from the released nils-cli package and available on
-  `PATH`.
+- `forge-cli` and `plan-issue` are installed from the released nils-cli package
+  and available on `PATH`.
 - A plan issue or dispatch record identifies the lane, source branch, base
   plan branch, task scope, and required validation.
 - Dispatch-plan lanes must target `PLAN_BRANCH`, not the repository default
@@ -67,6 +67,21 @@ forge-cli --provider github --dry-run --format json pr create \
   --label dispatch
 ```
 
+Render the issue-visible dispatch handoff comment with the shared record
+primitive:
+
+```bash
+plan-issue record render-comment \
+  --profile dispatch \
+  --marker-family shared \
+  --kind session \
+  --content-file "$DISPATCH_SESSION_FILE" \
+  --out "$DISPATCH_SESSION_COMMENT"
+
+forge-cli --provider github --repo "$REPO" issue comment "$PLAN_ISSUE" \
+  --body-file "$DISPATCH_SESSION_COMMENT"
+```
+
 ## Workflow
 
 1. Read the owning dispatch record and confirm the lane scope, source branch,
@@ -80,8 +95,11 @@ forge-cli --provider github --dry-run --format json pr create \
    evidence before mutation.
 5. Confirm the requested base equals the assigned `PLAN_BRANCH`.
 6. Run `forge-cli --provider github pr create ...` to create the draft lane PR.
-7. Write the PR URL back to the owning issue timeline or dispatch record through
-   `plan-issue link-pr` when the issue uses `Task Decomposition`.
+7. Write the PR URL back to the owning issue timeline by rendering a dispatch
+   `session` comment with `plan-issue record render-comment --profile dispatch
+   --marker-family shared`, then posting it through `forge-cli issue comment`.
+   Use `plan-issue link-pr` only for pre-record compatibility issues that
+   already use a `Task Decomposition` body.
 
 ## Boundary
 

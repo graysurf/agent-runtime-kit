@@ -22,7 +22,7 @@ Prereqs:
   open/close issues, or post live provider comments.
 - Use explicit user instruction or a delegation mode such as `parallel-first` or
   `orchestrator-first` before spawning reviewer subagents.
-- Use `dispatch-pr-review` for PR decision actions and `review-evidence` only
+- Use `review-dispatch-lane-pr` for PR decision actions and `review-evidence` only
   when findings need a retained evidence record.
 
 Inputs:
@@ -56,7 +56,7 @@ Failure modes:
   severity values, or omits evidence anchors.
 - Findings lack enough confidence or evidence to support a concrete issue; mark
   them as residual risk instead of presenting them as verified findings.
-- Caller tries to use this workflow as a substitute for `dispatch-pr-review`,
+- Caller tries to use this workflow as a substitute for `review-dispatch-lane-pr`,
   `review-evidence`, browser-session checks, CI repair automation, or
   implementation work.
 
@@ -79,7 +79,7 @@ review-specialists bundle --input findings.jsonl --out-dir "$REVIEW_OUT" --profi
   API-contract heavy, or broader than normal reviewer confidence.
 - Normal tests are not enough to reason about cross-cutting risk.
 - An issue or plan PR review needs supplemental specialist findings before the
-  `dispatch-pr-review` decision path.
+  `review-dispatch-lane-pr` decision path.
 
 Do not use it for tiny diffs, ordinary implementation work, pure formatting or
 doc-only changes unless requested, CI repair loops, or browser-facing checks
@@ -125,7 +125,7 @@ owned by browser-session workflows.
    selected specialist produced a `critical` finding, or the reviewer forced it.
    Merge red-team findings into the final report.
 10. Use the report template for the final synthesis. The recommended next step
-    may route to `dispatch-pr-review`, a normal implementation workflow, or a
+    may route to `review-dispatch-lane-pr`, a normal implementation workflow, or a
     retained `review-evidence` record, but this workflow does not execute that
     decision.
 
@@ -144,6 +144,6 @@ owned by browser-session workflows.
 - Delivery review outcome schema:
   `references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`
 - PR decision workflow:
-  `skills/dispatch/dispatch-pr-review/SKILL.md`
+  `skills/dispatch/review-dispatch-lane-pr/SKILL.md`
 - Review evidence tool:
   `skills/evidence/review-evidence/SKILL.md`

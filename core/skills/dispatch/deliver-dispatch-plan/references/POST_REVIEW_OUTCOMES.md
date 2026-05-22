@@ -10,7 +10,7 @@ decision only in a PR comment.
 
 - Keep the current lane active.
 - Mirror the exact PR comment URL into the issue timeline.
-- Sync the task row to `in-progress` when the subagent can continue, or
+- Sync the dispatch state to `in-progress` when the subagent can continue, or
   `blocked` when the lane is waiting on input or external unblock.
 - Do not create a replacement branch, worktree, or PR for ordinary follow-up.
 
@@ -25,7 +25,6 @@ decision only in a PR comment.
 
 ## Merge
 
-- Keep the merged PR as the canonical row PR reference.
-- Let `accept-sprint`, `close-plan`, or an equivalent gate advance rows to
-  `done`; do not invent an early done state that conflicts with the active
-  gate.
+- Keep the merged PR as the canonical dispatch ledger PR reference.
+- Let lifecycle audit and closeout gates advance records to `done`; do not
+  invent an early done state that conflicts with the active gate.

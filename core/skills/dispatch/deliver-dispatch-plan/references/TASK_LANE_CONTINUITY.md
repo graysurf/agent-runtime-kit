@@ -2,9 +2,10 @@
 
 ## Canonical Lane Model
 
-`Task Decomposition` is the runtime execution source of truth. Once a task is
-assigned, its lane is defined by `Owner`, `Branch`, `Worktree`, `Execution
-Mode`, and `PR`. For shared lanes, multiple task rows may share the same lane.
+The dispatch ledger and latest dispatch state comment are the runtime execution
+source of truth. Once a task is assigned, its lane is defined by `Owner`,
+`Branch`, `Worktree`, `Execution Mode`, and `PR`. For shared lanes, multiple
+task rows may share the same lane.
 
 ## Continuity Rule
 
@@ -28,6 +29,6 @@ and return a blocker packet:
 ## Reassignment
 
 Reassignment is explicit. Use it only when the current subagent cannot continue
-or the authoritative issue row intentionally changes. Preserve existing issue
-row and PR linkage until the replacement lane is written back through
-`plan-issue`.
+or the authoritative dispatch state intentionally changes. Preserve existing
+ledger and PR linkage until the replacement lane is written back through a
+dispatch state/session comment.

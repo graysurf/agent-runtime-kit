@@ -721,7 +721,7 @@ mirroring is explicitly part of the workflow.
 - **Location**:
   - `core/skills/dispatch/plan-tracking-issue/SKILL.md.tera`
   - `core/skills/dispatch/issue-lifecycle/SKILL.md.tera`
-  - `core/skills/dispatch/tracking-issue-closeout/SKILL.md.tera`
+  - `core/skills/dispatch/plan-tracking-issue-closeout/SKILL.md.tera`
 - **Description**: Create portable source bodies for issue creation,
   maintenance, and closeout workflows using `plan-issue`, `plan-issue-local`,
   and `plan-tooling` where appropriate.
@@ -741,10 +741,10 @@ mirroring is explicitly part of the workflow.
 ### Task 7.2: Migrate execution and dispatch orchestration sources
 
 - **Location**:
-  - `core/skills/dispatch/execute-from-tracking-issue/SKILL.md.tera`
-  - `core/skills/dispatch/deliver-tracking-issue/SKILL.md.tera`
-  - `core/skills/dispatch/dispatch-pr-review/SKILL.md.tera`
-  - `core/skills/dispatch/dispatch-subagent-pr/SKILL.md.tera`
+  - `core/skills/dispatch/execute-plan-tracking-issue/SKILL.md.tera`
+  - `core/skills/dispatch/deliver-plan-tracking-issue/SKILL.md.tera`
+  - `core/skills/dispatch/review-dispatch-lane-pr/SKILL.md.tera`
+  - `core/skills/dispatch/execute-dispatch-lane/SKILL.md.tera`
 - **Description**: Create portable source bodies for issue-backed execution,
   delivery, review, and subagent PR handoff workflows. Use planning primitives
   for durable state and `forge-cli` only for PR/MR provider operations.

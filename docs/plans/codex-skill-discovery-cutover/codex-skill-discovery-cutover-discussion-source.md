@@ -57,8 +57,8 @@ without breaking new Codex sessions.
 - [F6] `tests/sandbox/codex/expected-skills.txt` currently pins 39 migrated
   Codex skills.
 - [F7] The current migrated Codex set includes `meta.semantic-commit`,
-  `dispatch.execute-from-tracking-issue`, and
-  `dispatch.deliver-tracking-issue`, but does not include
+  `dispatch.execute-plan-tracking-issue`, and
+  `dispatch.deliver-plan-tracking-issue`, but does not include
   `discussion-to-implementation-doc` or `handoff-session-prompt`.
 - [F8] `docs/plans/05-domain-migration/05-domain-migration-plan.md` Task 9.3
   explicitly allowed keeping `$HOME/.agents` as a temporary compatibility alias
@@ -160,8 +160,8 @@ Out of scope:
    `agent-runtime-kit`, not from `$HOME/.agents`.
 3. The required acceptance set is explicit. Minimum set:
    - `semantic-commit`
-   - `execute-from-tracking-issue`
-   - `deliver-tracking-issue`
+   - `execute-plan-tracking-issue`
+   - `deliver-plan-tracking-issue`
    - `discussion-to-implementation-doc`
    - `handoff-session-prompt`
 4. The plan identifies any required skill that is missing from the current

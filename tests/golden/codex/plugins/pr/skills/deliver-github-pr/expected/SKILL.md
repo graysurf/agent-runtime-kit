@@ -54,7 +54,7 @@ Failure modes:
 - Delivery review outcome comment posting fails.
 - Review findings or issue-backed completion gates are unresolved.
 - A PR would close a plan-tracking or dispatch issue before
-  `tracking-issue-closeout`, `dispatch-issue-closeout`, or `plan-issue`
+  `plan-tracking-issue-closeout`, `dispatch-plan-closeout`, or `plan-issue`
   completion gates have passed.
 - The installed `forge-cli` is older than the manifest floor. Upgrade nils-cli
   before relying on GitHub delivery macro checks, ready, or merge operations.
@@ -105,7 +105,7 @@ forge-cli --provider github pr merge "$PR_NUMBER" --method squash
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
 8. For lightweight tracking issues, verify the latest issue-hosted state is
    complete and closeout-ready before allowing auto-close. For dispatch issues,
-   verify `plan-issue` sprint/plan gates or use `dispatch-issue-closeout`.
+   verify `plan-issue` sprint/plan gates or use `dispatch-plan-closeout`.
 9. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
    `--no-merge` is the requested final stop.
 10. Record the PR URL, check evidence, review outcome, merge commit, and any

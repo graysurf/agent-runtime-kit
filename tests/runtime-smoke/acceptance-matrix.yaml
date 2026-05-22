@@ -411,9 +411,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr create dry-run with dispatch label and plan branch
+    invocation: forge-cli github pr create dry-run plus dispatch session comment render
     expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider command
+    expected_artifacts: forge-cli dry-run provider command, dispatch session comment render, and issue comment dry-run
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -501,10 +501,10 @@ cases:
     skill_id: dispatch.create-plan-tracking-issue
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: create temp plan bundle and local task spec output
-    invocation: plan-tooling validate plus plan-issue-local build-plan-task-spec
+    setup: create temp plan bundle and tracking lifecycle record output
+    invocation: plan-tooling validate plus plan-issue record render-dashboard/render-comment/audit
     expected_exit_code: 0
-    expected_artifacts: plan-issue-local task-spec JSON and TSV
+    expected_artifacts: tracking dashboard, comment render JSON, and audit JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -514,88 +514,88 @@ cases:
     skill_id: dispatch.deliver-dispatch-plan
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render offline plan issue body and sprint dispatch artifacts
-    invocation: plan-tooling validate plus plan-issue-local start-sprint/status-plan and specialist scope probes
+    setup: render shared dispatch dashboard, ledger, and lifecycle comments
+    invocation: plan-tooling validate plus plan-issue record build-dispatch-ledger/audit and specialist scope probes
     expected_exit_code: 0
-    expected_artifacts: sprint task spec, prompt artifacts, status JSON, and specialist scope JSON
+    expected_artifacts: dispatch dashboard, ledger, audit JSON, and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.dispatch-issue-closeout.shared-cli.deterministic
+  - id: dispatch.dispatch-plan-closeout.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.dispatch-issue-closeout
+    skill_id: dispatch.dispatch-plan-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render offline plan issue body and close gate fixture
-    invocation: plan-issue-local status-plan plus plan-issue close-plan dry-run gate classification
+    setup: render shared dispatch issue body and close gate fixture
+    invocation: plan-issue record audit/closeout-gate/render-comment/render-dashboard
     expected_exit_code: 0
-    expected_artifacts: status JSON and close-plan JSON with expected gate result
+    expected_artifacts: dispatch gate JSON, closeout comment render, and final dashboard render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.tracking-issue-closeout.shared-cli.deterministic
+  - id: dispatch.plan-tracking-issue-closeout.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.tracking-issue-closeout
+    skill_id: dispatch.plan-tracking-issue-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: render lightweight closeout dashboard/comment fixtures
-    invocation: forge-cli issue comment/edit/close dry-run surfaces
+    invocation: plan-issue record closeout-gate/render-comment/render-dashboard plus forge-cli issue dry-runs
     expected_exit_code: 0
-    expected_artifacts: forge-cli issue comment, edit, and close dry-run JSON
+    expected_artifacts: tracking gate JSON, render JSON, and forge-cli issue dry-run JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.execute-from-tracking-issue.shared-cli.deterministic
+  - id: dispatch.execute-plan-tracking-issue.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.execute-from-tracking-issue
+    skill_id: dispatch.execute-plan-tracking-issue
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: validate temp plan and render offline issue state
-    invocation: plan-tooling validate plus plan-issue-local status-plan plus forge-cli pr view dry-run
+    setup: validate temp plan and render tracking issue lifecycle state
+    invocation: plan-tooling validate plus plan-issue record audit plus forge-cli pr view dry-run
     expected_exit_code: 0
-    expected_artifacts: plan validation status JSON and forge-cli PR view plan
+    expected_artifacts: plan validation, tracking audit JSON, and forge-cli PR view plan
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.deliver-tracking-issue.shared-cli.deterministic
+  - id: dispatch.deliver-plan-tracking-issue.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.deliver-tracking-issue
+    skill_id: dispatch.deliver-plan-tracking-issue
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render offline plan issue body and review evidence record
-    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr checks dry-run plus plan-issue-local link-pr
+    setup: render tracking record and review evidence record
+    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr checks dry-run plus tracking validation comment render
     expected_exit_code: 0
-    expected_artifacts: specialist scope JSON, review evidence JSON, and dry-run provider command
+    expected_artifacts: specialist scope JSON, review evidence JSON, provider checks, and validation comment render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.dispatch-pr-review.shared-cli.deterministic
+  - id: dispatch.review-dispatch-lane-pr.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.dispatch-pr-review
+    skill_id: dispatch.review-dispatch-lane-pr
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render review evidence and offline issue body
-    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr comment dry-run plus plan-issue-local link-pr
+    setup: render review evidence and shared dispatch issue body
+    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr comment dry-run plus dispatch review comment render
     expected_exit_code: 0
-    expected_artifacts: specialist scope JSON, PR comment plan, and issue sync JSON
+    expected_artifacts: specialist scope JSON, PR comment plan, and dispatch review comment render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.dispatch-subagent-pr.shared-cli.deterministic
+  - id: dispatch.execute-dispatch-lane.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.dispatch-subagent-pr
+    skill_id: dispatch.execute-dispatch-lane
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp assigned git workspace with pushed upstream branch metadata
-    invocation: forge-cli pr create dry-run plus plan-issue-local link-pr
+    invocation: forge-cli pr create dry-run plus dispatch session comment render
     expected_exit_code: 0
-    expected_artifacts: forge-cli PR create plan and issue sync JSON
+    expected_artifacts: forge-cli PR create plan and dispatch session comment render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

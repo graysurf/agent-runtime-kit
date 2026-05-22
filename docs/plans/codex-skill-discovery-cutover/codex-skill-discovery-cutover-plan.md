@@ -124,7 +124,7 @@ state.
   - `docs/source/extraction-backlog.md`
   - `docs/plans/codex-skill-discovery-cutover/codex-skill-discovery-cutover-execution-state.md`
 - **Description**: Map the minimum required acceptance set
-  (`semantic-commit`, `execute-from-tracking-issue`, `deliver-tracking-issue`,
+  (`semantic-commit`, `execute-plan-tracking-issue`, `deliver-plan-tracking-issue`,
   `discussion-to-implementation-doc`, `handoff-session-prompt`) to current
   runtime-kit source, manifest IDs, rendered Codex paths, required CLIs, and
   missing migration work.
@@ -140,7 +140,7 @@ state.
   - Any missing nils-cli primitive needed by a required skill is recorded as a
     release-boundary blocker.
 - **Validation**:
-  - `rg -n 'semantic-commit|execute-from-tracking-issue|deliver-tracking-issue|discussion-to-implementation-doc|handoff-session-prompt' manifests/skills.yaml tests/sandbox/codex/expected-skills.txt core/skills`
+  - `rg -n 'semantic-commit|execute-plan-tracking-issue|deliver-plan-tracking-issue|discussion-to-implementation-doc|handoff-session-prompt' manifests/skills.yaml tests/sandbox/codex/expected-skills.txt core/skills`
 
 ### Task 1.3: Define reversible live-session acceptance protocol
 
