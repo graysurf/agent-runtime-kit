@@ -168,7 +168,10 @@ bash scripts/ci/sandbox-install-rehearsal.sh
 bash tests/runtime-smoke/run.sh --mode matrix
 bash tests/runtime-smoke/run.sh --mode install
 bash tests/runtime-smoke/run.sh --mode install --format json
+bash tests/runtime-smoke/run.sh --mode deterministic
 bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
+bash tests/runtime-smoke/run.sh --mode deterministic --domain media
+bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 ```
 
 Runtime smoke install mode creates temporary Codex and Claude `live_home` and
@@ -179,7 +182,10 @@ can vary and are not treated as Sprint 1 blockers.
 
 Runtime smoke deterministic mode runs command-level probes inside temporary
 fixture workspaces and writes artifacts under the run artifact directory.
-Sprint 2 initially enables the `meta` domain only.
+Sprint 2 currently enables the `meta`, `media`, and `browser` domains.
+`screen-record` is host-sensitive: the deterministic media probe records a pass
+when `screen-record --preflight` succeeds and records `skip-host-capability`
+when the host capture prerequisites are unavailable.
 
 ## Release Boundary
 
