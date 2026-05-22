@@ -44,8 +44,8 @@ Failure modes:
   worktree root.
 - Dispatch record is missing required artifact paths, or declares a non-
   implementation `workflow_role`.
-- PR body lacks required sections `## Summary`, `## Scope`, `## Testing`, and
-  `## Issue`, or still contains placeholders.
+- PR body lacks required sections `## Summary`, `## Scope`, `## Testing`,
+  `## Test plan`, and `## Issue`, or still contains placeholders.
 - PR base branch differs from the assigned base branch; in dispatch-plan mode
   this must be `PLAN_BRANCH`.
 - Local validation fails.
@@ -107,9 +107,9 @@ forge-cli pr comment "$PR_NUMBER" \
 5. Implement only the assigned task scope and run task validation. For
    production behavior changes, capture failing-test evidence or an explicit
    waiver before editing production behavior.
-6. Validate PR body sections `## Summary`, `## Scope`, `## Testing`, and
-   `## Issue`; remove placeholders such as `TBD`, `TODO`, `<...>`, and
-   `#<number>`.
+6. Validate PR body sections `## Summary`, `## Scope`, `## Testing`,
+   `## Test plan`, and `## Issue`; remove placeholders such as `TBD`, `TODO`,
+   `<...>`, and `#<number>`.
 7. Use `forge-cli pr create` to open the draft PR against the assigned base, or
    `forge-cli pr comment` to respond to review follow-up on the existing PR.
 8. Use `plan-issue link-pr` to write the PR reference and in-progress or

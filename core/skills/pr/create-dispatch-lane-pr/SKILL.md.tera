@@ -24,8 +24,8 @@ Inputs:
 - Dispatch lane id, task id, source branch, base plan branch, title, and body
   file.
 - Validation evidence or an explicit not-run reason for the lane.
-- Required body sections: `## Summary`, `## Scope`, `## Testing`, and
-  `## Issue`.
+- Required body sections: `## Summary`, `## Scope`, `## Testing`,
+  `## Test plan`, and `## Issue`.
 - Optional labels and reviewers.
 
 Outputs:
@@ -38,7 +38,8 @@ Failure modes:
 
 - The dispatch record is missing branch, base, task, or validation data.
 - The PR body is missing required `forge-cli` sections such as `## Summary` and
-  `## Scope`, `## Testing`, and `## Issue`, or still contains placeholders.
+  `## Test plan`, or dispatch sections `## Scope`, `## Testing`, and
+  `## Issue`, or still contains placeholders.
 - The PR base is not the dispatched `PLAN_BRANCH`.
 - GitHub auth, branch upstream checks, labels, or reviewers fail.
 
@@ -72,9 +73,9 @@ forge-cli --provider github --dry-run --format json pr create \
    base plan branch, and validation expectations.
 2. Inspect `git status --short --branch`, then push the lane branch and confirm
    upstream tracking.
-3. Render a PR body with `## Summary`, `## Scope`, `## Testing`, and
-   `## Issue`; include the lane id, task ids, validation, issue link, and
-   handoff notes.
+3. Render a PR body with `## Summary`, `## Scope`, `## Testing`,
+   `## Test plan`, and `## Issue`; include the lane id, task ids, validation,
+   issue link, and handoff notes.
 4. Run the `forge-cli --dry-run` form when the lane needs command-shape
    evidence before mutation.
 5. Confirm the requested base equals the assigned `PLAN_BRANCH`.
