@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "mode": "install",
+  "counts": {
+    "pass": 2,
+    "fail": 0,
+    "skip-host-capability": 0,
+    "blocked-design": 0
+  },
+  "results": [
+    {"id":"install.codex","product":"codex","status":"pass","skill_count":19,"note":"install apply and doctor block=0"},
+    {"id":"install.claude","product":"claude","status":"pass","skill_count":19,"note":"install apply and doctor block=0"}
+  ]
+}

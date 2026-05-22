@@ -1,0 +1,276 @@
+# Runtime skill acceptance matrix.
+#
+# This file intentionally uses a small YAML subset so
+# tests/runtime-smoke/run.sh can validate it with portable shell tools before
+# later sprints add richer case runners.
+schema_version: 1
+
+required_fields:
+  - id
+  - product
+  - domain
+  - skill_id
+  - mode
+  - fixture_workspace
+  - setup
+  - invocation
+  - expected_exit_code
+  - expected_artifacts
+  - cleanup
+  - expected_disposition
+  - skip_policy
+
+dispositions:
+  - pass
+  - fail
+  - skip-host-capability
+  - blocked-design
+
+cases:
+  - id: meta.agent-docs.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.agent-docs
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: none
+    invocation: agent-docs resolve startup context in strict checklist mode
+    expected_exit_code: 0
+    expected_artifacts: checklist output
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.agent-out.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.agent-out
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp output root
+    invocation: agent-out project topic dry-run or mkdir in temp output root
+    expected_exit_code: 0
+    expected_artifacts: temp output path
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.agent-scope-lock.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.agent-scope-lock
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create fixture-local lock root
+    invocation: agent-scope-lock create and validate fixture-local lock
+    expected_exit_code: 0
+    expected_artifacts: fixture-local lock record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.heuristic-inbox.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.heuristic-inbox
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp inbox root
+    invocation: heuristic-inbox initialize or validate temp inbox
+    expected_exit_code: 0
+    expected_artifacts: temp inbox record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.repo-retro.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.repo-retro
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: enter fixture git workspace
+    invocation: repo-retro dry-run or no-write report probe
+    expected_exit_code: 0
+    expected_artifacts: summary output
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.semantic-commit.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.semantic-commit
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create fixture git workspace with staged sample change
+    invocation: semantic-commit validate-only with prepared message
+    expected_exit_code: 0
+    expected_artifacts: validation output
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: media.image-processing.shared-cli.deterministic
+    product: shared-cli
+    domain: media
+    skill_id: media.image-processing
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create tiny local image fixture
+    invocation: image-processing validate or convert local fixture
+    expected_exit_code: 0
+    expected_artifacts: converted image or validation report
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: media.screen-record.shared-cli.host-capability
+    product: shared-cli
+    domain: media
+    skill_id: media.screen-record
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: probe host screen capture capability
+    invocation: screen-record capability or dry-run probe
+    expected_exit_code: 0
+    expected_artifacts: capability result
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip when host screen capture permission or display is unavailable
+  - id: browser.browser-session.shared-cli.deterministic
+    product: shared-cli
+    domain: browser
+    skill_id: browser.browser-session
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp browser-session root
+    invocation: browser-session record local session metadata
+    expected_exit_code: 0
+    expected_artifacts: session record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: browser.canary-check.shared-cli.deterministic
+    product: shared-cli
+    domain: browser
+    skill_id: browser.canary-check
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp canary output root
+    invocation: canary-check record passing and controlled failing commands
+    expected_exit_code: 0
+    expected_artifacts: canary records
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: evidence.web-evidence.shared-cli.deterministic
+    product: shared-cli
+    domain: evidence
+    skill_id: evidence.web-evidence
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create local file or localhost fixture
+    invocation: web-evidence capture redacted static local evidence
+    expected_exit_code: 0
+    expected_artifacts: evidence bundle
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: evidence.test-first-evidence.shared-cli.deterministic
+    product: shared-cli
+    domain: evidence
+    skill_id: evidence.test-first-evidence
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp evidence root
+    invocation: test-first-evidence record failing and final validation notes
+    expected_exit_code: 0
+    expected_artifacts: evidence record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: evidence.review-evidence.shared-cli.deterministic
+    product: shared-cli
+    domain: evidence
+    skill_id: evidence.review-evidence
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp evidence root
+    invocation: review-evidence record final validation
+    expected_exit_code: 0
+    expected_artifacts: review evidence record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: evidence.skill-usage.shared-cli.deterministic
+    product: shared-cli
+    domain: evidence
+    skill_id: evidence.skill-usage
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp skill usage root
+    invocation: skill-usage record and verify invocation
+    expected_exit_code: 0
+    expected_artifacts: skill usage record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: evidence.docs-impact.shared-cli.deterministic
+    product: shared-cli
+    domain: evidence
+    skill_id: evidence.docs-impact
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create controlled fixture diff
+    invocation: docs-impact classify fixture diff
+    expected_exit_code: 0
+    expected_artifacts: docs-impact record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: evidence.model-cross-check.shared-cli.deterministic
+    product: shared-cli
+    domain: evidence
+    skill_id: evidence.model-cross-check
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp model cross-check root
+    invocation: model-cross-check record provider-boundary metadata
+    expected_exit_code: 0
+    expected_artifacts: cross-check record
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: reporting.daily-brief.shared-cli.regression
+    product: shared-cli
+    domain: reporting
+    skill_id: reporting.daily-brief
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp brief root
+    invocation: daily-brief offline or sample-mode helper probe
+    expected_exit_code: 0
+    expected_artifacts: brief summary
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: reporting.project-retro.shared-cli.regression
+    product: shared-cli
+    domain: reporting
+    skill_id: reporting.project-retro
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: enter fixture git workspace
+    invocation: repo-retro dry-run or sample-mode helper probe
+    expected_exit_code: 0
+    expected_artifacts: retro summary
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: reporting.topic-radar.shared-cli.regression
+    product: shared-cli
+    domain: reporting
+    skill_id: reporting.topic-radar
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp radar root
+    invocation: topic-radar offline or sample-mode helper probe
+    expected_exit_code: 0
+    expected_artifacts: radar summary
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
