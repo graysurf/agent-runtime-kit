@@ -111,19 +111,32 @@ if [ "$EXECUTE_LIVE" -eq 1 ]; then
   }
 fi
 
+if [ "$EXECUTE_LIVE" -eq 1 ]; then
+  git clone -q --depth=1 --branch main "git@github.com:$SCRATCH_FORK.git" "$WORKSPACE"
+  git -C "$WORKSPACE" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+  git -C "$WORKSPACE" switch -c "$HEAD_BRANCH" >/dev/null
+else
+  git -C "$WORKSPACE" init -q
+  git -C "$WORKSPACE" remote add origin "git@github.com:$SCRATCH_FORK.git"
+fi
+
 cp -R "$FIXTURE_ROOT/." "$WORKSPACE"
-git -C "$WORKSPACE" init -q
 git -C "$WORKSPACE" config user.email runtime-smoke@example.invalid
 git -C "$WORKSPACE" config user.name "Runtime Smoke"
 printf 'deliver lifecycle smoke\n' >"$WORKSPACE/deliver-lifecycle.txt"
 git -C "$WORKSPACE" add .
 TREE="$(git -C "$WORKSPACE" write-tree)"
-COMMIT="$(printf 'deliver lifecycle smoke\n' | git -C "$WORKSPACE" commit-tree "$TREE")"
+if [ "$EXECUTE_LIVE" -eq 1 ]; then
+  COMMIT="$(printf 'deliver lifecycle smoke\n' | git -C "$WORKSPACE" commit-tree "$TREE" -p HEAD)"
+else
+  COMMIT="$(printf 'deliver lifecycle smoke\n' | git -C "$WORKSPACE" commit-tree "$TREE")"
+fi
 git -C "$WORKSPACE" update-ref "refs/heads/$HEAD_BRANCH" "$COMMIT"
 git -C "$WORKSPACE" symbolic-ref HEAD "refs/heads/$HEAD_BRANCH"
-git -C "$WORKSPACE" remote add origin "git@github.com:$SCRATCH_FORK.git"
-git -C "$WORKSPACE" update-ref "refs/remotes/origin/$HEAD_BRANCH" "$COMMIT"
-git -C "$WORKSPACE" branch --set-upstream-to "origin/$HEAD_BRANCH" "$HEAD_BRANCH" >/dev/null
+if [ "$EXECUTE_LIVE" -eq 0 ]; then
+  git -C "$WORKSPACE" update-ref "refs/remotes/origin/$HEAD_BRANCH" "$COMMIT"
+  git -C "$WORKSPACE" branch --set-upstream-to "origin/$HEAD_BRANCH" "$HEAD_BRANCH" >/dev/null
+fi
 
 cat >"$BODY_FILE" <<'BODY'
 ## Summary
@@ -138,7 +151,14 @@ BODY
 if [ "$EXECUTE_LIVE" -eq 1 ]; then
   (
     cd "$WORKSPACE"
-    git push -u origin "$HEAD_BRANCH"
+    remote_oid="$(git ls-remote --heads origin "$HEAD_BRANCH" | awk '{print $1}')"
+    if [ -n "$remote_oid" ]; then
+      git push -u --force-with-lease="refs/heads/$HEAD_BRANCH:$remote_oid" origin "$HEAD_BRANCH"
+    else
+      git push -u origin "$HEAD_BRANCH"
+    fi
+    git fetch origin "refs/heads/$HEAD_BRANCH:refs/remotes/origin/$HEAD_BRANCH" >/dev/null
+    git branch --set-upstream-to "origin/$HEAD_BRANCH" "$HEAD_BRANCH" >/dev/null
     forge-cli pr deliver \
       --provider github \
       --repo "$SCRATCH_FORK" \

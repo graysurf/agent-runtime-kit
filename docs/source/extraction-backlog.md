@@ -13,9 +13,13 @@ This file records Plan 05 migration findings where a skill needs nils-cli behavi
 - Sprint 5 live PR delivery on 2026-05-22 found a GitHub checks compatibility
   gap in `forge-cli 0.16.0` with `gh 2.92.0`: `forge-cli pr checks` and
   `forge-cli pr wait-checks` requested an unsupported `conclusion` JSON field.
+- The upstream field-set gap was fixed in `sympoies/nils-cli` PR #440 and
+  released as `nils-cli` `0.17.0`; live Sprint 6 smoke then exposed a
+  pending-check stdout handling bug, fixed in `nils-cli` `0.17.1`. Local
+  `forge-cli --version` reported `forge-cli 0.17.1` on 2026-05-22.
 
 ## Entries
 
 | ID | Status | Skill | Missing surface | Evidence | Disposition |
 | --- | --- | --- | --- | --- | --- |
-| P5-S5-G1 | open | `pr.close-github-pr`, `pr.deliver-github-pr` | `forge-cli pr checks` / `forge-cli pr wait-checks` need a GitHub backend compatible with `gh 2.92.0` check JSON fields. | `forge-cli pr wait-checks 37 --provider github --repo graysurf/agent-runtime-kit --format json` failed with `Unknown JSON field: "conclusion"`; `forge-cli pr deliver --dry-run` also renders the unsupported field in its `wait_checks` plan step; `gh` reported available fields `bucket`, `completedAt`, `description`, `event`, `link`, `name`, `startedAt`, `state`, and `workflow`. | Fix in nils-cli/`forge-cli`; until released, live PR operations may use provider-native `gh pr checks` as an operator fallback while runtime skill bodies remain delegated to `forge-cli`. |
+| P5-S5-G1 | closed | `pr.close-github-pr`, `pr.deliver-github-pr` | `forge-cli pr checks` / `forge-cli pr wait-checks` need a GitHub backend compatible with `gh 2.92.0` check JSON fields and pending-check nonzero stdout. | Original failure: `forge-cli pr wait-checks 37 --provider github --repo graysurf/agent-runtime-kit --format json` failed with `Unknown JSON field: "conclusion"`; live scratch smoke later showed `gh pr checks` can return machine-readable pending-check stdout with a non-zero status. Fix evidence: `sympoies/nils-cli` issue #439 closed, PR #440 merged, `nils-cli` `v0.17.1` released, and local `forge-cli --version` reports `forge-cli 0.17.1`. | Closed by upstream `forge-cli >=0.17.1`; PR-domain manifest floors now require the fixed release. |

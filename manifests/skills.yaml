@@ -291,7 +291,7 @@ skills:
         name: create-github-pr
         render_to: plugins/pr/skills/create-github-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.create-gitlab-mr
@@ -305,7 +305,7 @@ skills:
         name: create-gitlab-mr
         render_to: plugins/pr/skills/create-gitlab-mr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.create-dispatch-lane-pr
@@ -319,7 +319,7 @@ skills:
         name: create-dispatch-lane-pr
         render_to: plugins/pr/skills/create-dispatch-lane-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.close-github-pr
@@ -333,7 +333,7 @@ skills:
         name: close-github-pr
         render_to: plugins/pr/skills/close-github-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.close-gitlab-mr
@@ -347,7 +347,7 @@ skills:
         name: close-gitlab-mr
         render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.deliver-github-pr
@@ -361,7 +361,7 @@ skills:
         name: deliver-github-pr
         render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.deliver-gitlab-mr
@@ -375,5 +375,5 @@ skills:
         name: deliver-gitlab-mr
         render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
     required_clis:
-      forge-cli: ">=0.16.0"
+      forge-cli: ">=0.17.1"
     state_out_mode: runtime

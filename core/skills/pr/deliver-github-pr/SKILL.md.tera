@@ -39,11 +39,8 @@ Failure modes:
 - Required checks fail, time out, remain pending, or are missing without an
   explicit no-checks decision.
 - Review findings or issue-backed completion gates are unresolved.
-- `forge-cli 0.16.0` with `gh 2.92.0` can fail GitHub checks operations because
-  the backend requests an unsupported `conclusion` JSON field. Record this as
-  extraction-backlog item `P5-S5-G1`; use provider-native `gh pr checks` and
-  `gh pr merge` only as temporary operator fallbacks until the nils-cli fix is
-  released.
+- The installed `forge-cli` is older than the manifest floor. Upgrade nils-cli
+  before relying on GitHub delivery macro checks, ready, or merge operations.
 
 ## Entrypoint
 

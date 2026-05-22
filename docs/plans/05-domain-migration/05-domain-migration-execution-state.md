@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: blocked
-- Target scope: Sprint 1 through Sprint 5 complete; Sprint 6 implementation ready, live smoke blocked
-- Execution window: Sprint 6 delivery macro migration
+- Status: ready-for-sprint-7
+- Target scope: Sprint 1 through Sprint 6 complete; Sprint 7 not started
+- Execution window: Sprint 6 delivery macro migration closeout / pre-Sprint 7 checkpoint
 - Staged execution confirmation: not applicable
-- Current task: Task 6.2 live delivery smoke blocked
-- Next task: Resolve Sprint 6 live smoke blocker before Sprint 7 dispatch migration
-- Last updated: 2026-05-22 17:41 CST
-- Branch/commit/PR: feat/plan-05-delivery-macros; PR pending
+- Current task: Sprint 6 validation and PR delivery closeout
+- Next task: Stop before Sprint 7 dispatch migration until the owner starts it
+- Last updated: 2026-05-22 21:00 CST
+- Branch/commit/PR: feat/plan-05-delivery-macros; PR #38 open
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -49,8 +49,8 @@ result must be recorded before migration proceeds past the affected surface.
 | Task 5.1 | done | Migrate PR/MR create skills | `core/skills/pr/{create-github-pr,create-gitlab-mr,create-dispatch-lane-pr}/SKILL.md.tera` | Create bodies invoke released `forge-cli pr create` surfaces only. |
 | Task 5.2 | done | Migrate PR/MR close skills and wire create/close integration | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `pr` probes | Create/close PR plugin integration rendered for both products; `forge-cli` dry-run smoke passed. |
 | Task 6.1 | done | Migrate delivery skill sources | `core/skills/pr/{deliver-github-pr,deliver-gitlab-mr}/SKILL.md.tera` | Delivery bodies invoke released `forge-cli pr deliver` surfaces only. |
-| Task 6.2 | blocked | Add delivery lifecycle smoke harness | `tests/smoke/deliver-lifecycle.sh` | Harness dry-run and target guards pass; live execution is blocked because `graysurf/agent-runtime-kit-smoke` does not exist. |
-| Task 6.3 | blocked | Wire delivery manifests, golden snapshots, and PR domain gate | manifests, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `pr` probes | Integration and deterministic dry-run pass; live Sprint 6 smoke remains blocked by missing scratch repo and `P5-S5-G1`. |
+| Task 6.2 | done | Add delivery lifecycle smoke harness | `tests/smoke/deliver-lifecycle.sh` | Harness dry-run, target guards, repeatable scratch branch setup, and live scratch PR delivery passed. |
+| Task 6.3 | done | Wire delivery manifests, golden snapshots, and PR domain gate | manifests, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `pr` probes | Integration and deterministic dry-run pass; `P5-S5-G1` closed by nils-cli `v0.17.1`, and live Sprint 6 smoke passed against `graysurf/agent-runtime-kit-smoke`. |
 | Task 7.1 | pending | Migrate issue lifecycle dispatch sources | n/a | `plan-issue`, `plan-issue-local`, `plan-tooling` |
 | Task 7.2 | pending | Migrate execution and dispatch orchestration sources | n/a | Execution/review handoff lane |
 | Task 7.3 | pending | Wire dispatch manifests, adapters, and golden snapshots | n/a | Full dispatch-domain integration |
@@ -93,7 +93,10 @@ result must be recorded before migration proceeds past the affected surface.
 | `bash tests/runtime-smoke/run.sh --mode product --format json > /tmp/runtime-smoke-product-summary-s6.json && diff -u tests/runtime-smoke/product/expected/product-summary.json /tmp/runtime-smoke-product-summary-s6.json` | pass | Product expected output updated to 26 installed skills; prompt cases remain quarantined skips. | `/tmp/runtime-smoke-product-summary-s6.json` |
 | `if bash tests/smoke/deliver-lifecycle.sh; then exit 1; else test $? -ne 0; fi` | pass | Delivery smoke refuses to run without scratch fork and branch. | n/a |
 | `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke` | pass | Safe default delivery smoke produced `forge-cli pr deliver --dry-run` evidence against scratch target metadata. | temp artifact path printed by command |
-| `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke --execute-live` | blocked | Live delivery smoke cannot start because scratch repository `graysurf/agent-runtime-kit-smoke` is unavailable. | n/a |
+| `forge-cli --version` | pass | Local released binary reports `forge-cli 0.17.1`. | n/a |
+| `gh release view v0.17.1 --repo sympoies/nils-cli --json tagName,url,publishedAt` | pass | Upstream nils-cli `v0.17.1` release is published and fixes the GitHub pending-check stdout path discovered during live smoke. | https://github.com/sympoies/nils-cli/releases/tag/v0.17.1 |
+| `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke --execute-live` | pass | Live delivery smoke created and merged scratch PR #4 using released `forge-cli 0.17.1`; scratch CI passed and merge commit is `45c6cb44b40a65fb1ee05145713921afcbf5ba4a`. | `/var/folders/3d/s2d3jvyn0g758lsd_2t79h1w0000gn/T//agent-runtime-kit-deliver-lifecycle.6KUs4y` |
+| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed after Sprint 6 unblock, including deterministic runtime smoke `total=26 pass=26`. | n/a |
 | `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `bash tests/projects/project-local-smoke/run.sh` | pending | Sprint 8 project-local overlay smoke | n/a |
@@ -107,19 +110,12 @@ result must be recorded before migration proceeds past the affected surface.
 
 - Any missing nils-cli binary or required flag blocks the affected skill body
   and must be logged in `docs/source/extraction-backlog.md`.
-- Sprint 5+ must not continue unless Plan 06 deterministic acceptance is green
-  for Sprint 1-4 migrated skills, or an affected case has an explicit
-  `skip-host-capability` classification.
+- Plan 06 deterministic acceptance is satisfied through Sprint 6 by the current
+  `matrix`, `deterministic`, and `scripts/ci/all.sh` validation; rerun the
+  same gate before future sprint merges.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
-- Sprint 6 live delivery smoke is blocked because
-  `graysurf/agent-runtime-kit-smoke` is unavailable. Creating that repository
-  is an external GitHub org-side effect and needs owner confirmation or a
-  provided scratch repository.
-- Sprint 6 must account for extraction backlog item `P5-S5-G1`: live GitHub
-  checks through `forge-cli 0.16.0` fail with `gh 2.92.0`, so delivery smoke
-  either needs a fixed nils-cli release or an explicitly recorded operator
-  fallback.
+- Sprint 7 dispatch migration is intentionally not started in this checkpoint.
 - Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
   `graysurf/claude-kit`.
 - Local cutover should use the recommended 2026-06-30 date unless the execution
@@ -134,3 +130,4 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Completed Sprint 5 PR create/close migration in branch `feat/plan-05-pr-domain`: added `forge-cli`-backed PR/MR create and close skill sources, PR plugin manifests/link maps, golden snapshots, sandbox pins, and deterministic PR runtime-smoke probes; opened PR #37.
 - 2026-05-22: Recorded extraction backlog item `P5-S5-G1` after live `forge-cli pr checks` / `wait-checks` failed against `gh 2.92.0`; used `gh pr checks` as the provider-native fallback for PR #37 CI evidence.
 - 2026-05-22: Implemented Sprint 6 delivery macro sources, PR manifest wiring, deterministic delivery dry-run probes, and `tests/smoke/deliver-lifecycle.sh`; live scratch delivery smoke is blocked because `graysurf/agent-runtime-kit-smoke` is unavailable and GitHub live checks still depend on `P5-S5-G1`.
+- 2026-05-22: Created and configured scratch repository `graysurf/agent-runtime-kit-smoke`, delivered `sympoies/nils-cli` issue #439, released and installed `nils-cli v0.17.1`, bumped PR-domain `forge-cli` floors to `>=0.17.1`, and passed live Sprint 6 delivery smoke by creating and merging scratch PR #4.
