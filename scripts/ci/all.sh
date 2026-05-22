@@ -10,6 +10,7 @@
 # Required on PATH (installed via `brew install sympoies/tap/nils-cli`):
 #   - agent-runtime  (subcommands: render, audit-drift)
 #   - plan-tooling   (subcommand: validate)
+#   - python3        (for offline runtime-smoke loopback/sample probes)
 
 set -euo pipefail
 
@@ -32,6 +33,7 @@ require_bin() {
 
 require_bin plan-tooling
 require_bin agent-runtime
+require_bin python3
 
 # -----------------------------------------------------------------------------
 # Position 1 — plan bundle validation
@@ -104,4 +106,10 @@ done
 banner 6 "sandbox install rehearsal (dry-run skill-list diff)"
 bash scripts/ci/sandbox-install-rehearsal.sh
 
-printf '\nci/all.sh: positions 1-6 OK\n'
+# -----------------------------------------------------------------------------
+# Position 7 — deterministic runtime skill smoke
+# -----------------------------------------------------------------------------
+banner 7 "runtime skill deterministic smoke"
+bash tests/runtime-smoke/run.sh --mode deterministic
+
+printf '\nci/all.sh: positions 1-7 OK\n'

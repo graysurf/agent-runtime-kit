@@ -16,8 +16,8 @@ history, logs, caches, or product state.
   `tests/sandbox/<product>/expected-skills.txt`, and runs `agent-runtime
   doctor`.
 - `deterministic`: runs committed command-level probes for available domains.
-  Sprint 2 currently includes `meta`, `media`, `browser`, and `evidence`
-  domains.
+  Sprint 2 currently includes `meta`, `media`, `browser`, `evidence`, and
+  `reporting` domains.
 
 `doctor` warnings are allowed in install mode because host tool freshness can
 vary. Blocking findings are not allowed; the runner parses the `block=<n>`
@@ -34,6 +34,7 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
 bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
+bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
 ```
 
 Use `--product codex` or `--product claude` to narrow install mode. Use

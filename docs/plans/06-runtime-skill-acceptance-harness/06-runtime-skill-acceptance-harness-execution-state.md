@@ -4,12 +4,12 @@
 ## Execution State
 
 - Status: in-progress
-- Target scope: Sprint 2 Task 2.3
-- Execution window: Sprint 2 Task 2.3 evidence probes
-- Current task: Task 2.3 validation checkpoint
-- Next task: Task 2.4 add reporting regression probes and CI wiring
-- Last updated: 2026-05-22 15:45 CST
-- Branch/commit/PR: feat/runtime-smoke-evidence; pending
+- Target scope: Sprint 2 Task 2.4
+- Execution window: Sprint 2 Task 2.4 reporting regression probes and CI wiring
+- Current task: Task 2.4 validation checkpoint
+- Next task: Sprint 3 Task 3.1 probe product CLI isolation contracts
+- Last updated: 2026-05-22 15:53 CST
+- Branch/commit/PR: feat/runtime-smoke-reporting-ci; pending
 - Source document: docs/plans/06-runtime-skill-acceptance-harness/06-runtime-skill-acceptance-harness-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/28
@@ -23,6 +23,7 @@
 - `bash tests/runtime-smoke/run.sh --mode deterministic --domain media`
 - `bash tests/runtime-smoke/run.sh --mode deterministic --domain browser`
 - `bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence`
+- `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting`
 - `bash tests/runtime-smoke/run.sh --mode deterministic`
 - `bash scripts/ci/all.sh`
 
@@ -35,8 +36,8 @@
 | 1.3 | done | Add result summary and artifact policy | PR #29 merged `c428829` | Stable summary format documented in `DEVELOPMENT.md`; run logs stay in temp/artifact dirs. |
 | 2.1 | done | Add meta skill probes | PR #30 merged `f344f60` | Added command-level probes for `agent-docs`, `agent-out`, `agent-scope-lock`, `heuristic-inbox`, `repo-retro`, and `semantic-commit`. |
 | 2.2 | done | Add media and browser probes | PR #31 merged `933944e` | Added command-level probes for `image-processing`, `screen-record`, `browser-session`, and `canary-check`. |
-| 2.3 | done | Add evidence probes | `bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence` pass | Added command-level probes for `web-evidence`, `test-first-evidence`, `review-evidence`, `skill-usage`, `docs-impact`, and `model-cross-check`. |
-| 2.4 | pending | Add reporting regression probes and CI wiring | Not started | Future sprint. |
+| 2.3 | done | Add evidence probes | PR #32 merged `b4f69a8` | Added command-level probes for `web-evidence`, `test-first-evidence`, `review-evidence`, `skill-usage`, `docs-impact`, and `model-cross-check`. |
+| 2.4 | done | Add reporting regression probes and CI wiring | `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting` pass; `bash scripts/ci/all.sh` pass | Added reporting regression probes for `daily-brief`, `project-retro`, and `topic-radar`; wired deterministic smoke into CI. |
 | 3.1 | pending | Probe product CLI isolation contracts | Not started | Future sprint. |
 | 3.2 | pending | Add representative product smoke cases | Not started | Future sprint. |
 | 3.3 | pending | Update architecture and Plan 05 unblock rule | Not started | Future sprint. |
@@ -53,6 +54,8 @@
 - 2026-05-22 15:38 CST: Implemented media/browser deterministic probes; local host `screen-record --preflight` passed, so the media run recorded a pass instead of a host-capability skip.
 - 2026-05-22 15:40 CST: Merged Task 2.2 PR #31 at `933944e` and started Sprint 2 Task 2.3 from updated `main`.
 - 2026-05-22 15:45 CST: Implemented evidence deterministic probes using temp artifacts and loopback-only web evidence; no nils-cli surface blockers found.
+- 2026-05-22 15:48 CST: Merged Task 2.3 PR #32 at `b4f69a8` and started Sprint 2 Task 2.4 from updated `main`.
+- 2026-05-22 15:53 CST: Implemented reporting regression probes and wired deterministic smoke into `scripts/ci/all.sh` position 7.
 
 ## Validation
 
@@ -64,7 +67,7 @@
 | `diff -u tests/runtime-smoke/expected/install-summary.json /tmp/runtime-smoke-install-summary.json` | pass | Deterministic JSON summary matches committed expected output. | `/tmp/runtime-smoke-install-summary.json` |
 | `bash scripts/ci/all.sh` | pass | Full repo gate positions 1-6 passed after adding the required execution-state `Source document` pointer. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta` | pass | Six meta probes passed inside temp fixture workspace. | temp run root cleaned |
-| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Default deterministic mode currently runs meta, media, browser, and evidence probes. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Default deterministic mode currently runs all 19 matrix skills across meta, media, browser, evidence, and reporting. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta --format json` | pass | JSON summary emitted 6 pass, 0 fail, 0 skip, 0 blocked. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain media` | pass | `image-processing` validated the committed SVG fixture; `screen-record --preflight` passed on this host. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain browser` | pass | `browser-session` verified local evidence; `canary-check` recorded pass and expected-nonzero canaries. | temp run root cleaned |
@@ -72,6 +75,8 @@
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain browser --format json` | pass | JSON summary emitted 2 pass, 0 fail, 0 skip, 0 blocked. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence` | pass | Six evidence probes passed with temp artifacts; `web-evidence` used local loopback HTTP only. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence --format json` | pass | JSON summary emitted 6 pass, 0 fail, 0 skip, 0 blocked. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting` | pass | Three reporting probes passed with offline sample/repo-local modes. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting --format json` | pass | JSON summary emitted 3 pass, 0 fail, 0 skip, 0 blocked. | n/a |
 
 ## Notes
 
@@ -84,3 +89,6 @@
   is set.
 - Task 2.3 found no missing nils-cli evidence surfaces. `web-evidence` is kept
   offline by serving a temp fixture through `127.0.0.1`.
+- Task 2.4 promotes deterministic smoke to required CI. Product-in-the-loop
+  smoke remains outside default CI until Sprint 3 proves an isolated invocation
+  contract.
