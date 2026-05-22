@@ -377,3 +377,114 @@ skills:
     required_clis:
       forge-cli: ">=0.17.1"
     state_out_mode: runtime
+
+  - id: dispatch.plan-tracking-issue
+    domain: dispatch
+    source: core/skills/dispatch/plan-tracking-issue
+    products:
+      codex:
+        name: plan-tracking-issue
+        render_to: plugins/dispatch/skills/plan-tracking-issue/SKILL.md
+      claude:
+        name: plan-tracking-issue
+        render_to: plugins/dispatch/skills/plan-tracking-issue/SKILL.md
+    required_clis:
+      plan-tooling: ">=0.17.1"
+      plan-issue: ">=0.17.1"
+      plan-issue-local: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: dispatch.issue-lifecycle
+    domain: dispatch
+    source: core/skills/dispatch/issue-lifecycle
+    products:
+      codex:
+        name: issue-lifecycle
+        render_to: plugins/dispatch/skills/issue-lifecycle/SKILL.md
+      claude:
+        name: issue-lifecycle
+        render_to: plugins/dispatch/skills/issue-lifecycle/SKILL.md
+    required_clis:
+      plan-issue: ">=0.17.1"
+      plan-issue-local: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: dispatch.tracking-issue-closeout
+    domain: dispatch
+    source: core/skills/dispatch/tracking-issue-closeout
+    products:
+      codex:
+        name: tracking-issue-closeout
+        render_to: plugins/dispatch/skills/tracking-issue-closeout/SKILL.md
+      claude:
+        name: tracking-issue-closeout
+        render_to: plugins/dispatch/skills/tracking-issue-closeout/SKILL.md
+    required_clis:
+      plan-issue: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: dispatch.execute-from-tracking-issue
+    domain: dispatch
+    source: core/skills/dispatch/execute-from-tracking-issue
+    products:
+      codex:
+        name: execute-from-tracking-issue
+        render_to: plugins/dispatch/skills/execute-from-tracking-issue/SKILL.md
+      claude:
+        name: execute-from-tracking-issue
+        render_to: plugins/dispatch/skills/execute-from-tracking-issue/SKILL.md
+    required_clis:
+      plan-tooling: ">=0.17.1"
+      plan-issue: ">=0.17.1"
+      plan-issue-local: ">=0.17.1"
+      forge-cli: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: dispatch.deliver-tracking-issue
+    domain: dispatch
+    source: core/skills/dispatch/deliver-tracking-issue
+    products:
+      codex:
+        name: deliver-tracking-issue
+        render_to: plugins/dispatch/skills/deliver-tracking-issue/SKILL.md
+      claude:
+        name: deliver-tracking-issue
+        render_to: plugins/dispatch/skills/deliver-tracking-issue/SKILL.md
+    required_clis:
+      plan-tooling: ">=0.17.1"
+      plan-issue: ">=0.17.1"
+      forge-cli: ">=0.17.1"
+      review-evidence: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: dispatch.dispatch-pr-review
+    domain: dispatch
+    source: core/skills/dispatch/dispatch-pr-review
+    products:
+      codex:
+        name: dispatch-pr-review
+        render_to: plugins/dispatch/skills/dispatch-pr-review/SKILL.md
+      claude:
+        name: dispatch-pr-review
+        render_to: plugins/dispatch/skills/dispatch-pr-review/SKILL.md
+    required_clis:
+      forge-cli: ">=0.17.1"
+      plan-issue: ">=0.17.1"
+      review-evidence: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: dispatch.dispatch-subagent-pr
+    domain: dispatch
+    source: core/skills/dispatch/dispatch-subagent-pr
+    products:
+      codex:
+        name: dispatch-subagent-pr
+        render_to: plugins/dispatch/skills/dispatch-subagent-pr/SKILL.md
+      claude:
+        name: dispatch-subagent-pr
+        render_to: plugins/dispatch/skills/dispatch-subagent-pr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.17.1"
+      plan-issue: ">=0.17.1"
+      review-evidence: ">=0.16.0"
+    state_out_mode: runtime

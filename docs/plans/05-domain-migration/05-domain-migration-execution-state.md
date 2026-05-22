@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: ready-for-sprint-7
-- Target scope: Sprint 1 through Sprint 6 complete; Sprint 7 not started
-- Execution window: Sprint 6 delivery macro migration closeout / pre-Sprint 7 checkpoint
+- Status: validating
+- Target scope: Sprint 1 through Sprint 7 complete locally
+- Execution window: Sprint 7 dispatch domain migration
 - Staged execution confirmation: not applicable
-- Current task: Pre-Sprint 7 checkpoint complete
-- Next task: Stop before Sprint 7 dispatch migration until the owner starts it
-- Last updated: 2026-05-22 21:08 CST
-- Branch/commit/PR: main; merge commit b21e22d7594ea817532dbd0ce1530066f6f02a88; PR #38 merged
+- Current task: Sprint 7 validation and PR delivery
+- Next task: Open and deliver Sprint 7 PR
+- Last updated: 2026-05-22 22:02 CST
+- Branch/commit/PR: feat/plan-05-dispatch-domain; PR pending
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -51,9 +51,9 @@ result must be recorded before migration proceeds past the affected surface.
 | Task 6.1 | done | Migrate delivery skill sources | `core/skills/pr/{deliver-github-pr,deliver-gitlab-mr}/SKILL.md.tera` | Delivery bodies invoke released `forge-cli pr deliver` surfaces only. |
 | Task 6.2 | done | Add delivery lifecycle smoke harness | `tests/smoke/deliver-lifecycle.sh` | Harness dry-run, target guards, repeatable scratch branch setup, and live scratch PR delivery passed. |
 | Task 6.3 | done | Wire delivery manifests, golden snapshots, and PR domain gate | manifests, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `pr` probes | Integration and deterministic dry-run pass; `P5-S5-G1` closed by nils-cli `v0.17.1`, and live Sprint 6 smoke passed against `graysurf/agent-runtime-kit-smoke`. |
-| Task 7.1 | pending | Migrate issue lifecycle dispatch sources | n/a | `plan-issue`, `plan-issue-local`, `plan-tooling` |
-| Task 7.2 | pending | Migrate execution and dispatch orchestration sources | n/a | Execution/review handoff lane |
-| Task 7.3 | pending | Wire dispatch manifests, adapters, and golden snapshots | n/a | Full dispatch-domain integration |
+| Task 7.1 | done | Migrate issue lifecycle dispatch sources | `core/skills/dispatch/{plan-tracking-issue,issue-lifecycle,tracking-issue-closeout}/SKILL.md.tera` | Bodies invoke released `plan-tooling`, `plan-issue`, and `plan-issue-local` surfaces only. |
+| Task 7.2 | done | Migrate execution and dispatch orchestration sources | `core/skills/dispatch/{execute-from-tracking-issue,deliver-tracking-issue,dispatch-pr-review,dispatch-subagent-pr}/SKILL.md.tera` | Bodies invoke released `forge-cli`, `plan-issue`, and `review-evidence` surfaces only. |
+| Task 7.3 | done | Wire dispatch manifests, adapters, and golden snapshots | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `dispatch` probes | Dispatch plugin integration rendered for both products; deterministic dispatch smoke passed. |
 | Task 8.1 | pending | Audit private overlay effective config | n/a | `.private` values remain untracked |
 | Task 8.2 | pending | Verify project-local overlay smoke gate | n/a | Adds stable fixture only |
 | Task 9.1 | pending | Prepare legacy repository archive markers | n/a | Root `MOVED.md` in legacy repos |
@@ -69,7 +69,7 @@ result must be recorded before migration proceeds past the affected surface.
 | `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 1 --strategy deterministic --pr-grouping group --pr-group 'Task 1.1=s1-reporting-guard' --pr-group 'Task 1.2=s1-meta-policy-state' --pr-group 'Task 1.3=s1-meta-workflow' --pr-group 'Task 1.4=s1-meta-integration' --format json` | pass | Sprint 1 dependency-layer PR split returned expected records | n/a |
 | `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 2 --strategy deterministic --pr-grouping group --pr-group 'Task 2.1=s2-media-source' --pr-group 'Task 2.2=s2-browser-source' --pr-group 'Task 2.3=s2-media-browser-integration' --format json` | pass | Sprint 2 dependency-layer PR split returned expected records | n/a |
 | `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 3 --strategy deterministic --pr-grouping group --pr-group 'Task 3.1=s3-web-test-evidence' --pr-group 'Task 3.2=s3-review-usage-evidence' --pr-group 'Task 3.3=s3-evidence-capture-integration' --format json` | pass | Sprint 3 dependency-layer PR split returned expected records | n/a |
-| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 7 --strategy deterministic --pr-grouping group --pr-group 'Task 7.1=s7-issue-lifecycle' --pr-group 'Task 7.2=s7-execution-orchestration' --pr-group 'Task 7.3=s7-dispatch-integration' --format json` | pending | Sprint 7 dependency-layer PR split | n/a |
+| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 7 --strategy deterministic --pr-grouping group --pr-group 'Task 7.1=s7-issue-lifecycle' --pr-group 'Task 7.2=s7-execution-orchestration' --pr-group 'Task 7.3=s7-dispatch-integration' --format json` | pass | Sprint 7 dependency-layer PR split returned Task 7.1, 7.2, and 7.3 grouped records. | n/a |
 | `for n in 4 5 6 8 9; do plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint "$n" --strategy deterministic --pr-grouping per-sprint --format json; done` | partial | Sprint 4 per-sprint split passed for selected scope; Sprints 5, 6, 8, and 9 remain future scope | n/a |
 | `agent-runtime render --product codex` | pass | Rendered 26 Codex skills | n/a |
 | `agent-runtime render --product claude` | pass | Rendered 26 Claude skills | n/a |
@@ -97,6 +97,21 @@ result must be recorded before migration proceeds past the affected surface.
 | `gh release view v0.17.1 --repo sympoies/nils-cli --json tagName,url,publishedAt` | pass | Upstream nils-cli `v0.17.1` release is published and fixes the GitHub pending-check stdout path discovered during live smoke. | https://github.com/sympoies/nils-cli/releases/tag/v0.17.1 |
 | `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke --execute-live` | pass | Live delivery smoke created and merged scratch PR #4 using released `forge-cli 0.17.1`; scratch CI passed and merge commit is `45c6cb44b40a65fb1ee05145713921afcbf5ba4a`. | `/var/folders/3d/s2d3jvyn0g758lsd_2t79h1w0000gn/T//agent-runtime-kit-deliver-lifecycle.6KUs4y` |
 | `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed after Sprint 6 unblock, including deterministic runtime smoke `total=26 pass=26`. | n/a |
+| `bash -n tests/runtime-smoke/run.sh tests/runtime-smoke/cases/dispatch/run.sh` | pass | Runtime-smoke dispatcher and dispatch case syntax passed. | n/a |
+| `shellcheck tests/runtime-smoke/run.sh tests/runtime-smoke/cases/dispatch/run.sh` | pass | Shell lint passed for Sprint 7 runtime-smoke changes. | n/a |
+| `shfmt -i 2 -ci -d tests/runtime-smoke/run.sh tests/runtime-smoke/cases/dispatch/run.sh` | pass | Shell formatting diff check passed. | n/a |
+| `jq empty targets/codex/plugins/dispatch/.codex-plugin/plugin.json targets/claude/plugins/dispatch/.claude-plugin/plugin.json tests/runtime-smoke/expected/install-summary.json tests/runtime-smoke/product/expected/product-summary.json` | pass | Dispatch plugin manifests and expected JSON summaries parse cleanly. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode matrix` | pass | Acceptance matrix covers 33 unique skill ids across 43 cases after Sprint 7 dispatch additions. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch` | pass | Dispatch deterministic smoke passed for all seven dispatch skill ids. | temp run root cleaned |
+| `agent-runtime render --product codex --update-golden` | pass | Refreshed Codex golden snapshots including dispatch domain files; rendered 33 skills. | `tests/golden/codex/` |
+| `agent-runtime render --product claude --update-golden` | pass | Refreshed Claude golden snapshots including dispatch domain files; rendered 33 skills. | `tests/golden/claude/` |
+| `bash tests/runtime-smoke/run.sh --mode install` | pass | Codex and Claude temp homes installed 33 skills each with doctor `block=0`. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode install --format json > /tmp/runtime-smoke-install-summary-s7.json && diff -u tests/runtime-smoke/expected/install-summary.json /tmp/runtime-smoke-install-summary-s7.json` | pass | Install expected output updated to 33 skills. | `/tmp/runtime-smoke-install-summary-s7.json` |
+| `bash tests/runtime-smoke/run.sh --mode product --format json > /tmp/runtime-smoke-product-summary-s7.json && diff -u tests/runtime-smoke/product/expected/product-summary.json /tmp/runtime-smoke-product-summary-s7.json` | pass | Product expected output updated to 33 installed skills; prompt cases remain quarantined skips. | `/tmp/runtime-smoke-product-summary-s7.json` |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Runtime skill smoke now covers 33 migrated skill ids including the Sprint 7 dispatch domain. | temp run root cleaned |
+| `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | Dry-run install skill-list diff passed for Claude and Codex with dispatch pins. | n/a |
+| `agent-runtime audit-drift` | pass | Root audit clean; only documented product manifest info differences including dispatch plugin metadata. | n/a |
+| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed after Sprint 7 edits, including deterministic runtime smoke `total=33 pass=33`. | n/a |
 | `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `bash tests/projects/project-local-smoke/run.sh` | pending | Sprint 8 project-local overlay smoke | n/a |
@@ -115,7 +130,8 @@ result must be recorded before migration proceeds past the affected surface.
   same gate before future sprint merges.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
-- Sprint 7 dispatch migration is intentionally not started in this checkpoint.
+- Sprint 7 dispatch migration is locally complete and awaiting PR delivery on
+  `feat/plan-05-dispatch-domain`.
 - Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
   `graysurf/claude-kit`.
 - Local cutover should use the recommended 2026-06-30 date unless the execution
@@ -132,3 +148,6 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Implemented Sprint 6 delivery macro sources, PR manifest wiring, deterministic delivery dry-run probes, and `tests/smoke/deliver-lifecycle.sh`; live scratch delivery smoke is blocked because `graysurf/agent-runtime-kit-smoke` is unavailable and GitHub live checks still depend on `P5-S5-G1`.
 - 2026-05-22: Created and configured scratch repository `graysurf/agent-runtime-kit-smoke`, delivered `sympoies/nils-cli` issue #439, released and installed `nils-cli v0.17.1`, bumped PR-domain `forge-cli` floors to `>=0.17.1`, and passed live Sprint 6 delivery smoke by creating and merging scratch PR #4.
 - 2026-05-22: Merged Plan 05 Sprint 6 PR #38 at `b21e22d7594ea817532dbd0ce1530066f6f02a88`; issue #26 dashboard, state, validation, and session comments now mark Sprint 6 complete and Sprint 7 intentionally not started.
+- 2026-05-22: Started Sprint 7 dispatch domain migration on `feat/plan-05-dispatch-domain`; Sprint 7 split-prs readiness passed and Task 7.1 is in progress.
+- 2026-05-22: Completed Sprint 7 dispatch source migration, manifests, product plugin metadata, link maps, golden snapshots, sandbox pins, and deterministic dispatch runtime smoke; local CI passed with `total=33 pass=33`.
+- 2026-05-22: Fixed a small Sprint 7 usage bug before commit: removed unsupported `forge-cli pr create --draft` guidance from `dispatch-subagent-pr` because draft PRs are the default in released `forge-cli 0.17.1`.

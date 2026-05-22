@@ -83,3 +83,18 @@ plugins:
       codex: targets/codex/plugins/pr/.codex-plugin/plugin.json
       claude: targets/claude/plugins/pr/.claude-plugin/plugin.json
     install_policy: always
+
+  - id: dispatch
+    domain: dispatch
+    contained_skills:
+      - dispatch.plan-tracking-issue
+      - dispatch.issue-lifecycle
+      - dispatch.tracking-issue-closeout
+      - dispatch.execute-from-tracking-issue
+      - dispatch.deliver-tracking-issue
+      - dispatch.dispatch-pr-review
+      - dispatch.dispatch-subagent-pr
+    product_manifests:
+      codex: targets/codex/plugins/dispatch/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/dispatch/.claude-plugin/plugin.json
+    install_policy: always

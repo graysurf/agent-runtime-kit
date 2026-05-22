@@ -1,5 +1,12 @@
 browser.browser-session
 browser.canary-check
+dispatch.deliver-tracking-issue
+dispatch.dispatch-pr-review
+dispatch.dispatch-subagent-pr
+dispatch.execute-from-tracking-issue
+dispatch.issue-lifecycle
+dispatch.plan-tracking-issue
+dispatch.tracking-issue-closeout
 evidence.docs-impact
 evidence.model-cross-check
 evidence.review-evidence

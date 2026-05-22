@@ -77,3 +77,14 @@ entries:
     source: build/claude/plugins/pr/skills
     destination: plugins/pr/skills
     recursive: true
+
+  - id: dispatch.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/claude/plugins/dispatch/.claude-plugin/plugin.json
+    destination: plugins/dispatch/.claude-plugin/plugin.json
+
+  - id: dispatch.skills-tree
+    kind: symlinked-file
+    source: build/claude/plugins/dispatch/skills
+    destination: plugins/dispatch/skills
+    recursive: true
