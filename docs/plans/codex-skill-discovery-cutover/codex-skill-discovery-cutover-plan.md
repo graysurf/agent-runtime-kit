@@ -267,7 +267,6 @@ skill gaps while keeping `$HOME/.agents` available as fallback until Sprint 3.
 ### Task 2.4: Integrate render, golden, and drift gates
 
 - **Location**:
-  - `build/codex/`
   - `tests/golden/codex/`
   - `scripts/ci/all.sh`
   - `docs/plans/codex-skill-discovery-cutover/codex-skill-discovery-cutover-execution-state.md`
