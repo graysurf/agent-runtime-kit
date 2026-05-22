@@ -6,10 +6,10 @@
 - Target scope: Sprint 1 through Sprint 6 complete; Sprint 7 not started
 - Execution window: Sprint 6 delivery macro migration closeout / pre-Sprint 7 checkpoint
 - Staged execution confirmation: not applicable
-- Current task: Sprint 6 validation and PR delivery closeout
+- Current task: Pre-Sprint 7 checkpoint complete
 - Next task: Stop before Sprint 7 dispatch migration until the owner starts it
-- Last updated: 2026-05-22 21:00 CST
-- Branch/commit/PR: feat/plan-05-delivery-macros; PR #38 open
+- Last updated: 2026-05-22 21:08 CST
+- Branch/commit/PR: main; merge commit b21e22d7594ea817532dbd0ce1530066f6f02a88; PR #38 merged
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -131,3 +131,4 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Recorded extraction backlog item `P5-S5-G1` after live `forge-cli pr checks` / `wait-checks` failed against `gh 2.92.0`; used `gh pr checks` as the provider-native fallback for PR #37 CI evidence.
 - 2026-05-22: Implemented Sprint 6 delivery macro sources, PR manifest wiring, deterministic delivery dry-run probes, and `tests/smoke/deliver-lifecycle.sh`; live scratch delivery smoke is blocked because `graysurf/agent-runtime-kit-smoke` is unavailable and GitHub live checks still depend on `P5-S5-G1`.
 - 2026-05-22: Created and configured scratch repository `graysurf/agent-runtime-kit-smoke`, delivered `sympoies/nils-cli` issue #439, released and installed `nils-cli v0.17.1`, bumped PR-domain `forge-cli` floors to `>=0.17.1`, and passed live Sprint 6 delivery smoke by creating and merging scratch PR #4.
+- 2026-05-22: Merged Plan 05 Sprint 6 PR #38 at `b21e22d7594ea817532dbd0ce1530066f6f02a88`; issue #26 dashboard, state, validation, and session comments now mark Sprint 6 complete and Sprint 7 intentionally not started.
