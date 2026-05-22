@@ -7,7 +7,7 @@
 - Current task: Task 4.3
 - Next task: PR review, nils-cli release handoff, and user acceptance
 - Branch: `feat/issue-backed-plan-lifecycle`
-- Runtime-kit PR: pending
+- Runtime-kit PR: https://github.com/graysurf/agent-runtime-kit/pull/51
 - Nils-cli branch: `feat/issue-backed-plan-lifecycle-cli`
 - Nils-cli PR: https://github.com/sympoies/nils-cli/pull/445
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/50
@@ -33,7 +33,7 @@
 | Task 3.3 | done | Update smoke coverage and manifests | agent-runtime-kit branch `feat/issue-backed-plan-lifecycle` | Manifests, product link maps, rendered outputs, golden snapshots, sandbox skill lists, and PR/dispatch smoke probes now cover the shared record lifecycle. |
 | Task 4.1 | done | Run cross-repo validation | nils-cli local-fast; agent-runtime-kit `scripts/ci/all.sh` | Cross-repo validation passed with the nils-cli debug binary first on `PATH`. |
 | Task 4.2 | done | Run specialist review and fix findings | `/Users/terry/.config/agent-kit/out/projects/graysurf__agent-runtime-kit/20260523-050234-issue-backed-plan-lifecycle-review/specialist-review-report-final.md` | code-review-specialists found and fixed one runtime-kit CLI contract issue and one nils-cli closeout evidence issue. |
-| Task 4.3 | done | Decide release/floor and close plan | nils-cli PR #445; runtime-kit PR pending | Runtime-kit keeps the `plan-issue >=0.17.4` floor; integration used the nils-cli debug binary until release. Tracking issue closeout remains gated on PR review/user acceptance rather than automatic merge. |
+| Task 4.3 | done | Decide release/floor and close plan | runtime-kit PR #51; nils-cli PR #445 | Runtime-kit keeps the `plan-issue >=0.17.4` floor; integration used the nils-cli debug binary until release. Tracking issue closeout remains gated on PR review/user acceptance rather than automatic merge. |
 
 ## Validation Ledger
 
@@ -83,6 +83,7 @@
 | `PATH="/Users/terry/Project/sympoies/nils-cli-issue-backed-plan-lifecycle/target/debug:$PATH" bash scripts/ci/all.sh` | pass | current session | Runtime-kit CI positions 1-9 passed against updated debug binary. |
 | `semantic-commit commit --automation --summary git-show ...` | pass | nils-cli commit `cdd8f76` | Review fix committed as `fix(plan-issue): filter closeout evidence by profile`. |
 | `forge-cli --provider github --repo sympoies/nils-cli --format json pr create ...` | pass | https://github.com/sympoies/nils-cli/pull/445 | Opened draft nils-cli PR for the unreleased CLI side. |
+| `forge-cli --provider github --repo graysurf/agent-runtime-kit --format json pr create ...` | pass | https://github.com/graysurf/agent-runtime-kit/pull/51 | Opened draft runtime-kit PR for the skill, render, smoke, and plan-state changes. |
 
 ## Notes
 
