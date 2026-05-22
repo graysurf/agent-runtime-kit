@@ -7,25 +7,29 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT_DIR="$REPO_ROOT/tests/runtime-smoke"
 MATRIX_FILE="$SCRIPT_DIR/acceptance-matrix.yaml"
 
+# shellcheck disable=SC1091
 # shellcheck source=tests/runtime-smoke/lib/results.sh
 . "$SCRIPT_DIR/lib/results.sh"
+# shellcheck disable=SC1091
 # shellcheck source=tests/runtime-smoke/lib/runtime-home.sh
 . "$SCRIPT_DIR/lib/runtime-home.sh"
 
 MODE=""
 FORMAT="text"
 PRODUCT=""
+DOMAIN=""
 KEEP_ARTIFACTS=0
 ARTIFACTS_DIR=""
 
 usage() {
   cat <<'USAGE'
-Usage: tests/runtime-smoke/run.sh --mode <matrix|install> [options]
+Usage: tests/runtime-smoke/run.sh --mode <matrix|install|deterministic> [options]
 
 Options:
   --mode <mode>           Smoke mode to run.
   --format <text|json>    Output format. Default: text.
   --product <product>     Product for install mode: codex or claude. Default: both.
+  --domain <domain>       Deterministic smoke domain. Default: all available domains.
   --artifacts-dir <path>  Write run logs and observed files to this directory.
   --keep-artifacts        Keep the temporary runtime root after the run.
   -h, --help              Show this help.
@@ -44,6 +48,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --product)
       PRODUCT="${2:-}"
+      shift 2
+      ;;
+    --domain)
+      DOMAIN="${2:-}"
       shift 2
       ;;
     --artifacts-dir)
@@ -73,7 +81,7 @@ if [ -z "$MODE" ]; then
 fi
 
 case "$MODE" in
-  matrix | install)
+  matrix | install | deterministic)
     ;;
   *)
     echo "runtime-smoke: unsupported mode: $MODE" >&2
@@ -95,6 +103,15 @@ case "$PRODUCT" in
     ;;
   *)
     echo "runtime-smoke: unsupported product: $PRODUCT" >&2
+    exit 2
+    ;;
+esac
+
+case "$DOMAIN" in
+  "" | meta)
+    ;;
+  *)
+    echo "runtime-smoke: unsupported domain: $DOMAIN" >&2
     exit 2
     ;;
 esac
@@ -263,12 +280,29 @@ run_install_mode() {
   done
 }
 
+run_deterministic_mode() {
+  results_init "$RESULTS_FILE"
+  export REPO_ROOT SCRIPT_DIR TMP_ROOT ARTIFACTS_DIR RESULTS_FILE
+
+  case "$DOMAIN" in
+    "")
+      bash "$SCRIPT_DIR/cases/meta/run.sh"
+      ;;
+    meta)
+      bash "$SCRIPT_DIR/cases/meta/run.sh"
+      ;;
+  esac
+}
+
 case "$MODE" in
   matrix)
     run_matrix_mode
     ;;
   install)
     run_install_mode
+    ;;
+  deterministic)
+    run_deterministic_mode
     ;;
 esac
 
