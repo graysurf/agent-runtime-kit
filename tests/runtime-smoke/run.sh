@@ -108,7 +108,7 @@ case "$PRODUCT" in
 esac
 
 case "$DOMAIN" in
-  "" | meta)
+  "" | browser | media | meta)
     ;;
   *)
     echo "runtime-smoke: unsupported domain: $DOMAIN" >&2
@@ -281,17 +281,29 @@ run_install_mode() {
 }
 
 run_deterministic_mode() {
+  local failures
+  failures=0
   results_init "$RESULTS_FILE"
   export REPO_ROOT SCRIPT_DIR TMP_ROOT ARTIFACTS_DIR RESULTS_FILE
 
   case "$DOMAIN" in
     "")
-      bash "$SCRIPT_DIR/cases/meta/run.sh"
+      bash "$SCRIPT_DIR/cases/meta/run.sh" || failures=1
+      bash "$SCRIPT_DIR/cases/media/run.sh" || failures=1
+      bash "$SCRIPT_DIR/cases/browser/run.sh" || failures=1
+      ;;
+    browser)
+      bash "$SCRIPT_DIR/cases/browser/run.sh" || failures=1
+      ;;
+    media)
+      bash "$SCRIPT_DIR/cases/media/run.sh" || failures=1
       ;;
     meta)
-      bash "$SCRIPT_DIR/cases/meta/run.sh"
+      bash "$SCRIPT_DIR/cases/meta/run.sh" || failures=1
       ;;
   esac
+
+  return "$failures"
 }
 
 case "$MODE" in

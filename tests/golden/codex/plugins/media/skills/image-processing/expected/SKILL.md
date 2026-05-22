@@ -37,7 +37,7 @@ Use the released CLI directly:
 ```bash
 image-processing convert --in icon.svg --to png --out icon.png
 image-processing convert --in photo.jpg --to webp --out photo.webp --width 1200
-image-processing svg-validate --in icon.svg --out report.json --json
+image-processing svg-validate --in icon.svg --out validated.svg --json
 ```
 
 ## Workflow
