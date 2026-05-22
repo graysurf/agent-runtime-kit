@@ -6,10 +6,10 @@
 - Target scope: Sprint 1 through Sprint 9
 - Execution window: Sprint 8 overlay gates and Sprint 9 legacy archive/cutover
 - Staged execution confirmation: not applicable
-- Current task: Final validation complete; PR delivery pending
-- Next task: Deliver PR and close issue-backed execution
-- Last updated: 2026-05-22 22:48 CST
-- Branch/commit/PR: feat/plan-05-overlay-cutover; PR pending
+- Current task: Plan 05 implementation complete; issue closeout pending
+- Next task: Run tracking issue closeout for issue #26
+- Last updated: 2026-05-22 23:08 CST
+- Branch/commit/PR: main; merge commit `b402fc2660831940f8f695e7f4d549e72fb520e8`; PR #40 merged
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -154,6 +154,9 @@ result must be recorded before migration proceeds past the affected surface.
 | `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context startup --strict --format checklist` | pass | Home-scope startup preflight still resolves after `.agents` removal. | n/a |
 | `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev --strict --format checklist` | pass | Project-dev preflight still resolves after `.agents` removal. | n/a |
 | `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context task-tools --strict --format checklist` | pass | Task-tools preflight still resolves for issue/PR operations after `.agents` removal. | n/a |
+| `gh pr checks 40 --watch --interval 10` | pass | PR #40 remote `scripts/ci/all.sh` check passed. | https://github.com/graysurf/agent-runtime-kit/actions/runs/26295494399/job/77406808933 |
+| `gh pr comment 40 --body-file <delivery-review-outcome>` | pass | Posted delivery review outcome comment with compatibility-alias repair and no remaining concrete findings. | https://github.com/graysurf/agent-runtime-kit/pull/40#issuecomment-4519871974 |
+| `/Users/terry/.config/agent-kit/skills/workflows/pr/github/close-github-pr/scripts/close-github-pr.sh --kind feature --pr 40` | pass | PR #40 was marked ready, merged, branch-cleaned, and local `main` updated to merge commit `b402fc2660831940f8f695e7f4d549e72fb520e8`. | https://github.com/graysurf/agent-runtime-kit/pull/40 |
 
 ## Blockers
 
@@ -167,7 +170,7 @@ result must be recorded before migration proceeds past the affected surface.
 - Sprint 7 dispatch migration is merged in PR #39 at
   `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`.
 - Sprint 8 overlay gates are complete and in branch
-  `feat/plan-05-overlay-cutover`.
+  `feat/plan-05-overlay-cutover`, merged through PR #40.
 - Sprint 9.1 and 9.2 are complete: both legacy repositories have root
   `MOVED.md` commits and GitHub `archived=true`.
 - Sprint 9.3 is complete: Codex home policy now links directly to
@@ -212,3 +215,6 @@ result must be recorded before migration proceeds past the affected surface.
   `PLAN_ISSUE_HOME`, and `CODEX_HOME`, verified `agent-docs --docs-home
   "$HOME/.agents"` startup preflight, and verified 61 original `agent-kit`
   `SKILL.md` files are reachable through the alias.
+- 2026-05-22: Merged Plan 05 Sprint 8/9 PR #40 at
+  `b402fc2660831940f8f695e7f4d549e72fb520e8`; issue #26 dashboard, state,
+  validation, and closeout comments should now mark Plan 05 complete.
