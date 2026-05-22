@@ -118,8 +118,8 @@ Status: source document for the first implementation discussion
 - 2026-05-20 (specialist-review batch 3) — reality + ceremony pass:
   hardened the Codex / Claude adapter asymmetry into a dedicated
   §Codex Activation Surface (Reality Check) subsection enumerating
-  what Codex actually loads (`AGENTS.md` + `config.toml` managed
-  block) vs. what the directory tree merely organises for authoring
+  what Codex actually loads (`AGENTS.md`, local skills, and the
+  `config.toml` managed block) vs. what the directory tree merely organises for authoring
   (`.codex-plugin/plugin.json`, marketplace entries, plugin packaging);
   tagged the Codex-side bullets in §Product Adapter Layer with
   "local convention" / "local-only" markers; updated drift-detection
@@ -143,6 +143,11 @@ Status: source document for the first implementation discussion
   directly to that file so Codex does not read duplicate `AGENTS.md` files when
   this repo is the active project. Home-scope `agent-docs` still pins its
   checked-out docs home explicitly until those runbooks migrate.
+- 2026-05-23 (Codex skill discovery cutover pass) — updated the Codex reality
+  check from prompt/config-only activation to the verified local skill root:
+  runtime-kit skills are installed under `$CODEX_HOME/skills/<domain>/<skill>/`
+  for Codex discovery, while `$CODEX_HOME/plugins` remains audit/compatibility
+  metadata rather than a plugin loader.
 
 ## Purpose
 
@@ -511,8 +516,13 @@ matching loader for each Claude concept. It does not.
 **What Codex actually reads at session start:**
 
 - `~/.codex/AGENTS.md` — primary agent prompt. Read on every session
-  start. Can be a symlink. This is the only file the runtime kit
-  positions to "activate" a domain on the Codex side.
+  start. Can be a symlink. The runtime kit uses root `CODEX_AGENTS.md`
+  as this source.
+- `~/.codex/skills/**/SKILL.md` — local skill discovery root observed from
+  `codex debug prompt-input` in the May 2026 cutover environment. The
+  generated prompt input lists `$HOME/.codex/skills` as a skill root, while
+  `$HOME/.codex/plugins/<domain>/skills` is not listed as a runtime-kit
+  discovery root.
 - `~/.codex/config.toml` — TOML config with custom hooks declared
   inline. The runtime kit writes only into the
   `# >>> agent-runtime-kit:hooks >>>` managed block; everything outside
@@ -528,19 +538,19 @@ suggests otherwise):**
   `marketplace.json` discovery / install protocol.
 - A `settings.json`-equivalent hook registration. Hooks are TOML-only.
 - Plugin-scoped skill discovery the way Claude's `${CLAUDE_PLUGIN_ROOT}`
-  works. Skills are addressed by absolute `$CODEX_HOME`-relative paths
-  inside `AGENTS.md` or hook scripts.
+  works. Codex local skills are exposed through `$CODEX_HOME/skills`, not by
+  loading `$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json`.
 
 **Why the runtime kit still uses a `targets/codex/plugins/` layout:**
 
 `targets/codex/plugins/<domain>/` and `.codex-plugin/plugin.json` are
 purely a source-organisation convention so the same plugin abstraction
 can describe both products on the authoring side. At render time,
-`agent-runtime render` flattens these into the two real Codex surfaces
-(`AGENTS.md` + `config.toml` managed block); the rendered files are
-what Codex actually loads. `.codex-plugin/plugin.json` exists in
-`build/codex/` for our own audit and drift purposes only — Codex never
-opens it.
+`agent-runtime render` keeps deterministic plugin-organized build output, and
+`agent-runtime install` exposes the skill files under the active
+`$CODEX_HOME/skills/<domain>/<skill>/SKILL.md` root. `.codex-plugin/plugin.json`
+exists in `build/codex/` and `$CODEX_HOME/plugins/` for our own audit and drift
+purposes only — Codex never opens it.
 
 **Home-scope prompt source invariant:**
 
@@ -557,10 +567,11 @@ reads. Do not reintroduce `$HOME/.agents` as an indirection for this link.
   local schema in `core/docs/schemas/`. It does NOT compare against any
   upstream Codex registry, because none exists. A Codex `plugin.json`
   schema change is a local-only revision.
-- `install` for Codex never writes "plugin packages" anywhere. The
-  install plan reduces to: symlink `AGENTS.md`, sync the managed block
-  into `config.toml`, drop any hook scripts under
-  `$CODEX_HOME/hooks/<name>/`.
+- `install` for Codex does not rely on plugin package loading. The active
+  install plan is: expose rendered skills under `$CODEX_HOME/skills`, sync the
+  managed hook block into `config.toml`, drop hook scripts under
+  `$CODEX_HOME/hooks/<name>/`, and retain `$CODEX_HOME/plugins` metadata only
+  for audit/compatibility.
 - PR review must not flag "missing Codex marketplace entry" as a defect.
   There is no such thing to be missing.
 
@@ -1177,9 +1188,10 @@ Recommended behavior:
 
 Product-specific examples:
 
-- Codex: link `~/.codex/AGENTS.md` to `<source_root>/CODEX_AGENTS.md`, sync
-  managed hooks into `~/.codex/config.toml`, register/install local plugins when
-  supported, and leave auth/history/logs/cache untouched.
+- Codex: link `~/.codex/AGENTS.md` to `<source_root>/CODEX_AGENTS.md`, expose
+  runtime-kit skills under `~/.codex/skills`, sync managed hooks into
+  `~/.codex/config.toml`, retain plugin metadata for audit only, and leave
+  auth/history/logs/cache untouched.
 - Claude: link approved files from the canonical link map into `~/.claude`,
   register the local plugin marketplace, install configured plugins, and leave
   projects/history/session/cache/plugin install artifacts untouched.
@@ -1997,16 +2009,18 @@ Pinned for the rest of this document and Phase 1+ implementation:
 10. **Codex adapter is source-organisation only.** `targets/codex/`
     holds plugin / marketplace / `.codex-plugin/plugin.json` files
     purely as an authoring abstraction shared with the Claude side.
-    Codex itself loads only `~/.codex/AGENTS.md` and the
-    `agent-runtime-kit` managed block inside `~/.codex/config.toml`;
-    `agent-runtime render` flattens everything else into those two
-    surfaces. Implications:
+    Runtime-kit plugin metadata is not loaded by Codex; active local skills
+    are exposed under `~/.codex/skills`, alongside `~/.codex/AGENTS.md` and
+    the `agent-runtime-kit` managed block inside `~/.codex/config.toml`.
+    Implications:
     - `audit-drift` validates `.codex-plugin/plugin.json` against the
       local schema only — there is no upstream Codex registry to diff
       against.
-    - `install` for Codex never writes plugin packages anywhere; the
-      plan is `AGENTS.md` symlink + `config.toml` managed-block sync +
-      hook scripts under `$CODEX_HOME/hooks/<name>/`.
+    - `install` for Codex does not depend on plugin packages; the active
+      plan exposes skills under `$CODEX_HOME/skills`, syncs the
+      `config.toml` managed block, installs hook scripts under
+      `$CODEX_HOME/hooks/<name>/`, and retains `$CODEX_HOME/plugins`
+      metadata for audit/compatibility only.
     - PR review must not flag "missing Codex marketplace entry" as a
       defect; the marketplace concept is local-only.
     - Phase 4 estimates for Codex domains exclude any "plugin

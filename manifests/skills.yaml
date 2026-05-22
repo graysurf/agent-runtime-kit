@@ -274,6 +274,32 @@ skills:
       canary-check: ">=0.16.0"
     state_out_mode: runtime
 
+  - id: conversation.discussion-to-implementation-doc
+    domain: conversation
+    source: core/skills/conversation/discussion-to-implementation-doc
+    products:
+      codex:
+        name: discussion-to-implementation-doc
+        render_to: plugins/conversation/skills/discussion-to-implementation-doc/SKILL.md
+      claude:
+        name: discussion-to-implementation-doc
+        render_to: plugins/conversation/skills/discussion-to-implementation-doc/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
+  - id: conversation.handoff-session-prompt
+    domain: conversation
+    source: core/skills/conversation/handoff-session-prompt
+    products:
+      codex:
+        name: handoff-session-prompt
+        render_to: plugins/conversation/skills/handoff-session-prompt/SKILL.md
+      claude:
+        name: handoff-session-prompt
+        render_to: plugins/conversation/skills/handoff-session-prompt/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
   - id: evidence.web-evidence
     domain: evidence
     source: core/skills/evidence/web-evidence

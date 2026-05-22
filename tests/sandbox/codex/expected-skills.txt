@@ -1,5 +1,7 @@
 browser.browser-session
 browser.canary-check
+conversation.discussion-to-implementation-doc
+conversation.handoff-session-prompt
 dispatch.deliver-tracking-issue
 dispatch.dispatch-pr-review
 dispatch.dispatch-subagent-pr

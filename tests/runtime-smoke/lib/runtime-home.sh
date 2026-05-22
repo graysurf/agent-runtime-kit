@@ -36,12 +36,24 @@ runtime_validate_expected_file() {
 
 runtime_collect_installed_skills() {
   local live_home="$1"
+  local product="$2"
 
-  find "$live_home/plugins" -path '*/skills/*/SKILL.md' -print |
-    sed "s#^$live_home/plugins/##" |
-    sed 's#/skills/#.#' |
-    sed 's#/SKILL\.md$##' |
-    sort -u
+  case "$product" in
+    codex)
+      find "$live_home/skills" -path '*/SKILL.md' -print 2>/dev/null |
+        sed "s#^$live_home/skills/##" |
+        sed 's#/SKILL\.md$##' |
+        sed 's#/#.#' |
+        sort -u
+      ;;
+    *)
+      find "$live_home/plugins" -path '*/skills/*/SKILL.md' -print |
+        sed "s#^$live_home/plugins/##" |
+        sed 's#/skills/#.#' |
+        sed 's#/SKILL\.md$##' |
+        sort -u
+      ;;
+  esac
 }
 
 runtime_doctor_block_count() {
@@ -86,7 +98,7 @@ runtime_install_product() {
     return 1
   fi
 
-  runtime_collect_installed_skills "$live_home" >"$observed"
+  runtime_collect_installed_skills "$live_home" "$product" >"$observed"
   if [ ! -s "$observed" ]; then
     echo "runtime-smoke: no installed SKILL.md surfaces found for $product" >&2
     cat "$install_log" >&2
