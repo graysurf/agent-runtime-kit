@@ -945,14 +945,23 @@ local legacy pointers only after all migrated surfaces are validated.
 - **Location**:
   - `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`
   - `docs/source/inventory-target-architecture.md`
-- **Description**: Remove the legacy `$HOME/.agents` symlink after the
-  recommended cutover window, then migrate any
+- **Description**: Move `$HOME/.codex/AGENTS.md` from the legacy
+  `$HOME/.agents/CODEX_AGENTS.md` indirection to the runtime-kit-owned
+  `<source_root>/CODEX_AGENTS.md`, remove the legacy `$HOME/.agents` symlink
+  after the execution owner chooses cutover, then migrate any
   `$XDG_STATE_HOME/claude-kit/` tree to
   `$XDG_STATE_HOME/agent-runtime-kit/claude/` using a verify-before-remove flow.
 - **Dependencies**:
   - Task 9.2
 - **Complexity**: 3
 - **Acceptance criteria**:
+  - `$HOME/.codex/AGENTS.md` resolves to a real
+    `<source_root>/CODEX_AGENTS.md` file and no longer routes through
+    `$HOME/.agents`.
+  - New zsh shells export `AGENT_HOME`, `AGENT_DOCS_HOME`, and
+    `PLAN_ISSUE_HOME` to a real path instead of `$HOME/.agents`.
+  - Codex managed hook commands point to real hook files and no longer route
+    through `$HOME/.agents`.
   - `test ! -L "$HOME/.agents"` exits 0.
   - If the old Claude state tree existed, the new destination matches it before
     source removal.
@@ -960,6 +969,10 @@ local legacy pointers only after all migrated surfaces are validated.
   - The execution-state Session Log captures paths, timestamp, and verification
     result.
 - **Validation**:
+  - `readlink "$HOME/.codex/AGENTS.md" | rg '/agent-runtime-kit/CODEX_AGENTS.md$'`
+  - `test -f "$(readlink "$HOME/.codex/AGENTS.md")"`
+  - `zsh -lc 'test "$AGENT_HOME" = "$HOME/.config/agent-kit" && test "$AGENT_DOCS_HOME" = "$AGENT_HOME" && test "$PLAN_ISSUE_HOME" = "$AGENT_HOME"'`
+  - `! rg -n '/Users/[^/]+/\.agents|\$HOME/\.agents' "$HOME/.zshenv" "$HOME/.config/zsh/scripts/_internal/paths.exports.zsh" "$HOME/.codex/config.toml"`
   - `test ! -L "$HOME/.agents"`
   - `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi`
 
@@ -1001,7 +1014,8 @@ local legacy pointers only after all migrated surfaces are validated.
 - GitHub archival requires admin permission. Verify access before Sprint 9.
 - `$HOME/.agents` removal can affect in-flight sessions. Use the recommended
   2026-06-30 cutover unless the execution owner explicitly chooses a different
-  date and records it.
+  date and records it. If cutover is accelerated, `$HOME/.codex/AGENTS.md` must
+  first point at a real runtime-kit-owned `CODEX_AGENTS.md` source file.
 - `.private` overlay values can be machine-specific. Do not commit private
   values; commit only stable fixtures or redacted expected outputs.
 
@@ -1018,6 +1032,7 @@ local legacy pointers only after all migrated surfaces are validated.
   preserve `.private` machine-local files.
 - Sprint 9 archival: `gh repo edit graysurf/<repo> --no-archived` reverses the
   archive flag. Revert each legacy repo's `MOVED.md` commit if needed.
-- Sprint 9 local cutover: recreate `$HOME/.agents` with
-  `ln -s "$HOME/.config/agent-kit" "$HOME/.agents"` and restore Claude state
+- Sprint 9 local cutover: point `$HOME/.codex/AGENTS.md` back to
+  `$HOME/.config/agent-kit/CODEX_AGENTS.md`, recreate `$HOME/.agents` with
+  `ln -s "$HOME/.config/agent-kit" "$HOME/.agents"`, and restore Claude state
   from the pre-migration copy if verification failed.

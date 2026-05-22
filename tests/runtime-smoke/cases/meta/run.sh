@@ -151,11 +151,37 @@ run_semantic_commit_probe() {
   ) >"$out" 2>&1
 }
 
+run_project_local_shim_probe() {
+  local name="$1"
+  local script="$REPO_ROOT/tests/projects/project-local-smoke/.agents/scripts/${name}.sh"
+  local out_dir="$META_ARTIFACTS_DIR/project-local-shims"
+  local stdout="$out_dir/${name}.stdout"
+
+  if [ ! -x "$script" ]; then
+    echo "runtime-smoke meta: project-local shim is not executable: $script" >&2
+    return 1
+  fi
+
+  mkdir -p "$out_dir"
+  (
+    cd "$REPO_ROOT/tests/projects/project-local-smoke"
+    PROJECT_LOCAL_SMOKE_OUT="$out_dir" "$script" --runtime-smoke "$name"
+  ) >"$stdout" 2>&1
+  grep -q "project-local-smoke:${name}:called" "$stdout"
+  test -f "$out_dir/${name}.invoked"
+}
+
 failures=0
 record_case "meta.agent-docs" "project-dev docs resolve passed from fixture workspace" run_agent_docs_probe || failures=1
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
 record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe || failures=1
+record_case "meta.bench" "project-local bench shim executed fixture script" run_project_local_shim_probe bench || failures=1
+record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap || failures=1
+record_case "meta.demo" "project-local demo shim executed fixture script" run_project_local_shim_probe demo || failures=1
+record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy || failures=1
 record_case "meta.heuristic-inbox" "heuristic inbox empty-list probe passed against temp inbox" run_heuristic_inbox_probe || failures=1
+record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" run_project_local_shim_probe pre-pr || failures=1
+record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release || failures=1
 record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1
 record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe || failures=1
 
