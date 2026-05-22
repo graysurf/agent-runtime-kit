@@ -12,15 +12,16 @@ schema_version: 1
 
 products:
   codex:
-    # Nested skills are addressed via `$CODEX_HOME`-relative paths referenced
-    # from `AGENTS.md` or hook scripts. Codex itself does not "discover"
-    # plugins or nested skills — the path is whatever AGENTS.md points at.
+    # Local skills are discovered from `$CODEX_HOME/skills/**/SKILL.md`.
+    # `.codex-plugin` plugin trees are retained for source organization,
+    # manifests, and audit-drift only; they are not the active Codex skill
+    # discovery surface.
     nested_skill_support: true
     plugin_manifest:
       # Codex never opens `.codex-plugin/plugin.json` at runtime. The file
       # exists as a source-organisation convention shared with the Claude
-      # side; render flattens domain content into AGENTS.md + config.toml
-      # managed block (see Codex Activation Surface Reality Check).
+      # side; install exposes runtime-kit skills through `$CODEX_HOME/skills`
+      # and keeps plugin metadata for audit only.
       path_pattern: "$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json"
       loaded_at_runtime: false
       schema_ref: "core/docs/schemas/codex-plugin.schema.json"
@@ -30,6 +31,7 @@ products:
       supports_inline_python: false
     config_activation:
       - "$CODEX_HOME/AGENTS.md"
+      - "$CODEX_HOME/skills/**/SKILL.md"
       - "$CODEX_HOME/config.toml (managed block only)"
       - "$CODEX_HOME/hooks/<name>/ (scripts referenced from managed block)"
     runtime_state:

@@ -1,0 +1,18 @@
+{
+  "name": "conversation",
+  "version": "0.1.0",
+  "description": "Conversation-to-artifact workflow skills for implementation handoffs and next-session prompts.",
+  "author": {
+    "name": "graysurf"
+  },
+  "skills": [
+    {
+      "id": "discussion-to-implementation-doc",
+      "source": "core/skills/conversation/discussion-to-implementation-doc"
+    },
+    {
+      "id": "handoff-session-prompt",
+      "source": "core/skills/conversation/handoff-session-prompt"
+    }
+  ]
+}

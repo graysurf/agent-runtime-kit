@@ -23,6 +23,12 @@ entries:
     destination: plugins/reporting/skills
     recursive: true
 
+  - id: reporting.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/reporting/skills
+    destination: skills/reporting
+    recursive: true
+
   - id: meta.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/meta/.codex-plugin/plugin.json
@@ -32,6 +38,12 @@ entries:
     kind: symlinked-file
     source: build/codex/plugins/meta/skills
     destination: plugins/meta/skills
+    recursive: true
+
+  - id: meta.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills
+    destination: skills/meta
     recursive: true
 
   - id: media.plugin-manifest
@@ -45,6 +57,12 @@ entries:
     destination: plugins/media/skills
     recursive: true
 
+  - id: media.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/media/skills
+    destination: skills/media
+    recursive: true
+
   - id: browser.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/browser/.codex-plugin/plugin.json
@@ -54,6 +72,29 @@ entries:
     kind: symlinked-file
     source: build/codex/plugins/browser/skills
     destination: plugins/browser/skills
+    recursive: true
+
+  - id: browser.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/browser/skills
+    destination: skills/browser
+    recursive: true
+
+  - id: conversation.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/conversation/.codex-plugin/plugin.json
+    destination: plugins/conversation/.codex-plugin/plugin.json
+
+  - id: conversation.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills
+    destination: plugins/conversation/skills
+    recursive: true
+
+  - id: conversation.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills
+    destination: skills/conversation
     recursive: true
 
   - id: evidence.plugin-manifest
@@ -67,6 +108,12 @@ entries:
     destination: plugins/evidence/skills
     recursive: true
 
+  - id: evidence.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills
+    destination: skills/evidence
+    recursive: true
+
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/pr/.codex-plugin/plugin.json
@@ -78,6 +125,12 @@ entries:
     destination: plugins/pr/skills
     recursive: true
 
+  - id: pr.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills
+    destination: skills/pr
+    recursive: true
+
   - id: dispatch.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/dispatch/.codex-plugin/plugin.json
@@ -87,6 +140,12 @@ entries:
     kind: symlinked-file
     source: build/codex/plugins/dispatch/skills
     destination: plugins/dispatch/skills
+    recursive: true
+
+  - id: dispatch.codex-skills-root
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills
+    destination: skills/dispatch
     recursive: true
 
   - id: hooks.shared-scripts

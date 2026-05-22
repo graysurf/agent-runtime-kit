@@ -16,9 +16,10 @@ history, logs, caches, or product state.
   `tests/sandbox/<product>/expected-skills.txt`, and runs `agent-runtime
   doctor`.
 - `deterministic`: runs committed command-level probes for available domains.
-  Current coverage includes `meta`, `media`, `browser`, `evidence`, `pr`, and
-  `reporting` domains. The `pr` domain includes `forge-cli` dry-run probes for
-  create, close, dispatch-lane create, and delivery macro surfaces.
+  Current coverage includes `meta`, `media`, `browser`, `conversation`,
+  `evidence`, `pr`, and `reporting` domains. The `pr` domain includes
+  `forge-cli` dry-run probes for create, close, dispatch-lane create, and
+  delivery macro surfaces.
 - `product`: runs quarantined product CLI isolation probes, installs temporary
   product homes, and records representative prompt cases. Prompt execution is
   skipped by default unless isolated provider/auth execution is explicitly
@@ -38,6 +39,7 @@ bash tests/runtime-smoke/run.sh --mode deterministic
 bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
 bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
+bash tests/runtime-smoke/run.sh --mode deterministic --domain conversation
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
 bash tests/runtime-smoke/run.sh --mode deterministic --domain pr
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting

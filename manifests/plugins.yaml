@@ -61,6 +61,16 @@ plugins:
       claude: targets/claude/plugins/browser/.claude-plugin/plugin.json
     install_policy: always
 
+  - id: conversation
+    domain: conversation
+    contained_skills:
+      - conversation.discussion-to-implementation-doc
+      - conversation.handoff-session-prompt
+    product_manifests:
+      codex: targets/codex/plugins/conversation/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/conversation/.claude-plugin/plugin.json
+    install_policy: always
+
   - id: evidence
     domain: evidence
     contained_skills:

@@ -43,8 +43,17 @@ validate_expected_file() {
 }
 
 extract_skill_ids() {
-  local dry_run_output="$1"
-  sed -n 's#.* /.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u
+  local product="$1"
+  local dry_run_output="$2"
+
+  case "$product" in
+    codex)
+      sed -n 's#.* /.*skills/\([^/][^/]*\)/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u
+      ;;
+    *)
+      sed -n 's#.* /.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u
+      ;;
+  esac
 }
 
 run_product() {
@@ -69,7 +78,7 @@ run_product() {
     exit 1
   fi
 
-  extract_skill_ids "$dry_run_output" >"$observed"
+  extract_skill_ids "$product" "$dry_run_output" >"$observed"
   if [ ! -s "$observed" ]; then
     echo "sandbox-install-rehearsal.sh: no SKILL.md surfaces found in dry-run output for $product" >&2
     cat "$dry_run_output" >&2

@@ -56,6 +56,17 @@ entries:
     destination: plugins/browser/skills
     recursive: true
 
+  - id: conversation.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/claude/plugins/conversation/.claude-plugin/plugin.json
+    destination: plugins/conversation/.claude-plugin/plugin.json
+
+  - id: conversation.skills-tree
+    kind: symlinked-file
+    source: build/claude/plugins/conversation/skills
+    destination: plugins/conversation/skills
+    recursive: true
+
   - id: evidence.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/claude/plugins/evidence/.claude-plugin/plugin.json

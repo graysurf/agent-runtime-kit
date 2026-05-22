@@ -178,6 +178,7 @@ bash tests/runtime-smoke/run.sh --mode deterministic
 bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
 bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
+bash tests/runtime-smoke/run.sh --mode deterministic --domain conversation
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
 bash tests/runtime-smoke/run.sh --mode deterministic --domain pr
 bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch
