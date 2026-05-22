@@ -81,6 +81,8 @@ result must be recorded before migration proceeds past the affected surface.
 | `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Deterministic runtime smoke passed for all 24 migrated skill ids. | temp run root cleaned |
 | `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed, including 24-skill deterministic runtime smoke. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain pr` | pass | Sprint 5 PR domain probes passed for GitHub/GitLab create and close dry-run surfaces. | temp run root cleaned |
+| `forge-cli pr wait-checks 37 --provider github --repo graysurf/agent-runtime-kit --format json` | fail | `forge-cli 0.16.0` requested unsupported `gh 2.92.0` JSON field `conclusion`; recorded extraction backlog item `P5-S5-G1`. | n/a |
+| `gh pr checks 37 --watch --interval 10 --fail-fast` | pass | Provider-native fallback verified PR #37 remote CI passed. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Runtime skill smoke now covers 24 skills including the Sprint 5 PR domain. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode install` | pass | Codex and Claude temp homes installed 24 skills each with doctor `block=0`. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode product --format json` | pass | Product temp-home install summary updated to 24 skills; prompt cases remain quarantined skips. | `/tmp/runtime-smoke-product-summary.json` |
@@ -103,6 +105,10 @@ result must be recorded before migration proceeds past the affected surface.
   `skip-host-capability` classification.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
+- Sprint 6 must account for extraction backlog item `P5-S5-G1`: live GitHub
+  checks through `forge-cli 0.16.0` fail with `gh 2.92.0`, so delivery smoke
+  either needs a fixed nils-cli release or an explicitly recorded operator
+  fallback.
 - Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
   `graysurf/claude-kit`.
 - Local cutover should use the recommended 2026-06-30 date unless the execution
@@ -115,3 +121,4 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Validation passed: `bash scripts/ci/all.sh`, selected `plan-tooling split-prs` checks, full `plan-tooling batches` sweep, `agent-runtime audit-drift`, and `bash scripts/ci/sandbox-install-rehearsal.sh`.
 - 2026-05-22: Recorded Plan 06 acceptance dependency before Sprint 5+ resumes: deterministic runtime smoke is the required gate; product smoke remains manual/quarantined until isolated provider/auth execution is supplied.
 - 2026-05-22: Completed Sprint 5 PR create/close migration in branch `feat/plan-05-pr-domain`: added `forge-cli`-backed PR/MR create and close skill sources, PR plugin manifests/link maps, golden snapshots, sandbox pins, and deterministic PR runtime-smoke probes; opened PR #37.
+- 2026-05-22: Recorded extraction backlog item `P5-S5-G1` after live `forge-cli pr checks` / `wait-checks` failed against `gh 2.92.0`; used `gh pr checks` as the provider-native fallback for PR #37 CI evidence.

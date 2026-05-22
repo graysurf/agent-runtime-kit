@@ -40,6 +40,10 @@ Failure modes:
   allowance, or provider auth fails.
 - Issue-backed completion state is incomplete for a PR that would close or
   finalize a tracking issue.
+- `forge-cli 0.16.0` with `gh 2.92.0` can fail checks operations because the
+  GitHub backend requests an unsupported `conclusion` JSON field. Record this
+  as extraction-backlog item `P5-S5-G1`; use `gh pr checks` only as a temporary
+  operator fallback until the nils-cli fix is released.
 
 ## Entrypoint
 
