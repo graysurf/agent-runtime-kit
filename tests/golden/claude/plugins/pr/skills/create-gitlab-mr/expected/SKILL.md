@@ -1,0 +1,82 @@
+---
+name: create-gitlab-mr
+description:
+  Create a GitLab merge request through the released nils-cli `forge-cli pr create` surface.
+---
+
+# Create GitLab MR
+
+## Contract
+
+Prereqs:
+
+- `forge-cli` is installed from the released nils-cli package and available on
+  `PATH`.
+- `glab auth status` succeeds for the target GitLab host when running live mode.
+- The source branch has been pushed and has an upstream tracking branch.
+- The working tree contains only the intended changes, or unrelated changes are
+  isolated from the MR scope.
+
+Inputs:
+
+- MR kind: `feature` or `bug`.
+- Source branch, base branch, title, and body file.
+- Optional labels and reviewers supported by the target GitLab project.
+- Draft state: draft by default; use `--no-draft` only when the caller has
+  explicitly chosen ready-for-review.
+
+Outputs:
+
+- A GitLab merge request created by `forge-cli`.
+- Text or JSON output from the CLI, depending on `--format`.
+- Provider command evidence in `--dry-run` mode.
+
+Failure modes:
+
+- GitLab auth, repo detection, or branch upstream checks fail.
+- The MR body is missing required `forge-cli` sections such as `## Summary` and
+  `## Test plan`.
+- The branch is not pushed, the base branch is invalid, or the provider rejects
+  labels or reviewers.
+
+## Entrypoint
+
+Use the released CLI directly:
+
+```bash
+forge-cli --provider gitlab pr create \
+  --kind feature \
+  --base main \
+  --title "$MR_TITLE" \
+  --body-file "$MR_BODY_FILE"
+```
+
+For an audited preview:
+
+```bash
+forge-cli --provider gitlab --dry-run --format json pr create \
+  --kind feature \
+  --base main \
+  --title "$MR_TITLE" \
+  --body-file "$MR_BODY_FILE"
+```
+
+## Workflow
+
+1. Inspect `git status --short --branch` and confirm the branch contains only
+   the intended change set.
+2. Push the branch and ensure it has an upstream tracking branch.
+3. Prepare an MR body with at least `## Summary` and `## Test plan`; include
+   validation commands and risk notes in prose.
+4. Run `forge-cli --provider gitlab --dry-run --format json pr create ...` when
+   the command shape or provider resolution needs evidence.
+5. Run `forge-cli --provider gitlab pr create ...` to create the draft MR.
+6. Record the MR URL, branch, validation, and any provider failure in the
+   execution ledger or issue timeline.
+
+## Boundary
+
+`forge-cli` owns provider command rendering, body validation, provider
+detection, and the live `glab mr create` call. The workflow owner owns the MR
+narrative, validation evidence, branch hygiene, and the decision to create a
+draft or ready MR.

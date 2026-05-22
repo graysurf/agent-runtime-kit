@@ -66,3 +66,14 @@ entries:
     source: build/codex/plugins/evidence/skills
     destination: plugins/evidence/skills
     recursive: true
+
+  - id: pr.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/pr/.codex-plugin/plugin.json
+    destination: plugins/pr/.codex-plugin/plugin.json
+
+  - id: pr.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills
+    destination: plugins/pr/skills
+    recursive: true

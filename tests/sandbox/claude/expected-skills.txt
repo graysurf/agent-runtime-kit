@@ -14,6 +14,11 @@ meta.agent-scope-lock
 meta.heuristic-inbox
 meta.repo-retro
 meta.semantic-commit
+pr.close-github-pr
+pr.close-gitlab-mr
+pr.create-dispatch-lane-pr
+pr.create-github-pr
+pr.create-gitlab-mr
 reporting.daily-brief
 reporting.project-retro
 reporting.topic-radar
