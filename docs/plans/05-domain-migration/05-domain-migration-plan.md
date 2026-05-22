@@ -1,20 +1,20 @@
-# Plan: Phase 4 — Domain Migration Sweep
+# Plan: Phase 4 Domain Migration Sweep
 
 ## Overview
 
-Final phase of the agent-runtime-kit migration. Five sprints rewrite every
-remaining skill domain (`meta`, `media`, `browser`, `evidence`, `pr`,
-`dispatch`) so that each body invokes the canonical nils-cli binary
-instead of duplicating logic, then re-verifies the `reporting` POC from
-Plan 03, then archives the two legacy source repos (`graysurf/agent-kit`,
-`graysurf/claude-kit`) per Resolved Decision #3. After Sprint 5 closes,
-`graysurf/agent-runtime-kit` is the sole content source of truth.
+Final migration phase for `agent-runtime-kit`. The work imports the remaining
+skill domains into `core/skills/<domain>/<skill>/`, wires product adapter
+metadata under `targets/<product>/`, pins `required_clis` in
+`manifests/skills.yaml`, refreshes rendered golden snapshots, and then closes
+the legacy-repo cutover. The plan keeps `reporting` as the already-landed Plan
+03 POC and re-verifies it before migrating the heavier domains.
 
-The per-skill checklist from `docs/source/inventory-target-architecture.md`
-lines 1741-1750 drives every domain task: identify the binary, strip
-inline logic, rewrite the body to invoke the binary with documented flags,
-add `required_clis` with a verified minimum semver, and log any missing
-binary as an extraction-backlog candidate instead of reinventing it inline.
+Every migrated skill follows the Phase 4 checklist from
+`docs/source/inventory-target-architecture.md`: identify the owning nils-cli
+binary, remove embedded shell/Python logic from the skill body, rewrite the
+body as CLI invocation guidance with JSON/error handling, pin a concrete
+`required_clis` semver, and log any missing binary surface in
+`docs/source/extraction-backlog.md`.
 
 ## Read First
 
@@ -23,969 +23,1001 @@ binary as an extraction-backlog candidate instead of reinventing it inline.
 - Open questions carried into execution:
   - Whether `agent-kit` archival should retain the public-content split decision or defer it. Default: defer.
   - Final cutover date for `$HOME/.agents` symlink removal. Recommended: 2026-06-30.
-  - Whether dispatch:* skills should keep their plugin-namespaced names or simplify post-migration. Default: keep.
+  - Whether dispatch skills should keep plugin-namespaced names. Default: keep current names and defer aliases.
 
 ## Scope
 
 - In scope:
-  - Rewriting skill bodies under `skills/meta/`, `skills/media/`,
-    `skills/browser/`, `skills/evidence/`, `skills/pr/`,
-    `skills/dispatch/`, plus matching `plugins/<domain>/` plugin bundles
-    where the domain ships as a plugin.
-  - Updating `manifests/skills.yaml` `required_clis` entries with pinned
-    minimum semvers for each migrated skill.
-  - Refreshing render-golden snapshots under `tests/golden/<domain>/`.
-  - Logging every "binary missing" finding in
-    `docs/source/extraction-backlog.md`.
-  - Re-verifying the `reporting` POC migrated in Plan 03 still passes
-    sandbox + doctor gates.
-  - Auditing `.private/` overlay merges after every domain rewrite.
-  - Verifying project-local overlay smoke test (CI gate 8) for
-    `bench`, `demo`, `deploy`, `pre-pr`, `release`, `bootstrap`.
-  - Archiving `graysurf/agent-kit` and `graysurf/claude-kit` on GitHub
-    (`gh repo edit --archived`, root `MOVED.md`, no delete).
-  - Removing the legacy `$HOME/.agents` symlink.
-  - Migrating any pre-existing `$XDG_STATE_HOME/claude-kit/` tree to
-    `$XDG_STATE_HOME/agent-runtime-kit/claude/`.
+  - Add portable skill sources under `core/skills/meta/`, `core/skills/media/`,
+    `core/skills/browser/`, `core/skills/evidence/`, `core/skills/pr/`, and
+    `core/skills/dispatch/`.
+  - Add or update product adapter metadata under `targets/codex/plugins/<domain>/`
+    and `targets/claude/plugins/<domain>/`.
+  - Update `manifests/skills.yaml` and `manifests/plugins.yaml` with concrete
+    `required_clis` floors against the current nils-cli surface snapshot.
+  - Refresh generated output and committed golden snapshots under
+    `tests/golden/<product>/plugins/<domain>/skills/<skill>/expected/`.
+  - Log missing nils-cli surfaces in `docs/source/extraction-backlog.md`.
+  - Extend sandbox install expected skill pins under `tests/sandbox/`.
+  - Add project-local overlay smoke coverage under `tests/projects/` when the
+    overlay shims land.
+  - Archive `graysurf/agent-kit` and `graysurf/claude-kit` after migration,
+    preserving history with root `MOVED.md` files.
+  - Remove the legacy `$HOME/.agents` symlink and migrate any
+    `$XDG_STATE_HOME/claude-kit/` state tree after repository archival.
 - Out of scope:
-  - Renaming skill manifest IDs (`pr:*`, `dispatch:*`); rename plan is
-    a follow-up.
-  - Adding new nils-cli binaries or flags — missing capability goes to
-    the extraction backlog and the skill body becomes a stub that exits
-    non-zero with a clear "blocked on extraction" message.
-  - Public-content split of `graysurf/agent-kit`; deferred per Open
-    Question.
-  - Re-migrating the `reporting` domain (Plan 03 POC); Sprint 1
-    re-verifies only.
+  - Adding new nils-cli binaries or flags inside this repo.
+  - Renaming canonical skill IDs during the migration.
+  - Deleting either legacy repository.
+  - Re-migrating the Plan 03 `reporting` domain beyond regression checks.
+  - Touching `sympoies/homebrew-tap` except through a separate nils-cli release
+    workflow if a missing binary blocks a task.
 
 ## Assumptions
 
-1. Live source repo skill counts captured 2026-05-20 via `find … -name SKILL.md`:
-   - agent-kit:tools has 29 SKILL.md files (split across `agent-docs`,
-     `agent-out`, `app-runtime`, `browser`, `computer-use`, `git`,
-     `google-workspace`, `market-research`, `media`, `notifications`,
-     `review`, `scope`, `skill-management`, `sql`, `testing`,
-     `workflow-evidence`).
-   - agent-kit:workflows has 34 SKILL.md files (split across
-     `code-review`, `conversation`, `coordination`, `heuristic-system`,
-     `issue`, `mr`, `plan`, `pr`, `prompts`, `qa`, `reporting`).
-   - agent-kit:automation has 8 SKILL.md files (split across `bug`,
-     `ci`, `commit`, `issue`, `release`, `security`).
-   - agent-kit:_projects has 4 SKILL.md files (project overlays).
-   - claude-kit:plugins/meta has 4 SKILL.md files
-     (`create-project-skill`, `create-skill`, `remove-skill`,
-     `skill-governance`).
-   - claude-kit:plugins/media has 3 SKILL.md files
-     (`image-processing`, `screen-record`, `screenshot`).
-   - claude-kit:plugins/browser has 6 SKILL.md files (`agent-browser`,
-     `browser-qa`, `browser-session`, `playwright`, `web-evidence`,
-     `web-qa`).
-   - claude-kit:plugins/evidence has 6 SKILL.md files (`canary-check`,
-     `docs-impact`, `model-cross-check`, `review-evidence`,
-     `skill-usage`, `test-first-evidence`).
-   - claude-kit:plugins/pr has 13 SKILL.md files (`close-bug-pr`,
-     `close-feature-pr`, `close-github-pr`, `close-gitlab-mr`,
-     `create-bug-pr`, `create-dispatch-lane-pr`, `create-feature-pr`,
-     `create-github-pr`, `create-gitlab-mr`, `deliver-bug-pr`,
-     `deliver-feature-pr`, `deliver-github-pr`, `deliver-gitlab-mr`).
-   - claude-kit:plugins/dispatch has 17 SKILL.md files (full
-     plan / issue / execute / cleanup family).
-   - claude-kit:plugins/reporting has 2 SKILL.md files (`daily-brief`,
-     `project-retro`) — already migrated by Plan 03, re-verified here.
-   - claude-kit:skills (root) has 17 SKILL.md files; the meta-equivalent
-     subset migrating here is `agent-doc-init`, `agent-scope-lock`,
-     `semantic-commit`, `semantic-commit-autostage`,
-     `heuristic-error-inbox`.
-2. The `meta` domain rewrite (Sprint 1) preserves the existing
-   `semantic-commit` and `agent-docs` preflight contracts unchanged so
-   downstream sprints (and any in-flight work that hot-reloads from this
-   repo) still pass.
-3. `forge-cli` semver pinned in Plan 04's `required_clis` bump is
-   sufficient to cover the `pr deliver` macro used in Sprint 4; this plan
-   does not bump it again.
-4. Plan 04 has landed: the sandbox install rehearsal harness exists and
-   doctor flags `required_clis` regressions. Sprint 4 cannot run before
-   Plan 04 is green.
-5. Plan 03 has landed: the `reporting` domain is already migrated and the
-   render-golden snapshot exists; Sprint 1 task 1.0 only re-verifies it.
-6. Both `graysurf/agent-kit` and `graysurf/claude-kit` are reachable via
-   `gh` with archive permission; the operator running Sprint 5 has admin
-   rights on both.
+1. `docs/source/nils-cli-surface.md` is current at `v0.16.0`, and every new
+   `required_clis` floor introduced by this plan defaults to `>=0.16.0` unless
+   the execution lane proves a newer nils-cli release is required.
+2. Plan 03 reporting migration has landed and remains the render/golden shape
+   to copy for new domains.
+3. Plan 04 installer, doctor, audit-drift, and sandbox rehearsal gates have
+   landed in the released `agent-runtime` binary.
+4. Any skill whose owning binary is absent or missing a required flag becomes a
+   documented blocked stub plus an extraction-backlog entry; inline logic is not
+   reintroduced.
+5. Sprints are sequential integration gates. Parallelism is only within a sprint
+   and only where same-batch shared-file ownership is separated.
+6. External archival tasks require GitHub admin permission on
+   `graysurf/agent-kit` and `graysurf/claude-kit`.
 
-## Sprint 1: Migrate `meta` domain (and verify Plan 03 reporting POC)
+## Sprint 1: Meta Foundation
 
-**Goal**: Rewrite every meta-domain skill body to invoke its canonical
-nils-cli binary, with `required_clis` pinned ≥0.2.0, render-golden
-updated, and sandbox install rehearsal still passing — so subsequent
-sprints rewrite against the new bodies rather than the legacy ones.
+**Goal**: Re-verify the reporting POC, then migrate the meta skills that later
+sprints depend on for docs resolution, output allocation, scope locks,
+heuristic routing, retrospectives, and semantic commits.
 
 **Demo/Validation**:
 
 - Commands:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `cargo test -p agent-runtime-cli render_golden_reporting`
-  - `bash tests/sandbox/claude/run.sh`
-  - `bash tests/sandbox/codex/run.sh`
-  - `agent-runtime doctor --product claude`
-  - `agent-runtime doctor --product codex`
-- Verify: every migrated meta skill body contains no inline shell or
-  Python, every `manifests/skills.yaml` entry for a meta skill carries
-  `required_clis` ≥0.2.0, sandbox install rehearsal lists every meta
-  skill, doctor reports all `required_clis` as `ok`.
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+- Verify: reporting remains unchanged, all meta skills render for both
+  products, sandbox expected skill pins include the meta skills, and audit-drift
+  reports no source/target/manifest mismatch.
 
 **PR grouping intent**: group
-**Execution Profile**: serial
+**Execution Profile**: parallel-x2
 
-### Task 1.0: Re-verify Plan 03 reporting POC
+- **TotalComplexity**: 19
+- **CriticalPathComplexity**: 13
+- **MaxBatchWidth**: 2
+- **OverlapHotspots**: `manifests/skills.yaml`, `manifests/plugins.yaml`, and
+  `docs/source/extraction-backlog.md` are owned by Task 1.4 after the parallel
+  source-body lanes complete.
+- **Split command**: `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 1 --strategy deterministic --pr-grouping group --pr-group 'Task 1.1=s1-reporting-guard' --pr-group 'Task 1.2=s1-meta-policy-state' --pr-group 'Task 1.3=s1-meta-workflow' --pr-group 'Task 1.4=s1-meta-integration' --format json`
+
+### Task 1.1: Re-verify Plan 03 reporting POC
 
 - **Location**:
-  - skills/reporting/daily-brief/SKILL.md
-  - skills/reporting/project-retro/SKILL.md
-  - tests/golden/reporting/daily-brief.snap
-  - tests/golden/reporting/project-retro.snap
-  - manifests/skills.yaml
-- **Description**: Re-run the Plan 03 reporting POC validation gates
-  against the current `main` to confirm Plan 04 did not regress them.
-  Run `cargo test -p agent-runtime-cli render_golden_reporting`, the
-  sandbox install rehearsal for both products, and `agent-runtime doctor`
-  for both products. If any check fails, file a blocker in this plan's
-  execution-state ledger and stop the sprint; do not patch reporting
-  inside this plan.
+  - `core/skills/reporting/daily-brief/SKILL.md.tera`
+  - `core/skills/reporting/project-retro/SKILL.md.tera`
+  - `core/skills/reporting/topic-radar/SKILL.md.tera`
+  - `manifests/skills.yaml`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+- **Description**: Run the current render, golden refresh, sandbox rehearsal,
+  and audit-drift gates before changing meta. If reporting changes unexpectedly,
+  stop the sprint and record a blocker in the execution-state ledger instead of
+  patching reporting as part of this plan.
 - **Dependencies**:
   - none
 - **Complexity**: 2
 - **Acceptance criteria**:
-  - `cargo test -p agent-runtime-cli render_golden_reporting` passes
-    unchanged.
-  - Sandbox install rehearsal for both products lists every reporting
-    skill present after Plan 03.
-  - `agent-runtime doctor --product claude` and `--product codex` report
-    every reporting-domain `required_clis` as `ok`.
-  - If any check fails, this plan's execution-state ledger is updated
-    with a `Blockers` entry naming the failing gate.
+  - Rendering both products succeeds before meta edits.
+  - Golden refresh produces no unexpected reporting diff.
+  - Sandbox rehearsal still lists the three reporting skills.
+  - Any regression is captured as a blocker in
+    `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_reporting`
-  - `bash tests/sandbox/claude/run.sh`
-  - `bash tests/sandbox/codex/run.sh`
-  - `agent-runtime doctor --product claude`
-  - `agent-runtime doctor --product codex`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
 
-### Task 1.1: Migrate `agent-docs` skill body
+### Task 1.2: Migrate policy and state meta skills
 
 - **Location**:
-  - skills/meta/agent-docs/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/meta/agent-docs.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify `agent-docs` (nils-cli workspace binary) as
-  the owner of the deterministic logic. Strip every embedded shell /
-  Python / inline body section from the legacy claude-kit
-  `agent-doc-init` skill and any agent-kit `tools/agent-docs/` skill.
-  Rewrite the body to invoke `agent-docs --docs-home "$HOME/.claude"`
-  with the documented `resolve` / `baseline` flags, JSON output handling,
-  and prose covering the strict-gate / status-present error recovery from
-  the global CLAUDE.md preflight contract. Pin `required_clis: agent-docs
-  >=0.2.0` in `manifests/skills.yaml`. Refresh the render-golden
-  snapshot. If any flag needed by the body does not exist in the released
-  binary, append an extraction-backlog entry naming the gap.
-- **Dependencies**:
-  - Task 1.0
-- **Complexity**: 5
-- **Acceptance criteria**:
-  - `skills/meta/agent-docs/SKILL.md` contains no inline shell / Python
-    code blocks beyond documented `agent-docs` invocations.
-  - `manifests/skills.yaml` entry for `agent-docs` carries
-    `required_clis: agent-docs >=0.2.0`.
-  - `tests/golden/meta/agent-docs.snap` matches the rendered output.
-  - Sandbox install rehearsal lists the migrated skill.
-  - Any missing-binary capability is logged in
-    `docs/source/extraction-backlog.md` with a one-line gap description.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `agent-runtime doctor --product claude`
-
-### Task 1.2: Migrate `agent-scope-lock` skill body
-
-- **Location**:
-  - skills/meta/agent-scope-lock/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/meta/agent-scope-lock.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `agent-scope-lock` binary as
-  owner. Strip inline logic from the existing skill bodies under
-  claude-kit and agent-kit, rewrite to invoke `agent-scope-lock` with
-  documented `create`, `read`, `validate`, and `clear` flags and JSON
-  parsing. Pin `required_clis: agent-scope-lock >=0.2.0`. Refresh the
-  render-golden snapshot. Log gaps to extraction-backlog if needed.
-- **Dependencies**:
-  - Task 1.1
-- **Complexity**: 4
-- **Acceptance criteria**:
-  - `skills/meta/agent-scope-lock/SKILL.md` contains no inline shell /
-    Python beyond binary invocations.
-  - `manifests/skills.yaml` entry pins `agent-scope-lock >=0.2.0`.
-  - `tests/golden/meta/agent-scope-lock.snap` matches rendered output.
-  - Sandbox install rehearsal lists the migrated skill.
-  - Any missing capability appears in `docs/source/extraction-backlog.md`.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `agent-runtime doctor --product claude`
-
-### Task 1.3: Migrate `agent-out` skill body
-
-- **Location**:
-  - skills/meta/agent-out/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/meta/agent-out.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `agent-out` binary as owner.
-  Rewrite the body to invoke `agent-out` for state-tree allocation under
-  `$XDG_STATE_HOME/claude-kit/out/` (the contract named in the global
-  CLAUDE.md preflight). Pin `required_clis: agent-out >=0.2.0`. Refresh
-  golden. Log gaps if any.
-- **Dependencies**:
-  - Task 1.1
-- **Complexity**: 4
-- **Acceptance criteria**:
-  - `skills/meta/agent-out/SKILL.md` contains no inline shell beyond
-    binary invocations.
-  - `manifests/skills.yaml` pins `agent-out >=0.2.0`.
-  - `tests/golden/meta/agent-out.snap` matches rendered output.
-  - Sandbox install rehearsal lists the skill.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `agent-runtime doctor --product claude`
-
-### Task 1.4: Migrate `heuristic-inbox` skill body
-
-- **Location**:
-  - skills/meta/heuristic-inbox/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/meta/heuristic-inbox.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `heuristic-inbox` binary as
-  owner (the legacy skill is `heuristic-error-inbox`). Rewrite the body
-  to invoke `heuristic-inbox` for `new`, `promote`, `archive`, and
-  `list` lifecycle commands matching the `HEURISTIC_SYSTEM.md` routing
-  table from the global CLAUDE.md. Pin `required_clis: heuristic-inbox
-  >=0.2.0`. Refresh golden. Log gaps.
-- **Dependencies**:
-  - Task 1.1
-- **Complexity**: 5
-- **Acceptance criteria**:
-  - `skills/meta/heuristic-inbox/SKILL.md` invokes `heuristic-inbox` and
-    contains no inline body logic.
-  - `manifests/skills.yaml` pins `heuristic-inbox >=0.2.0`.
-  - `tests/golden/meta/heuristic-inbox.snap` matches.
-  - Sandbox install rehearsal lists the skill.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `agent-runtime doctor --product claude`
-
-### Task 1.5: Migrate `repo-retro` skill body
-
-- **Location**:
-  - skills/meta/repo-retro/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/meta/repo-retro.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `repo-retro` binary (or log an
-  extraction-backlog entry if not yet shipped) and rewrite the body to
-  invoke it. If the binary does not exist, leave the skill body as a
-  stub that exits non-zero with a clear "blocked on extraction" message
-  per the per-skill checklist step 5, and log the gap. Pin
-  `required_clis` once the binary exists.
-- **Dependencies**:
-  - Task 1.1
-- **Complexity**: 4
-- **Acceptance criteria**:
-  - `skills/meta/repo-retro/SKILL.md` either invokes `repo-retro` or
-    exits non-zero with a `blocked on extraction` message.
-  - If invoked: `manifests/skills.yaml` pins a concrete semver.
-  - If stubbed: `docs/source/extraction-backlog.md` carries an entry
-    naming `repo-retro` and the required surface.
-  - `tests/golden/meta/repo-retro.snap` matches the chosen path.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `agent-runtime doctor --product claude`
-
-### Task 1.6: Migrate `semantic-commit` skill body
-
-- **Location**:
-  - skills/meta/semantic-commit/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/meta/semantic-commit.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `semantic-commit` binary as
-  owner. Rewrite the body to invoke `semantic-commit commit` with the
-  documented `--max-header-width` and `SEMANTIC_COMMIT_HEADER_WIDTH`
-  envelope (per the nils-cli CLI UX plan that landed earlier). Preserve
-  the commit body gate (1-2 bullets on non-trivial commits). Pin
-  `required_clis: semantic-commit >=0.2.0`. Refresh golden. Log gaps.
-  Critically, do not change the externally observable behaviour — every
-  downstream sprint relies on `semantic-commit` to land its commits.
+  - `core/skills/meta/agent-docs/SKILL.md.tera`
+  - `core/skills/meta/agent-out/SKILL.md.tera`
+  - `core/skills/meta/agent-scope-lock/SKILL.md.tera`
+- **Description**: Create portable source bodies for `agent-docs`,
+  `agent-out`, and `agent-scope-lock`. Each body should describe when to invoke
+  the nils-cli binary, the required flags, JSON/error handling expectations, and
+  product path rendering rules without embedding implementation shell or
+  Python.
 - **Dependencies**:
   - Task 1.1
 - **Complexity**: 6
 - **Acceptance criteria**:
-  - `skills/meta/semantic-commit/SKILL.md` invokes the binary and has no
-    inline body logic.
-  - `manifests/skills.yaml` pins `semantic-commit >=0.2.0`.
-  - `tests/golden/meta/semantic-commit.snap` matches rendered output.
-  - The body still enforces the 1-2 bullets body gate for non-trivial
-    commits.
-  - Sandbox install rehearsal lists the skill.
+  - Each source body invokes only its owning nils-cli binary for deterministic
+    behavior.
+  - Product-specific paths are expressed through render helpers or prose, not
+    hard-coded `$AGENT_HOME` references.
+  - Missing flags or surfaces are noted for Task 1.4 to record in the shared
+    extraction backlog.
+  - No manifest or golden ownership is taken in this task.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_meta`
-  - `bash tests/sandbox/claude/run.sh`
-  - `bash tests/sandbox/codex/run.sh`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime audit-drift`
 
-## Sprint 2: Migrate `media` + `browser` domains
+### Task 1.3: Migrate workflow meta skills
 
-**Goal**: Rewrite the four low-risk wrapper skills (media: 2; browser: 2)
-in parallel, pinning each `required_clis` entry and refreshing golden
-snapshots.
+- **Location**:
+  - `core/skills/meta/heuristic-inbox/SKILL.md.tera`
+  - `core/skills/meta/repo-retro/SKILL.md.tera`
+  - `core/skills/meta/semantic-commit/SKILL.md.tera`
+- **Description**: Create portable source bodies for `heuristic-inbox`,
+  `repo-retro`, and `semantic-commit`. Preserve the external behavior of
+  semantic commits and heuristic routing while replacing embedded workflow
+  logic with nils-cli invocation guidance.
+- **Dependencies**:
+  - Task 1.1
+- **Complexity**: 6
+- **Acceptance criteria**:
+  - `heuristic-inbox`, `repo-retro`, and `semantic-commit` source bodies contain
+    no inline deterministic implementation logic.
+  - `semantic-commit` keeps the existing commit-message and body-quality
+    contract in prose.
+  - Missing surfaces are noted for Task 1.4 to record in the shared extraction
+    backlog.
+  - No manifest or golden ownership is taken in this task.
+- **Validation**:
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime audit-drift`
+
+### Task 1.4: Wire meta manifests, adapters, and golden snapshots
+
+- **Location**:
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/meta/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/meta/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Register the six meta skills for both products, pin
+  `required_clis` to concrete semvers, refresh golden snapshots, and update
+  sandbox expected skill lists. This task owns the shared manifest/backlog files
+  to avoid parallel write conflicts.
+- **Dependencies**:
+  - Task 1.2
+  - Task 1.3
+- **Complexity**: 5
+- **Acceptance criteria**:
+  - All six meta skills appear in `manifests/skills.yaml` with concrete
+    `required_clis` floors.
+  - Both product adapter plugin manifests exist and render without drift.
+  - Golden snapshots are refreshed for Codex and Claude.
+  - Sandbox expected skill pins include the meta skills in sorted order.
+- **Validation**:
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+
+## Sprint 2: Media And Browser Wrappers
+
+**Goal**: Migrate low-risk media and browser wrapper skills while keeping shared
+manifest/golden writes in one integration lane.
 
 **Demo/Validation**:
 
 - Commands:
-  - `cargo test -p agent-runtime-cli render_golden_media`
-  - `cargo test -p agent-runtime-cli render_golden_browser`
-  - `bash tests/sandbox/claude/run.sh`
-  - `bash tests/sandbox/codex/run.sh`
-  - `agent-runtime doctor --product claude`
-  - `agent-runtime doctor --product codex`
-- Verify: each of the four migrated skill bodies contains no inline
-  shell / Python beyond binary invocations; doctor reports all four
-  `required_clis` entries as `ok`.
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+- Verify: media/browser skills render for both products, sandbox pins are
+  updated, and doctor/audit coverage catches missing `required_clis`.
 
 **PR grouping intent**: group
 **Execution Profile**: parallel-x2
 
-### Task 2.1: Migrate `image-processing` skill body
+- **TotalComplexity**: 15
+- **CriticalPathComplexity**: 10
+- **MaxBatchWidth**: 2
+- **OverlapHotspots**: Task 2.3 owns shared manifests, plugin metadata, golden
+  snapshots, and sandbox pins after source-body lanes complete.
+- **Split command**: `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 2 --strategy deterministic --pr-grouping group --pr-group 'Task 2.1=s2-media-source' --pr-group 'Task 2.2=s2-browser-source' --pr-group 'Task 2.3=s2-media-browser-integration' --format json`
+
+### Task 2.1: Migrate media skill sources
 
 - **Location**:
-  - skills/media/image-processing/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/media/image-processing.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `image-processing` binary as
-  owner. Strip inline ImageMagick / Python from the legacy skill body,
-  rewrite to invoke `image-processing` with documented resize / convert /
-  optimize flags and JSON output. Pin `required_clis: image-processing
-  >=0.2.0`. Refresh golden. Log gaps.
+  - `core/skills/media/image-processing/SKILL.md.tera`
+  - `core/skills/media/screen-record/SKILL.md.tera`
+- **Description**: Create portable source bodies for `image-processing` and
+  `screen-record`, replacing ImageMagick/Python/shell implementation details
+  with nils-cli invocation contracts and macOS availability notes where needed.
 - **Dependencies**:
   - none
-- **Complexity**: 4
+- **Complexity**: 5
 - **Acceptance criteria**:
-  - `skills/media/image-processing/SKILL.md` contains no inline shell /
-    Python.
-  - `manifests/skills.yaml` pins `image-processing >=0.2.0`.
-  - `tests/golden/media/image-processing.snap` matches.
-  - Sandbox install rehearsal lists the skill.
+  - Both media bodies invoke their owning nils-cli binaries.
+  - `screen-record` documents macOS-specific behavior and failure handling.
+  - Missing binary surfaces are noted for Task 2.3 to record in the shared
+    extraction backlog.
+  - No shared manifest or golden files are edited in this task.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_media`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 2.2: Migrate `screen-record` skill body
+### Task 2.2: Migrate browser skill sources
 
 - **Location**:
-  - skills/media/screen-record/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/media/screen-record.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `screen-record` binary as
-  owner. Rewrite the body to invoke `screen-record` for start / stop /
-  status commands, with macOS-only guards documented in prose. Pin
-  `required_clis: screen-record >=0.2.0`. Refresh golden.
+  - `core/skills/browser/browser-session/SKILL.md.tera`
+  - `core/skills/browser/canary-check/SKILL.md.tera`
+- **Description**: Create portable source bodies for `browser-session` and
+  `canary-check`, routing deterministic evidence or session recording behavior
+  through the nils-cli binaries and keeping browser-operation prose in the
+  skill body.
 - **Dependencies**:
   - none
-- **Complexity**: 4
+- **Complexity**: 5
 - **Acceptance criteria**:
-  - `skills/media/screen-record/SKILL.md` contains no inline shell.
-  - `manifests/skills.yaml` pins `screen-record >=0.2.0`.
-  - `tests/golden/media/screen-record.snap` matches.
-  - Sandbox install rehearsal lists the skill.
+  - Both browser bodies invoke their owning nils-cli binaries.
+  - Browser interaction prose stays product-neutral.
+  - Missing binary surfaces are noted for Task 2.3 to record in the shared
+    extraction backlog.
+  - No shared manifest or golden files are edited in this task.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_media`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 2.3: Migrate `browser-session` skill body
+### Task 2.3: Wire media/browser manifests, adapters, and golden snapshots
 
 - **Location**:
-  - skills/browser/browser-session/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/browser/browser-session.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `browser-session` binary as
-  owner. Rewrite the body to invoke it for session open / close /
-  inspect commands. Pin `required_clis: browser-session >=0.2.0`.
-  Refresh golden.
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/media/.codex-plugin/plugin.json`
+  - `targets/codex/plugins/browser/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/media/.claude-plugin/plugin.json`
+  - `targets/claude/plugins/browser/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Register the media and browser skills, add product plugin
+  metadata, refresh golden snapshots, and update sandbox expected skill pins.
 - **Dependencies**:
-  - none
-- **Complexity**: 4
+  - Task 2.1
+  - Task 2.2
+- **Complexity**: 5
 - **Acceptance criteria**:
-  - `skills/browser/browser-session/SKILL.md` has no inline shell /
-    Python.
-  - `manifests/skills.yaml` pins `browser-session >=0.2.0`.
-  - `tests/golden/browser/browser-session.snap` matches.
-  - Sandbox install rehearsal lists the skill.
+  - Four new skill entries have concrete `required_clis` floors.
+  - Product plugin metadata exists for media and browser.
+  - Golden snapshots and sandbox expected skill pins include the new skills.
+  - Audit-drift reports no dangling source or rendered-target mismatch.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_browser`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
 
-### Task 2.4: Migrate `canary-check` skill body
+## Sprint 3: Evidence Capture Records
 
-- **Location**:
-  - skills/browser/canary-check/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/browser/canary-check.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `canary-check` binary as owner.
-  Rewrite the body to invoke it. Pin `required_clis: canary-check
-  >=0.2.0`. Refresh golden.
-- **Dependencies**:
-  - none
-- **Complexity**: 3
-- **Acceptance criteria**:
-  - `skills/browser/canary-check/SKILL.md` has no inline shell / Python.
-  - `manifests/skills.yaml` pins `canary-check >=0.2.0`.
-  - `tests/golden/browser/canary-check.snap` matches.
-  - Sandbox install rehearsal lists the skill.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_browser`
-  - `agent-runtime doctor --product claude`
-
-## Sprint 3: Migrate `evidence` domain
-
-**Goal**: Rewrite all six evidence-domain skills with per-skill task
-scoping so each PR review stays small.
+**Goal**: Migrate the high-use evidence capture skills in two source lanes and
+one shared integration lane.
 
 **Demo/Validation**:
 
 - Commands:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `bash tests/sandbox/claude/run.sh`
-  - `bash tests/sandbox/codex/run.sh`
-  - `agent-runtime doctor --product claude`
-  - `agent-runtime doctor --product codex`
-- Verify: each of the six migrated skill bodies has no inline logic,
-  each `required_clis` entry resolves `ok` under doctor, golden snapshot
-  matches the new render.
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+- Verify: the first four evidence skills render for both products and preserve
+  deterministic record-writing guidance.
 
 **PR grouping intent**: group
 **Execution Profile**: parallel-x2
 
-### Task 3.1: Migrate `web-evidence` skill body
+- **TotalComplexity**: 17
+- **CriticalPathComplexity**: 11
+- **MaxBatchWidth**: 2
+- **OverlapHotspots**: Task 3.3 owns shared manifest, plugin, golden, sandbox,
+  and extraction-backlog writes after source-body lanes complete.
+- **Split command**: `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 3 --strategy deterministic --pr-grouping group --pr-group 'Task 3.1=s3-web-test-evidence' --pr-group 'Task 3.2=s3-review-usage-evidence' --pr-group 'Task 3.3=s3-evidence-capture-integration' --format json`
+
+### Task 3.1: Migrate web and test-first evidence sources
 
 - **Location**:
-  - skills/evidence/web-evidence/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/evidence/web-evidence.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `web-evidence` binary as
-  owner. Rewrite the body to invoke it for evidence capture commands.
-  Pin `required_clis: web-evidence >=0.2.0`. Refresh golden.
+  - `core/skills/evidence/web-evidence/SKILL.md.tera`
+  - `core/skills/evidence/test-first-evidence/SKILL.md.tera`
+- **Description**: Create portable source bodies for `web-evidence` and
+  `test-first-evidence`, preserving redaction, failure, and evidence-retention
+  guidance while delegating deterministic record creation to nils-cli.
 - **Dependencies**:
   - none
-- **Complexity**: 4
+- **Complexity**: 6
 - **Acceptance criteria**:
-  - `skills/evidence/web-evidence/SKILL.md` has no inline shell / Python.
-  - `manifests/skills.yaml` pins `web-evidence >=0.2.0`.
-  - `tests/golden/evidence/web-evidence.snap` matches.
+  - Both source bodies invoke their owning nils-cli binaries.
+  - Evidence-retention and redaction guidance remains explicit.
+  - Missing surfaces are noted for Task 3.3 to record in the shared extraction
+    backlog.
+  - No shared manifest or golden files are edited in this task.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 3.2: Migrate `test-first-evidence` skill body
+### Task 3.2: Migrate review and skill-usage evidence sources
 
 - **Location**:
-  - skills/evidence/test-first-evidence/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/evidence/test-first-evidence.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `test-first-evidence` binary as
-  owner. Rewrite the body to invoke it. Pin `required_clis:
-  test-first-evidence >=0.2.0`. Refresh golden.
+  - `core/skills/evidence/review-evidence/SKILL.md.tera`
+  - `core/skills/evidence/skill-usage/SKILL.md.tera`
+- **Description**: Create portable source bodies for `review-evidence` and
+  `skill-usage`, keeping workflow judgment in prose and deterministic envelope
+  writing in nils-cli.
 - **Dependencies**:
   - none
-- **Complexity**: 4
+- **Complexity**: 6
 - **Acceptance criteria**:
-  - `skills/evidence/test-first-evidence/SKILL.md` has no inline logic.
-  - `manifests/skills.yaml` pins `test-first-evidence >=0.2.0`.
-  - `tests/golden/evidence/test-first-evidence.snap` matches.
+  - Both source bodies invoke their owning nils-cli binaries.
+  - `skill-usage` documents serialized writes to one record directory.
+  - Missing surfaces are noted for Task 3.3 to record in the shared extraction
+    backlog.
+  - No shared manifest or golden files are edited in this task.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 3.3: Migrate `review-evidence` skill body
+### Task 3.3: Wire evidence capture manifests, adapters, and golden snapshots
 
 - **Location**:
-  - skills/evidence/review-evidence/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/evidence/review-evidence.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `review-evidence` binary as
-  owner. Rewrite the body to invoke it. Pin `required_clis:
-  review-evidence >=0.2.0`. Refresh golden.
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/evidence/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/evidence/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Register the four evidence capture skills, add product
+  adapter metadata, refresh golden snapshots, and update sandbox expected skill
+  pins.
 - **Dependencies**:
-  - none
-- **Complexity**: 4
+  - Task 3.1
+  - Task 3.2
+- **Complexity**: 5
 - **Acceptance criteria**:
-  - `skills/evidence/review-evidence/SKILL.md` has no inline logic.
-  - `manifests/skills.yaml` pins `review-evidence >=0.2.0`.
-  - `tests/golden/evidence/review-evidence.snap` matches.
+  - Four evidence capture skill entries have concrete `required_clis` floors.
+  - Evidence plugin metadata exists for both products.
+  - Golden snapshots and sandbox expected skill pins include the new skills.
+  - Audit-drift reports no source or rendered-target mismatch.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
 
-### Task 3.4: Migrate `skill-usage` skill body
+## Sprint 4: Evidence Analysis And Impact
 
-- **Location**:
-  - skills/evidence/skill-usage/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/evidence/skill-usage.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `skill-usage` binary as owner.
-  Rewrite the body to invoke it. Pin `required_clis: skill-usage
-  >=0.2.0`. Refresh golden.
-- **Dependencies**:
-  - none
-- **Complexity**: 3
-- **Acceptance criteria**:
-  - `skills/evidence/skill-usage/SKILL.md` has no inline logic.
-  - `manifests/skills.yaml` pins `skill-usage >=0.2.0`.
-  - `tests/golden/evidence/skill-usage.snap` matches.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `agent-runtime doctor --product claude`
-
-### Task 3.5: Migrate `docs-impact` skill body
-
-- **Location**:
-  - skills/evidence/docs-impact/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/evidence/docs-impact.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `docs-impact` binary as owner.
-  Rewrite the body to invoke it. Pin `required_clis: docs-impact
-  >=0.2.0`. Refresh golden.
-- **Dependencies**:
-  - none
-- **Complexity**: 3
-- **Acceptance criteria**:
-  - `skills/evidence/docs-impact/SKILL.md` has no inline logic.
-  - `manifests/skills.yaml` pins `docs-impact >=0.2.0`.
-  - `tests/golden/evidence/docs-impact.snap` matches.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `agent-runtime doctor --product claude`
-
-### Task 3.6: Migrate `model-cross-check` skill body
-
-- **Location**:
-  - skills/evidence/model-cross-check/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/evidence/model-cross-check.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Identify the nils-cli `model-cross-check` binary as
-  owner. Rewrite the body to invoke it. Pin `required_clis:
-  model-cross-check >=0.2.0`. Refresh golden.
-- **Dependencies**:
-  - none
-- **Complexity**: 4
-- **Acceptance criteria**:
-  - `skills/evidence/model-cross-check/SKILL.md` has no inline logic.
-  - `manifests/skills.yaml` pins `model-cross-check >=0.2.0`.
-  - `tests/golden/evidence/model-cross-check.snap` matches.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_evidence`
-  - `agent-runtime doctor --product claude`
-
-## Sprint 4: Migrate `pr` + `dispatch` domains
-
-**Goal**: Rewrite the highest-risk surfaces. Every pr-domain skill
-invokes `forge-cli`; every dispatch-domain skill invokes `plan-issue`,
-`plan-issue-local`, or `plan-tooling`. Sprint passes only when a
-deliver-lifecycle smoke test (open + close one throwaway PR on a sandbox
-branch in a scratch fork) succeeds.
+**Goal**: Finish evidence migration with the analysis/impact record skills and
+run the evidence-domain integration gate as a serial lane to avoid shared-file
+conflicts.
 
 **Demo/Validation**:
 
 - Commands:
-  - `cargo test -p agent-runtime-cli render_golden_pr`
-  - `cargo test -p agent-runtime-cli render_golden_dispatch`
-  - `bash tests/sandbox/claude/run.sh`
-  - `bash tests/sandbox/codex/run.sh`
-  - `agent-runtime doctor --product claude`
-  - `agent-runtime doctor --product codex`
-  - `bash tests/smoke/deliver-lifecycle.sh --scratch-fork`
-- Verify: deliver-lifecycle smoke test opens a draft PR via
-  `pr:create-feature-pr` on a sandbox branch, the matching close path
-  via `pr:close-feature-pr` succeeds, no skill body contains inline
-  shell / Python beyond binary invocations.
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+- Verify: all evidence-domain skills render and the sandbox expected skill pins
+  match the installed dry-run plan.
 
-**PR grouping intent**: group
+**PR grouping intent**: per-sprint
 **Execution Profile**: serial
 
-### Task 4.1: Migrate pr-domain create skills onto `forge-cli`
+- **TotalComplexity**: 12
+- **CriticalPathComplexity**: 12
+- **MaxBatchWidth**: 1
+- **OverlapHotspots**: Serial execution intentionally owns
+  `manifests/skills.yaml`, plugin metadata, and sandbox pins in one lane.
+
+### Task 4.1: Migrate docs-impact source
 
 - **Location**:
-  - skills/pr/create-feature-pr/SKILL.md
-  - skills/pr/create-bug-pr/SKILL.md
-  - skills/pr/create-gitlab-mr/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/pr/create-feature-pr.snap
-  - tests/golden/pr/create-bug-pr.snap
-  - tests/golden/pr/create-gitlab-mr.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Rewrite each of the three create skills to invoke
-  `forge-cli pr create` (GitHub) or `forge-cli mr create` (GitLab) with
-  the documented `--draft`, `--branch`, `--title`, `--body-file` flags.
-  Strip the legacy claude-kit inline gh / glab logic. Pin
-  `required_clis: forge-cli >=<plan-04-version>` (carry the semver Plan
-  04 published). Refresh golden snapshots. Log gaps if any flag is
-  missing.
+  - `core/skills/evidence/docs-impact/SKILL.md.tera`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Create the portable `docs-impact` source body with
+  nils-cli invocation guidance, output interpretation, and docs-impact
+  escalation behavior.
 - **Dependencies**:
   - none
-- **Complexity**: 6
+- **Complexity**: 4
 - **Acceptance criteria**:
-  - Each of the three create-skill bodies contains no inline gh / glab
-    invocations.
-  - `manifests/skills.yaml` pins `forge-cli` at the Plan 04 semver for
-    each entry.
-  - All three golden snapshots match.
-  - Sandbox install rehearsal lists all three skills.
+  - The body invokes `docs-impact` for deterministic analysis.
+  - The body separates docs-impact judgment from record writing.
+  - Missing surfaces are logged to the extraction backlog.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_pr`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 4.2: Migrate pr-domain close skills onto `forge-cli`
+### Task 4.2: Migrate model-cross-check source
 
 - **Location**:
-  - skills/pr/close-feature-pr/SKILL.md
-  - skills/pr/close-bug-pr/SKILL.md
-  - skills/pr/close-gitlab-mr/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/pr/close-feature-pr.snap
-  - tests/golden/pr/close-bug-pr.snap
-  - tests/golden/pr/close-gitlab-mr.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Rewrite each close skill to invoke `forge-cli pr
-  close` / `forge-cli mr close` with documented cleanup flags
-  (branch delete, draft-to-ready, merge). Pin `required_clis: forge-cli`
-  at the Plan 04 semver. Refresh golden.
+  - `core/skills/evidence/model-cross-check/SKILL.md.tera`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Create the portable `model-cross-check` source body with
+  nils-cli invocation guidance, provider-boundary notes, and evidence summary
+  handling.
 - **Dependencies**:
   - Task 4.1
-- **Complexity**: 6
+- **Complexity**: 4
 - **Acceptance criteria**:
-  - Each of the three close-skill bodies has no inline gh / glab logic.
-  - `manifests/skills.yaml` pins `forge-cli` at the Plan 04 semver.
-  - All three golden snapshots match.
+  - The body invokes `model-cross-check` for deterministic record handling.
+  - Provider calls remain outside the primitive and are described as caller
+    responsibility.
+  - Missing surfaces are logged to the extraction backlog.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_pr`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 4.3: Migrate pr-domain deliver skills onto `forge-cli`
+### Task 4.3: Finalize evidence domain integration
 
 - **Location**:
-  - skills/pr/deliver-feature-pr/SKILL.md
-  - skills/pr/deliver-bug-pr/SKILL.md
-  - skills/pr/deliver-gitlab-mr/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/pr/deliver-feature-pr.snap
-  - tests/golden/pr/deliver-bug-pr.snap
-  - tests/golden/pr/deliver-gitlab-mr.snap
-  - docs/source/extraction-backlog.md
-  - tests/smoke/deliver-lifecycle.sh
-- **Description**: Rewrite each deliver skill to invoke the macro
-  composed of `forge-cli pr create` → wait CI → `forge-cli pr close`.
-  Pin `required_clis: forge-cli` at the Plan 04 semver (per Assumption
-  3 the semver is sufficient). Add or update
-  `tests/smoke/deliver-lifecycle.sh` so it drives one throwaway PR on a
-  scratch fork through the macro and asserts the merged state.
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/evidence/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/evidence/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Add the final evidence skill entries, refresh plugin metadata
+  and golden snapshots, and run the evidence-domain sandbox/audit gate.
 - **Dependencies**:
   - Task 4.2
-- **Complexity**: 8
+- **Complexity**: 4
 - **Acceptance criteria**:
-  - Each of the three deliver-skill bodies has no inline gh / glab logic.
-  - `manifests/skills.yaml` pins `forge-cli` at the Plan 04 semver.
-  - All three golden snapshots match.
-  - `tests/smoke/deliver-lifecycle.sh --scratch-fork` opens and closes
-    one throwaway PR successfully.
+  - `docs-impact` and `model-cross-check` are registered with concrete
+    `required_clis` floors.
+  - Evidence plugin metadata and golden snapshots are current for both
+    products.
+  - Sandbox expected skill pins include the complete evidence domain.
+  - Audit-drift reports no source or rendered-target mismatch.
 - **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_pr`
-  - `bash tests/smoke/deliver-lifecycle.sh --scratch-fork`
-  - `agent-runtime doctor --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
 
-### Task 4.4: Migrate dispatch-domain skills onto `plan-issue` / `plan-issue-local` / `plan-tooling`
+## Sprint 5: PR Create And Close
 
-- **Location**:
-  - skills/dispatch/dispatch-implementation/SKILL.md
-  - skills/dispatch/dispatch-orchestrator/SKILL.md
-  - skills/dispatch/dispatch-review/SKILL.md
-  - skills/dispatch/dispatch-monitor/SKILL.md
-  - manifests/skills.yaml
-  - tests/golden/dispatch/dispatch-implementation.snap
-  - tests/golden/dispatch/dispatch-orchestrator.snap
-  - tests/golden/dispatch/dispatch-review.snap
-  - tests/golden/dispatch/dispatch-monitor.snap
-  - docs/source/extraction-backlog.md
-- **Description**: Rewrite each dispatch skill to invoke the canonical
-  nils-cli binary set: `plan-issue` for issue lifecycle, `plan-issue-local`
-  for local-state ledger ops, `plan-tooling` for validate / spec / to-json
-  operations. Strip the legacy claude-kit dispatch logic. Pin
-  `required_clis: plan-issue >=0.8.0, plan-issue-local >=0.2.0,
-  plan-tooling >=0.2.0` per entry as relevant. Refresh golden snapshots.
-- **Dependencies**:
-  - Task 4.3
-- **Complexity**: 8
-- **Acceptance criteria**:
-  - Each of the four dispatch-skill bodies has no inline gh / shell
-    logic.
-  - `manifests/skills.yaml` pins each binary at the named semver.
-  - All four golden snapshots match.
-  - Sandbox install rehearsal lists all four skills.
-- **Validation**:
-  - `cargo test -p agent-runtime-cli render_golden_dispatch`
-  - `agent-runtime doctor --product claude`
-  - `agent-runtime doctor --product codex`
-
-## Sprint 5: Overlays audit and legacy repo archival
-
-**Goal**: Finalize the migration. Audit `.private/` shadow overlay
-merges, verify project-local overlay smoke test, archive
-`graysurf/agent-kit` and `graysurf/claude-kit` per Resolved Decision #3,
-remove the `$HOME/.agents` symlink, and migrate any pre-existing
-`$XDG_STATE_HOME/claude-kit/` tree to the new
-`$XDG_STATE_HOME/agent-runtime-kit/claude/` path.
+**Goal**: Migrate the lower-risk PR/MR create and close surfaces onto
+`forge-cli` before touching delivery macros.
 
 **Demo/Validation**:
 
 - Commands:
-  - `agent-runtime install --product claude --dry-run --print-effective-config`
-  - `agent-runtime install --product codex --dry-run --print-effective-config`
-  - `agent-runtime doctor --product claude --check-project $HOME/Project/graysurf/agent-runtime-kit`
-  - `gh repo view graysurf/agent-kit --json isArchived,name`
-  - `gh repo view graysurf/claude-kit --json isArchived,name`
-  - `test ! -L "$HOME/.agents"`
-  - `test -d "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude"`
-- Verify: post-merge effective config matches expected for both
-  products, project-local overlay smoke test green, both legacy repos
-  archived with a root `MOVED.md`, neither repo deleted, local symlink
-  removed, state tree migrated.
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+- Verify: create/close skills invoke `forge-cli`, render for both products, and
+  do not perform inline `gh`/`glab` lifecycle logic.
 
-**PR grouping intent**: group
+**PR grouping intent**: per-sprint
 **Execution Profile**: serial
 
-### Task 5.1: Audit `.private/` shadow overlay merges
+- **TotalComplexity**: 12
+- **CriticalPathComplexity**: 12
+- **MaxBatchWidth**: 1
+- **OverlapHotspots**: `manifests/skills.yaml` and golden snapshots are serially
+  updated in this sprint because create/close wrappers share `forge-cli` naming
+  and product aliases.
+
+### Task 5.1: Migrate PR/MR create skills
 
 - **Location**:
-  - .private/runtime-roots.yaml
-  - .private/link-map.overrides.yaml
-  - profile.recommended.yaml
-  - manifests/runtime-roots.yaml
-  - targets/claude/link-map.yaml
-  - targets/codex/link-map.yaml
-- **Description**: Re-run `agent-runtime install --dry-run
-  --print-effective-config` for both products against the current
-  `.private/` overlay set after every domain migration sprint has
-  landed. Confirm the post-merge effective config matches the Overlay
-  Merge Semantics contract (deep merge for `runtime-roots`, replace for
-  `link-map.overrides`, union / replace per profile for
-  `profile.recommended`). Any drift becomes a blocker logged in this
-  plan's execution-state ledger.
+  - `core/skills/pr/create-github-pr/SKILL.md.tera`
+  - `core/skills/pr/create-gitlab-mr/SKILL.md.tera`
+  - `core/skills/pr/create-dispatch-lane-pr/SKILL.md.tera`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Create portable source bodies for create flows that invoke
+  `forge-cli` for GitHub PRs, GitLab MRs, and dispatch-lane PR creation. Keep
+  provider-specific judgment in prose and route missing flags to the extraction
+  backlog.
 - **Dependencies**:
-  - Task 4.4
-- **Complexity**: 5
+  - none
+- **Complexity**: 6
 - **Acceptance criteria**:
-  - `agent-runtime install --product claude --dry-run
-    --print-effective-config` matches the expected merge for every
-    `.private/` entry.
-  - Same for `--product codex`.
-  - Any drift is recorded as a `Blockers` entry in
-    `05-domain-migration-execution-state.md` before the sprint
-    continues.
+  - Create skill bodies contain no inline provider lifecycle implementation.
+  - Each body names the relevant `forge-cli` command shape and failure handling.
+  - Missing surfaces are logged to the extraction backlog.
 - **Validation**:
-  - `agent-runtime install --product claude --dry-run --print-effective-config`
-  - `agent-runtime install --product codex --dry-run --print-effective-config`
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
 
-### Task 5.2: Verify project-local overlay smoke test (CI gate 8)
+### Task 5.2: Migrate PR/MR close skills and wire create/close integration
 
 - **Location**:
-  - tests/sandbox/project-local/run.sh
-  - skills/meta/bench/SKILL.md
-  - skills/meta/demo/SKILL.md
-  - skills/meta/deploy/SKILL.md
-  - skills/meta/pre-pr/SKILL.md
-  - skills/meta/release/SKILL.md
-  - skills/meta/bootstrap/SKILL.md
-- **Description**: Run the project-local overlay smoke test (CI gate
-  position 8 per the architecture doc) against one consumer repo for
-  each of the six overlay scripts (`bench`, `demo`, `deploy`, `pre-pr`,
-  `release`, `bootstrap`). The skill body for each must still dispatch
-  to `<repo>/.agents/scripts/<name>.sh` only when the script exists and
-  is executable, and exit non-zero with the documented "no project-local
-  implementation" message otherwise. Use this repo itself
-  (`$HOME/Project/graysurf/agent-runtime-kit`) as the consumer
-  for any script it implements.
+  - `core/skills/pr/close-github-pr/SKILL.md.tera`
+  - `core/skills/pr/close-gitlab-mr/SKILL.md.tera`
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/pr/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/pr/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Create close-flow source bodies, register create/close PR
+  skills, refresh product plugin metadata and golden snapshots, and update
+  sandbox expected skill pins.
 - **Dependencies**:
   - Task 5.1
-- **Complexity**: 5
+- **Complexity**: 6
 - **Acceptance criteria**:
-  - `bash tests/sandbox/project-local/run.sh` exits 0.
-  - For each of the six skill bodies, dispatch happens only when the
-    target script exists and is executable; missing scripts produce a
-    non-zero exit with the documented message.
-  - `agent-runtime doctor --product claude --check-project
-    $HOME/Project/graysurf/agent-runtime-kit` reports each
-    overlay as wired or missing as expected.
+  - Create and close PR/MR skill entries pin `forge-cli >=0.16.0` or the newer
+    required released floor.
+  - Product plugin metadata exists for the PR domain.
+  - Golden snapshots and sandbox expected skill pins include create/close PR
+    skills.
+  - Audit-drift reports no source or rendered-target mismatch.
 - **Validation**:
-  - `bash tests/sandbox/project-local/run.sh`
-  - `agent-runtime doctor --product claude --check-project $HOME/Project/graysurf/agent-runtime-kit`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
 
-### Task 5.3: Archive `graysurf/agent-kit` and `graysurf/claude-kit`
+## Sprint 6: PR Delivery Macros
+
+**Goal**: Migrate end-to-end delivery skills after create/close primitives are
+rendering, then add a controlled smoke test for the delivery macro.
+
+**Demo/Validation**:
+
+- Commands:
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+  - `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke`
+- Verify: delivery skills use `forge-cli` macro guidance and the smoke test
+  operates only on a scratch fork/branch.
+
+**PR grouping intent**: per-sprint
+**Execution Profile**: serial
+
+- **TotalComplexity**: 15
+- **CriticalPathComplexity**: 15
+- **MaxBatchWidth**: 1
+- **OverlapHotspots**: Smoke harness, golden snapshots, and PR skill manifest
+  entries are intentionally serialized.
+
+### Task 6.1: Migrate delivery skill sources
 
 - **Location**:
-  - docs/source/inventory-target-architecture.md
-  - docs/plans/05-domain-migration/05-domain-migration-execution-state.md
-- **Description**: For each of `graysurf/agent-kit` and
-  `graysurf/claude-kit`: (a) commit a root `MOVED.md` pointing at
-  `https://github.com/graysurf/agent-runtime-kit` and naming the
-  archival date; (b) run `gh repo edit graysurf/<repo> --archived` to
-  flip the GitHub archived flag; (c) verify with `gh repo view
-  graysurf/<repo> --json isArchived` that `isArchived` is `true`.
-  Neither repo is deleted — history preservation is required per
-  Resolved Decision #3. Record both archival commits and the final
-  `gh repo view` JSON in the execution-state Session Log.
+  - `core/skills/pr/deliver-github-pr/SKILL.md.tera`
+  - `core/skills/pr/deliver-gitlab-mr/SKILL.md.tera`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Create portable delivery skill bodies that compose create,
+  wait/check, repair, and close behavior through `forge-cli` while leaving
+  review judgment and failure recovery in prose.
 - **Dependencies**:
-  - Task 5.2
+  - none
+- **Complexity**: 6
+- **Acceptance criteria**:
+  - Delivery bodies contain no inline provider lifecycle implementation.
+  - GitHub and GitLab differences are handled through documented `forge-cli`
+    command shapes.
+  - Missing surfaces are logged to the extraction backlog.
+- **Validation**:
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+
+### Task 6.2: Add delivery lifecycle smoke harness
+
+- **Location**:
+  - `tests/smoke/deliver-lifecycle.sh`
+  - `docs/source/extraction-backlog.md`
+  - `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`
+- **Description**: Add a smoke harness that drives one throwaway PR on a scratch
+  fork/branch through create and close flows. The script must refuse to run
+  against `main` or the canonical repository without an explicit scratch target.
+- **Dependencies**:
+  - Task 6.1
+- **Complexity**: 5
+- **Acceptance criteria**:
+  - Smoke harness exits non-zero if no scratch fork/branch is supplied.
+  - Smoke harness records the created PR URL and final merged/closed state in
+    execution evidence.
+  - The harness never targets `graysurf/agent-runtime-kit` `main`.
+- **Validation**:
+  - `if bash tests/smoke/deliver-lifecycle.sh; then exit 1; else test $? -ne 0; fi`
+  - `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke`
+
+### Task 6.3: Wire delivery manifests, golden snapshots, and PR domain gate
+
+- **Location**:
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/pr/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/pr/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Register delivery skills, refresh PR plugin metadata and
+  golden snapshots, update sandbox pins, and run the full PR-domain render,
+  sandbox, audit, and smoke checks.
+- **Dependencies**:
+  - Task 6.2
 - **Complexity**: 4
 - **Acceptance criteria**:
-  - `gh repo view graysurf/agent-kit --json isArchived` returns
-    `{"isArchived":true}`.
-  - `gh repo view graysurf/claude-kit --json isArchived` returns
-    `{"isArchived":true}`.
-  - Both repos still exist (not deleted) and carry a root `MOVED.md`
-    pointing at `graysurf/agent-runtime-kit`.
-  - Archival commit hashes are recorded in the execution-state Session
-    Log.
+  - Delivery skill entries pin `forge-cli` at a concrete released semver.
+  - Golden snapshots and sandbox expected skill pins include delivery skills.
+  - Audit-drift reports no PR-domain source/render mismatch.
+  - Delivery smoke passes against the scratch target.
+- **Validation**:
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+  - `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke`
+
+## Sprint 7: Dispatch Domain
+
+**Goal**: Migrate plan/issue/dispatch skills onto `plan-tooling`,
+`plan-issue`, and `plan-issue-local`, with `forge-cli` mentioned only where PR
+mirroring is explicitly part of the workflow.
+
+**Demo/Validation**:
+
+- Commands:
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+- Verify: dispatch skills render for both products, use nils-cli planning/issue
+  primitives, and keep orchestration policy in prose.
+
+**PR grouping intent**: group
+**Execution Profile**: parallel-x2
+
+- **TotalComplexity**: 17
+- **CriticalPathComplexity**: 11
+- **MaxBatchWidth**: 2
+- **OverlapHotspots**: Task 7.3 owns shared manifest, plugin metadata, sandbox,
+  golden, and extraction-backlog writes after source-body lanes complete.
+- **Split command**: `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 7 --strategy deterministic --pr-grouping group --pr-group 'Task 7.1=s7-issue-lifecycle' --pr-group 'Task 7.2=s7-execution-orchestration' --pr-group 'Task 7.3=s7-dispatch-integration' --format json`
+
+### Task 7.1: Migrate issue lifecycle dispatch sources
+
+- **Location**:
+  - `core/skills/dispatch/plan-tracking-issue/SKILL.md.tera`
+  - `core/skills/dispatch/issue-lifecycle/SKILL.md.tera`
+  - `core/skills/dispatch/tracking-issue-closeout/SKILL.md.tera`
+- **Description**: Create portable source bodies for issue creation,
+  maintenance, and closeout workflows using `plan-issue`, `plan-issue-local`,
+  and `plan-tooling` where appropriate.
+- **Dependencies**:
+  - none
+- **Complexity**: 6
+- **Acceptance criteria**:
+  - Issue lifecycle bodies invoke nils-cli issue/planning primitives.
+  - GitHub/GitLab provider distinctions remain explicit in prose.
+  - Missing surfaces are noted for Task 7.3 to record in the shared extraction
+    backlog.
+  - No shared manifest or golden files are edited in this task.
+- **Validation**:
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+
+### Task 7.2: Migrate execution and dispatch orchestration sources
+
+- **Location**:
+  - `core/skills/dispatch/execute-from-tracking-issue/SKILL.md.tera`
+  - `core/skills/dispatch/deliver-tracking-issue/SKILL.md.tera`
+  - `core/skills/dispatch/dispatch-pr-review/SKILL.md.tera`
+  - `core/skills/dispatch/dispatch-subagent-pr/SKILL.md.tera`
+- **Description**: Create portable source bodies for issue-backed execution,
+  delivery, review, and subagent PR handoff workflows. Use planning primitives
+  for durable state and `forge-cli` only for PR/MR provider operations.
+- **Dependencies**:
+  - none
+- **Complexity**: 6
+- **Acceptance criteria**:
+  - Execution and review bodies invoke nils-cli primitives instead of inline
+    issue/PR state manipulation.
+  - Subagent handoff guidance remains prose-level and does not create hidden
+    runtime state.
+  - Missing surfaces are noted for Task 7.3 to record in the shared extraction
+    backlog.
+  - No shared manifest or golden files are edited in this task.
+- **Validation**:
+  - `agent-runtime render --product codex`
+  - `agent-runtime render --product claude`
+
+### Task 7.3: Wire dispatch manifests, adapters, and golden snapshots
+
+- **Location**:
+  - `manifests/skills.yaml`
+  - `manifests/plugins.yaml`
+  - `targets/codex/plugins/dispatch/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/dispatch/.claude-plugin/plugin.json`
+  - `tests/sandbox/claude/expected-skills.txt`
+  - `tests/sandbox/codex/expected-skills.txt`
+  - `tests/golden/`
+  - `docs/source/extraction-backlog.md`
+- **Description**: Register dispatch skills, add product plugin metadata,
+  refresh golden snapshots, update sandbox pins, and run the dispatch-domain
+  render/sandbox/audit gate.
+- **Dependencies**:
+  - Task 7.1
+  - Task 7.2
+- **Complexity**: 5
+- **Acceptance criteria**:
+  - Dispatch skill entries pin `plan-tooling`, `plan-issue`,
+    `plan-issue-local`, and `forge-cli` only where used.
+  - Product plugin metadata exists for dispatch.
+  - Golden snapshots and sandbox expected skill pins include dispatch skills.
+  - Audit-drift reports no dispatch-domain source/render mismatch.
+- **Validation**:
+  - `agent-runtime render --product codex --update-golden`
+  - `agent-runtime render --product claude --update-golden`
+  - `bash scripts/ci/sandbox-install-rehearsal.sh`
+  - `agent-runtime audit-drift`
+
+## Sprint 8: Overlay Gates
+
+**Goal**: Verify `.private` shadow overlays and project-local overlay shims
+after all migrated domains render.
+
+**Demo/Validation**:
+
+- Commands:
+  - `agent-runtime install --product claude --dry-run`
+  - `agent-runtime install --product codex --dry-run`
+  - `bash tests/projects/project-local-smoke/run.sh`
+  - `agent-runtime doctor --check-project tests/projects/project-local-smoke`
+  - `bash scripts/ci/all.sh`
+- Verify: effective config and project-local dispatch behavior match the
+  architecture contract.
+
+**PR grouping intent**: per-sprint
+**Execution Profile**: serial
+
+- **TotalComplexity**: 10
+- **CriticalPathComplexity**: 10
+- **MaxBatchWidth**: 1
+- **OverlapHotspots**: Overlay fixtures, expected install output, and sandbox
+  pins are serialized because they validate the whole migrated surface.
+
+### Task 8.1: Audit private overlay effective config
+
+- **Location**:
+  - `manifests/runtime-roots.yaml`
+  - `targets/claude/link-map.yaml`
+  - `targets/codex/link-map.yaml`
+  - `tests/install/`
+  - `drift-audit.allow.yaml`
+- **Description**: Verify `.private/runtime-roots.yaml`,
+  `.private/link-map.overrides.yaml`, and `profile.recommended.yaml` merge
+  semantics through `agent-runtime install --dry-run`. Add durable fixture or
+  expected-output coverage only for behavior that should become a repo gate.
+- **Dependencies**:
+  - none
+- **Complexity**: 5
+- **Acceptance criteria**:
+  - Dry-run install output shows the expected post-merge roots, link map, and
+    profile behavior for both products.
+  - Any overlay drift is recorded as a blocker before project-local smoke work.
+  - New expected-output fixtures are added only for stable, non-private values.
+- **Validation**:
+  - `agent-runtime install --product claude --dry-run`
+  - `agent-runtime install --product codex --dry-run`
+  - `agent-runtime audit-drift`
+
+### Task 8.2: Verify project-local overlay smoke gate
+
+- **Location**:
+  - `tests/projects/project-local-smoke/run.sh`
+  - `tests/projects/project-local-smoke/.agents/scripts`
+  - `core/skills/meta/bench/SKILL.md.tera`
+  - `core/skills/meta/demo/SKILL.md.tera`
+  - `core/skills/meta/deploy/SKILL.md.tera`
+  - `core/skills/meta/pre-pr/SKILL.md.tera`
+  - `core/skills/meta/release/SKILL.md.tera`
+  - `core/skills/meta/bootstrap/SKILL.md.tera`
+  - `scripts/ci/all.sh`
+- **Description**: Add or verify the project-local overlay smoke fixture for
+  `bench`, `demo`, `deploy`, `pre-pr`, `release`, and `bootstrap` shims. The
+  gate should prove executable project-local scripts are called and missing
+  scripts fail with the documented message.
+- **Dependencies**:
+  - Task 8.1
+- **Complexity**: 5
+- **Acceptance criteria**:
+  - Project-local smoke fixture exits 0.
+  - `agent-runtime doctor --check-project` reports expected wired/missing shim
+    status for the sample project.
+  - `scripts/ci/all.sh` includes the project-local smoke gate only after its
+    expected outputs are stable.
+- **Validation**:
+  - `bash tests/projects/project-local-smoke/run.sh`
+  - `agent-runtime doctor --check-project tests/projects/project-local-smoke`
+  - `bash scripts/ci/all.sh`
+
+## Sprint 9: Legacy Archive And Local Cutover
+
+**Goal**: Preserve the two legacy repositories as archived records and remove
+local legacy pointers only after all migrated surfaces are validated.
+
+**Demo/Validation**:
+
+- Commands:
+  - `gh repo view graysurf/agent-kit --json isArchived,name`
+  - `gh repo view graysurf/claude-kit --json isArchived,name`
+  - `test ! -L "$HOME/.agents"`
+  - `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi`
+- Verify: both repositories are archived but not deleted, each has a root
+  `MOVED.md`, local legacy symlink is gone, and Claude state is present under
+  the new runtime-kit state path.
+
+**PR grouping intent**: per-sprint
+**Execution Profile**: serial
+
+- **TotalComplexity**: 10
+- **CriticalPathComplexity**: 10
+- **MaxBatchWidth**: 1
+- **OverlapHotspots**: External repo commits, GitHub archive flags, local symlink
+  removal, and state migration are intentionally serialized and recorded in the
+  execution-state ledger.
+
+### Task 9.1: Prepare legacy repository archive markers
+
+- **Location**:
+  - `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`
+  - `docs/source/inventory-target-architecture.md`
+- **Description**: In the legacy `graysurf/agent-kit` and
+  `graysurf/claude-kit` checkouts, add root `MOVED.md` files pointing to
+  `https://github.com/graysurf/agent-runtime-kit`, commit them, and record both
+  commit hashes in this plan's execution-state ledger.
+- **Dependencies**:
+  - none
+- **Complexity**: 4
+- **Acceptance criteria**:
+  - Each legacy repo has a committed root `MOVED.md` pointing at
+    `graysurf/agent-runtime-kit`.
+  - Commit hashes are recorded in the execution-state Session Log.
+  - No legacy repository is deleted.
+- **Validation**:
+  - `git -C "$HOME/.config/agent-kit" log -1 --format=%H -- MOVED.md`
+  - `git -C "$HOME/.config/claude" log -1 --format=%H -- MOVED.md`
+  - `gh api repos/graysurf/agent-kit/contents/MOVED.md --jq '.download_url' | xargs curl -fsSL | rg 'graysurf/agent-runtime-kit'`
+  - `gh api repos/graysurf/claude-kit/contents/MOVED.md --jq '.download_url' | xargs curl -fsSL | rg 'graysurf/agent-runtime-kit'`
+
+### Task 9.2: Archive legacy repositories on GitHub
+
+- **Location**:
+  - `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`
+- **Description**: Run `gh repo edit graysurf/agent-kit --archived` and
+  `gh repo edit graysurf/claude-kit --archived`, then verify the archived flags.
+  Record command evidence and JSON verification in the execution-state ledger.
+- **Dependencies**:
+  - Task 9.1
+- **Complexity**: 3
+- **Acceptance criteria**:
+  - `gh repo view graysurf/agent-kit --json isArchived,name` returns
+    `isArchived: true`.
+  - `gh repo view graysurf/claude-kit --json isArchived,name` returns
+    `isArchived: true`.
+  - Neither repository is deleted.
 - **Validation**:
   - `gh repo view graysurf/agent-kit --json isArchived,name`
   - `gh repo view graysurf/claude-kit --json isArchived,name`
 
-### Task 5.4: Remove `$HOME/.agents` symlink
+### Task 9.3: Remove local legacy pointers and migrate Claude state
 
 - **Location**:
-  - docs/plans/05-domain-migration/05-domain-migration-execution-state.md
-- **Description**: After Task 5.3 lands, remove the legacy
-  `$HOME/.agents` symlink (it pointed at `$HOME/.config/agent-kit`).
-  Recommended cutover date is 2026-06-30 per the source-doc Open
-  Question. Verify with `test ! -L "$HOME/.agents"`. Record the removal
-  command and timestamp in the execution-state Session Log.
+  - `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`
+  - `docs/source/inventory-target-architecture.md`
+- **Description**: Remove the legacy `$HOME/.agents` symlink after the
+  recommended cutover window, then migrate any
+  `$XDG_STATE_HOME/claude-kit/` tree to
+  `$XDG_STATE_HOME/agent-runtime-kit/claude/` using a verify-before-remove flow.
 - **Dependencies**:
-  - Task 5.3
-- **Complexity**: 2
-- **Acceptance criteria**:
-  - `test ! -L "$HOME/.agents"` exits 0.
-  - Removal command and timestamp recorded in the execution-state
-    Session Log.
-- **Validation**:
-  - `test ! -L "$HOME/.agents"`
-
-### Task 5.5: Migrate `$XDG_STATE_HOME/claude-kit/` to `$XDG_STATE_HOME/agent-runtime-kit/claude/`
-
-- **Location**:
-  - docs/plans/05-domain-migration/05-domain-migration-execution-state.md
-- **Description**: If `$XDG_STATE_HOME/claude-kit/` exists on the host
-  running Sprint 5, move its tree into
-  `$XDG_STATE_HOME/agent-runtime-kit/claude/` per the Runtime Root Model
-  migration note. Use `rsync -a` to preserve permissions and
-  timestamps, then remove the source after verifying the destination
-  is intact (`diff -r` exits 0). If the source does not exist, record
-  the no-op and move on. Update the execution-state Session Log with
-  the source / destination paths and the `diff -r` result.
-- **Dependencies**:
-  - Task 5.4
+  - Task 9.2
 - **Complexity**: 3
 - **Acceptance criteria**:
-  - If `$XDG_STATE_HOME/claude-kit/` existed: it now lives at
-    `$XDG_STATE_HOME/agent-runtime-kit/claude/`, `diff -r` between any
-    pre-migration snapshot and the destination is empty, and the old
-    path no longer exists.
-  - If it did not exist: a `no-op` entry is recorded in the
-    execution-state Session Log.
-  - `test -d "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude"`
-    exits 0 in either case (the destination is created as needed).
+  - `test ! -L "$HOME/.agents"` exits 0.
+  - If the old Claude state tree existed, the new destination matches it before
+    source removal.
+  - If the old state tree did not exist, the no-op is recorded.
+  - The execution-state Session Log captures paths, timestamp, and verification
+    result.
 - **Validation**:
-  - `test -d "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude"`
+  - `test ! -L "$HOME/.agents"`
+  - `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi`
 
 ## Testing Strategy
 
-- Unit: none new (all logic lives in nils-cli binaries).
-- Render-golden: refresh per migrated domain via
-  `cargo test -p agent-runtime-cli render_golden_<domain>` (meta,
-  media, browser, evidence, pr, dispatch). Plan 03's reporting golden
-  is re-run as a regression gate in Task 1.0.
-- Sandbox install rehearsal: `bash tests/sandbox/claude/run.sh` and
-  `bash tests/sandbox/codex/run.sh` after every sprint. Plan 04's
-  harness is the contract; this plan only consumes it.
-- Doctor regression gate: `agent-runtime doctor --product claude` and
-  `--product codex` after every sprint, asserting every `required_clis`
-  entry resolves `ok`.
-- Deliver-lifecycle smoke (Sprint 4 only):
-  `bash tests/smoke/deliver-lifecycle.sh --scratch-fork` opens and
-  closes one throwaway PR.
-- Project-local overlay smoke (Sprint 5):
-  `bash tests/sandbox/project-local/run.sh` plus
-  `agent-runtime doctor --check-project <repo>` against this repo for
-  the six overlay scripts.
-- Plan-bundle gate: `plan-tooling validate --file
-  docs/plans/05-domain-migration/05-domain-migration-plan.md --strict`
-  before the first commit on each sprint branch.
+- Plan bundle: `plan-tooling validate --file docs/plans/05-domain-migration/05-domain-migration-plan.md --format text --explain`.
+- Dispatch grouping: run `for n in 1 2 3 4 5 6 7 8 9; do plan-tooling batches
+  --file docs/plans/05-domain-migration/05-domain-migration-plan.md --sprint
+  "$n" --format json; done`, then run each sprint's deterministic split
+  command from its scorecard or the per-sprint deterministic command for
+  Sprints 4, 5, 6, 8, and 9.
+- Render: `agent-runtime render --product codex` and
+  `agent-runtime render --product claude` after each source lane.
+- Golden: `agent-runtime render --product codex --update-golden` and
+  `agent-runtime render --product claude --update-golden` in each integration
+  lane, followed by review of `tests/golden/`.
+- Sandbox install: `bash scripts/ci/sandbox-install-rehearsal.sh` after each
+  domain integration lane.
+- Drift: `agent-runtime audit-drift` after each domain integration lane.
+- Full repo gate: `bash scripts/ci/all.sh` before closing each sprint.
+- External smoke: `bash tests/smoke/deliver-lifecycle.sh --scratch-fork
+  graysurf/agent-runtime-kit-smoke --scratch-branch
+  agent-runtime-kit-delivery-smoke` only for Sprint 6 and never against the
+  canonical repo's `main`.
 
-## Risks & gotchas
+## Risks & Gotchas
 
-- `meta` rewrite (Sprint 1) must not change the externally observable
-  behaviour of `agent-docs` and `semantic-commit`. Downstream sprints
-  rely on them; any drift cascades.
-- Sprint 4 deliver-lifecycle smoke must use a **scratch fork** (not
-  this repo's main) to open and close the throwaway PR. Hitting the
-  real `graysurf/agent-runtime-kit` `main` with a smoke PR is
-  prohibited.
-- Archival (Task 5.3) is irreversible from the GitHub UI without
-  `repo: admin` on both repos; confirm the operator has the right
-  before kicking off the sprint.
-- `$HOME/.agents` symlink removal (Task 5.4) breaks any in-flight
-  shell that resolved the path at start. Recommend the 2026-06-30
-  cutover date so existing sessions cycle out first.
-- `.private/` overlay deep-merge semantics are subtle — a single
-  `null` value removes a key from the merged config; reviewers must
-  read the post-merge "effective config" emitted by `--dry-run`, not
-  the input overlay files.
-- Missing nils-cli binaries (any sprint task) must route to
-  `docs/source/extraction-backlog.md` rather than inline shell. Inline
-  logic re-introduction is the failure mode this plan explicitly
-  prevents.
-- `forge-cli` semver pinned in Plan 04 — if Plan 04 has not yet
-  shipped, Sprint 4 cannot start. Block on it.
+- Meta migration is a dependency multiplier. Preserve `agent-docs`,
+  `agent-out`, and `semantic-commit` observable behavior or downstream sprints
+  become noisy.
+- Same-sprint parallel lanes must not edit shared manifest/golden/sandbox files;
+  each sprint has an explicit integration task for those files.
+- `tests/golden/` paths are product-rendered snapshots, not skill-source paths.
+  Review rendered diffs before committing them.
+- Missing nils-cli capability is a release-boundary blocker, not permission to
+  restore inline shell/Python.
+- Delivery smoke must use a scratch fork/branch. Running a throwaway PR against
+  `graysurf/agent-runtime-kit` `main` is prohibited.
+- GitHub archival requires admin permission. Verify access before Sprint 9.
+- `$HOME/.agents` removal can affect in-flight sessions. Use the recommended
+  2026-06-30 cutover unless the execution owner explicitly chooses a different
+  date and records it.
+- `.private` overlay values can be machine-specific. Do not commit private
+  values; commit only stable fixtures or redacted expected outputs.
 
-## Rollback plan
+## Rollback Plan
 
-- Sprint 1: revert the meta-domain commits. Render-golden snapshots
-  revert with the bodies. The legacy claude-kit / agent-kit skill
-  sources are still present (this plan does not delete them until
-  Sprint 5), so reverted sessions fall back to the legacy bodies.
-- Sprints 2–4: per-domain revert. Each sprint's PRs are scoped to its
-  domain (`group` PR grouping in every sprint, with parallel lanes
-  where the Execution Profile says so) so a single revert restores the
-  previous body and `required_clis` entries.
-- Sprint 5 task 5.3 (archival): `gh repo edit graysurf/<repo>
-  --no-archived` flips the flag back. The `MOVED.md` commit can be
-  reverted via standard `git revert`.
-- Sprint 5 task 5.4 (symlink removal): recreate the symlink with
-  `ln -s "$HOME/.config/agent-kit" "$HOME/.agents"`.
-- Sprint 5 task 5.5 (state migration): `rsync -a` is non-destructive
-  until the source removal step; if `diff -r` flags drift, abort and
-  keep the source.
+- Sprints 1-7: revert the domain's source, manifest, adapter, sandbox, and
+  golden changes together. Because shared-file writes are isolated to each
+  sprint's integration task, one revert per sprint should restore the previous
+  rendered surface.
+- Sprint 6 smoke harness: disable or revert the harness if scratch-fork behavior
+  is unsafe, but keep delivery skill bodies reverted with the same sprint
+  change set.
+- Sprint 8 overlays: revert only stable fixture/gate changes. Do not commit or
+  preserve `.private` machine-local files.
+- Sprint 9 archival: `gh repo edit graysurf/<repo> --no-archived` reverses the
+  archive flag. Revert each legacy repo's `MOVED.md` commit if needed.
+- Sprint 9 local cutover: recreate `$HOME/.agents` with
+  `ln -s "$HOME/.config/agent-kit" "$HOME/.agents"` and restore Claude state
+  from the pre-migration copy if verification failed.
