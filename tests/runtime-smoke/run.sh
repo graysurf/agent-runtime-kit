@@ -18,18 +18,20 @@ MODE=""
 FORMAT="text"
 PRODUCT=""
 DOMAIN=""
+PROBE_ONLY=0
 KEEP_ARTIFACTS=0
 ARTIFACTS_DIR=""
 
 usage() {
   cat <<'USAGE'
-Usage: tests/runtime-smoke/run.sh --mode <matrix|install|deterministic> [options]
+Usage: tests/runtime-smoke/run.sh --mode <matrix|install|deterministic|product> [options]
 
 Options:
   --mode <mode>           Smoke mode to run.
   --format <text|json>    Output format. Default: text.
-  --product <product>     Product for install mode: codex or claude. Default: both.
+  --product <product>     Product for install/product mode: codex or claude. Default: both.
   --domain <domain>       Deterministic smoke domain. Default: all available domains.
+  --probe-only            Product mode only: run isolation probes without product prompt assertions.
   --artifacts-dir <path>  Write run logs and observed files to this directory.
   --keep-artifacts        Keep the temporary runtime root after the run.
   -h, --help              Show this help.
@@ -53,6 +55,10 @@ while [ "$#" -gt 0 ]; do
     --domain)
       DOMAIN="${2:-}"
       shift 2
+      ;;
+    --probe-only)
+      PROBE_ONLY=1
+      shift
       ;;
     --artifacts-dir)
       ARTIFACTS_DIR="${2:-}"
@@ -81,7 +87,7 @@ if [ -z "$MODE" ]; then
 fi
 
 case "$MODE" in
-  matrix | install | deterministic)
+  matrix | install | deterministic | product)
     ;;
   *)
     echo "runtime-smoke: unsupported mode: $MODE" >&2
@@ -314,15 +320,25 @@ run_deterministic_mode() {
   return "$failures"
 }
 
+run_product_mode() {
+  results_init "$RESULTS_FILE"
+  export REPO_ROOT SCRIPT_DIR TMP_ROOT ARTIFACTS_DIR RESULTS_FILE PRODUCT PROBE_ONLY
+  bash "$SCRIPT_DIR/product/run.sh"
+}
+
+RUN_STATUS=0
 case "$MODE" in
   matrix)
-    run_matrix_mode
+    run_matrix_mode || RUN_STATUS=$?
     ;;
   install)
-    run_install_mode
+    run_install_mode || RUN_STATUS=$?
     ;;
   deterministic)
-    run_deterministic_mode
+    run_deterministic_mode || RUN_STATUS=$?
+    ;;
+  product)
+    run_product_mode || RUN_STATUS=$?
     ;;
 esac
 
@@ -332,6 +348,6 @@ else
   results_print_text "$MODE"
 fi
 
-if results_has_failures; then
+if results_has_failures || [ "$RUN_STATUS" -ne 0 ]; then
   exit 1
 fi

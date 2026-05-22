@@ -4,12 +4,12 @@
 ## Execution State
 
 - Status: in-progress
-- Target scope: Sprint 2 Task 2.4
-- Execution window: Sprint 2 Task 2.4 reporting regression probes and CI wiring
-- Current task: Task 2.4 validation checkpoint
-- Next task: Sprint 3 Task 3.1 probe product CLI isolation contracts
-- Last updated: 2026-05-22 15:53 CST
-- Branch/commit/PR: feat/runtime-smoke-reporting-ci; pending
+- Target scope: Sprint 3 Task 3.1
+- Execution window: Sprint 3 Task 3.1 product CLI isolation contracts
+- Current task: Task 3.1 validation checkpoint
+- Next task: Sprint 3 Task 3.2 representative product smoke cases
+- Last updated: 2026-05-22 16:08 CST
+- Branch/commit/PR: feat/runtime-smoke-product-probes; pending
 - Source document: docs/plans/06-runtime-skill-acceptance-harness/06-runtime-skill-acceptance-harness-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/28
@@ -25,6 +25,8 @@
 - `bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence`
 - `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting`
 - `bash tests/runtime-smoke/run.sh --mode deterministic`
+- `bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only`
+- `bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only`
 - `bash scripts/ci/all.sh`
 
 ## Task Ledger
@@ -37,8 +39,8 @@
 | 2.1 | done | Add meta skill probes | PR #30 merged `f344f60` | Added command-level probes for `agent-docs`, `agent-out`, `agent-scope-lock`, `heuristic-inbox`, `repo-retro`, and `semantic-commit`. |
 | 2.2 | done | Add media and browser probes | PR #31 merged `933944e` | Added command-level probes for `image-processing`, `screen-record`, `browser-session`, and `canary-check`. |
 | 2.3 | done | Add evidence probes | PR #32 merged `b4f69a8` | Added command-level probes for `web-evidence`, `test-first-evidence`, `review-evidence`, `skill-usage`, `docs-impact`, and `model-cross-check`. |
-| 2.4 | done | Add reporting regression probes and CI wiring | `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting` pass; `bash scripts/ci/all.sh` pass | Added reporting regression probes for `daily-brief`, `project-retro`, and `topic-radar`; wired deterministic smoke into CI. |
-| 3.1 | pending | Probe product CLI isolation contracts | Not started | Future sprint. |
+| 2.4 | done | Add reporting regression probes and CI wiring | PR #33 merged `2ebba25` | Added reporting regression probes for `daily-brief`, `project-retro`, and `topic-radar`; wired deterministic smoke into CI. |
+| 3.1 | done | Probe product CLI isolation contracts | `bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only` pass; `bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only` pass | Codex and Claude isolated invocation contracts are supported; prompt smoke remains manual-only when isolated provider/auth is absent. |
 | 3.2 | pending | Add representative product smoke cases | Not started | Future sprint. |
 | 3.3 | pending | Update architecture and Plan 05 unblock rule | Not started | Future sprint. |
 
@@ -56,6 +58,10 @@
 - 2026-05-22 15:45 CST: Implemented evidence deterministic probes using temp artifacts and loopback-only web evidence; no nils-cli surface blockers found.
 - 2026-05-22 15:48 CST: Merged Task 2.3 PR #32 at `b4f69a8` and started Sprint 2 Task 2.4 from updated `main`.
 - 2026-05-22 15:53 CST: Implemented reporting regression probes and wired deterministic smoke into `scripts/ci/all.sh` position 7.
+- 2026-05-22 15:59 CST: Merged Task 2.4 PR #33 at `2ebba25` and started Sprint 3 Task 3.1 from updated `main`.
+- 2026-05-22 16:01 CST: Implemented product CLI isolation probes for Codex and Claude with temp runtime homes only.
+- 2026-05-22 16:05 CST: Validated Task 3.1 product probes, runtime-smoke regressions, and full `bash scripts/ci/all.sh`.
+- 2026-05-22 16:08 CST: Fixed runtime-smoke nonzero-mode dispatch so failing product/deterministic modes still emit the stable result summary before exiting.
 
 ## Validation
 
@@ -65,7 +71,7 @@
 | `bash tests/runtime-smoke/run.sh --mode install` | pass | Codex and Claude temp homes installed 19 skills each; doctor summaries reported `block=0`. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode install --format json` | pass | Machine-readable summary emitted 2 pass, 0 fail, 0 skip, 0 blocked. | n/a |
 | `diff -u tests/runtime-smoke/expected/install-summary.json /tmp/runtime-smoke-install-summary.json` | pass | Deterministic JSON summary matches committed expected output. | `/tmp/runtime-smoke-install-summary.json` |
-| `bash scripts/ci/all.sh` | pass | Full repo gate positions 1-6 passed after adding the required execution-state `Source document` pointer. | n/a |
+| `bash scripts/ci/all.sh` | pass | Full repo gate positions 1-7 passed, including deterministic runtime skill smoke. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta` | pass | Six meta probes passed inside temp fixture workspace. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Default deterministic mode currently runs all 19 matrix skills across meta, media, browser, evidence, and reporting. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta --format json` | pass | JSON summary emitted 6 pass, 0 fail, 0 skip, 0 blocked. | n/a |
@@ -77,6 +83,10 @@
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence --format json` | pass | JSON summary emitted 6 pass, 0 fail, 0 skip, 0 blocked. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting` | pass | Three reporting probes passed with offline sample/repo-local modes. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting --format json` | pass | JSON summary emitted 3 pass, 0 fail, 0 skip, 0 blocked. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only` | pass | Claude supports temp `CLAUDE_CONFIG_DIR` plus `--bare --no-session-persistence`; prompt path is manual-only without isolated API key/auth. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only` | pass | Codex supports temp `CODEX_HOME` plus `exec --ignore-user-config --ephemeral`; prompt path is manual-only without isolated provider/auth. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode product --probe-only` | pass | Both product isolation probes passed; summary emitted 2 pass, 0 fail, 0 skip, 0 blocked. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode product --probe-only --format json` | pass | JSON product probe summary emitted 2 pass, 0 fail, 0 skip, 0 blocked. | n/a |
 
 ## Notes
 
@@ -92,3 +102,10 @@
 - Task 2.4 promotes deterministic smoke to required CI. Product-in-the-loop
   smoke remains outside default CI until Sprint 3 proves an isolated invocation
   contract.
+- Task 3.1 proves isolated product invocation contracts for both Codex and
+  Claude. Neither probe requires or touches real product homes; missing
+  provider/auth is classified as manual-only prompt smoke rather than
+  `blocked-design`.
+- Small fix applied during Task 3.1: runtime-smoke now preserves the result
+  summary when a sub-mode returns nonzero, so future product prompt cases can
+  report `blocked-design` evidence instead of exiting before summary output.

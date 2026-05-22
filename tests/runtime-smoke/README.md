@@ -18,6 +18,9 @@ history, logs, caches, or product state.
 - `deterministic`: runs committed command-level probes for available domains.
   Sprint 2 currently includes `meta`, `media`, `browser`, `evidence`, and
   `reporting` domains.
+- `product`: runs quarantined product CLI isolation probes. Sprint 3 Task 3.1
+  supports `--probe-only` to verify temp-home invocation contracts without
+  depending on real auth, provider state, sessions, or user product homes.
 
 `doctor` warnings are allowed in install mode because host tool freshness can
 vary. Blocking findings are not allowed; the runner parses the `block=<n>`
@@ -35,12 +38,20 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
+bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only
+bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only
 ```
 
 Use `--product codex` or `--product claude` to narrow install mode. Use
 `--keep-artifacts` for manual debugging; the command prints the temporary root
 to stderr. Use `--artifacts-dir <path>` when a caller needs persistent logs
 without keeping the temporary runtime homes.
+
+Product mode is intentionally outside default CI. A probe passes when the
+product CLI can run with only temporary runtime homes and either completes the
+prompt path or fails for a known missing isolated provider/auth reason. Product
+prompt cases become required only after they can run without touching real
+`$HOME/.codex`, `$HOME/.claude`, auth, sessions, history, logs, or caches.
 
 ## Matrix Contract
 

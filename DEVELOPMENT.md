@@ -49,7 +49,7 @@ agent-docs --docs-home "$AGENT_HOME" resolve --context project-dev --strict --fo
 - `tests/runtime-smoke/`: Plan 06 runtime skill acceptance harness, including
   the acceptance matrix, temporary runtime-home install smoke, and fixture
   workspaces.
-- `scripts/ci/all.sh`: current CI gate stack, positions 1-6.
+- `scripts/ci/all.sh`: current CI gate stack, positions 1-7.
 
 ## Documentation Changes
 
@@ -174,6 +174,8 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
+bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only
+bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only
 ```
 
 Runtime smoke install mode creates temporary Codex and Claude `live_home` and
@@ -189,6 +191,20 @@ Sprint 2 currently enables the `meta`, `media`, `browser`, `evidence`, and
 `screen-record` is host-sensitive: the deterministic media probe records a pass
 when `screen-record --preflight` succeeds and records `skip-host-capability`
 when the host capture prerequisites are unavailable.
+
+Runtime smoke product mode is quarantined outside the default CI gate. Sprint 3
+Task 3.1 uses `--probe-only` to validate that Codex and Claude can be invoked
+with temporary runtime homes only:
+
+```bash
+bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only
+bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only
+```
+
+The probe is allowed to pass with a manual-only prompt note when the product CLI
+is isolated correctly but the host lacks an isolated local provider or API key.
+It must not read or mutate real `$HOME/.codex`, `$HOME/.claude`, auth,
+sessions, history, logs, or caches.
 
 ## Release Boundary
 
