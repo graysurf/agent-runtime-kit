@@ -10,8 +10,8 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue`, `plan-issue-local`, and `forge-cli` are
-  available on `PATH`. The lifecycle record commands require
+- `plan-tooling`, `plan-issue`, and `forge-cli` are available on `PATH`.
+  The lifecycle record commands require
   `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli debug
   binary directory to `PATH`.
 - The issue has source/plan snapshots and lifecycle comments, or enough
