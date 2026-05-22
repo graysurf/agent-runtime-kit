@@ -137,6 +137,12 @@ Status: source document for the first implementation discussion
   rollback path, and team notice (Red-team #3). All M / L / Red-team
   findings from the original specialist review are now landed; no
   remaining deferred items.
+- 2026-05-22 (home policy cutover pass) — clarified that the Codex home-scope
+  policy source is the root `CODEX_AGENTS.md` file in this repo, not a rendered
+  `AGENTS.md` source and not `$HOME/.agents`; `$CODEX_HOME/AGENTS.md` links
+  directly to that file so Codex does not read duplicate `AGENTS.md` files when
+  this repo is the active project. Home-scope `agent-docs` still pins its
+  checked-out docs home explicitly until those runbooks migrate.
 
 ## Purpose
 
@@ -396,6 +402,7 @@ product adapters:
 
 ```text
 agent-runtime-kit/
+  CODEX_AGENTS.md             # Codex home-scope policy, linked by ~/.codex/AGENTS.md
   core/                       # portable, product-independent source of truth
     policies/                 # commit/PR rules, agent-docs gates, heuristic system, secrets
     skills/<domain>/<skill>/  # skill bodies, assets, scripts
@@ -462,7 +469,9 @@ resolve product paths; runtime resolution is the adapter's job.
 
 `targets/codex/` owns Codex-specific activation:
 
-- `CODEX_AGENTS.md` / `AGENTS.md` rendering
+- `$CODEX_HOME/AGENTS.md` link target policy. For the home-scope Codex prompt,
+  this repo uses root `CODEX_AGENTS.md` as the source file and links
+  `$CODEX_HOME/AGENTS.md` directly to it.
 - `.codex-plugin/plugin.json` generation or storage
   *(local convention; not a Codex upstream contract — see
   [Codex Activation Surface](#codex-activation-surface-reality-check) below)*
@@ -532,6 +541,15 @@ can describe both products on the authoring side. At render time,
 what Codex actually loads. `.codex-plugin/plugin.json` exists in
 `build/codex/` for our own audit and drift purposes only — Codex never
 opens it.
+
+**Home-scope prompt source invariant:**
+
+The checked-out source file for Codex's home-scope prompt is
+`<source_root>/CODEX_AGENTS.md`. `$CODEX_HOME/AGENTS.md` may symlink directly
+to it. Do not use `<source_root>/AGENTS.md` for this source because Codex also
+loads project-local `AGENTS.md` files while developing this repository; using
+the same filename for both surfaces would cause duplicate global/project policy
+reads. Do not reintroduce `$HOME/.agents` as an indirection for this link.
 
 **Implications for drift audit, install, and review:**
 
@@ -646,6 +664,9 @@ its own native runtime root, and the source checkout sits in its own
 location independent of either product. The migration explicitly drops
 `AGENT_HOME` / `$HOME/.agents`: any reference to them in legacy `agent-kit`
 content is rewritten to product-native paths during render.
+The Codex home prompt is the deliberate source-link exception:
+`$CODEX_HOME/AGENTS.md` links directly to `<source_root>/CODEX_AGENTS.md` so the
+source filename stays distinct from project-local `AGENTS.md`.
 
 | Root | Meaning | Codex value | Claude value | Target rule |
 | --- | --- | --- | --- | --- |
@@ -1156,9 +1177,9 @@ Recommended behavior:
 
 Product-specific examples:
 
-- Codex: link `~/.codex/AGENTS.md`, sync managed hooks into
-  `~/.codex/config.toml`, register/install local plugins when supported, and
-  leave auth/history/logs/cache untouched.
+- Codex: link `~/.codex/AGENTS.md` to `<source_root>/CODEX_AGENTS.md`, sync
+  managed hooks into `~/.codex/config.toml`, register/install local plugins when
+  supported, and leave auth/history/logs/cache untouched.
 - Claude: link approved files from the canonical link map into `~/.claude`,
   register the local plugin marketplace, install configured plugins, and leave
   projects/history/session/cache/plugin install artifacts untouched.

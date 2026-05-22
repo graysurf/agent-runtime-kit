@@ -52,9 +52,10 @@ calls this plan locks in:
   and `dispatch` follows after the delivery smoke has a scratch-target gate.
 - Archival is treated as a content step (`archived=true`, root `MOVED.md`) and
   never as deletion; commit history is preserved.
-- The `$HOME/.agents` symlink and any pre-existing
-  `$XDG_STATE_HOME/claude-kit/` state tree are migrated only after legacy repo
-  archival verifies.
+- The `$XDG_STATE_HOME/claude-kit/` state tree is migrated only after legacy
+  repo archival verifies. `$HOME/.agents` may remain as a compatibility alias
+  until Codex Desktop skill discovery no longer depends on the legacy
+  `agent-kit` checkout.
 
 ## Findings
 
@@ -65,7 +66,7 @@ calls this plan locks in:
 | medium | M3 | evidence is broad-surface and needs split integration lanes | inventory doc Phase 4 ordering | `core/skills/evidence/` | evidence skills rewritten across capture and analysis sprints; render-golden snapshots updated |
 | high | M4 | pr + dispatch touch the deliver lifecycle and must migrate only after sandbox harness is reliable | inventory doc Phase 4 ordering and high-risk note | `core/skills/pr/`, `core/skills/dispatch/`, `manifests/skills.yaml` | every pr / dispatch skill body invokes `forge-cli` / `plan-issue` / `plan-issue-local` / `plan-tooling`; deliver-lifecycle smoke test passes on a scratch fork/branch |
 | medium | M5 | overlays (project / company / private) must keep merging correctly after all bodies rewrite | inventory doc Runtime Root Model and Overlay Merge Semantics table | `.private/`, `targets/`, `manifests/`, `tests/projects/` | `agent-runtime install --dry-run` post-merge output matches expected; project-local overlay smoke test passes |
-| high | M6 | legacy repos must archive after migration completes per Resolved Decision #3 | inventory doc GitHub Repositories and Resolved Decisions | `graysurf/agent-kit`, `graysurf/claude-kit` (GitHub), `$HOME/.agents` (local), `$XDG_STATE_HOME/claude-kit/` (local) | both repos `archived=true` via `gh repo edit`, each carries a root `MOVED.md` pointing at `graysurf/agent-runtime-kit`, neither repo is deleted, `$HOME/.agents` symlink removed, state tree migrated to `$XDG_STATE_HOME/agent-runtime-kit/claude/` |
+| high | M6 | legacy repos must archive after migration completes per Resolved Decision #3 | inventory doc GitHub Repositories and Resolved Decisions | `graysurf/agent-kit`, `graysurf/claude-kit` (GitHub), `$HOME/.agents` (local), `$XDG_STATE_HOME/claude-kit/` (local) | both repos `archived=true` via `gh repo edit`, each carries a root `MOVED.md` pointing at `graysurf/agent-runtime-kit`, neither repo is deleted, `$HOME/.agents` is either absent or only a compatibility alias to the active docs/skills checkout, state tree migrated to `$XDG_STATE_HOME/agent-runtime-kit/claude/` |
 
 ## Ownership Boundary
 
@@ -150,8 +151,9 @@ calls this plan locks in:
 - Whether `agent-kit` archival should retain the public-content split decision
   or defer it as a follow-up. **Default: defer.** This plan archives both repos
   in-place; a future plan can revisit a public split.
-- Final cutover date for the `$HOME/.agents` symlink removal. **Recommended
-  date: 2026-06-30**, giving in-flight sessions time to pick up the new home.
+- Final cutover date for the `$HOME/.agents` compatibility alias removal.
+  **Recommended date: after Codex Desktop skill discovery no longer needs the
+  legacy `agent-kit` checkout.**
 - Whether dispatch skills should keep plugin-namespaced names or simplify
   post-migration. **Default: keep**, document any future alias mapping in a
   follow-up plan.

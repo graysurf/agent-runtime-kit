@@ -121,9 +121,15 @@ banner 7 "runtime skill deterministic smoke"
 bash tests/runtime-smoke/run.sh --mode deterministic
 
 # -----------------------------------------------------------------------------
-# Position 8 — shared hook contract smoke
+# Position 8 — project-local overlay smoke
 # -----------------------------------------------------------------------------
-banner 8 "shared hook contract smoke"
+banner 8 "project-local overlay smoke"
+bash tests/projects/project-local-smoke/run.sh
+
+# -----------------------------------------------------------------------------
+# Position 9 — shared hook contract smoke
+# -----------------------------------------------------------------------------
+banner 9 "shared hook contract smoke"
 bash tests/hooks/run.sh
 
-printf '\nci/all.sh: positions 1-8 OK\n'
+printf '\nci/all.sh: positions 1-9 OK\n'
