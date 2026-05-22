@@ -1,0 +1,102 @@
+// Claude settings hook fragment. This is a source artifact, not a whole
+// settings.json replacement.
+"hooks": {
+  "UserPromptSubmit": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$HOME/.claude/hooks/user-prompt-agent-docs.sh\"",
+          "statusMessage": "agent-runtime-kit: Remind agent-docs preflight"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/skill-usage-reminder.py\"",
+          "statusMessage": "agent-runtime-kit: Remind skill-usage recording"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/stop-pre-pr-reminder.sh\"",
+          "statusMessage": "agent-runtime-kit: Remind PR readiness"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/agent-scope-lock-guard.py\"",
+          "statusMessage": "agent-runtime-kit: Report scope lock violations"
+        }
+      ]
+    }
+  ],
+  "SessionStart": [
+    {
+      "matcher": "startup|resume|clear",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$HOME/.claude/hooks/session-start-healthcheck.sh\"",
+          "statusMessage": "agent-runtime-kit: Check baseline health"
+        }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-direct-git-commit.py\"",
+          "statusMessage": "agent-runtime-kit: Block direct git commit"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/semantic-commit-body-gate.py\"",
+          "statusMessage": "agent-runtime-kit: Require semantic-commit body"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-direct-pr-create.py\"",
+          "statusMessage": "agent-runtime-kit: Block direct PR/MR creation"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-direct-python.py\"",
+          "statusMessage": "agent-runtime-kit: Block bare Python in managed repos"
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit|NotebookEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/mcp-secret-scan.py\"",
+          "statusMessage": "agent-runtime-kit: Scan .mcp.json for secrets"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-project-memory-write.py\"",
+          "statusMessage": "agent-runtime-kit: Protect project memory writes"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/agent-scope-lock-guard.py\"",
+          "statusMessage": "agent-runtime-kit: Validate active scope lock"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/portable-paths-scan.py\"",
+          "statusMessage": "agent-runtime-kit: Scan docs for local paths"
+        }
+      ]
+    }
+  ]
+}

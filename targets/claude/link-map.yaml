@@ -88,3 +88,8 @@ entries:
     source: build/claude/plugins/dispatch/skills
     destination: plugins/dispatch/skills
     recursive: true
+
+  - id: hooks.shared-scripts
+    kind: symlinked-file
+    source: core/hooks/shared
+    destination: hooks

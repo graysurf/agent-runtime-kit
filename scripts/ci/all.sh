@@ -112,4 +112,10 @@ bash scripts/ci/sandbox-install-rehearsal.sh
 banner 7 "runtime skill deterministic smoke"
 bash tests/runtime-smoke/run.sh --mode deterministic
 
-printf '\nci/all.sh: positions 1-7 OK\n'
+# -----------------------------------------------------------------------------
+# Position 8 — shared hook contract smoke
+# -----------------------------------------------------------------------------
+banner 8 "shared hook contract smoke"
+bash tests/hooks/run.sh
+
+printf '\nci/all.sh: positions 1-8 OK\n'

@@ -11,3 +11,13 @@ schema_version: 1
 unsafe_allow:
   - path: "core/docs/schemas/*.schema.json"
     reason: "Schema files contain public JSON Schema and local schema identifier URIs, not host secrets."
+  - path: "core/hooks/shared/*"
+    reason: "Hook guardrail source intentionally contains blocked command patterns, token regexes, and env var examples for detection; these are not credentials."
+  - path: "core/hooks/shared/block-direct-python.py"
+    reason: "Second demotion for the shared Python hook because the audit combines command-token punctuation and a documented bypass env example."
+  - path: "targets/*/hooks/*"
+    reason: "Product hook activation fragments intentionally contain command strings and hook matcher patterns, not secrets."
+  - path: "core/hooks/claude/*"
+    reason: "Claude hook activation fragments intentionally contain command strings and hook matcher patterns, not secrets."
+  - path: "targets/*/link-map.yaml"
+    reason: "Link maps intentionally embed hook command strings used by managed runtime config blocks."

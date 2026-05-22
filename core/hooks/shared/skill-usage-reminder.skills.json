@@ -1,0 +1,226 @@
+[
+  {
+    "skill": "browser-qa",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["browser-qa", "browser qa", "web-qa", "web qa"],
+    "reason": "Browser-facing QA usually creates validation and browser evidence artifacts.",
+    "record_when": "The workflow opens, inspects, captures, validates, or writes durable QA evidence."
+  },
+  {
+    "skill": "code-review-specialists",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["code-review-specialists", "code review specialists", "specialist review"],
+    "reason": "Specialist review workflows create retained review findings for broad or risky diffs.",
+    "record_when": "The workflow runs specialist review passes, writes a report, or gates a PR/release decision."
+  },
+  {
+    "skill": "create-github-pr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-github-pr", "create github pr", "open github pr"],
+    "reason": "GitHub PR creation is provider-side delivery state.",
+    "record_when": "The workflow creates or materially prepares a GitHub pull request."
+  },
+  {
+    "skill": "deliver-github-pr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["deliver-github-pr", "deliver github pr"],
+    "reason": "GitHub PR delivery spans validation, checks, provider state, and merge handling.",
+    "record_when": "The workflow creates, updates, watches, readies, merges, or closes a GitHub pull request."
+  },
+  {
+    "skill": "close-github-pr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["close-github-pr", "close github pr", "merge github pr"],
+    "reason": "GitHub PR close/merge changes provider-side delivery state.",
+    "record_when": "The workflow marks ready, merges, closes, or cleans up a GitHub pull request."
+  },
+  {
+    "skill": "create-gitlab-mr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-gitlab-mr", "create gitlab mr", "open gitlab mr"],
+    "reason": "GitLab MR creation is provider-side delivery state.",
+    "record_when": "The workflow creates or materially prepares a GitLab merge request."
+  },
+  {
+    "skill": "deliver-gitlab-mr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["deliver-gitlab-mr", "deliver gitlab mr"],
+    "reason": "GitLab MR delivery spans validation, pipelines, provider state, and merge handling.",
+    "record_when": "The workflow creates, updates, watches, readies, merges, or closes a GitLab merge request."
+  },
+  {
+    "skill": "close-gitlab-mr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["close-gitlab-mr", "close gitlab mr", "merge gitlab mr"],
+    "reason": "GitLab MR close/merge changes provider-side delivery state.",
+    "record_when": "The workflow marks ready, merges, closes, or cleans up a GitLab merge request."
+  },
+  {
+    "skill": "create-dispatch-lane-pr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-dispatch-lane-pr", "create dispatch lane pr", "dispatch lane pr"],
+    "reason": "Dispatch lane PR creation links plan execution state to provider delivery state.",
+    "record_when": "The workflow creates or materially prepares an assigned dispatch lane pull request."
+  },
+  {
+    "skill": "gh-fix-ci",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["gh-fix-ci", "fix ci", "fix github actions", "github actions failure"],
+    "reason": "Automated CI repair can modify code, push commits, and iterate on remote checks.",
+    "record_when": "The workflow inspects or fixes failing GitHub Actions checks."
+  },
+  {
+    "skill": "release-workflow",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["release-workflow", "release workflow", "cut release", "publish release"],
+    "reason": "Release workflows change public version, tag, changelog, and distribution state.",
+    "record_when": "The workflow prepares, validates, publishes, or repairs a release."
+  },
+  {
+    "skill": "find-and-fix-bugs",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["find-and-fix-bugs", "find and fix bugs"],
+    "reason": "Autonomous bug-fixing can scan, edit, validate, commit, and open PRs.",
+    "record_when": "The workflow scans for bugs, applies fixes, validates, or opens a bug PR."
+  },
+  {
+    "skill": "fix-bug-pr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["fix-bug-pr", "fix bug pr"],
+    "reason": "Bug PR repair changes existing provider-visible remediation state.",
+    "record_when": "The workflow fixes, updates, comments on, or resolves an existing bug PR."
+  },
+  {
+    "skill": "semgrep-find-and-fix",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["semgrep-find-and-fix", "semgrep find and fix"],
+    "reason": "Security automation can scan, triage, edit, and open report or fix PRs.",
+    "record_when": "The workflow runs Semgrep triage, fixes findings, or opens a security/report PR."
+  },
+  {
+    "skill": "issue-follow-up",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["issue-follow-up", "issue follow-up", "issue follow up"],
+    "reason": "Issue follow-up turns discovered work or blockers into durable provider state.",
+    "record_when": "The workflow opens, updates, or continues a GitHub issue for durable follow-up."
+  },
+  {
+    "skill": "dispatch-pr-review",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["dispatch-pr-review", "dispatch pr review"],
+    "reason": "Dispatch PR review ties provider comments, findings, issue state, and merge decisions together.",
+    "record_when": "The workflow reviews a PR through issue-linked evidence, comments, or merge decisions."
+  },
+  {
+    "skill": "dispatch-issue-closeout",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["dispatch-issue-closeout", "dispatch issue closeout"],
+    "reason": "Dispatch issue closeout reviews subagent lanes, merges PRs, and closes plan-issue runtime work.",
+    "record_when": "The workflow reviews, merges, or closes existing issue-backed dispatch work."
+  },
+  {
+    "skill": "dispatch-subagent-pr",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["dispatch-subagent-pr", "dispatch subagent pr"],
+    "reason": "Dispatch subagent PR work owns an implementation lane and provider PR handoff.",
+    "record_when": "The workflow implements an assigned lane, creates a draft PR, or responds to review."
+  },
+  {
+    "skill": "deliver-dispatch-plan",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["deliver-dispatch-plan", "deliver dispatch plan"],
+    "reason": "Dispatch plan delivery coordinates sprint execution, subagent PRs, and acceptance gates.",
+    "record_when": "The workflow dispatches, reviews, merges, or advances plan-driven issue sprints."
+  },
+  {
+    "skill": "create-plan",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-plan", "create plan"],
+    "reason": "Plan creation writes durable implementation artifacts that guide later execution.",
+    "record_when": "The workflow creates or updates a durable docs/plans implementation bundle."
+  },
+  {
+    "skill": "create-dispatch-plan",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-dispatch-plan", "create dispatch plan", "dispatch plan"],
+    "reason": "Dispatch plans add sprint, PR lane, and subagent execution metadata.",
+    "record_when": "The workflow creates or updates a dispatch-ready execution-modeling plan."
+  },
+  {
+    "skill": "execute-from-plan",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["execute-from-plan", "execute from plan"],
+    "reason": "Plan execution performs implementation work against a durable execution-state ledger.",
+    "record_when": "The workflow resumes, edits, validates, or updates execution state from a plan."
+  },
+  {
+    "skill": "execute-plan-parallel",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["execute-plan-parallel", "execute plan parallel"],
+    "reason": "Parallel plan execution dispatches subagents, integrates changes, and validates results.",
+    "record_when": "The workflow dispatches, integrates, validates, or updates state for plan tasks."
+  },
+  {
+    "skill": "docs-plan-cleanup",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["docs-plan-cleanup", "docs plan cleanup"],
+    "reason": "Plan cleanup removes or reconciles durable coordination artifacts.",
+    "record_when": "The workflow audits, edits, removes, or reconciles docs/plans artifacts."
+  },
+  {
+    "skill": "durable-artifact-cleanup",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["durable-artifact-cleanup", "durable artifact cleanup"],
+    "reason": "Durable artifact cleanup removes obsolete implementation artifacts after execution.",
+    "record_when": "The workflow audits, removes, rehomes, or reconciles durable implementation artifacts."
+  },
+  {
+    "skill": "create-skill",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-skill"],
+    "reason": "Skill lifecycle changes affect future agent behavior and should be traceable when invoked.",
+    "record_when": "The workflow scaffolds, edits, validates, or commits a new tracked skill."
+  },
+  {
+    "skill": "create-project-skill",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-project-skill"],
+    "reason": "Project-local skill lifecycle changes affect future project agent behavior.",
+    "record_when": "The workflow scaffolds, edits, validates, or commits a project-local skill."
+  },
+  {
+    "skill": "remove-skill",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["remove-skill"],
+    "reason": "Skill removal is a breaking lifecycle change and should have retained context.",
+    "record_when": "The workflow removes a skill directory or purges repo references."
+  }
+]
