@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: ready-for-sprint-8
-- Target scope: Sprint 1 through Sprint 7 complete; Sprint 8 not started
-- Execution window: Sprint 7 dispatch domain migration closeout / pre-Sprint 8 checkpoint
+- Status: complete
+- Target scope: Sprint 1 through Sprint 9
+- Execution window: Sprint 8 overlay gates and Sprint 9 legacy archive/cutover
 - Staged execution confirmation: not applicable
-- Current task: Pre-Sprint 8 checkpoint complete
-- Next task: Stop before Sprint 8 overlay gates until the owner starts it
-- Last updated: 2026-05-22 22:07 CST
-- Branch/commit/PR: main; merge commit 47ab356327a70e3d1ef1ef1aab4e223c3fa1631f; PR #39 merged
+- Current task: Plan 05 implementation complete; issue closeout pending
+- Next task: Run tracking issue closeout for issue #26
+- Last updated: 2026-05-22 23:08 CST
+- Branch/commit/PR: main; merge commit `b402fc2660831940f8f695e7f4d549e72fb520e8`; PR #40 merged
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -54,11 +54,11 @@ result must be recorded before migration proceeds past the affected surface.
 | Task 7.1 | done | Migrate issue lifecycle dispatch sources | `core/skills/dispatch/{plan-tracking-issue,issue-lifecycle,tracking-issue-closeout}/SKILL.md.tera` | Bodies invoke released `plan-tooling`, `plan-issue`, and `plan-issue-local` surfaces only. |
 | Task 7.2 | done | Migrate execution and dispatch orchestration sources | `core/skills/dispatch/{execute-from-tracking-issue,deliver-tracking-issue,dispatch-pr-review,dispatch-subagent-pr}/SKILL.md.tera` | Bodies invoke released `forge-cli`, `plan-issue`, and `review-evidence` surfaces only. |
 | Task 7.3 | done | Wire dispatch manifests, adapters, and golden snapshots | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `dispatch` probes | Dispatch plugin integration rendered for both products; deterministic dispatch smoke passed. |
-| Task 8.1 | pending | Audit private overlay effective config | n/a | `.private` values remain untracked |
-| Task 8.2 | pending | Verify project-local overlay smoke gate | n/a | Adds stable fixture only |
-| Task 9.1 | pending | Prepare legacy repository archive markers | n/a | Root `MOVED.md` in legacy repos |
-| Task 9.2 | pending | Archive legacy repositories on GitHub | n/a | Archive, do not delete |
-| Task 9.3 | pending | Remove local legacy pointers and migrate Claude state | n/a | Recommended cutover 2026-06-30 |
+| Task 8.1 | done | Audit private overlay effective config | `agent-runtime install --product claude --dry-run`; `agent-runtime install --product codex --dry-run`; `agent-runtime audit-drift` pass | No `.private` overlay files present; dry-run install resolved 39 skills / 49 actions per product without mutating real homes |
+| Task 8.2 | done | Verify project-local overlay smoke gate | `bash tests/projects/project-local-smoke/run.sh`; `agent-runtime doctor --check-project` through fixture; `bash scripts/ci/all.sh` pass | Added six project-local shim sources and fixture scripts for `bench`, `bootstrap`, `demo`, `deploy`, `pre-pr`, and `release` |
+| Task 9.1 | done | Prepare legacy repository archive markers | `graysurf/agent-kit` `11559d656ab64b409d33f6321bc9b65a42b59169`; `graysurf/claude-kit` `194a1ec239b67eb3fa4b47a7baea13e2ab561965` | Root `MOVED.md` committed and pushed in both legacy repos |
+| Task 9.2 | done | Archive legacy repositories on GitHub | `gh api -X PATCH repos/graysurf/{agent-kit,claude-kit} -F archived=true`; `gh repo view ... isArchived=true` | Both repos archived, not deleted |
+| Task 9.3 | done | Retire canonical local legacy pointers and migrate Claude state | `$HOME/.codex/AGENTS.md -> $HOME/Project/graysurf/agent-runtime-kit/CODEX_AGENTS.md`; zsh env and Codex hooks no longer reference `.agents`; `$HOME/.agents -> $HOME/.config/agent-kit` retained only as a compatibility alias; Claude state migrated to `$HOME/.local/state/agent-runtime-kit/claude` | Added runtime-kit-owned `CODEX_AGENTS.md` so the home prompt remains distinct from project-local `AGENTS.md`, while preserving Codex Desktop access to the original agent-kit skills during cutover |
 
 ## Validation
 
@@ -116,31 +116,68 @@ result must be recorded before migration proceeds past the affected surface.
 | `/Users/terry/.config/agent-kit/skills/workflows/code-review/code-review-specialists/scripts/review_specialists.py scope --base origin/main --testing --maintainability` | pass | Specialist review scope selected testing and maintainability; red-team review applied due broad diff; no displayed findings remained. | n/a |
 | `gh pr comment 39 --body-file <delivery-review-outcome>` | pass | Posted delivery review outcome comment with merge decision and no blocking findings. | https://github.com/graysurf/agent-runtime-kit/pull/39#issuecomment-4519412557 |
 | `/Users/terry/.config/agent-kit/skills/workflows/pr/github/close-github-pr/scripts/close-github-pr.sh --kind feature --pr 39` | pass | PR #39 marked ready, merged, remote branch deleted, local branch cleaned up, and `main` fast-forwarded to merge commit `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`. | https://github.com/graysurf/agent-runtime-kit/pull/39 |
-| `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
-| `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
-| `bash tests/projects/project-local-smoke/run.sh` | pending | Sprint 8 project-local overlay smoke | n/a |
-| `agent-runtime doctor --check-project tests/projects/project-local-smoke` | pending | Sprint 8 project-local doctor check | n/a |
-| `gh repo view graysurf/agent-kit --json isArchived,name` | pending | Sprint 9 archive verification | n/a |
-| `gh repo view graysurf/claude-kit --json isArchived,name` | pending | Sprint 9 archive verification | n/a |
-| `test ! -L "$HOME/.agents"` | pending | Sprint 9 symlink removal check | n/a |
-| `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi` | pending | Sprint 9 conditional state-home check | n/a |
+| `bash -n tests/projects/project-local-smoke/run.sh tests/projects/project-local-smoke/.agents/scripts/*.sh tests/runtime-smoke/cases/meta/run.sh scripts/ci/all.sh` | pass | Sprint 8 shell syntax passed. | n/a |
+| `shellcheck tests/projects/project-local-smoke/run.sh tests/projects/project-local-smoke/.agents/scripts/*.sh tests/runtime-smoke/cases/meta/run.sh scripts/ci/all.sh` | pass | Sprint 8 shell lint passed. | n/a |
+| `shfmt -i 2 -ci -d tests/projects/project-local-smoke/run.sh tests/projects/project-local-smoke/.agents/scripts/*.sh tests/runtime-smoke/cases/meta/run.sh scripts/ci/all.sh` | pass | Sprint 8 shell format diff check passed. | n/a |
+| `jq empty targets/codex/plugins/meta/.codex-plugin/plugin.json targets/claude/plugins/meta/.claude-plugin/plugin.json tests/runtime-smoke/expected/install-summary.json tests/runtime-smoke/product/expected/product-summary.json` | pass | Sprint 8 JSON files parse cleanly. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode matrix` | pass | Acceptance matrix covers 39 unique skill ids across 49 cases after project-local shim additions. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta` | pass | Meta deterministic smoke passed 12 cases including six project-local shims. | n/a |
+| `agent-runtime render --product codex --update-golden` | pass | Codex golden snapshots refreshed; rendered 39 skills. | `tests/golden/codex/` |
+| `agent-runtime render --product claude --update-golden` | pass | Claude golden snapshots refreshed; rendered 39 skills. | `tests/golden/claude/` |
+| `agent-runtime install --product claude --live-home <temp> --state-home <temp> --dry-run` | pass | Sprint 8 dry-run install resolved 49 actions for Claude without mutating real runtime homes. | `/tmp/plan05-s8-claude-install-dry-run.log` |
+| `agent-runtime install --product codex --live-home <temp> --state-home <temp> --dry-run` | pass | Sprint 8 dry-run install resolved 49 actions for Codex without mutating real runtime homes. | `/tmp/plan05-s8-codex-install-dry-run.log` |
+| `bash tests/projects/project-local-smoke/run.sh` | pass | Project-local fixture executed all six scripts and verified wired/missing-script doctor reports. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode install --format json > /tmp/runtime-smoke-install-summary-s8.json && diff -u tests/runtime-smoke/expected/install-summary.json /tmp/runtime-smoke-install-summary-s8.json` | pass | Install expected output updated to 39 skills. | `/tmp/runtime-smoke-install-summary-s8.json` |
+| `bash tests/runtime-smoke/run.sh --mode product --format json > /tmp/runtime-smoke-product-summary-s8.json && diff -u tests/runtime-smoke/product/expected/product-summary.json /tmp/runtime-smoke-product-summary-s8.json` | pass | Product expected output updated to 39 installed skills; prompt cases remain quarantined skips. | `/tmp/runtime-smoke-product-summary-s8.json` |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Runtime deterministic smoke passed 39 migrated skill ids. | n/a |
+| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-8 passed, including project-local overlay smoke. | n/a |
+| `git -C "$HOME/.config/agent-kit" log -1 --format=%H -- MOVED.md` | pass | Legacy `agent-kit` archive marker commit pushed after rebase. | `11559d656ab64b409d33f6321bc9b65a42b59169` |
+| `git -C "$HOME/.config/claude" log -1 --format=%H -- MOVED.md` | pass | Legacy `claude-kit` archive marker commit pushed. | `194a1ec239b67eb3fa4b47a7baea13e2ab561965` |
+| `gh api repos/graysurf/agent-kit/contents/MOVED.md --jq '.download_url' \| xargs curl -fsSL \| rg 'graysurf/agent-runtime-kit'` | pass | Remote `agent-kit` marker points to `agent-runtime-kit`. | n/a |
+| `gh api repos/graysurf/claude-kit/contents/MOVED.md --jq '.download_url' \| xargs curl -fsSL \| rg 'graysurf/agent-runtime-kit'` | pass | Remote `claude-kit` marker points to `agent-runtime-kit`. | n/a |
+| `gh api -X PATCH repos/graysurf/agent-kit -F archived=true` | pass | GitHub returned `archived: true` for `graysurf/agent-kit`. | https://github.com/graysurf/agent-kit |
+| `gh api -X PATCH repos/graysurf/claude-kit -F archived=true` | pass | GitHub returned `archived: true` for `graysurf/claude-kit`. | https://github.com/graysurf/claude-kit |
+| `gh repo view graysurf/agent-kit --json isArchived,name,url` | pass | Verified `graysurf/agent-kit` remains present and archived. | https://github.com/graysurf/agent-kit |
+| `gh repo view graysurf/claude-kit --json isArchived,name,url` | pass | Verified `graysurf/claude-kit` remains present and archived. | https://github.com/graysurf/claude-kit |
+| `readlink "$HOME/.codex/AGENTS.md" \| rg '/agent-runtime-kit/CODEX_AGENTS.md$'` | pass | Codex home prompt now points directly at the runtime-kit-owned home policy source. | `$HOME/Project/graysurf/agent-runtime-kit/CODEX_AGENTS.md` |
+| `test -f "$(readlink "$HOME/.codex/AGENTS.md")"` | pass | Symlink target exists. | n/a |
+| `zsh -lc 'printf "AGENT_HOME=%s\nAGENT_DOCS_HOME=%s\nPLAN_ISSUE_HOME=%s\n" "$AGENT_HOME" "$AGENT_DOCS_HOME" "$PLAN_ISSUE_HOME"'` | pass | Zsh startup now exports all three values to `$HOME/.config/agent-kit`, not `$HOME/.agents`. | n/a |
+| `env -u ZDOTDIR zsh -lc 'printf "AGENT_HOME=%s\nAGENT_DOCS_HOME=%s\nPLAN_ISSUE_HOME=%s\n" "$AGENT_HOME" "$AGENT_DOCS_HOME" "$PLAN_ISSUE_HOME"'` | pass | Cold zsh startup without inherited `ZDOTDIR` also exports all three values to `$HOME/.config/agent-kit`. | n/a |
+| `! rg -n '/Users/[^/]+/\.agents\|\$HOME/\.agents' "$HOME/.zshenv" "$HOME/.config/zsh/scripts/_internal/paths.exports.zsh" "$HOME/.codex/config.toml"` | pass | No stale `.agents` path remains in the shell env setup or Codex managed hook block. | n/a |
+| `rg -o 'command = "[^"]+"' "$HOME/.codex/config.toml" \| sed 's/^command = "//; s/"$//' \| while read -r hook; do case "$hook" in "$HOME/.config/agent-kit/hooks/codex/"*) test -f "$hook";; esac; done` | pass | Codex managed hook command targets all exist after replacing `.agents` with `$HOME/.config/agent-kit`. | n/a |
+| `if [ -L "$HOME/.agents" ]; then readlink "$HOME/.agents" \| rg '/\.config/agent-kit$'; else test ! -e "$HOME/.agents"; fi` | pass | `$HOME/.agents` is retained only as a compatibility alias to the active agent-kit docs/skills checkout. | `$HOME/.agents -> $HOME/.config/agent-kit` |
+| `agent-docs --docs-home "$HOME/.agents" resolve --context startup --strict --format checklist` | pass | Compatibility alias still resolves the startup docs needed by older Codex sessions. | n/a |
+| `find "$HOME/.agents/skills" -maxdepth 4 -name SKILL.md -print \| wc -l` | pass | Original agent-kit skills remain reachable through the compatibility alias. | `61` |
+| `launchctl getenv AGENT_HOME; launchctl getenv AGENT_DOCS_HOME; launchctl getenv PLAN_ISSUE_HOME; launchctl getenv CODEX_HOME` | pass | macOS app launch environment now points future Codex app launches at the real docs/skills checkout and Codex home. | `$HOME/.config/agent-kit`; `$HOME/.codex` |
+| `rsync -a "$state_root/claude-kit/" "$state_root/agent-runtime-kit/claude/" && diff -qr "$state_root/claude-kit" "$state_root/agent-runtime-kit/claude" && rm -rf "$state_root/claude-kit"` | pass | Migrated 5.5M of Claude state to the runtime-kit namespace and verified it before removing the old tree. | `$HOME/.local/state/agent-runtime-kit/claude` |
+| `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi` | pass | Post-migration state invariant passed. | n/a |
+| `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context startup --strict --format checklist` | pass | Home-scope startup preflight still resolves after `.agents` removal. | n/a |
+| `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev --strict --format checklist` | pass | Project-dev preflight still resolves after `.agents` removal. | n/a |
+| `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context task-tools --strict --format checklist` | pass | Task-tools preflight still resolves for issue/PR operations after `.agents` removal. | n/a |
+| `gh pr checks 40 --watch --interval 10` | pass | PR #40 remote `scripts/ci/all.sh` check passed. | https://github.com/graysurf/agent-runtime-kit/actions/runs/26295494399/job/77406808933 |
+| `gh pr comment 40 --body-file <delivery-review-outcome>` | pass | Posted delivery review outcome comment with compatibility-alias repair and no remaining concrete findings. | https://github.com/graysurf/agent-runtime-kit/pull/40#issuecomment-4519871974 |
+| `/Users/terry/.config/agent-kit/skills/workflows/pr/github/close-github-pr/scripts/close-github-pr.sh --kind feature --pr 40` | pass | PR #40 was marked ready, merged, branch-cleaned, and local `main` updated to merge commit `b402fc2660831940f8f695e7f4d549e72fb520e8`. | https://github.com/graysurf/agent-runtime-kit/pull/40 |
 
 ## Blockers
 
 - Any missing nils-cli binary or required flag blocks the affected skill body
   and must be logged in `docs/source/extraction-backlog.md`.
-- Plan 06 deterministic acceptance is satisfied through Sprint 7 by the current
+- Plan 06 deterministic acceptance is satisfied through Sprint 8 by the current
   `matrix`, `deterministic`, and `scripts/ci/all.sh` validation; rerun the
   same gate before future sprint merges.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
 - Sprint 7 dispatch migration is merged in PR #39 at
   `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`.
-- Sprint 8 overlay gates have not been started.
-- Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
-  `graysurf/claude-kit`.
-- Local cutover should use the recommended 2026-06-30 date unless the execution
-  owner records a different decision.
+- Sprint 8 overlay gates are complete and in branch
+  `feat/plan-05-overlay-cutover`, merged through PR #40.
+- Sprint 9.1 and 9.2 are complete: both legacy repositories have root
+  `MOVED.md` commits and GitHub `archived=true`.
+- Sprint 9.3 is complete: Codex home policy now links directly to
+  `agent-runtime-kit/CODEX_AGENTS.md`, zsh/Codex hook config no longer references
+  `.agents`, `.agents` is retained only as a compatibility alias, and Claude
+  state is under `$HOME/.local/state/agent-runtime-kit/claude`.
+- No active Plan 05 blockers remain.
 
 ## Session Log
 
@@ -157,3 +194,27 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Completed Sprint 7 dispatch source migration, manifests, product plugin metadata, link maps, golden snapshots, sandbox pins, and deterministic dispatch runtime smoke; local CI passed with `total=33 pass=33`.
 - 2026-05-22: Fixed a small Sprint 7 usage bug before commit: removed unsupported `forge-cli pr create --draft` guidance from `dispatch-subagent-pr` because draft PRs are the default in released `forge-cli 0.17.1`.
 - 2026-05-22: Merged Plan 05 Sprint 7 PR #39 at `47ab356327a70e3d1ef1ef1aab4e223c3fa1631f`; issue #26 dashboard, state, validation, and session comments should now mark Sprint 7 complete and Sprint 8 intentionally not started.
+- 2026-05-22: Completed Sprint 8 overlay gates in `feat/plan-05-overlay-cutover`: added project-local shim sources for `bench`, `bootstrap`, `demo`, `deploy`, `pre-pr`, and `release`; added `tests/projects/project-local-smoke/`; updated runtime smoke expected counts to 39 skills; local CI positions 1-8 passed.
+- 2026-05-22: Completed Sprint 9.1 and 9.2 external archive work: pushed `MOVED.md` to `graysurf/agent-kit` at `11559d656ab64b409d33f6321bc9b65a42b59169`, pushed `MOVED.md` to `graysurf/claude-kit` at `194a1ec239b67eb3fa4b47a7baea13e2ab561965`, and set both GitHub repositories to `archived=true`.
+- 2026-05-22: Blocked Sprint 9.3 local cutover before removing `$HOME/.agents`: live Codex startup still resolves `$HOME/.codex/AGENTS.md -> $HOME/.agents/CODEX_AGENTS.md`, and this repo does not yet render or install a replacement AGENTS surface.
+- 2026-05-22: Resolved Sprint 9.3 after user confirmed the original
+  `CODEX_AGENTS.md` naming design: added runtime-kit-owned `CODEX_AGENTS.md`,
+  moved `$HOME/.codex/AGENTS.md` to point directly at it, migrated
+  `$HOME/.local/state/claude-kit` to
+  `$HOME/.local/state/agent-runtime-kit/claude`, and re-ran `agent-docs`
+  startup/project-dev/task-tools preflights successfully.
+- 2026-05-22: Finished local shell and Codex hook cutover: updated zsh env
+  exports so new shells set `AGENT_HOME`, `AGENT_DOCS_HOME`, and
+  `PLAN_ISSUE_HOME` to `$HOME/.config/agent-kit`; updated
+  `$HOME/.codex/config.toml` hook commands away from `.agents`; verified no
+  stale `.agents` references remain in those machine-local startup/config files.
+- 2026-05-22: Repaired Codex Desktop skill discovery during cutover after a new
+  Codex session did not see the original `agent-kit` skills: restored
+  `$HOME/.agents -> $HOME/.config/agent-kit` as a compatibility alias, set
+  `launchctl` app environment for `AGENT_HOME`, `AGENT_DOCS_HOME`,
+  `PLAN_ISSUE_HOME`, and `CODEX_HOME`, verified `agent-docs --docs-home
+  "$HOME/.agents"` startup preflight, and verified 61 original `agent-kit`
+  `SKILL.md` files are reachable through the alias.
+- 2026-05-22: Merged Plan 05 Sprint 8/9 PR #40 at
+  `b402fc2660831940f8f695e7f4d549e72fb520e8`; issue #26 dashboard, state,
+  validation, and closeout comments should now mark Plan 05 complete.
