@@ -1297,6 +1297,30 @@ without `--force`.
 Exit code: `0` clean, `1` warnings only, `2` blocking issues. Same code shape
 as `audit-drift` so CI gates can chain them.
 
+### Runtime Skill Acceptance
+
+Plan 06 adds `tests/runtime-smoke/` as the repo-local acceptance harness for
+runtime skill surfaces. The default gate stays deterministic, offline, and
+credential-free: `scripts/ci/all.sh` runs `bash tests/runtime-smoke/run.sh
+--mode deterministic` after render, golden, drift, and sandbox install checks.
+
+Product-in-the-loop smoke is separate from default CI. The product probe mode
+uses temporary homes only and is limited to isolated invocation contracts until
+prompt execution can be supplied with isolated provider/auth state:
+
+- Codex probe contract: `CODEX_HOME=<temp> codex exec --ignore-user-config
+  --ephemeral --skip-git-repo-check ...`. This proves an isolated CLI prompt
+  path. If no isolated local provider is running, the prompt path is
+  manual-only rather than a CI blocker.
+- Claude probe contract: `CLAUDE_CONFIG_DIR=<temp> claude -p --bare
+  --no-session-persistence ...`. This proves an isolated CLI prompt path. If no
+  isolated API key or auth helper is supplied, the prompt path is manual-only
+  rather than a CI blocker.
+
+No runtime smoke mode may read or mutate real `$HOME/.codex`, `$HOME/.claude`,
+auth, sessions, history, logs, caches, or product state. Product smoke must
+remain quarantined until the acceptance case can run without those dependencies.
+
 The installer must also render a product-specific root map before it renders
 skills, hooks, or docs. A minimal local machine map could look like:
 
