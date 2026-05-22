@@ -3,13 +3,13 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: in-progress
-- Target scope: Sprint 3 Task 3.2
-- Execution window: Sprint 3 Task 3.2 representative product smoke cases
-- Current task: Task 3.2 validation checkpoint
-- Next task: Sprint 3 Task 3.3 update architecture and Plan 05 unblock rule
-- Last updated: 2026-05-22 16:24 CST
-- Branch/commit/PR: feat/runtime-smoke-product-cases; pending
+- Status: complete
+- Target scope: Sprint 3 Task 3.3
+- Execution window: Sprint 3 Task 3.3 architecture and Plan 05 unblock rule
+- Current task: Task 3.3 complete pending PR merge
+- Next task: Plan 06 closeout and return to Plan 05 Task 5.1 after merge
+- Last updated: 2026-05-22 16:37 CST
+- Branch/commit/PR: docs/plan-06-acceptance-unblock; pending
 - Source document: docs/plans/06-runtime-skill-acceptance-harness/06-runtime-skill-acceptance-harness-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/28
@@ -45,8 +45,8 @@
 | 2.3 | done | Add evidence probes | PR #32 merged `b4f69a8` | Added command-level probes for `web-evidence`, `test-first-evidence`, `review-evidence`, `skill-usage`, `docs-impact`, and `model-cross-check`. |
 | 2.4 | done | Add reporting regression probes and CI wiring | PR #33 merged `2ebba25` | Added reporting regression probes for `daily-brief`, `project-retro`, and `topic-radar`; wired deterministic smoke into CI. |
 | 3.1 | done | Probe product CLI isolation contracts | PR #34 merged `751ae8e` | Codex and Claude isolated invocation contracts are supported; prompt smoke remains manual-only when isolated provider/auth is absent. |
-| 3.2 | done | Add representative product smoke cases | `bash tests/runtime-smoke/run.sh --mode product --product claude` pass; `bash tests/runtime-smoke/run.sh --mode product --product codex` pass | Added representative prompt cases for `agent-docs`, `agent-out`, `canary-check`, `skill-usage`, and `docs-impact`; default prompt execution is skipped unless isolated provider/auth is explicitly enabled. |
-| 3.3 | pending | Update architecture and Plan 05 unblock rule | Not started | Future sprint. |
+| 3.2 | done | Add representative product smoke cases | PR #35 merged `c17ca44` | Added representative prompt cases for `agent-docs`, `agent-out`, `canary-check`, `skill-usage`, and `docs-impact`; default prompt execution is skipped unless isolated provider/auth is explicitly enabled. |
+| 3.3 | done | Update architecture and Plan 05 unblock rule | `bash scripts/ci/all.sh` pass | Architecture now reflects deterministic CI strength and quarantined/manual product prompt cases; Plan 05 records the deterministic continuation gate for Sprint 5+. |
 
 ## Session Log
 
@@ -68,11 +68,16 @@
 - 2026-05-22 16:08 CST: Fixed runtime-smoke nonzero-mode dispatch so failing product/deterministic modes still emit the stable result summary before exiting.
 - 2026-05-22 16:15 CST: Merged Task 3.1 PR #34 at `751ae8e`; issue #28 dashboard repaired with current state.
 - 2026-05-22 16:24 CST: Implemented Task 3.2 product prompt cases and default manual-only skip summary.
+- 2026-05-22 16:32 CST: Merged Task 3.2 PR #35 at `c17ca44` and started Sprint 3 Task 3.3 from updated `main`.
+- 2026-05-22 16:34 CST: Updated the architecture source and Plan 05 execution state with the Plan 06 deterministic acceptance dependency.
+- 2026-05-22 16:37 CST: Validated Task 3.3 with Plan 05/06 plan validation, deterministic runtime smoke, quarantined product smoke, and full `bash scripts/ci/all.sh`.
 
 ## Validation
 
 | Command | Status | Summary | Artifact |
 | --- | --- | --- | --- |
+| `plan-tooling validate --file docs/plans/05-domain-migration/05-domain-migration-plan.md --format text --explain` | pass | Plan 05 bundle validation passed after adding the Plan 06 continuation dependency to its execution state. | n/a |
+| `plan-tooling validate --file docs/plans/06-runtime-skill-acceptance-harness/06-runtime-skill-acceptance-harness-plan.md --format text --explain` | pass | Plan 06 bundle validation passed after Task 3.3 state updates. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode matrix` | pass | Acceptance matrix has 19 unique skill ids matching Codex and Claude sandbox pins. | n/a |
 | `bash tests/runtime-smoke/run.sh --mode install` | pass | Codex and Claude temp homes installed 19 skills each; doctor summaries reported `block=0`. | temp run root cleaned |
 | `bash tests/runtime-smoke/run.sh --mode install --format json` | pass | Machine-readable summary emitted 2 pass, 0 fail, 0 skip, 0 blocked. | n/a |
@@ -123,3 +128,7 @@
   installs temp product homes and records representative prompt cases as
   `skip-host-capability` unless `RUNTIME_SMOKE_PRODUCT_EXECUTE=1` is set with
   isolated provider/auth state.
+- Task 3.3 records the Plan 05 Sprint 5+ continuation rule: deterministic
+  runtime smoke must stay green for migrated Sprint 1-4 skills, while product
+  smoke remains manual/quarantined unless isolated provider/auth execution is
+  supplied.

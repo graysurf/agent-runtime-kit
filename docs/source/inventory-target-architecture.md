@@ -1305,8 +1305,12 @@ credential-free: `scripts/ci/all.sh` runs `bash tests/runtime-smoke/run.sh
 --mode deterministic` after render, golden, drift, and sandbox install checks.
 
 Product-in-the-loop smoke is separate from default CI. The product probe mode
-uses temporary homes only and is limited to isolated invocation contracts until
-prompt execution can be supplied with isolated provider/auth state:
+uses temporary homes only. Default product mode first proves isolated CLI
+invocation, then installs the rendered runtime into temp product homes and
+records representative prompt cases for `agent-docs`, `agent-out`,
+`canary-check`, `skill-usage`, and `docs-impact`. Prompt execution stays
+quarantined and is recorded as `skip-host-capability` unless the operator
+explicitly enables it with isolated provider/auth state:
 
 - Codex probe contract: `CODEX_HOME=<temp> codex exec --ignore-user-config
   --ephemeral --skip-git-repo-check ...`. This proves an isolated CLI prompt
@@ -1319,7 +1323,9 @@ prompt execution can be supplied with isolated provider/auth state:
 
 No runtime smoke mode may read or mutate real `$HOME/.codex`, `$HOME/.claude`,
 auth, sessions, history, logs, caches, or product state. Product smoke must
-remain quarantined until the acceptance case can run without those dependencies.
+remain outside required CI until prompt execution can run without those
+dependencies. The acceptance matrix may contain both deterministic and product
+prompt cases, but deterministic smoke is the required continuation gate.
 
 The installer must also render a product-specific root map before it renders
 skills, hooks, or docs. A minimal local machine map could look like:
