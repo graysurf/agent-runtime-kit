@@ -349,3 +349,31 @@ skills:
     required_clis:
       forge-cli: ">=0.16.0"
     state_out_mode: runtime
+
+  - id: pr.deliver-github-pr
+    domain: pr
+    source: core/skills/pr/deliver-github-pr
+    products:
+      codex:
+        name: deliver-github-pr
+        render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
+      claude:
+        name: deliver-github-pr
+        render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: pr.deliver-gitlab-mr
+    domain: pr
+    source: core/skills/pr/deliver-gitlab-mr
+    products:
+      codex:
+        name: deliver-gitlab-mr
+        render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
+      claude:
+        name: deliver-gitlab-mr
+        render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime

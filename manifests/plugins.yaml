@@ -77,6 +77,8 @@ plugins:
       - pr.create-dispatch-lane-pr
       - pr.close-github-pr
       - pr.close-gitlab-mr
+      - pr.deliver-github-pr
+      - pr.deliver-gitlab-mr
     product_manifests:
       codex: targets/codex/plugins/pr/.codex-plugin/plugin.json
       claude: targets/claude/plugins/pr/.claude-plugin/plugin.json

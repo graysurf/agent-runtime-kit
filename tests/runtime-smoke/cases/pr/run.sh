@@ -207,11 +207,67 @@ run_close_gitlab_probe() {
   grep -q '"provider":"gitlab"' "$out"
 }
 
+run_deliver_github_probe() {
+  local workspace="$PR_WORKSPACE/deliver-github"
+  local body="$PR_ARTIFACTS_DIR/deliver-github-body.md"
+  local out="$PR_ARTIFACTS_DIR/deliver-github.json"
+  require_pr_bin forge-cli || return 1
+  mkdir -p "$workspace"
+  cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$workspace"
+  init_pushed_branch_fixture "$workspace" "feat/runtime-smoke-deliver-github" \
+    "git@github.com:graysurf/agent-runtime-kit.git"
+  write_pr_body "$body"
+  (
+    cd "$workspace"
+    forge-cli --provider github --repo graysurf/agent-runtime-kit \
+      --dry-run --format json \
+      pr deliver \
+      --kind feature \
+      --base main \
+      --title "Runtime smoke GitHub delivery" \
+      --body-file "$body" \
+      --no-merge
+  ) >"$out" 2>&1
+  grep -q '"schema_version":"cli.forge-cli.pr.deliver.v1"' "$out"
+  grep -q '"provider":"github"' "$out"
+  grep -q '"wait_checks"' "$out"
+  grep -q '"gh"' "$out"
+}
+
+run_deliver_gitlab_probe() {
+  local workspace="$PR_WORKSPACE/deliver-gitlab"
+  local body="$PR_ARTIFACTS_DIR/deliver-gitlab-body.md"
+  local out="$PR_ARTIFACTS_DIR/deliver-gitlab.json"
+  require_pr_bin forge-cli || return 1
+  mkdir -p "$workspace"
+  cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$workspace"
+  init_pushed_branch_fixture "$workspace" "feat/runtime-smoke-deliver-gitlab" \
+    "git@gitlab.com:group/project.git"
+  write_pr_body "$body"
+  (
+    cd "$workspace"
+    forge-cli --provider gitlab --repo group/project \
+      --dry-run --format json \
+      pr deliver \
+      --kind feature \
+      --base main \
+      --title "Runtime smoke GitLab delivery" \
+      --body-file "$body" \
+      --no-merge
+  ) >"$out" 2>&1
+  grep -q '"schema_version":"cli.forge-cli.pr.deliver.v1"' "$out"
+  grep -q '"provider":"gitlab"' "$out"
+  grep -q '"wait_checks"' "$out"
+  grep -q '"glab"' "$out"
+}
+
 failures=0
 record_case "pr.create-github-pr" "forge-cli GitHub pr create dry-run passed" run_create_github_probe || failures=1
 record_case "pr.create-gitlab-mr" "forge-cli GitLab pr create dry-run passed" run_create_gitlab_probe || failures=1
 record_case "pr.create-dispatch-lane-pr" "forge-cli dispatch lane pr create dry-run passed" run_create_dispatch_lane_probe || failures=1
 record_case "pr.close-github-pr" "forge-cli GitHub checks, ready, merge, and close dry-runs passed" run_close_github_probe || failures=1
 record_case "pr.close-gitlab-mr" "forge-cli GitLab checks, ready, merge, and close dry-runs passed" run_close_gitlab_probe || failures=1
+record_case "pr.deliver-github-pr" "forge-cli GitHub delivery macro dry-run passed" run_deliver_github_probe || failures=1
+record_case "pr.deliver-gitlab-mr" "forge-cli GitLab delivery macro dry-run passed" run_deliver_gitlab_probe || failures=1
 
 exit "$failures"

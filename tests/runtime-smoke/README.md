@@ -17,7 +17,8 @@ history, logs, caches, or product state.
   doctor`.
 - `deterministic`: runs committed command-level probes for available domains.
   Current coverage includes `meta`, `media`, `browser`, `evidence`, `pr`, and
-  `reporting` domains.
+  `reporting` domains. The `pr` domain includes `forge-cli` dry-run probes for
+  create, close, dispatch-lane create, and delivery macro surfaces.
 - `product`: runs quarantined product CLI isolation probes, installs temporary
   product homes, and records representative prompt cases. Prompt execution is
   skipped by default unless isolated provider/auth execution is explicitly
