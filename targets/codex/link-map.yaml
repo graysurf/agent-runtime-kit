@@ -5,9 +5,11 @@
 #         Sprint 1 Task 1.2 — install pipeline body.
 #
 # Overlay merge for this file is per-entry replace, keyed by `id`. The
-# install plan walks `entries` in order; `recursive: true` expands a
-# directory into one symlink per file at plan time, so each rendered
-# skill file lands as its own surface in the dry-run output.
+# install plan walks `entries` in order. `recursive: true` expands a
+# directory into one symlink per file for plugin/audit trees. The active
+# Codex skill root intentionally uses one non-recursive directory symlink per
+# domain/skill folder because Codex discovers symlinked skill folders, not
+# individual symlinked `SKILL.md` files.
 
 schema_version: 1
 
@@ -23,11 +25,23 @@ entries:
     destination: plugins/reporting/skills
     recursive: true
 
-  - id: reporting.codex-skills-root
+  - id: reporting.daily-brief.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/reporting/skills
-    destination: skills/reporting
-    recursive: true
+    source: build/codex/plugins/reporting/skills/daily-brief
+    destination: skills/reporting/daily-brief
+    recursive: false
+
+  - id: reporting.project-retro.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/reporting/skills/project-retro
+    destination: skills/reporting/project-retro
+    recursive: false
+
+  - id: reporting.topic-radar.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/reporting/skills/topic-radar
+    destination: skills/reporting/topic-radar
+    recursive: false
 
   - id: meta.plugin-manifest
     kind: plugin-manifest-copy
@@ -40,11 +54,77 @@ entries:
     destination: plugins/meta/skills
     recursive: true
 
-  - id: meta.codex-skills-root
+  - id: meta.agent-docs.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/meta/skills
-    destination: skills/meta
-    recursive: true
+    source: build/codex/plugins/meta/skills/agent-docs
+    destination: skills/meta/agent-docs
+    recursive: false
+
+  - id: meta.agent-out.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/agent-out
+    destination: skills/meta/agent-out
+    recursive: false
+
+  - id: meta.bench.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/bench
+    destination: skills/meta/bench
+    recursive: false
+
+  - id: meta.bootstrap.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/bootstrap
+    destination: skills/meta/bootstrap
+    recursive: false
+
+  - id: meta.demo.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/demo
+    destination: skills/meta/demo
+    recursive: false
+
+  - id: meta.deploy.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/deploy
+    destination: skills/meta/deploy
+    recursive: false
+
+  - id: meta.agent-scope-lock.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/agent-scope-lock
+    destination: skills/meta/agent-scope-lock
+    recursive: false
+
+  - id: meta.heuristic-inbox.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/heuristic-inbox
+    destination: skills/meta/heuristic-inbox
+    recursive: false
+
+  - id: meta.pre-pr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/pre-pr
+    destination: skills/meta/pre-pr
+    recursive: false
+
+  - id: meta.release.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/release
+    destination: skills/meta/release
+    recursive: false
+
+  - id: meta.repo-retro.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/repo-retro
+    destination: skills/meta/repo-retro
+    recursive: false
+
+  - id: meta.semantic-commit.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/semantic-commit
+    destination: skills/meta/semantic-commit
+    recursive: false
 
   - id: media.plugin-manifest
     kind: plugin-manifest-copy
@@ -57,11 +137,17 @@ entries:
     destination: plugins/media/skills
     recursive: true
 
-  - id: media.codex-skills-root
+  - id: media.image-processing.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/media/skills
-    destination: skills/media
-    recursive: true
+    source: build/codex/plugins/media/skills/image-processing
+    destination: skills/media/image-processing
+    recursive: false
+
+  - id: media.screen-record.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/media/skills/screen-record
+    destination: skills/media/screen-record
+    recursive: false
 
   - id: browser.plugin-manifest
     kind: plugin-manifest-copy
@@ -74,11 +160,17 @@ entries:
     destination: plugins/browser/skills
     recursive: true
 
-  - id: browser.codex-skills-root
+  - id: browser.browser-session.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/browser/skills
-    destination: skills/browser
-    recursive: true
+    source: build/codex/plugins/browser/skills/browser-session
+    destination: skills/browser/browser-session
+    recursive: false
+
+  - id: browser.canary-check.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/browser/skills/canary-check
+    destination: skills/browser/canary-check
+    recursive: false
 
   - id: conversation.plugin-manifest
     kind: plugin-manifest-copy
@@ -91,11 +183,17 @@ entries:
     destination: plugins/conversation/skills
     recursive: true
 
-  - id: conversation.codex-skills-root
+  - id: conversation.discussion-to-implementation-doc.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/conversation/skills
-    destination: skills/conversation
-    recursive: true
+    source: build/codex/plugins/conversation/skills/discussion-to-implementation-doc
+    destination: skills/conversation/discussion-to-implementation-doc
+    recursive: false
+
+  - id: conversation.handoff-session-prompt.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/handoff-session-prompt
+    destination: skills/conversation/handoff-session-prompt
+    recursive: false
 
   - id: evidence.plugin-manifest
     kind: plugin-manifest-copy
@@ -108,11 +206,41 @@ entries:
     destination: plugins/evidence/skills
     recursive: true
 
-  - id: evidence.codex-skills-root
+  - id: evidence.web-evidence.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/evidence/skills
-    destination: skills/evidence
-    recursive: true
+    source: build/codex/plugins/evidence/skills/web-evidence
+    destination: skills/evidence/web-evidence
+    recursive: false
+
+  - id: evidence.test-first-evidence.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills/test-first-evidence
+    destination: skills/evidence/test-first-evidence
+    recursive: false
+
+  - id: evidence.review-evidence.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills/review-evidence
+    destination: skills/evidence/review-evidence
+    recursive: false
+
+  - id: evidence.skill-usage.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills/skill-usage
+    destination: skills/evidence/skill-usage
+    recursive: false
+
+  - id: evidence.docs-impact.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills/docs-impact
+    destination: skills/evidence/docs-impact
+    recursive: false
+
+  - id: evidence.model-cross-check.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills/model-cross-check
+    destination: skills/evidence/model-cross-check
+    recursive: false
 
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
@@ -125,11 +253,47 @@ entries:
     destination: plugins/pr/skills
     recursive: true
 
-  - id: pr.codex-skills-root
+  - id: pr.create-github-pr.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/pr/skills
-    destination: skills/pr
-    recursive: true
+    source: build/codex/plugins/pr/skills/create-github-pr
+    destination: skills/pr/create-github-pr
+    recursive: false
+
+  - id: pr.create-gitlab-mr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/create-gitlab-mr
+    destination: skills/pr/create-gitlab-mr
+    recursive: false
+
+  - id: pr.create-dispatch-lane-pr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/create-dispatch-lane-pr
+    destination: skills/pr/create-dispatch-lane-pr
+    recursive: false
+
+  - id: pr.close-github-pr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/close-github-pr
+    destination: skills/pr/close-github-pr
+    recursive: false
+
+  - id: pr.close-gitlab-mr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/close-gitlab-mr
+    destination: skills/pr/close-gitlab-mr
+    recursive: false
+
+  - id: pr.deliver-github-pr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/deliver-github-pr
+    destination: skills/pr/deliver-github-pr
+    recursive: false
+
+  - id: pr.deliver-gitlab-mr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/deliver-gitlab-mr
+    destination: skills/pr/deliver-gitlab-mr
+    recursive: false
 
   - id: dispatch.plugin-manifest
     kind: plugin-manifest-copy
@@ -142,11 +306,47 @@ entries:
     destination: plugins/dispatch/skills
     recursive: true
 
-  - id: dispatch.codex-skills-root
+  - id: dispatch.plan-tracking-issue.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills
-    destination: skills/dispatch
-    recursive: true
+    source: build/codex/plugins/dispatch/skills/plan-tracking-issue
+    destination: skills/dispatch/plan-tracking-issue
+    recursive: false
+
+  - id: dispatch.issue-lifecycle.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/issue-lifecycle
+    destination: skills/dispatch/issue-lifecycle
+    recursive: false
+
+  - id: dispatch.tracking-issue-closeout.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/tracking-issue-closeout
+    destination: skills/dispatch/tracking-issue-closeout
+    recursive: false
+
+  - id: dispatch.execute-from-tracking-issue.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/execute-from-tracking-issue
+    destination: skills/dispatch/execute-from-tracking-issue
+    recursive: false
+
+  - id: dispatch.deliver-tracking-issue.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/deliver-tracking-issue
+    destination: skills/dispatch/deliver-tracking-issue
+    recursive: false
+
+  - id: dispatch.dispatch-pr-review.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/dispatch-pr-review
+    destination: skills/dispatch/dispatch-pr-review
+    recursive: false
+
+  - id: dispatch.dispatch-subagent-pr.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/dispatch-subagent-pr
+    destination: skills/dispatch/dispatch-subagent-pr
+    recursive: false
 
   - id: hooks.shared-scripts
     kind: symlinked-file

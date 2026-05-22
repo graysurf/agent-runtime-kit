@@ -12,7 +12,10 @@ schema_version: 1
 
 products:
   codex:
-    # Local skills are discovered from `$CODEX_HOME/skills/**/SKILL.md`.
+    # Local skills are discovered from skill folders under
+    # `$CODEX_HOME/skills/<domain>/<skill>/SKILL.md`. Runtime-kit uses
+    # directory symlinks for this surface; individual `SKILL.md` symlinks are
+    # not a valid Codex discovery contract.
     # `.codex-plugin` plugin trees are retained for source organization,
     # manifests, and audit-drift only; they are not the active Codex skill
     # discovery surface.
@@ -31,7 +34,7 @@ products:
       supports_inline_python: false
     config_activation:
       - "$CODEX_HOME/AGENTS.md"
-      - "$CODEX_HOME/skills/**/SKILL.md"
+      - "$CODEX_HOME/skills/<domain>/<skill>/SKILL.md"
       - "$CODEX_HOME/config.toml (managed block only)"
       - "$CODEX_HOME/hooks/<name>/ (scripts referenced from managed block)"
     runtime_state:

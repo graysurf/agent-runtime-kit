@@ -14,7 +14,9 @@ history, logs, caches, or product state.
   Claude, renders current product surfaces, runs `agent-runtime install
   --apply`, verifies installed `SKILL.md` surfaces against
   `tests/sandbox/<product>/expected-skills.txt`, and runs `agent-runtime
-  doctor`.
+  doctor`. For Codex, the collector follows domain-nested skill folder
+  symlinks under `$CODEX_HOME/skills/<domain>/<skill>/` and maps their
+  rendered plugin target back to the canonical `domain.skill` id.
 - `deterministic`: runs committed command-level probes for available domains.
   Current coverage includes `meta`, `media`, `browser`, `conversation`,
   `evidence`, `pr`, and `reporting` domains. The `pr` domain includes
