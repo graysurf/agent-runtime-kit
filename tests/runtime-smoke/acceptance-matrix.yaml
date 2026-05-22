@@ -274,3 +274,133 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.agent-docs.codex.product-prompt
+    product: codex
+    domain: meta
+    skill_id: meta.agent-docs
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp codex runtime home
+    invocation: codex prompt asks for agent-docs runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: meta.agent-out.codex.product-prompt
+    product: codex
+    domain: meta
+    skill_id: meta.agent-out
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp codex runtime home
+    invocation: codex prompt asks for agent-out runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: browser.canary-check.codex.product-prompt
+    product: codex
+    domain: browser
+    skill_id: browser.canary-check
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp codex runtime home
+    invocation: codex prompt asks for canary-check runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: evidence.skill-usage.codex.product-prompt
+    product: codex
+    domain: evidence
+    skill_id: evidence.skill-usage
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp codex runtime home
+    invocation: codex prompt asks for skill-usage runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: evidence.docs-impact.codex.product-prompt
+    product: codex
+    domain: evidence
+    skill_id: evidence.docs-impact
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp codex runtime home
+    invocation: codex prompt asks for docs-impact runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: meta.agent-docs.claude.product-prompt
+    product: claude
+    domain: meta
+    skill_id: meta.agent-docs
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp claude runtime home
+    invocation: claude prompt asks for agent-docs runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: meta.agent-out.claude.product-prompt
+    product: claude
+    domain: meta
+    skill_id: meta.agent-out
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp claude runtime home
+    invocation: claude prompt asks for agent-out runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: browser.canary-check.claude.product-prompt
+    product: claude
+    domain: browser
+    skill_id: browser.canary-check
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp claude runtime home
+    invocation: claude prompt asks for canary-check runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: evidence.skill-usage.claude.product-prompt
+    product: claude
+    domain: evidence
+    skill_id: evidence.skill-usage
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp claude runtime home
+    invocation: claude prompt asks for skill-usage runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
+  - id: evidence.docs-impact.claude.product-prompt
+    product: claude
+    domain: evidence
+    skill_id: evidence.docs-impact
+    mode: product
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: install temp claude runtime home
+    invocation: claude prompt asks for docs-impact runtime-smoke marker
+    expected_exit_code: 0
+    expected_artifacts: product prompt output or skip reason
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: skip unless isolated provider/auth prompt execution is explicitly enabled
