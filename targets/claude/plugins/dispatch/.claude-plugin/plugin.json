@@ -1,0 +1,9 @@
+{
+  "name": "dispatch",
+  "version": "0.1.0",
+  "description": "Issue-backed plan execution, dispatch review, subagent lane, and tracking issue lifecycle workflows backed by plan-issue and forge-cli.",
+  "author": {
+    "name": "graysurf"
+  },
+  "homepage": "https://github.com/graysurf/agent-runtime-kit"
+}

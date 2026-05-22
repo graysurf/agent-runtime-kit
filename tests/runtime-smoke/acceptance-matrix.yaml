@@ -365,6 +365,97 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: dispatch.plan-tracking-issue.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.plan-tracking-issue
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp plan bundle and local task spec output
+    invocation: plan-tooling validate plus plan-issue-local build-plan-task-spec
+    expected_exit_code: 0
+    expected_artifacts: plan-issue-local task-spec JSON and TSV
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.issue-lifecycle.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.issue-lifecycle
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render offline plan issue body
+    invocation: plan-issue-local status-plan and link-pr dry-run
+    expected_exit_code: 0
+    expected_artifacts: plan-issue-local status and link JSON
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.tracking-issue-closeout.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.tracking-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render offline plan issue body with incomplete task row
+    invocation: plan-issue-local close-plan dry-run rejects incomplete close gate
+    expected_exit_code: 0
+    expected_artifacts: close-plan JSON with close-gate-failed classification
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.execute-from-tracking-issue.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.execute-from-tracking-issue
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: validate temp plan and render offline issue state
+    invocation: plan-tooling validate plus plan-issue-local status-plan plus forge-cli pr view dry-run
+    expected_exit_code: 0
+    expected_artifacts: plan validation status JSON and forge-cli PR view plan
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.deliver-tracking-issue.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.deliver-tracking-issue
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render offline plan issue body and review evidence record
+    invocation: review-evidence verify plus forge-cli pr checks dry-run plus plan-issue-local link-pr
+    expected_exit_code: 0
+    expected_artifacts: review evidence JSON and dry-run provider command
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.dispatch-pr-review.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.dispatch-pr-review
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render review evidence and offline issue body
+    invocation: review-evidence verify plus forge-cli pr comment dry-run plus plan-issue-local link-pr
+    expected_exit_code: 0
+    expected_artifacts: PR comment plan and issue sync JSON
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.dispatch-subagent-pr.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.dispatch-subagent-pr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp assigned git workspace with pushed upstream branch metadata
+    invocation: forge-cli pr create dry-run plus plan-issue-local link-pr
+    expected_exit_code: 0
+    expected_artifacts: forge-cli PR create plan and issue sync JSON
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.agent-docs.codex.product-prompt
     product: codex
     domain: meta

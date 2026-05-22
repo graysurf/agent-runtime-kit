@@ -77,3 +77,14 @@ entries:
     source: build/codex/plugins/pr/skills
     destination: plugins/pr/skills
     recursive: true
+
+  - id: dispatch.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/dispatch/.codex-plugin/plugin.json
+    destination: plugins/dispatch/.codex-plugin/plugin.json
+
+  - id: dispatch.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills
+    destination: plugins/dispatch/skills
+    recursive: true
