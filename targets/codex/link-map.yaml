@@ -242,6 +242,40 @@ entries:
     destination: skills/evidence/model-cross-check
     recursive: false
 
+  - id: issue.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/issue/.codex-plugin/plugin.json
+    destination: plugins/issue/.codex-plugin/plugin.json
+
+  - id: issue.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/issue/skills
+    destination: plugins/issue/skills
+    recursive: true
+
+  - id: issue.issue-follow-up.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/issue/skills/issue-follow-up
+    destination: skills/issue/issue-follow-up
+    recursive: false
+
+  - id: code-review.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/code-review/.codex-plugin/plugin.json
+    destination: plugins/code-review/.codex-plugin/plugin.json
+
+  - id: code-review.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/code-review/skills
+    destination: plugins/code-review/skills
+    recursive: true
+
+  - id: code-review.code-review-specialists.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/code-review/skills/code-review-specialists
+    destination: skills/code-review/code-review-specialists
+    recursive: false
+
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/pr/.codex-plugin/plugin.json
@@ -306,16 +340,22 @@ entries:
     destination: plugins/dispatch/skills
     recursive: true
 
-  - id: dispatch.plan-tracking-issue.codex-skill-dir
+  - id: dispatch.create-plan-tracking-issue.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/plan-tracking-issue
-    destination: skills/dispatch/plan-tracking-issue
+    source: build/codex/plugins/dispatch/skills/create-plan-tracking-issue
+    destination: skills/dispatch/create-plan-tracking-issue
     recursive: false
 
-  - id: dispatch.issue-lifecycle.codex-skill-dir
+  - id: dispatch.deliver-dispatch-plan.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/dispatch/skills/issue-lifecycle
-    destination: skills/dispatch/issue-lifecycle
+    source: build/codex/plugins/dispatch/skills/deliver-dispatch-plan
+    destination: skills/dispatch/deliver-dispatch-plan
+    recursive: false
+
+  - id: dispatch.dispatch-issue-closeout.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/dispatch-issue-closeout
+    destination: skills/dispatch/dispatch-issue-closeout
     recursive: false
 
   - id: dispatch.tracking-issue-closeout.codex-skill-dir

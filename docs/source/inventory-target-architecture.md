@@ -255,7 +255,7 @@ Observed role:
   - **Planning and delivery:** `plan-tooling`, `plan-issue`,
     `plan-issue-local`, `semantic-commit`, `forge-cli` (PR/MR/Issue lifecycle
     on GitHub via `gh` and GitLab via `glab`, including the `pr deliver`
-    macro).
+    macro), `review-specialists`.
   - **API testing:** `api-rest`, `api-gql`, `api-grpc`, `api-websocket`,
     `api-test`.
   - **Git tooling:** `git-cli`, `git-scope`, `git-summary`, `git-lock`.
@@ -276,10 +276,11 @@ Important existing contract:
   binaries; they do not re-implement the underlying logic.
 - Many present-day skills in claude-kit / agent-kit duplicate logic that
   already exists as a nils-cli binary (`semantic-commit`, `agent-docs`,
-  `agent-scope-lock`, `heuristic-error-inbox`, `api-test-runner`, `pr:*` →
+  `agent-scope-lock`, `heuristic-error-inbox`, `api-test-runner`, `issue:*` →
+  `forge-cli issue`, `code-review:*` → `review-specialists`, `pr:*` →
   `forge-cli`, `dispatch:*` → `plan-issue` / `plan-tooling`,
-  `macos-agent-ops` → `macos-agent`). Migration is largely the act of
-  rewriting those skill bodies to call the CLI.
+  `macos-agent-ops` → `macos-agent`). Migration is largely the act of rewriting
+  those skill bodies to call the CLI.
 
 ### GitHub Repositories
 
@@ -1875,10 +1876,12 @@ Suggested order:
 4. `browser` (wraps `browser-session`, `canary-check`).
 5. `evidence` (wraps `web-evidence`, `test-first-evidence`,
    `review-evidence`, `skill-usage`, `docs-impact`, `model-cross-check`).
-6. `pr` (wraps `forge-cli` end-to-end lifecycle, including `pr deliver`).
-7. `dispatch` (wraps `plan-issue`, `plan-issue-local`, `plan-tooling`,
+6. `issue` (wraps `forge-cli issue` open/comment/view/follow-up flows).
+7. `code-review` (wraps `review-specialists` for read-only specialist review).
+8. `pr` (wraps `forge-cli` end-to-end lifecycle, including `pr deliver`).
+9. `dispatch` (wraps `plan-issue`, `plan-issue-local`, `plan-tooling`,
    coordinates with `forge-cli` for issue / PR mirroring).
-8. project/company/private overlays.
+10. project/company/private overlays.
 
 For each migrated domain, the per-skill checklist is:
 

@@ -85,6 +85,24 @@ plugins:
       claude: targets/claude/plugins/evidence/.claude-plugin/plugin.json
     install_policy: always
 
+  - id: issue
+    domain: issue
+    contained_skills:
+      - issue.issue-follow-up
+    product_manifests:
+      codex: targets/codex/plugins/issue/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/issue/.claude-plugin/plugin.json
+    install_policy: always
+
+  - id: code-review
+    domain: code-review
+    contained_skills:
+      - code-review.code-review-specialists
+    product_manifests:
+      codex: targets/codex/plugins/code-review/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/code-review/.claude-plugin/plugin.json
+    install_policy: always
+
   - id: pr
     domain: pr
     contained_skills:
@@ -103,8 +121,9 @@ plugins:
   - id: dispatch
     domain: dispatch
     contained_skills:
-      - dispatch.plan-tracking-issue
-      - dispatch.issue-lifecycle
+      - dispatch.create-plan-tracking-issue
+      - dispatch.deliver-dispatch-plan
+      - dispatch.dispatch-issue-closeout
       - dispatch.tracking-issue-closeout
       - dispatch.execute-from-tracking-issue
       - dispatch.deliver-tracking-issue

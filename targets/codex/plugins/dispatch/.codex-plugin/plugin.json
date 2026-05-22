@@ -7,12 +7,16 @@
   },
   "skills": [
     {
-      "id": "plan-tracking-issue",
-      "source": "core/skills/dispatch/plan-tracking-issue"
+      "id": "create-plan-tracking-issue",
+      "source": "core/skills/dispatch/create-plan-tracking-issue"
     },
     {
-      "id": "issue-lifecycle",
-      "source": "core/skills/dispatch/issue-lifecycle"
+      "id": "deliver-dispatch-plan",
+      "source": "core/skills/dispatch/deliver-dispatch-plan"
+    },
+    {
+      "id": "dispatch-issue-closeout",
+      "source": "core/skills/dispatch/dispatch-issue-closeout"
     },
     {
       "id": "tracking-issue-closeout",

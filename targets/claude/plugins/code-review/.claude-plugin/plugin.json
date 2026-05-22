@@ -1,0 +1,9 @@
+{
+  "name": "code-review",
+  "version": "0.1.0",
+  "description": "Read-only specialist code review workflows backed by review-specialists.",
+  "author": {
+    "name": "graysurf"
+  },
+  "homepage": "https://github.com/graysurf/agent-runtime-kit"
+}

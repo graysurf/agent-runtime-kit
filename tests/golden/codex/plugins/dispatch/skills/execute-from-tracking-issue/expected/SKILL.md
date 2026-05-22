@@ -22,6 +22,8 @@ Inputs:
   selector, branch name, and validation scope.
 - Existing state comment or task decomposition row that identifies current
   work, next work, blockers, and validation expectations.
+- Issue contract classification: lightweight plan-tracking issue, or
+  heavyweight dispatch/`plan-issue` runtime.
 
 Outputs:
 
@@ -72,19 +74,42 @@ plan-issue link-pr \
 Use `forge-cli pr create`, `forge-cli pr checks`, and `forge-cli pr deliver`
 for provider PR lifecycle steps.
 
+## Issue Contract Selection
+
+- Lightweight plan-tracking issues use append-only markers:
+  - `<!-- plan-tracking-issue:snapshot:v1 kind=source -->`
+  - `<!-- plan-tracking-issue:snapshot:v1 kind=plan -->`
+  - `<!-- execute-from-tracking-issue:state:v1 -->`
+  - `<!-- execute-from-tracking-issue:session:v1 -->`
+  - `<!-- execute-from-tracking-issue:validation:v1 -->`
+- The lightweight mutable body is only the dashboard; the latest valid
+  `execute-from-tracking-issue:state:v1` comment is the durable task ledger.
+- Heavyweight dispatch issues use `Task Decomposition` rows plus
+  `deliver-dispatch-plan:*` markers. Route whole-plan/sprint orchestration to
+  `deliver-dispatch-plan` and closeout to `dispatch-issue-closeout`.
+- Do not mix marker families in one issue. If a lightweight issue is being
+  promoted to dispatch, create or prepare a new dispatch issue through the
+  dispatch workflow instead of rewriting the existing ledger in place.
+
 ## Workflow
 
 1. Read the issue dashboard, latest issue state, and plan snapshot.
 2. Validate the local or issue-hosted plan with `plan-tooling`.
-3. Use `plan-issue status-plan` when the issue has task rows; otherwise keep
-   the issue-backed state comment as the durable ledger and record the selected
-   scope explicitly.
-4. Implement only the selected task/sprint scope.
-5. Run required validation and deterministic acceptance before PR delivery.
-6. Create or update the PR through `forge-cli`, then synchronize the issue with
+3. Classify the issue contract before edits. Use `plan-issue status-plan` for
+   dispatch task rows; otherwise recover the lightweight snapshots and latest
+   `execute-from-tracking-issue:state:v1` ledger.
+4. For lightweight issues, initialize or update the issue-backed state comment
+   before code edits; keep the canonical ledger columns
+   `ID | Status | Task | Evidence | Notes`.
+5. Implement only the selected task/sprint scope.
+6. Run required validation and deterministic acceptance before PR delivery.
+7. Create or update the PR through `forge-cli`, then synchronize the issue with
    `plan-issue link-pr` when task rows are present.
-7. Post validation/session evidence and repair the issue dashboard before
-   handoff or close.
+8. For lightweight issues, post session and validation comments with the marker
+   lines above and update the body dashboard to link latest evidence.
+9. Before PR merge, auto-close, closeout, or final success reporting, confirm
+   the latest lightweight state is `complete` with done/deferred rows and
+   validation/PR evidence; for dispatch issues, use the `plan-issue` gates.
 
 ## Boundary
 

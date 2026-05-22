@@ -1,7 +1,7 @@
 ---
 name: tracking-issue-closeout
 description:
-  Close a plan-tracked issue only after plan-issue gates, approval, merged PR evidence, and final dashboard synchronization pass.
+  Close a lightweight plan-tracking issue only after issue-backed execution state, approval, validation, linked PRs, and dashboard repair pass.
 ---
 
 # Tracking Issue Closeout
@@ -10,76 +10,101 @@ description:
 
 Prereqs:
 
-- `plan-issue` is installed from the released nils-cli package and available on
+- `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
-- The issue follows the `plan-issue` Task Decomposition contract, or an offline
-  body file is supplied for a dry-run gate check.
+- `plan-issue` and `plan-issue-local` are available for offline gate rehearsal
+  or for routing detected heavyweight dispatch issues.
+- The issue was created by `create-plan-tracking-issue` or carries equivalent
+  lightweight snapshot/state markers.
 - User approval or project-policy approval is captured as a concrete comment
-  URL before close.
-- Linked PRs are merged unless the close policy explicitly allows a documented
-  exception.
+  URL, explicit approval, or issue-visible policy before close.
+- Linked PRs are merged unless the close policy explicitly records a
+  documented exception.
 
 Inputs:
 
-- Issue number or offline body file.
-- Approved review comment URL.
-- Optional close reason, close comment, repository override, and state dir.
+- Issue number or URL, repository override, approval basis, and optional close
+  reason/comment.
+- Optional offline issue JSON/body artifact for dry-run readiness checks.
+- Optional repair mode for already closed issues whose dashboard or closeout
+  marker is stale.
 
 Outputs:
 
-- A `plan-issue close-plan` JSON result.
-- A final close comment and closed provider issue in live mode.
-- A rendered dry-run close plan when using `--body-file` or `--dry-run`.
+- Final dashboard derived from issue comments.
+- One append-only `<!-- tracking-issue-closeout:v1 -->` closeout comment.
+- Closed provider issue in live mode through `forge-cli issue close`.
+- In repair mode, body-only dashboard repair and optional single missing
+  closeout marker; never duplicate existing closeout markers.
 
 Failure modes:
 
-- Any task row is not done, lacks a concrete PR reference, or points at an
-  unmerged PR.
-- The approval URL is missing or invalid.
-- Live provider issue close fails.
-- The issue body no longer parses as a `plan-issue` task table.
+- Source snapshot, plan snapshot, completed execution state, completed session,
+  validation evidence, approval, or merged PR evidence is missing.
+- The latest state ledger has unresolved rows other than explicit `deferred`.
+- The issue is a heavyweight dispatch/`plan-issue` runtime; use
+  `dispatch-issue-closeout`.
+- Provider issue comment, body update, or close mutation fails.
 
 ## Entrypoint
 
-Run the close gate without mutating the provider first:
+Inspect the issue and recover lightweight markers:
 
 ```bash
-plan-issue close-plan \
-  --issue "$ISSUE" \
-  --repo "$OWNER_REPO" \
-  --approved-comment-url "$APPROVAL_URL" \
-  --dry-run \
-  --format json
+forge-cli issue view "$ISSUE" --repo "$OWNER_REPO" --format json
 ```
 
-Close live only after the dry-run gate passes:
+Post closeout evidence and close after gates pass:
 
 ```bash
-plan-issue close-plan \
-  --issue "$ISSUE" \
-  --repo "$OWNER_REPO" \
-  --approved-comment-url "$APPROVAL_URL" \
-  --reason completed \
-  --format json
+forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
+forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
+forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
 ```
 
-For local fixture checks, replace `--issue` with `--body-file <path>` and keep
-`--dry-run`.
+For a detected `Task Decomposition` dispatch issue, stop and use
+`dispatch-issue-closeout` unless the user explicitly asked for an offline
+`plan-issue close-plan --body-file` rehearsal.
+
+## Marker Contract
+
+Required lightweight comments:
+
+- `<!-- plan-tracking-issue:snapshot:v1 kind=source -->`
+- `<!-- plan-tracking-issue:snapshot:v1 kind=plan -->`
+- `<!-- execute-from-tracking-issue:state:v1 -->`
+- `<!-- execute-from-tracking-issue:session:v1 -->`
+- `<!-- execute-from-tracking-issue:validation:v1 -->`
+
+Closeout comment marker:
+
+- `<!-- tracking-issue-closeout:v1 -->`
+
+The issue body is a mutable dashboard only. The latest valid state comment is
+the durable task ledger and must contain rows that are all `done` or
+explicitly `deferred` before close.
 
 ## Workflow
 
-1. Run `plan-issue status-plan` and confirm all task rows are done or explicitly
-   accepted by policy.
-2. Resolve the approval comment URL and record it in validation evidence.
-3. Run `plan-issue close-plan --dry-run` and inspect any gate failure.
-4. Repair missing PR links, incomplete rows, stale approval references, or
-   unmerged PRs before live close.
-5. Run live `plan-issue close-plan` only after the dry-run gate passes.
-6. Record the close result, issue URL, close comment, and any accepted caveat in
-   the final session note.
+1. Read issue body, labels, state, linked PRs, and comments.
+2. Reject heavyweight dispatch issues and route to `dispatch-issue-closeout`.
+3. Verify source snapshot, plan snapshot, latest execution state, completed
+   session, validation evidence, approval basis, and linked PR merge state.
+4. Repair stale dashboard links from current comments before close.
+5. Render a compact final dashboard and one closeout comment with
+   `tracking-issue-closeout:v1`.
+6. In repair-closed mode, require the issue to already be closed; repair only
+   the dashboard, and append a missing closeout marker only when explicitly
+   finalizing a closed issue.
+7. In normal live mode, post the closeout comment, update the dashboard, then
+   close the issue through `forge-cli`.
+8. Record issue URL, closeout comment URL, linked PRs, validation summary, and
+   any accepted caveat.
 
 ## Boundary
 
-`plan-issue close-plan` owns close gates, task-row validation, approval URL
-checking, final comments, and provider issue closure. The skill body owns
-approval interpretation, policy exceptions, and whether to stop for user review.
+`forge-cli` owns provider issue view/comment/edit/close calls. `plan-issue`
+owns heavyweight dispatch close gates when this skill routes to
+`dispatch-issue-closeout`. The skill body owns lightweight marker audit,
+approval interpretation, closeout rendering, dashboard repair judgment, and
+whether to stop for user review.

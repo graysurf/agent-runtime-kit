@@ -1,13 +1,15 @@
 browser.browser-session
 browser.canary-check
+code-review.code-review-specialists
 conversation.discussion-to-implementation-doc
 conversation.handoff-session-prompt
+dispatch.create-plan-tracking-issue
+dispatch.deliver-dispatch-plan
 dispatch.deliver-tracking-issue
+dispatch.dispatch-issue-closeout
 dispatch.dispatch-pr-review
 dispatch.dispatch-subagent-pr
 dispatch.execute-from-tracking-issue
-dispatch.issue-lifecycle
-dispatch.plan-tracking-issue
 dispatch.tracking-issue-closeout
 evidence.docs-impact
 evidence.model-cross-check
@@ -15,6 +17,7 @@ evidence.review-evidence
 evidence.skill-usage
 evidence.test-first-evidence
 evidence.web-evidence
+issue.issue-follow-up
 media.image-processing
 media.screen-record
 meta.agent-docs

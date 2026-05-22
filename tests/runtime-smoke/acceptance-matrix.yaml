@@ -424,9 +424,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: none
-    invocation: forge-cli github pr checks ready merge close dry-run surfaces
+    invocation: forge-cli github pr checks ready merge close dry-run surfaces plus optional review-specialists scope
     expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider commands
+    expected_artifacts: forge-cli dry-run provider commands and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -437,9 +437,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: none
-    invocation: forge-cli gitlab pr checks ready merge close dry-run surfaces
+    invocation: forge-cli gitlab pr checks ready merge close dry-run surfaces plus optional review-specialists scope
     expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider commands
+    expected_artifacts: forge-cli dry-run provider commands and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -450,9 +450,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr deliver dry-run validates macro command plan
+    invocation: forge-cli github pr deliver dry-run plus mandatory review-specialists scope
     expected_exit_code: 0
-    expected_artifacts: forge-cli deliver dry-run provider command
+    expected_artifacts: forge-cli deliver dry-run provider command and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -463,16 +463,42 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli gitlab pr deliver dry-run validates macro command plan
+    invocation: forge-cli gitlab pr deliver dry-run plus mandatory review-specialists scope
     expected_exit_code: 0
-    expected_artifacts: forge-cli deliver dry-run provider command
+    expected_artifacts: forge-cli deliver dry-run provider command and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.plan-tracking-issue.shared-cli.deterministic
+  - id: issue.issue-follow-up.shared-cli.deterministic
+    product: shared-cli
+    domain: issue
+    skill_id: issue.issue-follow-up
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create issue body and follow-up comment fixtures
+    invocation: forge-cli issue create/view/comment dry-run surfaces
+    expected_exit_code: 0
+    expected_artifacts: forge-cli issue dry-run provider commands
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: code-review.code-review-specialists.shared-cli.deterministic
+    product: shared-cli
+    domain: code-review
+    skill_id: code-review.code-review-specialists
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git diff and specialist finding JSONL
+    invocation: review-specialists scope, validate, merge, and render
+    expected_exit_code: 0
+    expected_artifacts: scope JSON, merged JSON, and rendered report
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.create-plan-tracking-issue.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.plan-tracking-issue
+    skill_id: dispatch.create-plan-tracking-issue
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp plan bundle and local task spec output
@@ -482,16 +508,29 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: dispatch.issue-lifecycle.shared-cli.deterministic
+  - id: dispatch.deliver-dispatch-plan.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
-    skill_id: dispatch.issue-lifecycle
+    skill_id: dispatch.deliver-dispatch-plan
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render offline plan issue body
-    invocation: plan-issue-local status-plan and link-pr dry-run
+    setup: render offline plan issue body and sprint dispatch artifacts
+    invocation: plan-tooling validate plus plan-issue-local start-sprint/status-plan and specialist scope probes
     expected_exit_code: 0
-    expected_artifacts: plan-issue-local status and link JSON
+    expected_artifacts: sprint task spec, prompt artifacts, status JSON, and specialist scope JSON
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.dispatch-issue-closeout.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.dispatch-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render offline plan issue body and close gate fixture
+    invocation: plan-issue-local status-plan plus plan-issue close-plan dry-run gate classification
+    expected_exit_code: 0
+    expected_artifacts: status JSON and close-plan JSON with expected gate result
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -501,10 +540,10 @@ cases:
     skill_id: dispatch.tracking-issue-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render offline plan issue body with incomplete task row
-    invocation: plan-issue-local close-plan dry-run rejects incomplete close gate
+    setup: render lightweight closeout dashboard/comment fixtures
+    invocation: forge-cli issue comment/edit/close dry-run surfaces
     expected_exit_code: 0
-    expected_artifacts: close-plan JSON with close-gate-failed classification
+    expected_artifacts: forge-cli issue comment, edit, and close dry-run JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -528,9 +567,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: render offline plan issue body and review evidence record
-    invocation: review-evidence verify plus forge-cli pr checks dry-run plus plan-issue-local link-pr
+    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr checks dry-run plus plan-issue-local link-pr
     expected_exit_code: 0
-    expected_artifacts: review evidence JSON and dry-run provider command
+    expected_artifacts: specialist scope JSON, review evidence JSON, and dry-run provider command
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -541,9 +580,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: render review evidence and offline issue body
-    invocation: review-evidence verify plus forge-cli pr comment dry-run plus plan-issue-local link-pr
+    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr comment dry-run plus plan-issue-local link-pr
     expected_exit_code: 0
-    expected_artifacts: PR comment plan and issue sync JSON
+    expected_artifacts: specialist scope JSON, PR comment plan, and issue sync JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
