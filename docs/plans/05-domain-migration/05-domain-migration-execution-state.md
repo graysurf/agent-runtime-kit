@@ -58,7 +58,7 @@ result must be recorded before migration proceeds past the affected surface.
 | Task 8.2 | done | Verify project-local overlay smoke gate | `bash tests/projects/project-local-smoke/run.sh`; `agent-runtime doctor --check-project` through fixture; `bash scripts/ci/all.sh` pass | Added six project-local shim sources and fixture scripts for `bench`, `bootstrap`, `demo`, `deploy`, `pre-pr`, and `release` |
 | Task 9.1 | done | Prepare legacy repository archive markers | `graysurf/agent-kit` `11559d656ab64b409d33f6321bc9b65a42b59169`; `graysurf/claude-kit` `194a1ec239b67eb3fa4b47a7baea13e2ab561965` | Root `MOVED.md` committed and pushed in both legacy repos |
 | Task 9.2 | done | Archive legacy repositories on GitHub | `gh api -X PATCH repos/graysurf/{agent-kit,claude-kit} -F archived=true`; `gh repo view ... isArchived=true` | Both repos archived, not deleted |
-| Task 9.3 | done | Remove local legacy pointers and migrate Claude state | `$HOME/.codex/AGENTS.md -> $HOME/Project/graysurf/agent-runtime-kit/CODEX_AGENTS.md`; zsh env and Codex hooks no longer reference `.agents`; `test ! -L "$HOME/.agents"` pass; Claude state migrated to `$HOME/.local/state/agent-runtime-kit/claude` | Added runtime-kit-owned `CODEX_AGENTS.md` so the home prompt remains distinct from project-local `AGENTS.md` and no longer depends on `$HOME/.agents` |
+| Task 9.3 | done | Retire canonical local legacy pointers and migrate Claude state | `$HOME/.codex/AGENTS.md -> $HOME/Project/graysurf/agent-runtime-kit/CODEX_AGENTS.md`; zsh env and Codex hooks no longer reference `.agents`; `$HOME/.agents -> $HOME/.config/agent-kit` retained only as a compatibility alias; Claude state migrated to `$HOME/.local/state/agent-runtime-kit/claude` | Added runtime-kit-owned `CODEX_AGENTS.md` so the home prompt remains distinct from project-local `AGENTS.md`, while preserving Codex Desktop access to the original agent-kit skills during cutover |
 
 ## Validation
 
@@ -145,7 +145,10 @@ result must be recorded before migration proceeds past the affected surface.
 | `env -u ZDOTDIR zsh -lc 'printf "AGENT_HOME=%s\nAGENT_DOCS_HOME=%s\nPLAN_ISSUE_HOME=%s\n" "$AGENT_HOME" "$AGENT_DOCS_HOME" "$PLAN_ISSUE_HOME"'` | pass | Cold zsh startup without inherited `ZDOTDIR` also exports all three values to `$HOME/.config/agent-kit`. | n/a |
 | `! rg -n '/Users/[^/]+/\.agents\|\$HOME/\.agents' "$HOME/.zshenv" "$HOME/.config/zsh/scripts/_internal/paths.exports.zsh" "$HOME/.codex/config.toml"` | pass | No stale `.agents` path remains in the shell env setup or Codex managed hook block. | n/a |
 | `rg -o 'command = "[^"]+"' "$HOME/.codex/config.toml" \| sed 's/^command = "//; s/"$//' \| while read -r hook; do case "$hook" in "$HOME/.config/agent-kit/hooks/codex/"*) test -f "$hook";; esac; done` | pass | Codex managed hook command targets all exist after replacing `.agents` with `$HOME/.config/agent-kit`. | n/a |
-| `test ! -L "$HOME/.agents"` | pass | Removed the retired `.agents` symlink after replacing the Codex AGENTS target. | n/a |
+| `if [ -L "$HOME/.agents" ]; then readlink "$HOME/.agents" \| rg '/\.config/agent-kit$'; else test ! -e "$HOME/.agents"; fi` | pass | `$HOME/.agents` is retained only as a compatibility alias to the active agent-kit docs/skills checkout. | `$HOME/.agents -> $HOME/.config/agent-kit` |
+| `agent-docs --docs-home "$HOME/.agents" resolve --context startup --strict --format checklist` | pass | Compatibility alias still resolves the startup docs needed by older Codex sessions. | n/a |
+| `find "$HOME/.agents/skills" -maxdepth 4 -name SKILL.md -print \| wc -l` | pass | Original agent-kit skills remain reachable through the compatibility alias. | `61` |
+| `launchctl getenv AGENT_HOME; launchctl getenv AGENT_DOCS_HOME; launchctl getenv PLAN_ISSUE_HOME; launchctl getenv CODEX_HOME` | pass | macOS app launch environment now points future Codex app launches at the real docs/skills checkout and Codex home. | `$HOME/.config/agent-kit`; `$HOME/.codex` |
 | `rsync -a "$state_root/claude-kit/" "$state_root/agent-runtime-kit/claude/" && diff -qr "$state_root/claude-kit" "$state_root/agent-runtime-kit/claude" && rm -rf "$state_root/claude-kit"` | pass | Migrated 5.5M of Claude state to the runtime-kit namespace and verified it before removing the old tree. | `$HOME/.local/state/agent-runtime-kit/claude` |
 | `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi` | pass | Post-migration state invariant passed. | n/a |
 | `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context startup --strict --format checklist` | pass | Home-scope startup preflight still resolves after `.agents` removal. | n/a |
@@ -169,8 +172,8 @@ result must be recorded before migration proceeds past the affected surface.
   `MOVED.md` commits and GitHub `archived=true`.
 - Sprint 9.3 is complete: Codex home policy now links directly to
   `agent-runtime-kit/CODEX_AGENTS.md`, zsh/Codex hook config no longer references
-  `.agents`, `.agents` is removed, and Claude state is under
-  `$HOME/.local/state/agent-runtime-kit/claude`.
+  `.agents`, `.agents` is retained only as a compatibility alias, and Claude
+  state is under `$HOME/.local/state/agent-runtime-kit/claude`.
 - No active Plan 05 blockers remain.
 
 ## Session Log
@@ -193,8 +196,8 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Blocked Sprint 9.3 local cutover before removing `$HOME/.agents`: live Codex startup still resolves `$HOME/.codex/AGENTS.md -> $HOME/.agents/CODEX_AGENTS.md`, and this repo does not yet render or install a replacement AGENTS surface.
 - 2026-05-22: Resolved Sprint 9.3 after user confirmed the original
   `CODEX_AGENTS.md` naming design: added runtime-kit-owned `CODEX_AGENTS.md`,
-  moved `$HOME/.codex/AGENTS.md` to point directly at it, removed the retired
-  `$HOME/.agents` symlink, migrated `$HOME/.local/state/claude-kit` to
+  moved `$HOME/.codex/AGENTS.md` to point directly at it, migrated
+  `$HOME/.local/state/claude-kit` to
   `$HOME/.local/state/agent-runtime-kit/claude`, and re-ran `agent-docs`
   startup/project-dev/task-tools preflights successfully.
 - 2026-05-22: Finished local shell and Codex hook cutover: updated zsh env
@@ -202,3 +205,10 @@ result must be recorded before migration proceeds past the affected surface.
   `PLAN_ISSUE_HOME` to `$HOME/.config/agent-kit`; updated
   `$HOME/.codex/config.toml` hook commands away from `.agents`; verified no
   stale `.agents` references remain in those machine-local startup/config files.
+- 2026-05-22: Repaired Codex Desktop skill discovery during cutover after a new
+  Codex session did not see the original `agent-kit` skills: restored
+  `$HOME/.agents -> $HOME/.config/agent-kit` as a compatibility alias, set
+  `launchctl` app environment for `AGENT_HOME`, `AGENT_DOCS_HOME`,
+  `PLAN_ISSUE_HOME`, and `CODEX_HOME`, verified `agent-docs --docs-home
+  "$HOME/.agents"` startup preflight, and verified 61 original `agent-kit`
+  `SKILL.md` files are reachable through the alias.

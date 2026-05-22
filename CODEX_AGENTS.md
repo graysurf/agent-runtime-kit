@@ -10,8 +10,8 @@
 - It intentionally uses the `CODEX_AGENTS.md` name, not `AGENTS.md`, so Codex
   does not read the same policy twice when this source repository is the active
   project and a project-local `AGENTS.md` is also present.
-- `$HOME/.agents` is a retired compatibility indirection. Do not route new
-  runtime-kit paths through it.
+- `$HOME/.agents` may exist as a compatibility alias for older Codex sessions
+  and skill discovery. Do not route new runtime-kit paths through it.
 - It must be safe as fallback policy for unrelated workspaces, not only this
   repo.
 - A closer project or directory `AGENTS.md` can override or extend these
@@ -91,7 +91,7 @@
   In the current migration environment, use `$HOME/.config/agent-kit` directly
   until the home-scope docs catalog is moved into `agent-runtime-kit`.
 - Do not use `$HOME/.agents` or ambient `AGENT_HOME` as the docs-home
-  indirection.
+  indirection; it may be present only as a compatibility alias.
 - Required context sequence:
   - new session or task: `startup`
   - repository edits, tests, commits, or delivery: `startup` -> `project-dev`
@@ -115,8 +115,8 @@
   by project rules, or clearly reusable.
 - Codex hooks may enforce mechanical guardrails, but hooks do not replace
   policy.
-- Hook source and managed config live under the installed runtime-kit hook source
-  plus the managed block in `$HOME/.codex/config.toml`.
+- Hook source and managed config live under the active hook source checkout plus
+  the managed block in `$HOME/.codex/config.toml`.
 - Use the installed hook sync command to update local `$HOME/.codex/config.toml`;
   do not track or symlink the whole Codex config file.
 - Prefer project-defined validation commands. If none exist, run the smallest

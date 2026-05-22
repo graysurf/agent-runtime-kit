@@ -22,7 +22,9 @@ body as CLI invocation guidance with JSON/error handling, pin a concrete
 - Source type: discussion-to-implementation-doc
 - Open questions carried into execution:
   - Whether `agent-kit` archival should retain the public-content split decision or defer it. Default: defer.
-  - Final cutover date for `$HOME/.agents` symlink removal. Recommended: 2026-06-30.
+  - Final cutover date for `$HOME/.agents` compatibility alias removal.
+    Recommended: after Codex Desktop skill discovery no longer needs the legacy
+    `agent-kit` checkout.
   - Whether dispatch skills should keep plugin-namespaced names. Default: keep current names and defer aliases.
 
 ## Scope
@@ -43,7 +45,7 @@ body as CLI invocation guidance with JSON/error handling, pin a concrete
     overlay shims land.
   - Archive `graysurf/agent-kit` and `graysurf/claude-kit` after migration,
     preserving history with root `MOVED.md` files.
-  - Remove the legacy `$HOME/.agents` symlink and migrate any
+  - Retire canonical use of the legacy `$HOME/.agents` symlink and migrate any
     `$XDG_STATE_HOME/claude-kit/` state tree after repository archival.
 - Out of scope:
   - Adding new nils-cli binaries or flags inside this repo.
@@ -940,15 +942,17 @@ local legacy pointers only after all migrated surfaces are validated.
   - `gh repo view graysurf/agent-kit --json isArchived,name`
   - `gh repo view graysurf/claude-kit --json isArchived,name`
 
-### Task 9.3: Remove local legacy pointers and migrate Claude state
+### Task 9.3: Retire canonical local legacy pointers and migrate Claude state
 
 - **Location**:
   - `docs/plans/05-domain-migration/05-domain-migration-execution-state.md`
   - `docs/source/inventory-target-architecture.md`
 - **Description**: Move `$HOME/.codex/AGENTS.md` from the legacy
   `$HOME/.agents/CODEX_AGENTS.md` indirection to the runtime-kit-owned
-  `<source_root>/CODEX_AGENTS.md`, remove the legacy `$HOME/.agents` symlink
-  after the execution owner chooses cutover, then migrate any
+  `<source_root>/CODEX_AGENTS.md`, stop routing canonical shell/docs/hook
+  configuration through `$HOME/.agents`, keep `$HOME/.agents` only as a
+  temporary compatibility alias when Codex Desktop skill discovery still needs
+  the legacy `agent-kit` checkout, then migrate any
   `$XDG_STATE_HOME/claude-kit/` tree to
   `$XDG_STATE_HOME/agent-runtime-kit/claude/` using a verify-before-remove flow.
 - **Dependencies**:
@@ -962,7 +966,10 @@ local legacy pointers only after all migrated surfaces are validated.
     `PLAN_ISSUE_HOME` to a real path instead of `$HOME/.agents`.
   - Codex managed hook commands point to real hook files and no longer route
     through `$HOME/.agents`.
-  - `test ! -L "$HOME/.agents"` exits 0.
+  - If `$HOME/.agents` exists, it is documented as a compatibility alias and
+    resolves to the active docs/skills checkout.
+  - Codex app launch environment exports the same real docs/skills checkout for
+    `AGENT_HOME`, `AGENT_DOCS_HOME`, and `PLAN_ISSUE_HOME`.
   - If the old Claude state tree existed, the new destination matches it before
     source removal.
   - If the old state tree did not exist, the no-op is recorded.
@@ -973,7 +980,9 @@ local legacy pointers only after all migrated surfaces are validated.
   - `test -f "$(readlink "$HOME/.codex/AGENTS.md")"`
   - `zsh -lc 'test "$AGENT_HOME" = "$HOME/.config/agent-kit" && test "$AGENT_DOCS_HOME" = "$AGENT_HOME" && test "$PLAN_ISSUE_HOME" = "$AGENT_HOME"'`
   - `! rg -n '/Users/[^/]+/\.agents|\$HOME/\.agents' "$HOME/.zshenv" "$HOME/.config/zsh/scripts/_internal/paths.exports.zsh" "$HOME/.codex/config.toml"`
-  - `test ! -L "$HOME/.agents"`
+  - `if [ -L "$HOME/.agents" ]; then readlink "$HOME/.agents" | rg '/\.config/agent-kit$'; else test ! -e "$HOME/.agents"; fi`
+  - `agent-docs --docs-home "$HOME/.agents" resolve --context startup --strict --format checklist`
+  - `launchctl getenv AGENT_HOME | rg '^/Users/[^/]+/\.config/agent-kit$'`
   - `state_root="${XDG_STATE_HOME:-$HOME/.local/state}"; if [ -d "$state_root/agent-runtime-kit/claude" ]; then test ! -d "$state_root/claude-kit"; else rg -q 'claude-kit state migration no-op' docs/plans/05-domain-migration/05-domain-migration-execution-state.md; fi`
 
 ## Testing Strategy
@@ -1012,10 +1021,10 @@ local legacy pointers only after all migrated surfaces are validated.
 - Delivery smoke must use a scratch fork/branch. Running a throwaway PR against
   `graysurf/agent-runtime-kit` `main` is prohibited.
 - GitHub archival requires admin permission. Verify access before Sprint 9.
-- `$HOME/.agents` removal can affect in-flight sessions. Use the recommended
-  2026-06-30 cutover unless the execution owner explicitly chooses a different
-  date and records it. If cutover is accelerated, `$HOME/.codex/AGENTS.md` must
-  first point at a real runtime-kit-owned `CODEX_AGENTS.md` source file.
+- `$HOME/.agents` removal can affect in-flight sessions and Codex Desktop skill
+  discovery. Keep it as a compatibility alias until a live Codex session
+  confirms the app no longer needs it. Before removal, `$HOME/.codex/AGENTS.md`
+  must first point at a real runtime-kit-owned `CODEX_AGENTS.md` source file.
 - `.private` overlay values can be machine-specific. Do not commit private
   values; commit only stable fixtures or redacted expected outputs.
 
@@ -1033,6 +1042,6 @@ local legacy pointers only after all migrated surfaces are validated.
 - Sprint 9 archival: `gh repo edit graysurf/<repo> --no-archived` reverses the
   archive flag. Revert each legacy repo's `MOVED.md` commit if needed.
 - Sprint 9 local cutover: point `$HOME/.codex/AGENTS.md` back to
-  `$HOME/.config/agent-kit/CODEX_AGENTS.md`, recreate `$HOME/.agents` with
+  `$HOME/.config/agent-kit/CODEX_AGENTS.md`, ensure `$HOME/.agents` exists with
   `ln -s "$HOME/.config/agent-kit" "$HOME/.agents"`, and restore Claude state
   from the pre-migration copy if verification failed.
