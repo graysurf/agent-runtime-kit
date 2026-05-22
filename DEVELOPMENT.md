@@ -168,6 +168,7 @@ bash scripts/ci/sandbox-install-rehearsal.sh
 bash tests/runtime-smoke/run.sh --mode matrix
 bash tests/runtime-smoke/run.sh --mode install
 bash tests/runtime-smoke/run.sh --mode install --format json
+bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
 ```
 
 Runtime smoke install mode creates temporary Codex and Claude `live_home` and
@@ -175,6 +176,10 @@ Runtime smoke install mode creates temporary Codex and Claude `live_home` and
 skill surfaces with `tests/sandbox/<product>/expected-skills.txt`, and accepts
 `agent-runtime doctor` only when its summary reports `block=0`. Host warnings
 can vary and are not treated as Sprint 1 blockers.
+
+Runtime smoke deterministic mode runs command-level probes inside temporary
+fixture workspaces and writes artifacts under the run artifact directory.
+Sprint 2 initially enables the `meta` domain only.
 
 ## Release Boundary
 
