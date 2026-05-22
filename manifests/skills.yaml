@@ -542,7 +542,46 @@ skills:
         name: tracking-issue-closeout
         render_to: plugins/dispatch/skills/tracking-issue-closeout/SKILL.md
     required_clis:
+      forge-cli: ">=0.17.1"
       plan-issue: ">=0.17.1"
+      plan-issue-local: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: dispatch.deliver-dispatch-plan
+    domain: dispatch
+    source: core/skills/dispatch/deliver-dispatch-plan
+    products:
+      codex:
+        name: deliver-dispatch-plan
+        render_to: plugins/dispatch/skills/deliver-dispatch-plan/SKILL.md
+      claude:
+        name: deliver-dispatch-plan
+        render_to: plugins/dispatch/skills/deliver-dispatch-plan/SKILL.md
+    required_clis:
+      plan-tooling: ">=0.17.1"
+      plan-issue: ">=0.17.1"
+      plan-issue-local: ">=0.17.1"
+      forge-cli: ">=0.17.1"
+      review-evidence: ">=0.16.0"
+      review-specialists: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: dispatch.dispatch-issue-closeout
+    domain: dispatch
+    source: core/skills/dispatch/dispatch-issue-closeout
+    products:
+      codex:
+        name: dispatch-issue-closeout
+        render_to: plugins/dispatch/skills/dispatch-issue-closeout/SKILL.md
+      claude:
+        name: dispatch-issue-closeout
+        render_to: plugins/dispatch/skills/dispatch-issue-closeout/SKILL.md
+    required_clis:
+      plan-issue: ">=0.17.1"
+      plan-issue-local: ">=0.17.1"
+      forge-cli: ">=0.17.1"
+      review-evidence: ">=0.16.0"
+      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: dispatch.execute-from-tracking-issue

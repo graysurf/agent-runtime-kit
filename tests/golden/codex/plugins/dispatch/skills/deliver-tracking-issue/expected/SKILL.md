@@ -14,6 +14,9 @@ Prereqs:
   `review-specialists` are installed from released nils-cli packages and
   available on `PATH`.
 - The target issue has recoverable plan/task state and linked source context.
+- The target issue is a lightweight plan-tracking issue. If the issue contains
+  `Task Decomposition` rows, subagent owners, or `deliver-dispatch-plan:*`
+  markers, route to `deliver-dispatch-plan` or `dispatch-issue-closeout`.
 - The delivery branch contains only the intended issue scope.
 - Invoking this workflow is authorization to carry the selected issue scope
   through PR review, merge, issue synchronization, and close readiness unless the
@@ -39,10 +42,15 @@ Outputs:
 - Issue task rows or issue-backed state updated with PR, validation, and next
   task status.
 - Closeout readiness evidence when the selected scope completes the issue.
+- For lightweight issues, issue-hosted `execute-from-tracking-issue:state:v1`,
+  `session:v1`, and `validation:v1` comments updated after execution, PR
+  review, PR merge, and final completion.
 
 Failure modes:
 
 - Issue state is incomplete, stale, or ambiguous.
+- The issue is actually a heavyweight dispatch runtime; use the dispatch
+  workflow family instead.
 - Local or remote validation fails.
 - Specialist review or review-evidence findings remain unresolved or lack an
   issue-visible disposition.
@@ -111,14 +119,22 @@ plan-issue link-pr \
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
 8. Merge only after checks, specialist review, review evidence, and issue-backed
    completion gates pass.
-9. Synchronize the issue with `plan-issue link-pr`, `ready-sprint`,
-   `accept-sprint`, or `close-plan` as appropriate for the issue contract.
-10. Leave the issue open with an exact unblock action if any gate fails.
+9. For lightweight issues, append or update the issue-hosted state/session/
+   validation evidence with PR number, validation, review lenses, finding
+   disposition, and task ledger status. Use `Refs #<issue>` in PR bodies so
+   closeout owns the issue closure.
+10. Before merge or final success, verify the latest lightweight state is
+    closeout-ready: status `complete`, all task rows `done` or `deferred`,
+    validation/PR evidence present, and dashboard links current.
+11. Close through `tracking-issue-closeout` after completion approval. If the
+    issue is a dispatch runtime, use `dispatch-issue-closeout` instead.
+12. Leave the issue open with an exact unblock action if any gate fails.
 
 ## Boundary
 
-`plan-issue` owns issue task state and close/accept gates. `forge-cli` owns PR
-provider lifecycle. `review-evidence` owns retained review records.
-`code-review-specialists` supplies read-only specialist review; this workflow
-owns implementation, review judgment, repair decisions, issue-visible finding
-dispositions, delivery outcome comment URLs, and final status reporting.
+`plan-issue` owns issue task state only when routing to dispatch gates.
+`forge-cli` owns PR provider lifecycle. `review-evidence` owns retained review
+records. `code-review-specialists` supplies read-only specialist review; this
+workflow owns lightweight issue execution, review judgment, repair decisions,
+issue-visible finding dispositions, delivery outcome comment URLs, and final
+status reporting.

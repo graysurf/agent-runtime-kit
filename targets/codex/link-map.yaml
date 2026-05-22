@@ -346,6 +346,18 @@ entries:
     destination: skills/dispatch/create-plan-tracking-issue
     recursive: false
 
+  - id: dispatch.deliver-dispatch-plan.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/deliver-dispatch-plan
+    destination: skills/dispatch/deliver-dispatch-plan
+    recursive: false
+
+  - id: dispatch.dispatch-issue-closeout.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/dispatch/skills/dispatch-issue-closeout
+    destination: skills/dispatch/dispatch-issue-closeout
+    recursive: false
+
   - id: dispatch.tracking-issue-closeout.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/dispatch/skills/tracking-issue-closeout

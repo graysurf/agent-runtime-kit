@@ -28,6 +28,8 @@ Inputs:
 - Optional user-requested pre-close specialist review through
   `code-review-specialists`.
 - A decision to merge, mark ready, wait for checks, or abandon-close the MR.
+- Issue-backed close gate evidence when the MR would complete or auto-close a
+  lightweight tracking issue or dispatch plan issue.
 
 Outputs:
 
@@ -74,7 +76,8 @@ forge-cli --provider gitlab pr close "$MR_NUMBER"
 
 ## Workflow
 
-1. Inspect the MR metadata and linked issue state before changing it.
+1. Inspect the MR metadata, closing references, linked issues, and target branch
+   before changing it.
 2. Resolve review findings and run required local validation.
 3. If the user explicitly requested review, specialist review, or review before
    close, run the optional `code-review-specialists` gate before final merge.
@@ -83,11 +86,14 @@ forge-cli --provider gitlab pr close "$MR_NUMBER"
    if concrete findings need a decision.
 4. Run `forge-cli --provider gitlab pr wait-checks "$MR_NUMBER"` to gate on
    required provider checks.
-5. Run `forge-cli --provider gitlab pr ready "$MR_NUMBER"` if the MR is still
+5. For plan-tracking issues, require complete issue-backed state and closeout
+   readiness before merging an MR that closes or finalizes the issue. For
+   dispatch issues, require `plan-issue` / `dispatch-issue-closeout` gates.
+6. Run `forge-cli --provider gitlab pr ready "$MR_NUMBER"` if the MR is still
    draft and is ready to merge.
-6. Run `forge-cli --provider gitlab pr merge "$MR_NUMBER"` with the project's
+7. Run `forge-cli --provider gitlab pr merge "$MR_NUMBER"` with the project's
    merge method and branch-retention choice.
-7. Record the merge commit, check evidence, linked issue updates, and any
+8. Record the merge commit, check evidence, linked issue updates, and any
    residual risk in the durable timeline.
 
 ## Boundary

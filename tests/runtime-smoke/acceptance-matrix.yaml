@@ -508,16 +508,42 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: dispatch.deliver-dispatch-plan.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.deliver-dispatch-plan
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render offline plan issue body and sprint dispatch artifacts
+    invocation: plan-tooling validate plus plan-issue-local start-sprint/status-plan and specialist scope probes
+    expected_exit_code: 0
+    expected_artifacts: sprint task spec, prompt artifacts, status JSON, and specialist scope JSON
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.dispatch-issue-closeout.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.dispatch-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render offline plan issue body and close gate fixture
+    invocation: plan-issue-local status-plan plus plan-issue close-plan dry-run gate classification
+    expected_exit_code: 0
+    expected_artifacts: status JSON and close-plan JSON with expected gate result
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: dispatch.tracking-issue-closeout.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
     skill_id: dispatch.tracking-issue-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render offline plan issue body with incomplete task row
-    invocation: plan-issue-local close-plan dry-run rejects incomplete close gate
+    setup: render lightweight closeout dashboard/comment fixtures
+    invocation: forge-cli issue comment/edit/close dry-run surfaces
     expected_exit_code: 0
-    expected_artifacts: close-plan JSON with close-gate-failed classification
+    expected_artifacts: forge-cli issue comment, edit, and close dry-run JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

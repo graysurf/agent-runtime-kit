@@ -65,8 +65,9 @@ lower-level issue or PR/MR tools.
   ready.
 - Use `dispatch-pr-review` when PR review decisions or review follow-up must be
   mirrored back to a plan issue.
-- Use `tracking-issue-closeout` only for heavyweight plan/subagent/close-gate
-  issue execution.
+- Use `tracking-issue-closeout` for lightweight plan-tracking closeout.
+- Use `dispatch-issue-closeout` for heavyweight `plan-issue` dispatch runtimes
+  with subagent lanes and close gates.
 
 ## Modes
 

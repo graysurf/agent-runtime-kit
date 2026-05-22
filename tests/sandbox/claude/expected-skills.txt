@@ -4,7 +4,9 @@ code-review.code-review-specialists
 conversation.discussion-to-implementation-doc
 conversation.handoff-session-prompt
 dispatch.create-plan-tracking-issue
+dispatch.deliver-dispatch-plan
 dispatch.deliver-tracking-issue
+dispatch.dispatch-issue-closeout
 dispatch.dispatch-pr-review
 dispatch.dispatch-subagent-pr
 dispatch.execute-from-tracking-issue

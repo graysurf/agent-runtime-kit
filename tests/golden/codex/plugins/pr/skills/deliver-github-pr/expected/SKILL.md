@@ -28,6 +28,9 @@ Inputs:
   review gate; this is an orchestration gate, not a `forge-cli pr deliver`
   flag.
 - Issue-backed state links when the PR participates in a tracking issue.
+- If the PR body or metadata can auto-close an issue, the matching
+  lightweight tracking issue or dispatch issue close gate has already passed,
+  or the body uses non-closing references such as `Refs #<issue>`.
 
 Outputs:
 
@@ -50,6 +53,9 @@ Failure modes:
   repaired or explicitly accepted under the delivery policy.
 - Delivery review outcome comment posting fails.
 - Review findings or issue-backed completion gates are unresolved.
+- A PR would close a plan-tracking or dispatch issue before
+  `tracking-issue-closeout`, `dispatch-issue-closeout`, or `plan-issue`
+  completion gates have passed.
 - The installed `forge-cli` is older than the manifest floor. Upgrade nils-cli
   before relying on GitHub delivery macro checks, ready, or merge operations.
 
@@ -80,24 +86,29 @@ forge-cli --provider github pr merge "$PR_NUMBER" --method squash
 
 1. Confirm the branch, base, dirty-tree scope, validation evidence, and review
    outcome.
-2. Prepare a PR body with `## Summary` and `## Test plan`.
-3. Run `forge-cli pr deliver` with the GitHub provider, selected base, and
+2. Inspect linked issues and closing references. For issue-backed plan work,
+   prefer `Refs #<issue>` until the appropriate closeout gate has passed.
+3. Prepare a PR body with `## Summary` and `## Test plan`.
+4. Run `forge-cli pr deliver` with the GitHub provider, selected base, and
    `--no-merge` so checks complete before the mandatory review gate. If the
    macro stops for a concrete blocker before checks are green, fix the blocker
    on the same branch and rerun the macro.
-4. Follow the shared delivery specialist review gate:
+5. Follow the shared delivery specialist review gate:
    `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`.
    Resolve the PR base branch, run `review-specialists scope --base "$BASE_REF"
    --testing --maintainability --format json`, add risk lenses when warranted,
    and do not skip only because the diff is small.
-5. Keep `code-review-specialists` read-only. Repair concrete findings in this
+6. Keep `code-review-specialists` read-only. Repair concrete findings in this
    delivery workflow, then rerun validation, required checks, and affected
    specialist lenses.
-6. Post the delivery review outcome comment before merge using:
+7. Post the delivery review outcome comment before merge using:
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
-7. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
+8. For lightweight tracking issues, verify the latest issue-hosted state is
+   complete and closeout-ready before allowing auto-close. For dispatch issues,
+   verify `plan-issue` sprint/plan gates or use `dispatch-issue-closeout`.
+9. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
    `--no-merge` is the requested final stop.
-8. Record the PR URL, check evidence, review outcome, merge commit, and any
+10. Record the PR URL, check evidence, review outcome, merge commit, and any
    fallback used in the linked issue or delivery notes.
 
 ## Boundary

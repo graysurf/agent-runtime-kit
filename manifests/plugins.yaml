@@ -122,6 +122,8 @@ plugins:
     domain: dispatch
     contained_skills:
       - dispatch.create-plan-tracking-issue
+      - dispatch.deliver-dispatch-plan
+      - dispatch.dispatch-issue-closeout
       - dispatch.tracking-issue-closeout
       - dispatch.execute-from-tracking-issue
       - dispatch.deliver-tracking-issue

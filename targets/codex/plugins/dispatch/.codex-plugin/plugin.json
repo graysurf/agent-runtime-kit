@@ -11,6 +11,14 @@
       "source": "core/skills/dispatch/create-plan-tracking-issue"
     },
     {
+      "id": "deliver-dispatch-plan",
+      "source": "core/skills/dispatch/deliver-dispatch-plan"
+    },
+    {
+      "id": "dispatch-issue-closeout",
+      "source": "core/skills/dispatch/dispatch-issue-closeout"
+    },
+    {
       "id": "tracking-issue-closeout",
       "source": "core/skills/dispatch/tracking-issue-closeout"
     },
