@@ -20,3 +20,51 @@ plugins:
       codex: targets/codex/plugins/reporting/.codex-plugin/plugin.json
       claude: targets/claude/plugins/reporting/.claude-plugin/plugin.json
     install_policy: always
+
+  - id: meta
+    domain: meta
+    contained_skills:
+      - meta.agent-docs
+      - meta.agent-out
+      - meta.agent-scope-lock
+      - meta.heuristic-inbox
+      - meta.repo-retro
+      - meta.semantic-commit
+    product_manifests:
+      codex: targets/codex/plugins/meta/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/meta/.claude-plugin/plugin.json
+    install_policy: always
+
+  - id: media
+    domain: media
+    contained_skills:
+      - media.image-processing
+      - media.screen-record
+    product_manifests:
+      codex: targets/codex/plugins/media/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/media/.claude-plugin/plugin.json
+    install_policy: always
+
+  - id: browser
+    domain: browser
+    contained_skills:
+      - browser.browser-session
+      - browser.canary-check
+    product_manifests:
+      codex: targets/codex/plugins/browser/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/browser/.claude-plugin/plugin.json
+    install_policy: always
+
+  - id: evidence
+    domain: evidence
+    contained_skills:
+      - evidence.web-evidence
+      - evidence.test-first-evidence
+      - evidence.review-evidence
+      - evidence.skill-usage
+      - evidence.docs-impact
+      - evidence.model-cross-check
+    product_manifests:
+      codex: targets/codex/plugins/evidence/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/evidence/.claude-plugin/plugin.json
+    install_policy: always

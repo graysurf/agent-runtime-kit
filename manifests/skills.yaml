@@ -5,8 +5,8 @@
 # Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`
 #
 # Each entry MUST declare `id`, `domain`, `source`, `products`, and
-# `required_clis`. Concrete semver floors against the v0.13.0 nils-cli
-# release; the audit-drift gate rejects any surviving placeholder.
+# `required_clis`. Concrete semver floors are pinned against the released
+# nils-cli surface; the audit-drift gate rejects any surviving placeholder.
 schema_version: 1
 
 skills:
@@ -54,4 +54,228 @@ skills:
         path_override: plugins/reporting/skills/topic-radar
     required_clis:
       agent-out: ">=0.13.0"
+    state_out_mode: runtime
+
+  - id: meta.agent-docs
+    domain: meta
+    source: core/skills/meta/agent-docs
+    products:
+      codex:
+        name: agent-docs
+        render_to: plugins/meta/skills/agent-docs/SKILL.md
+      claude:
+        name: agent-docs
+        render_to: plugins/meta/skills/agent-docs/SKILL.md
+    required_clis:
+      agent-docs: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.agent-out
+    domain: meta
+    source: core/skills/meta/agent-out
+    products:
+      codex:
+        name: agent-out
+        render_to: plugins/meta/skills/agent-out/SKILL.md
+      claude:
+        name: agent-out
+        render_to: plugins/meta/skills/agent-out/SKILL.md
+    required_clis:
+      agent-out: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.agent-scope-lock
+    domain: meta
+    source: core/skills/meta/agent-scope-lock
+    products:
+      codex:
+        name: agent-scope-lock
+        render_to: plugins/meta/skills/agent-scope-lock/SKILL.md
+      claude:
+        name: agent-scope-lock
+        render_to: plugins/meta/skills/agent-scope-lock/SKILL.md
+    required_clis:
+      agent-scope-lock: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.heuristic-inbox
+    domain: meta
+    source: core/skills/meta/heuristic-inbox
+    products:
+      codex:
+        name: heuristic-inbox
+        render_to: plugins/meta/skills/heuristic-inbox/SKILL.md
+      claude:
+        name: heuristic-inbox
+        render_to: plugins/meta/skills/heuristic-inbox/SKILL.md
+    required_clis:
+      heuristic-inbox: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.repo-retro
+    domain: meta
+    source: core/skills/meta/repo-retro
+    products:
+      codex:
+        name: repo-retro
+        render_to: plugins/meta/skills/repo-retro/SKILL.md
+      claude:
+        name: repo-retro
+        render_to: plugins/meta/skills/repo-retro/SKILL.md
+    required_clis:
+      repo-retro: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.semantic-commit
+    domain: meta
+    source: core/skills/meta/semantic-commit
+    products:
+      codex:
+        name: semantic-commit
+        render_to: plugins/meta/skills/semantic-commit/SKILL.md
+      claude:
+        name: semantic-commit
+        render_to: plugins/meta/skills/semantic-commit/SKILL.md
+    required_clis:
+      semantic-commit: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: media.image-processing
+    domain: media
+    source: core/skills/media/image-processing
+    products:
+      codex:
+        name: image-processing
+        render_to: plugins/media/skills/image-processing/SKILL.md
+      claude:
+        name: image-processing
+        render_to: plugins/media/skills/image-processing/SKILL.md
+    required_clis:
+      image-processing: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: media.screen-record
+    domain: media
+    source: core/skills/media/screen-record
+    products:
+      codex:
+        name: screen-record
+        render_to: plugins/media/skills/screen-record/SKILL.md
+      claude:
+        name: screen-record
+        render_to: plugins/media/skills/screen-record/SKILL.md
+    required_clis:
+      screen-record: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: browser.browser-session
+    domain: browser
+    source: core/skills/browser/browser-session
+    products:
+      codex:
+        name: browser-session
+        render_to: plugins/browser/skills/browser-session/SKILL.md
+      claude:
+        name: browser-session
+        render_to: plugins/browser/skills/browser-session/SKILL.md
+    required_clis:
+      browser-session: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: browser.canary-check
+    domain: browser
+    source: core/skills/browser/canary-check
+    products:
+      codex:
+        name: canary-check
+        render_to: plugins/browser/skills/canary-check/SKILL.md
+      claude:
+        name: canary-check
+        render_to: plugins/browser/skills/canary-check/SKILL.md
+    required_clis:
+      canary-check: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: evidence.web-evidence
+    domain: evidence
+    source: core/skills/evidence/web-evidence
+    products:
+      codex:
+        name: web-evidence
+        render_to: plugins/evidence/skills/web-evidence/SKILL.md
+      claude:
+        name: web-evidence
+        render_to: plugins/evidence/skills/web-evidence/SKILL.md
+    required_clis:
+      web-evidence: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: evidence.test-first-evidence
+    domain: evidence
+    source: core/skills/evidence/test-first-evidence
+    products:
+      codex:
+        name: test-first-evidence
+        render_to: plugins/evidence/skills/test-first-evidence/SKILL.md
+      claude:
+        name: test-first-evidence
+        render_to: plugins/evidence/skills/test-first-evidence/SKILL.md
+    required_clis:
+      test-first-evidence: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: evidence.review-evidence
+    domain: evidence
+    source: core/skills/evidence/review-evidence
+    products:
+      codex:
+        name: review-evidence
+        render_to: plugins/evidence/skills/review-evidence/SKILL.md
+      claude:
+        name: review-evidence
+        render_to: plugins/evidence/skills/review-evidence/SKILL.md
+    required_clis:
+      review-evidence: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: evidence.skill-usage
+    domain: evidence
+    source: core/skills/evidence/skill-usage
+    products:
+      codex:
+        name: skill-usage
+        render_to: plugins/evidence/skills/skill-usage/SKILL.md
+      claude:
+        name: skill-usage
+        render_to: plugins/evidence/skills/skill-usage/SKILL.md
+    required_clis:
+      skill-usage: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: evidence.docs-impact
+    domain: evidence
+    source: core/skills/evidence/docs-impact
+    products:
+      codex:
+        name: docs-impact
+        render_to: plugins/evidence/skills/docs-impact/SKILL.md
+      claude:
+        name: docs-impact
+        render_to: plugins/evidence/skills/docs-impact/SKILL.md
+    required_clis:
+      docs-impact: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: evidence.model-cross-check
+    domain: evidence
+    source: core/skills/evidence/model-cross-check
+    products:
+      codex:
+        name: model-cross-check
+        render_to: plugins/evidence/skills/model-cross-check/SKILL.md
+      claude:
+        name: model-cross-check
+        render_to: plugins/evidence/skills/model-cross-check/SKILL.md
+    required_clis:
+      model-cross-check: ">=0.16.0"
     state_out_mode: runtime

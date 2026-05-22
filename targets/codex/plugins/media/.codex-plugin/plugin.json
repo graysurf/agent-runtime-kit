@@ -1,0 +1,18 @@
+{
+  "name": "media",
+  "version": "0.1.0",
+  "description": "Media helper skills for image conversion, SVG validation, screenshots, and screen recordings.",
+  "author": {
+    "name": "graysurf"
+  },
+  "skills": [
+    {
+      "id": "image-processing",
+      "source": "core/skills/media/image-processing"
+    },
+    {
+      "id": "screen-record",
+      "source": "core/skills/media/screen-record"
+    }
+  ]
+}

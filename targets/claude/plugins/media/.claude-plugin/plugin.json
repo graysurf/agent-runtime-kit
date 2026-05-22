@@ -1,0 +1,9 @@
+{
+  "name": "media",
+  "version": "0.1.0",
+  "description": "Media helper skills for image conversion, SVG validation, screenshots, and screen recordings.",
+  "author": {
+    "name": "graysurf"
+  },
+  "homepage": "https://github.com/graysurf/agent-runtime-kit"
+}

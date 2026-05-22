@@ -1,0 +1,9 @@
+{
+  "name": "meta",
+  "version": "0.1.0",
+  "description": "Core workflow primitives for docs, output paths, scope locks, heuristic cases, retrospectives, and semantic commits.",
+  "author": {
+    "name": "graysurf"
+  },
+  "homepage": "https://github.com/graysurf/agent-runtime-kit"
+}

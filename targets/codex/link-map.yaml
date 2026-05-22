@@ -22,3 +22,47 @@ entries:
     source: build/codex/plugins/reporting/skills
     destination: plugins/reporting/skills
     recursive: true
+
+  - id: meta.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/meta/.codex-plugin/plugin.json
+    destination: plugins/meta/.codex-plugin/plugin.json
+
+  - id: meta.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills
+    destination: plugins/meta/skills
+    recursive: true
+
+  - id: media.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/media/.codex-plugin/plugin.json
+    destination: plugins/media/.codex-plugin/plugin.json
+
+  - id: media.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/media/skills
+    destination: plugins/media/skills
+    recursive: true
+
+  - id: browser.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/browser/.codex-plugin/plugin.json
+    destination: plugins/browser/.codex-plugin/plugin.json
+
+  - id: browser.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/browser/skills
+    destination: plugins/browser/skills
+    recursive: true
+
+  - id: evidence.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/codex/plugins/evidence/.codex-plugin/plugin.json
+    destination: plugins/evidence/.codex-plugin/plugin.json
+
+  - id: evidence.skills-tree
+    kind: symlinked-file
+    source: build/codex/plugins/evidence/skills
+    destination: plugins/evidence/skills
+    recursive: true

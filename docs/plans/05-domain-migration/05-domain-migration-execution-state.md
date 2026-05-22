@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: not started
-- Target scope: whole plan
-- Execution window: undecided
+- Status: in-progress
+- Target scope: Sprint 1 through Sprint 4 complete; Sprint 5+ pending
+- Execution window: Sprint 1-4 completed on 2026-05-22
 - Staged execution confirmation: not applicable
-- Current task: Task 1.1
-- Next task: Task 1.1
+- Current task: Task 5.1
+- Next task: Task 5.1
 - Last updated: 2026-05-22
-- Branch/commit: not started
+- Branch/commit: feat/issue-26-sprint-4 (commit pending)
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -17,19 +17,19 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| Task 1.1 | pending | Re-verify Plan 03 reporting POC | n/a | Regression guard before meta edits |
-| Task 1.2 | pending | Migrate policy and state meta skills | n/a | `agent-docs`, `agent-out`, `agent-scope-lock` |
-| Task 1.3 | pending | Migrate workflow meta skills | n/a | `heuristic-inbox`, `repo-retro`, `semantic-commit` |
-| Task 1.4 | pending | Wire meta manifests, adapters, and golden snapshots | n/a | Owns shared manifest/golden/sandbox files |
-| Task 2.1 | pending | Migrate media skill sources | n/a | `image-processing`, `screen-record` |
-| Task 2.2 | pending | Migrate browser skill sources | n/a | `browser-session`, `canary-check` |
-| Task 2.3 | pending | Wire media/browser manifests, adapters, and golden snapshots | n/a | Owns shared files |
-| Task 3.1 | pending | Migrate web and test-first evidence sources | n/a | Capture lane A |
-| Task 3.2 | pending | Migrate review and skill-usage evidence sources | n/a | Capture lane B |
-| Task 3.3 | pending | Wire evidence capture manifests, adapters, and golden snapshots | n/a | Owns shared files |
-| Task 4.1 | pending | Migrate docs-impact source | n/a | Serial to avoid shared-file conflicts |
-| Task 4.2 | pending | Migrate model-cross-check source | n/a | Depends on Task 4.1 |
-| Task 4.3 | pending | Finalize evidence domain integration | n/a | Complete evidence domain gate |
+| Task 1.1 | done | Re-verify Plan 03 reporting POC | `bash scripts/ci/all.sh` pass | Baseline reporting POC/full gate passed before meta edits |
+| Task 1.2 | done | Migrate policy and state meta skills | `core/skills/meta/{agent-docs,agent-out,agent-scope-lock}/SKILL.md.tera` | Bodies invoke released nils-cli primitives only |
+| Task 1.3 | done | Migrate workflow meta skills | `core/skills/meta/{heuristic-inbox,repo-retro,semantic-commit}/SKILL.md.tera` | Bodies invoke released nils-cli primitives only |
+| Task 1.4 | done | Wire meta manifests, adapters, and golden snapshots | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/` | Shared meta integration rendered for Codex and Claude |
+| Task 2.1 | done | Migrate media skill sources | `core/skills/media/{image-processing,screen-record}/SKILL.md.tera` | Bodies invoke released nils-cli primitives only |
+| Task 2.2 | done | Migrate browser skill sources | `core/skills/browser/{browser-session,canary-check}/SKILL.md.tera` | Bodies invoke released nils-cli primitives only |
+| Task 2.3 | done | Wire media/browser manifests, adapters, and golden snapshots | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/` | Media and browser plugins render/install dry-run cleanly |
+| Task 3.1 | done | Migrate web and test-first evidence sources | `core/skills/evidence/{web-evidence,test-first-evidence}/SKILL.md.tera` | Evidence capture lane A invokes released nils-cli primitives only |
+| Task 3.2 | done | Migrate review and skill-usage evidence sources | `core/skills/evidence/{review-evidence,skill-usage}/SKILL.md.tera` | Evidence capture lane B invokes released nils-cli primitives only |
+| Task 3.3 | done | Wire evidence capture manifests, adapters, and golden snapshots | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/` | Evidence capture plugin integration rendered for both products |
+| Task 4.1 | done | Migrate docs-impact source | `core/skills/evidence/docs-impact/SKILL.md.tera` | Body invokes `docs-impact` and separates CLI classification from judgment |
+| Task 4.2 | done | Migrate model-cross-check source | `core/skills/evidence/model-cross-check/SKILL.md.tera` | Body records provider-boundary notes and invokes `model-cross-check` |
+| Task 4.3 | done | Finalize evidence domain integration | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/`, `docs/source/extraction-backlog.md` | Complete evidence domain gate passed; no extraction blocker found |
 | Task 5.1 | pending | Migrate PR/MR create skills | n/a | `forge-cli` create surfaces |
 | Task 5.2 | pending | Migrate PR/MR close skills and wire create/close integration | n/a | Shared PR files |
 | Task 6.1 | pending | Migrate delivery skill sources | n/a | `forge-cli` delivery macros |
@@ -48,20 +48,20 @@
 
 | Command | Status | Summary | Artifact |
 | --- | --- | --- | --- |
-| `plan-tooling validate --file docs/plans/05-domain-migration/05-domain-migration-plan.md --format text --explain` | pending | Plan bundle validation before dispatch | n/a |
-| `for n in 1 2 3 4 5 6 7 8 9; do plan-tooling batches --file docs/plans/05-domain-migration/05-domain-migration-plan.md --sprint "$n" --format json; done` | pending | Sprint DAG/sizing check for every sprint | n/a |
-| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 1 --strategy deterministic --pr-grouping group --pr-group 'Task 1.1=s1-reporting-guard' --pr-group 'Task 1.2=s1-meta-policy-state' --pr-group 'Task 1.3=s1-meta-workflow' --pr-group 'Task 1.4=s1-meta-integration' --format json` | pending | Sprint 1 dependency-layer PR split | n/a |
-| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 2 --strategy deterministic --pr-grouping group --pr-group 'Task 2.1=s2-media-source' --pr-group 'Task 2.2=s2-browser-source' --pr-group 'Task 2.3=s2-media-browser-integration' --format json` | pending | Sprint 2 dependency-layer PR split | n/a |
-| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 3 --strategy deterministic --pr-grouping group --pr-group 'Task 3.1=s3-web-test-evidence' --pr-group 'Task 3.2=s3-review-usage-evidence' --pr-group 'Task 3.3=s3-evidence-capture-integration' --format json` | pending | Sprint 3 dependency-layer PR split | n/a |
+| `plan-tooling validate --file docs/plans/05-domain-migration/05-domain-migration-plan.md --format text --explain` | pass | Plan bundle validation passed through `bash scripts/ci/all.sh` | n/a |
+| `for n in 1 2 3 4 5 6 7 8 9; do plan-tooling batches --file docs/plans/05-domain-migration/05-domain-migration-plan.md --sprint "$n" --format json; done` | pass | Sprint DAG/sizing check passed for every sprint | `agent-out` run dir `issue-26-sprint-4` |
+| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 1 --strategy deterministic --pr-grouping group --pr-group 'Task 1.1=s1-reporting-guard' --pr-group 'Task 1.2=s1-meta-policy-state' --pr-group 'Task 1.3=s1-meta-workflow' --pr-group 'Task 1.4=s1-meta-integration' --format json` | pass | Sprint 1 dependency-layer PR split returned expected records | n/a |
+| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 2 --strategy deterministic --pr-grouping group --pr-group 'Task 2.1=s2-media-source' --pr-group 'Task 2.2=s2-browser-source' --pr-group 'Task 2.3=s2-media-browser-integration' --format json` | pass | Sprint 2 dependency-layer PR split returned expected records | n/a |
+| `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 3 --strategy deterministic --pr-grouping group --pr-group 'Task 3.1=s3-web-test-evidence' --pr-group 'Task 3.2=s3-review-usage-evidence' --pr-group 'Task 3.3=s3-evidence-capture-integration' --format json` | pass | Sprint 3 dependency-layer PR split returned expected records | n/a |
 | `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 7 --strategy deterministic --pr-grouping group --pr-group 'Task 7.1=s7-issue-lifecycle' --pr-group 'Task 7.2=s7-execution-orchestration' --pr-group 'Task 7.3=s7-dispatch-integration' --format json` | pending | Sprint 7 dependency-layer PR split | n/a |
-| `for n in 4 5 6 8 9; do plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint "$n" --strategy deterministic --pr-grouping per-sprint --format json; done` | pending | Serial sprint PR split where metadata uses `per-sprint` | n/a |
-| `agent-runtime render --product codex` | pending | Render Codex target | n/a |
-| `agent-runtime render --product claude` | pending | Render Claude target | n/a |
-| `agent-runtime render --product codex --update-golden` | pending | Refresh Codex golden snapshots | n/a |
-| `agent-runtime render --product claude --update-golden` | pending | Refresh Claude golden snapshots | n/a |
-| `bash scripts/ci/sandbox-install-rehearsal.sh` | pending | Dry-run install skill-list diff | n/a |
-| `agent-runtime audit-drift` | pending | Root drift audit | n/a |
-| `bash scripts/ci/all.sh` | pending | Full local gate stack | n/a |
+| `for n in 4 5 6 8 9; do plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint "$n" --strategy deterministic --pr-grouping per-sprint --format json; done` | partial | Sprint 4 per-sprint split passed for selected scope; Sprints 5, 6, 8, and 9 remain future scope | n/a |
+| `agent-runtime render --product codex` | pass | Rendered 19 Codex skills | n/a |
+| `agent-runtime render --product claude` | pass | Rendered 19 Claude skills | n/a |
+| `agent-runtime render --product codex --update-golden` | pass | Refreshed Codex golden snapshots | `tests/golden/codex/` |
+| `agent-runtime render --product claude --update-golden` | pass | Refreshed Claude golden snapshots | `tests/golden/claude/` |
+| `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | Dry-run install skill-list diff passed for Claude and Codex | n/a |
+| `agent-runtime audit-drift` | pass | Root audit clean; only documented product manifest info differences | n/a |
+| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-6 passed | n/a |
 | `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke` | pending | Sprint 6 scratch delivery smoke | n/a |
 | `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
@@ -85,4 +85,6 @@
 
 ## Session Log
 
-(none yet)
+- 2026-05-22: Bootstrapped issue-backed execution state for GitHub issue #26 because the issue had source/plan snapshots but no `execute-from-tracking-issue:state:v1` comment.
+- 2026-05-22: Completed Sprint 1 through Sprint 4 in branch `feat/issue-26-sprint-4`: added meta, media, browser, and evidence portable skill source bodies; wired manifests, product plugin metadata, link maps, sandbox expected skill pins, and golden snapshots; added `docs/source/extraction-backlog.md` with no selected-scope extraction blockers.
+- 2026-05-22: Validation passed: `bash scripts/ci/all.sh`, selected `plan-tooling split-prs` checks, full `plan-tooling batches` sweep, `agent-runtime audit-drift`, and `bash scripts/ci/sandbox-install-rehearsal.sh`.

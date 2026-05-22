@@ -1,0 +1,34 @@
+{
+  "name": "meta",
+  "version": "0.1.0",
+  "description": "Core workflow primitives for docs, output paths, scope locks, heuristic cases, retrospectives, and semantic commits.",
+  "author": {
+    "name": "graysurf"
+  },
+  "skills": [
+    {
+      "id": "agent-docs",
+      "source": "core/skills/meta/agent-docs"
+    },
+    {
+      "id": "agent-out",
+      "source": "core/skills/meta/agent-out"
+    },
+    {
+      "id": "agent-scope-lock",
+      "source": "core/skills/meta/agent-scope-lock"
+    },
+    {
+      "id": "heuristic-inbox",
+      "source": "core/skills/meta/heuristic-inbox"
+    },
+    {
+      "id": "repo-retro",
+      "source": "core/skills/meta/repo-retro"
+    },
+    {
+      "id": "semantic-commit",
+      "source": "core/skills/meta/semantic-commit"
+    }
+  ]
+}
