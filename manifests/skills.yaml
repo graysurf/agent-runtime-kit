@@ -84,6 +84,58 @@ skills:
       agent-out: ">=0.16.0"
     state_out_mode: runtime
 
+  - id: meta.bench
+    domain: meta
+    source: core/skills/meta/bench
+    products:
+      codex:
+        name: bench
+        render_to: plugins/meta/skills/bench/SKILL.md
+      claude:
+        name: bench
+        render_to: plugins/meta/skills/bench/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
+  - id: meta.bootstrap
+    domain: meta
+    source: core/skills/meta/bootstrap
+    products:
+      codex:
+        name: bootstrap
+        render_to: plugins/meta/skills/bootstrap/SKILL.md
+      claude:
+        name: bootstrap
+        render_to: plugins/meta/skills/bootstrap/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
+  - id: meta.demo
+    domain: meta
+    source: core/skills/meta/demo
+    products:
+      codex:
+        name: demo
+        render_to: plugins/meta/skills/demo/SKILL.md
+      claude:
+        name: demo
+        render_to: plugins/meta/skills/demo/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
+  - id: meta.deploy
+    domain: meta
+    source: core/skills/meta/deploy
+    products:
+      codex:
+        name: deploy
+        render_to: plugins/meta/skills/deploy/SKILL.md
+      claude:
+        name: deploy
+        render_to: plugins/meta/skills/deploy/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
   - id: meta.agent-scope-lock
     domain: meta
     source: core/skills/meta/agent-scope-lock
@@ -110,6 +162,32 @@ skills:
         render_to: plugins/meta/skills/heuristic-inbox/SKILL.md
     required_clis:
       heuristic-inbox: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.pre-pr
+    domain: meta
+    source: core/skills/meta/pre-pr
+    products:
+      codex:
+        name: pre-pr
+        render_to: plugins/meta/skills/pre-pr/SKILL.md
+      claude:
+        name: pre-pr
+        render_to: plugins/meta/skills/pre-pr/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
+  - id: meta.release
+    domain: meta
+    source: core/skills/meta/release
+    products:
+      codex:
+        name: release
+        render_to: plugins/meta/skills/release/SKILL.md
+      claude:
+        name: release
+        render_to: plugins/meta/skills/release/SKILL.md
+    required_clis: {}
     state_out_mode: runtime
 
   - id: meta.repo-retro

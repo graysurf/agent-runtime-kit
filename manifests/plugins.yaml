@@ -26,8 +26,14 @@ plugins:
     contained_skills:
       - meta.agent-docs
       - meta.agent-out
+      - meta.bench
+      - meta.bootstrap
+      - meta.demo
+      - meta.deploy
       - meta.agent-scope-lock
       - meta.heuristic-inbox
+      - meta.pre-pr
+      - meta.release
       - meta.repo-retro
       - meta.semantic-commit
     product_manifests:

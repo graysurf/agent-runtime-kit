@@ -28,13 +28,16 @@ plan-tooling --version
 Before repository edits, run the home-scope preflight:
 
 ```bash
-agent-docs --docs-home "$AGENT_HOME" resolve --context startup --strict --format checklist
-agent-docs --docs-home "$AGENT_HOME" resolve --context project-dev --strict --format checklist
+agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context startup --strict --format checklist
+agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev --strict --format checklist
 ```
 
 ## Repo Layout
 
 - `core/`: portable source content.
+- `CODEX_AGENTS.md`: Codex home-scope policy source linked by
+  `$HOME/.codex/AGENTS.md`; this filename is intentionally distinct from
+  project-local `AGENTS.md`.
 - `targets/`: Codex and Claude adapter surfaces.
 - `manifests/`: machine-checkable source of truth for skills, plugins,
   products, runtime roots, and CLI tools.
@@ -49,7 +52,8 @@ agent-docs --docs-home "$AGENT_HOME" resolve --context project-dev --strict --fo
 - `tests/runtime-smoke/`: Plan 06 runtime skill acceptance harness, including
   the acceptance matrix, temporary runtime-home install smoke, and fixture
   workspaces.
-- `scripts/ci/all.sh`: current CI gate stack, positions 1-7.
+- `tests/projects/`: stable project-local overlay smoke fixtures.
+- `scripts/ci/all.sh`: current CI gate stack, positions 1-8.
 
 ## Documentation Changes
 
@@ -158,6 +162,7 @@ That currently performs:
 5. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
 6. sandbox install rehearsal dry-run plus expected skill-list diff
 7. `bash tests/runtime-smoke/run.sh --mode deterministic`
+8. `bash tests/projects/project-local-smoke/run.sh`
 
 For targeted checks:
 
@@ -175,7 +180,9 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
 bash tests/runtime-smoke/run.sh --mode deterministic --domain pr
+bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
+bash tests/projects/project-local-smoke/run.sh
 bash tests/runtime-smoke/run.sh --mode product --product codex
 bash tests/runtime-smoke/run.sh --mode product --product claude
 bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only
@@ -195,10 +202,16 @@ can vary and are not treated as Sprint 1 blockers.
 Runtime smoke deterministic mode runs command-level probes inside temporary
 fixture workspaces and writes artifacts under the run artifact directory.
 Current deterministic coverage includes the `meta`, `media`, `browser`,
-`evidence`, `pr`, and `reporting` domains.
+`evidence`, `pr`, `dispatch`, and `reporting` domains.
 `screen-record` is host-sensitive: the deterministic media probe records a pass
 when `screen-record --preflight` succeeds and records `skip-host-capability`
 when the host capture prerequisites are unavailable.
+
+`tests/projects/project-local-smoke/run.sh` validates project-local shim
+coverage for `bench`, `bootstrap`, `demo`, `deploy`, `pre-pr`, and `release`.
+It executes fixture `.agents/scripts/*.sh` files, installs Codex into a temp
+runtime home, runs `agent-runtime doctor --check-project`, and verifies both
+wired and missing-script overlay reports.
 
 `tests/smoke/deliver-lifecycle.sh` is a controlled Sprint 6 PR delivery smoke.
 It refuses to run without a scratch fork and branch, and its default mode is a
