@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Codex may execute hooks through a source symlink; keep the checkout clean.
+sys.dont_write_bytecode = True
+
 from hook_common import ALLOW, emit_block, patch_text_candidates, read_payload, tool_input_dict
 
 PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (

@@ -93,3 +93,42 @@ local validation in one implementation slice.
 - **Validation**:
   - `bash tests/hooks/run.sh`
   - `bash scripts/ci/all.sh`
+
+## Issue Closeout Gate
+
+Issue #41 is ready for closeout only after the merged hook source is installed
+into the local Codex live home. The closeout step must be dry-run-first and
+then, only after explicit approval, apply the Codex install so:
+
+- `$HOME/.codex/hooks` points at `core/hooks/shared/` from this checkout.
+- `$HOME/.codex/config.toml` references `$CODEX_HOME/hooks/...` commands from
+  the managed hook block.
+- Legacy `$HOME/.config/agent-kit/hooks/codex/...` commands are no longer the
+  active Codex hook paths.
+- Auth, history, sessions, logs, caches, plugin install artifacts, and other
+  runtime state are not modified.
+- A fresh Codex invocation proves at least one installed hook actually runs.
+- Issue #43 remains the owner for Codex skill discovery and broader
+  `$HOME/.agents` compatibility alias retirement.
+
+Validation:
+
+- `state_home="${CODEX_AGENT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex}" && agent-runtime install --source-root "$PWD" --product codex --live-home "$HOME/.codex" --state-home "$state_home" --dry-run`
+- After explicit approval only:
+  `state_home="${CODEX_AGENT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex}" && agent-runtime install --source-root "$PWD" --product codex --live-home "$HOME/.codex" --state-home "$state_home" --apply`
+- `test "$(readlink "$HOME/.codex/hooks")" = "$PWD/core/hooks/shared"`
+- `rg -n 'command = ".*\\.config/agent-kit/hooks/codex' "$HOME/.codex/config.toml"` returns no matches.
+- `rg -n 'AGENT_RUNTIME_PRODUCT=codex.*\\$CODEX_HOME/hooks' "$HOME/.codex/config.toml"` shows the managed hook commands.
+- `codex exec --json --cd "$PWD" --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox 'Use the Bash tool to run exactly: git commit -m test. Do not run any other command.'` is blocked by the direct-commit PreToolUse hook.
+
+Current outcome as of 2026-05-23:
+
+- The local closeout gate has been applied and verified with a hook-only overlay
+  to avoid unrelated Codex runtime surface changes.
+- `$HOME/.codex/hooks` points at this checkout's `core/hooks/shared/`.
+- `$HOME/.codex/config.toml` contains the `agent-runtime-kit:hooks` managed
+  block and no active legacy Codex hook commands.
+- `$HOME/.agents/hooks/codex` has been removed after verification. The broader
+  `$HOME/.agents` compatibility alias is intentionally left to issue #43.
+- Python hook bytecode generation through the live source symlink is suppressed
+  in the hook entrypoints and covered by `bash tests/hooks/run.sh`.

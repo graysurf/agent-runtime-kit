@@ -31,10 +31,14 @@ def run_hook(
     *,
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
+    dont_write_bytecode: bool = True,
 ) -> tuple[int, dict[str, object] | None, str]:
     full_env = dict(os.environ)
     full_env["PYTHONPATH"] = str(HOOK_DIR)
-    full_env["PYTHONDONTWRITEBYTECODE"] = "1"
+    if dont_write_bytecode:
+        full_env["PYTHONDONTWRITEBYTECODE"] = "1"
+    else:
+        full_env.pop("PYTHONDONTWRITEBYTECODE", None)
     if env:
         full_env.update(env)
     completed = subprocess.run(
@@ -74,6 +78,22 @@ class SharedHookTests(unittest.TestCase):
         )
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "semantic-commit")
+
+    def test_python_hooks_do_not_write_bytecode_in_source_checkout(self) -> None:
+        pycache = HOOK_DIR / "__pycache__"
+        if pycache.exists():
+            for path in pycache.iterdir():
+                path.unlink()
+            pycache.rmdir()
+
+        code, decision, stderr = run_hook(
+            "block-direct-git-commit.py",
+            command_payload("git status"),
+            dont_write_bytecode=False,
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+        self.assertFalse(pycache.exists())
 
     def test_blocks_nontrivial_semantic_commit_without_body(self) -> None:
         code, decision, stderr = run_hook(

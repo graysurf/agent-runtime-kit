@@ -1,6 +1,6 @@
 # Shared Hooks Runtime Discussion Source
 
-- Status: implemented in this branch
+- Status: implementation merged; local Codex hook install verified
 - Date: 2026-05-22
 - Source: user request to move agent-kit and claude-kit hooks into
   `agent-runtime-kit`, keep product harness differences where required, and
@@ -81,6 +81,30 @@ work turns that design into a concrete source layout.
 5. `agent-runtime install --dry-run` includes shared hook script installation
    for both products and Codex config managed-block activation.
 6. The repo CI gate runs the hook contract smoke.
+7. Before closing issue #41, the local Codex live home must be updated through
+   `agent-runtime install` so `$HOME/.codex/hooks` points at the
+   `agent-runtime-kit` shared hook source and `$HOME/.codex/config.toml`
+   references those installed hooks instead of the legacy agent-kit hook paths.
+   This must be dry-run-first and must not mutate auth, history, sessions, logs,
+   caches, or other runtime state.
+
+## Local Closeout Evidence
+
+- As of 2026-05-23, `$HOME/.codex/hooks` points at this checkout's
+  `core/hooks/shared/`.
+- `$HOME/.codex/config.toml` uses the `agent-runtime-kit:hooks` managed block
+  with `$CODEX_HOME/hooks/...` commands, and active shell/Codex config checks no
+  longer reference `$HOME/.config/agent-kit/hooks/codex` or
+  `$HOME/.agents/hooks/codex`.
+- `$HOME/.agents/hooks/codex` was removed after the new hook path was verified.
+  This only retires the legacy hook directory; issue #43 still owns the broader
+  `$HOME/.agents` compatibility alias and Codex skill discovery cutover.
+- A fresh `codex exec` invocation that attempted `git commit -m test` was
+  blocked by the migrated direct-commit PreToolUse hook.
+- The live symlink initially showed Python hooks could create
+  `core/hooks/shared/__pycache__/` in the source checkout. The hook entrypoints
+  now suppress Python bytecode before importing shared hook modules, and the
+  hook contract tests cover the source-checkout cleanliness case.
 
 ## Risks And Guardrails
 

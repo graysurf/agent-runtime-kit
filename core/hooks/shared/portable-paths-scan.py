@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+# Codex may execute hooks through a source symlink; keep the checkout clean.
+sys.dont_write_bytecode = True
+
 from hook_common import ALLOW, emit_block, patch_text_candidates, read_payload, tool_input_dict
 
 HOME_PATH_RE = re.compile(

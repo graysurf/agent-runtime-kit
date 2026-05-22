@@ -6,6 +6,9 @@ from __future__ import annotations
 import re
 import sys
 
+# Codex may execute hooks through a source symlink; keep the checkout clean.
+sys.dont_write_bytecode = True
+
 from hook_common import ALLOW, command_from, emit_block, read_payload
 
 BLOCK_REASON_TEMPLATE = (
