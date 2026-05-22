@@ -88,3 +88,107 @@ entries:
     source: build/codex/plugins/dispatch/skills
     destination: plugins/dispatch/skills
     recursive: true
+
+  - id: hooks.shared-scripts
+    kind: symlinked-file
+    source: core/hooks/shared
+    destination: hooks
+
+  - id: hooks.codex-config
+    kind: managed-block
+    destination: config.toml
+    surface: hooks
+    comment_style: hash
+    body_template: |-
+      [[hooks.PreToolUse]]
+      matcher = "Bash"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-git-commit.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Block direct git commit"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/semantic-commit-body-gate.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Require semantic-commit body"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-python.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Block bare Python in managed repos"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-pr-create.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Block direct PR/MR creation"
+
+      [[hooks.PreToolUse]]
+      matcher = "Write|Edit|NotebookEdit|apply_patch"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-project-memory-write.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Protect project memory writes"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/mcp-secret-scan.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Scan .mcp.json for secrets"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/portable-paths-scan.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Scan docs for local paths"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/agent-scope-lock-guard.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Validate active scope lock"
+
+      [[hooks.UserPromptSubmit]]
+      matcher = ""
+
+      [[hooks.UserPromptSubmit.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$CODEX_HOME/hooks/user-prompt-agent-docs.sh\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Remind agent-docs preflight"
+
+      [[hooks.UserPromptSubmit.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/skill-usage-reminder.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Remind skill-usage recording"
+
+      [[hooks.SessionStart]]
+      matcher = "startup|resume|clear"
+
+      [[hooks.SessionStart.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$CODEX_HOME/hooks/session-start-healthcheck.sh\""
+      timeout = 20
+      statusMessage = "agent-runtime-kit: Check baseline health"
+
+      [[hooks.Stop]]
+      matcher = ""
+
+      [[hooks.Stop.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/stop-pre-pr-reminder.sh\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Remind PR readiness"
+
+      [[hooks.Stop.hooks]]
+      type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/agent-scope-lock-guard.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Report scope lock violations"

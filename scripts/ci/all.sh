@@ -17,6 +17,14 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
+# Git hooks export repo-local GIT_* variables. They are correct for the hook
+# process, but they leak into temp git repositories used by runtime smoke tests.
+if git_local_env="$(git rev-parse --local-env-vars 2>/dev/null)"; then
+  while IFS= read -r env_name; do
+    [[ -n "$env_name" ]] && unset "$env_name"
+  done <<<"$git_local_env"
+fi
+
 banner() {
   local position="$1"
   local title="$2"
@@ -118,4 +126,10 @@ bash tests/runtime-smoke/run.sh --mode deterministic
 banner 8 "project-local overlay smoke"
 bash tests/projects/project-local-smoke/run.sh
 
-printf '\nci/all.sh: positions 1-8 OK\n'
+# -----------------------------------------------------------------------------
+# Position 9 — shared hook contract smoke
+# -----------------------------------------------------------------------------
+banner 9 "shared hook contract smoke"
+bash tests/hooks/run.sh
+
+printf '\nci/all.sh: positions 1-9 OK\n'
