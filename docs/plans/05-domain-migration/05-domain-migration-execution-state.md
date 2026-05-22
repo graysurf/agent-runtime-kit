@@ -3,13 +3,13 @@
 ## Current State
 
 - Status: in-progress
-- Target scope: Sprint 1 through Sprint 4 complete; Sprint 5+ pending
-- Execution window: Sprint 1-4 completed on 2026-05-22
+- Target scope: Sprint 1 through Sprint 5 complete; Sprint 6+ pending
+- Execution window: Sprint 5 PR create/close domain migration
 - Staged execution confirmation: not applicable
-- Current task: Task 5.1
-- Next task: Task 5.1 after the Plan 06 deterministic acceptance gate remains green
-- Last updated: 2026-05-22
-- Branch/commit: feat/issue-26-sprint-4; Plan 06 dependency update pending on docs/plan-06-acceptance-unblock
+- Current task: Task 5.2 complete pending PR merge
+- Next task: Task 6.1 after Sprint 5 PR merge
+- Last updated: 2026-05-22 17:12 CST
+- Branch/commit/PR: feat/plan-05-pr-domain; commit 71461ea; PR #37 open
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
 
@@ -46,8 +46,8 @@ result must be recorded before migration proceeds past the affected surface.
 | Task 4.1 | done | Migrate docs-impact source | `core/skills/evidence/docs-impact/SKILL.md.tera` | Body invokes `docs-impact` and separates CLI classification from judgment |
 | Task 4.2 | done | Migrate model-cross-check source | `core/skills/evidence/model-cross-check/SKILL.md.tera` | Body records provider-boundary notes and invokes `model-cross-check` |
 | Task 4.3 | done | Finalize evidence domain integration | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/`, `docs/source/extraction-backlog.md` | Complete evidence domain gate passed; no extraction blocker found |
-| Task 5.1 | pending | Migrate PR/MR create skills | n/a | `forge-cli` create surfaces |
-| Task 5.2 | pending | Migrate PR/MR close skills and wire create/close integration | n/a | Shared PR files |
+| Task 5.1 | done | Migrate PR/MR create skills | `core/skills/pr/{create-github-pr,create-gitlab-mr,create-dispatch-lane-pr}/SKILL.md.tera` | Create bodies invoke released `forge-cli pr create` surfaces only. |
+| Task 5.2 | done | Migrate PR/MR close skills and wire create/close integration | manifests, link maps, plugin manifests, sandbox pins, `tests/golden/`, runtime-smoke `pr` probes | Create/close PR plugin integration rendered for both products; `forge-cli` dry-run smoke passed. |
 | Task 6.1 | pending | Migrate delivery skill sources | n/a | `forge-cli` delivery macros |
 | Task 6.2 | pending | Add delivery lifecycle smoke harness | n/a | Scratch fork/branch only |
 | Task 6.3 | pending | Wire delivery manifests, golden snapshots, and PR domain gate | n/a | Full PR-domain integration |
@@ -71,15 +71,21 @@ result must be recorded before migration proceeds past the affected surface.
 | `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 3 --strategy deterministic --pr-grouping group --pr-group 'Task 3.1=s3-web-test-evidence' --pr-group 'Task 3.2=s3-review-usage-evidence' --pr-group 'Task 3.3=s3-evidence-capture-integration' --format json` | pass | Sprint 3 dependency-layer PR split returned expected records | n/a |
 | `plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint 7 --strategy deterministic --pr-grouping group --pr-group 'Task 7.1=s7-issue-lifecycle' --pr-group 'Task 7.2=s7-execution-orchestration' --pr-group 'Task 7.3=s7-dispatch-integration' --format json` | pending | Sprint 7 dependency-layer PR split | n/a |
 | `for n in 4 5 6 8 9; do plan-tooling split-prs --file docs/plans/05-domain-migration/05-domain-migration-plan.md --scope sprint --sprint "$n" --strategy deterministic --pr-grouping per-sprint --format json; done` | partial | Sprint 4 per-sprint split passed for selected scope; Sprints 5, 6, 8, and 9 remain future scope | n/a |
-| `agent-runtime render --product codex` | pass | Rendered 19 Codex skills | n/a |
-| `agent-runtime render --product claude` | pass | Rendered 19 Claude skills | n/a |
-| `agent-runtime render --product codex --update-golden` | pass | Refreshed Codex golden snapshots | `tests/golden/codex/` |
-| `agent-runtime render --product claude --update-golden` | pass | Refreshed Claude golden snapshots | `tests/golden/claude/` |
+| `agent-runtime render --product codex` | pass | Rendered 24 Codex skills | n/a |
+| `agent-runtime render --product claude` | pass | Rendered 24 Claude skills | n/a |
+| `agent-runtime render --product codex --update-golden` | pass | Refreshed Codex golden snapshots including PR domain files | `tests/golden/codex/` |
+| `agent-runtime render --product claude --update-golden` | pass | Refreshed Claude golden snapshots including PR domain files | `tests/golden/claude/` |
 | `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | Dry-run install skill-list diff passed for Claude and Codex | n/a |
 | `agent-runtime audit-drift` | pass | Root audit clean; only documented product manifest info differences | n/a |
-| `bash tests/runtime-smoke/run.sh --mode matrix` | pass | Plan 06 acceptance matrix covers all 19 migrated Sprint 1-4 skill ids plus quarantined product prompt cases. | n/a |
-| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Plan 06 deterministic gate passed for all 19 migrated Sprint 1-4 skill ids. | temp run root cleaned |
-| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed, including deterministic runtime skill smoke. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode matrix` | pass | Acceptance matrix covers 24 unique skill ids plus quarantined product prompt cases. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Deterministic runtime smoke passed for all 24 migrated skill ids. | temp run root cleaned |
+| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed, including 24-skill deterministic runtime smoke. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain pr` | pass | Sprint 5 PR domain probes passed for GitHub/GitLab create and close dry-run surfaces. | temp run root cleaned |
+| `forge-cli pr wait-checks 37 --provider github --repo graysurf/agent-runtime-kit --format json` | fail | `forge-cli 0.16.0` requested unsupported `gh 2.92.0` JSON field `conclusion`; recorded extraction backlog item `P5-S5-G1`. | n/a |
+| `gh pr checks 37 --watch --interval 10 --fail-fast` | pass | Provider-native fallback verified PR #37 remote CI passed. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Runtime skill smoke now covers 24 skills including the Sprint 5 PR domain. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode install` | pass | Codex and Claude temp homes installed 24 skills each with doctor `block=0`. | temp run root cleaned |
+| `bash tests/runtime-smoke/run.sh --mode product --format json` | pass | Product temp-home install summary updated to 24 skills; prompt cases remain quarantined skips. | `/tmp/runtime-smoke-product-summary.json` |
 | `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke` | pending | Sprint 6 scratch delivery smoke | n/a |
 | `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
@@ -99,6 +105,10 @@ result must be recorded before migration proceeds past the affected surface.
   `skip-host-capability` classification.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
+- Sprint 6 must account for extraction backlog item `P5-S5-G1`: live GitHub
+  checks through `forge-cli 0.16.0` fail with `gh 2.92.0`, so delivery smoke
+  either needs a fixed nils-cli release or an explicitly recorded operator
+  fallback.
 - Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
   `graysurf/claude-kit`.
 - Local cutover should use the recommended 2026-06-30 date unless the execution
@@ -110,3 +120,5 @@ result must be recorded before migration proceeds past the affected surface.
 - 2026-05-22: Completed Sprint 1 through Sprint 4 in branch `feat/issue-26-sprint-4`: added meta, media, browser, and evidence portable skill source bodies; wired manifests, product plugin metadata, link maps, sandbox expected skill pins, and golden snapshots; added `docs/source/extraction-backlog.md` with no selected-scope extraction blockers.
 - 2026-05-22: Validation passed: `bash scripts/ci/all.sh`, selected `plan-tooling split-prs` checks, full `plan-tooling batches` sweep, `agent-runtime audit-drift`, and `bash scripts/ci/sandbox-install-rehearsal.sh`.
 - 2026-05-22: Recorded Plan 06 acceptance dependency before Sprint 5+ resumes: deterministic runtime smoke is the required gate; product smoke remains manual/quarantined until isolated provider/auth execution is supplied.
+- 2026-05-22: Completed Sprint 5 PR create/close migration in branch `feat/plan-05-pr-domain`: added `forge-cli`-backed PR/MR create and close skill sources, PR plugin manifests/link maps, golden snapshots, sandbox pins, and deterministic PR runtime-smoke probes; opened PR #37.
+- 2026-05-22: Recorded extraction backlog item `P5-S5-G1` after live `forge-cli pr checks` / `wait-checks` failed against `gh 2.92.0`; used `gh pr checks` as the provider-native fallback for PR #37 CI evidence.

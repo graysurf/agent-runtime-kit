@@ -157,6 +157,7 @@ That currently performs:
 4. render-golden refresh plus `git diff --exit-code -- tests/golden/`
 5. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
 6. sandbox install rehearsal dry-run plus expected skill-list diff
+7. `bash tests/runtime-smoke/run.sh --mode deterministic`
 
 For targeted checks:
 
@@ -173,6 +174,7 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
 bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
+bash tests/runtime-smoke/run.sh --mode deterministic --domain pr
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
 bash tests/runtime-smoke/run.sh --mode product --product codex
 bash tests/runtime-smoke/run.sh --mode product --product claude
@@ -190,8 +192,8 @@ can vary and are not treated as Sprint 1 blockers.
 
 Runtime smoke deterministic mode runs command-level probes inside temporary
 fixture workspaces and writes artifacts under the run artifact directory.
-Sprint 2 currently enables the `meta`, `media`, `browser`, `evidence`, and
-`reporting` domains.
+Current deterministic coverage includes the `meta`, `media`, `browser`,
+`evidence`, `pr`, and `reporting` domains.
 `screen-record` is host-sensitive: the deterministic media probe records a pass
 when `screen-record --preflight` succeeds and records `skip-host-capability`
 when the host capture prerequisites are unavailable.

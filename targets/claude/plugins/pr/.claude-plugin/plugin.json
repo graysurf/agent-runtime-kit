@@ -1,0 +1,9 @@
+{
+  "name": "pr",
+  "version": "0.1.0",
+  "description": "Provider PR and MR creation, review-gated closeout, and dispatch lane PR workflows backed by forge-cli.",
+  "author": {
+    "name": "graysurf"
+  },
+  "homepage": "https://github.com/graysurf/agent-runtime-kit"
+}

@@ -274,6 +274,71 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: pr.create-github-pr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.create-github-pr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git workspace with pushed upstream branch metadata
+    invocation: forge-cli github pr create dry-run validates body and branch contract
+    expected_exit_code: 0
+    expected_artifacts: forge-cli dry-run provider command
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: pr.create-gitlab-mr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.create-gitlab-mr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git workspace with pushed upstream branch metadata
+    invocation: forge-cli gitlab pr create dry-run validates body and branch contract
+    expected_exit_code: 0
+    expected_artifacts: forge-cli dry-run provider command
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: pr.create-dispatch-lane-pr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.create-dispatch-lane-pr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git workspace with pushed upstream branch metadata
+    invocation: forge-cli github pr create dry-run with dispatch label and plan branch
+    expected_exit_code: 0
+    expected_artifacts: forge-cli dry-run provider command
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: pr.close-github-pr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.close-github-pr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: none
+    invocation: forge-cli github pr checks ready merge close dry-run surfaces
+    expected_exit_code: 0
+    expected_artifacts: forge-cli dry-run provider commands
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: pr.close-gitlab-mr.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.close-gitlab-mr
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: none
+    invocation: forge-cli gitlab pr checks ready merge close dry-run surfaces
+    expected_exit_code: 0
+    expected_artifacts: forge-cli dry-run provider commands
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.agent-docs.codex.product-prompt
     product: codex
     domain: meta

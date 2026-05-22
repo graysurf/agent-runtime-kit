@@ -279,3 +279,73 @@ skills:
     required_clis:
       model-cross-check: ">=0.16.0"
     state_out_mode: runtime
+
+  - id: pr.create-github-pr
+    domain: pr
+    source: core/skills/pr/create-github-pr
+    products:
+      codex:
+        name: create-github-pr
+        render_to: plugins/pr/skills/create-github-pr/SKILL.md
+      claude:
+        name: create-github-pr
+        render_to: plugins/pr/skills/create-github-pr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: pr.create-gitlab-mr
+    domain: pr
+    source: core/skills/pr/create-gitlab-mr
+    products:
+      codex:
+        name: create-gitlab-mr
+        render_to: plugins/pr/skills/create-gitlab-mr/SKILL.md
+      claude:
+        name: create-gitlab-mr
+        render_to: plugins/pr/skills/create-gitlab-mr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: pr.create-dispatch-lane-pr
+    domain: pr
+    source: core/skills/pr/create-dispatch-lane-pr
+    products:
+      codex:
+        name: create-dispatch-lane-pr
+        render_to: plugins/pr/skills/create-dispatch-lane-pr/SKILL.md
+      claude:
+        name: create-dispatch-lane-pr
+        render_to: plugins/pr/skills/create-dispatch-lane-pr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: pr.close-github-pr
+    domain: pr
+    source: core/skills/pr/close-github-pr
+    products:
+      codex:
+        name: close-github-pr
+        render_to: plugins/pr/skills/close-github-pr/SKILL.md
+      claude:
+        name: close-github-pr
+        render_to: plugins/pr/skills/close-github-pr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: pr.close-gitlab-mr
+    domain: pr
+    source: core/skills/pr/close-gitlab-mr
+    products:
+      codex:
+        name: close-gitlab-mr
+        render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
+      claude:
+        name: close-gitlab-mr
+        render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
+    required_clis:
+      forge-cli: ">=0.16.0"
+    state_out_mode: runtime

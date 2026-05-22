@@ -16,7 +16,7 @@ history, logs, caches, or product state.
   `tests/sandbox/<product>/expected-skills.txt`, and runs `agent-runtime
   doctor`.
 - `deterministic`: runs committed command-level probes for available domains.
-  Sprint 2 currently includes `meta`, `media`, `browser`, `evidence`, and
+  Current coverage includes `meta`, `media`, `browser`, `evidence`, `pr`, and
   `reporting` domains.
 - `product`: runs quarantined product CLI isolation probes, installs temporary
   product homes, and records representative prompt cases. Prompt execution is
@@ -38,6 +38,7 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain meta
 bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
+bash tests/runtime-smoke/run.sh --mode deterministic --domain pr
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
 bash tests/runtime-smoke/run.sh --mode product --product codex
 bash tests/runtime-smoke/run.sh --mode product --product claude

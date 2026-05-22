@@ -68,3 +68,16 @@ plugins:
       codex: targets/codex/plugins/evidence/.codex-plugin/plugin.json
       claude: targets/claude/plugins/evidence/.claude-plugin/plugin.json
     install_policy: always
+
+  - id: pr
+    domain: pr
+    contained_skills:
+      - pr.create-github-pr
+      - pr.create-gitlab-mr
+      - pr.create-dispatch-lane-pr
+      - pr.close-github-pr
+      - pr.close-gitlab-mr
+    product_manifests:
+      codex: targets/codex/plugins/pr/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/pr/.claude-plugin/plugin.json
+    install_policy: always

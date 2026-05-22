@@ -66,3 +66,14 @@ entries:
     source: build/claude/plugins/evidence/skills
     destination: plugins/evidence/skills
     recursive: true
+
+  - id: pr.plugin-manifest
+    kind: plugin-manifest-copy
+    source: targets/claude/plugins/pr/.claude-plugin/plugin.json
+    destination: plugins/pr/.claude-plugin/plugin.json
+
+  - id: pr.skills-tree
+    kind: symlinked-file
+    source: build/claude/plugins/pr/skills
+    destination: plugins/pr/skills
+    recursive: true
