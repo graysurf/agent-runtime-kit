@@ -108,7 +108,7 @@ case "$PRODUCT" in
 esac
 
 case "$DOMAIN" in
-  "" | browser | media | meta)
+  "" | browser | evidence | media | meta)
     ;;
   *)
     echo "runtime-smoke: unsupported domain: $DOMAIN" >&2
@@ -291,9 +291,13 @@ run_deterministic_mode() {
       bash "$SCRIPT_DIR/cases/meta/run.sh" || failures=1
       bash "$SCRIPT_DIR/cases/media/run.sh" || failures=1
       bash "$SCRIPT_DIR/cases/browser/run.sh" || failures=1
+      bash "$SCRIPT_DIR/cases/evidence/run.sh" || failures=1
       ;;
     browser)
       bash "$SCRIPT_DIR/cases/browser/run.sh" || failures=1
+      ;;
+    evidence)
+      bash "$SCRIPT_DIR/cases/evidence/run.sh" || failures=1
       ;;
     media)
       bash "$SCRIPT_DIR/cases/media/run.sh" || failures=1
