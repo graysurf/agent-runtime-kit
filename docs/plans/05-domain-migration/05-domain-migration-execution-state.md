@@ -7,11 +7,27 @@
 - Execution window: Sprint 1-4 completed on 2026-05-22
 - Staged execution confirmation: not applicable
 - Current task: Task 5.1
-- Next task: Task 5.1
+- Next task: Task 5.1 after the Plan 06 deterministic acceptance gate remains green
 - Last updated: 2026-05-22
-- Branch/commit: feat/issue-26-sprint-4 (commit pending)
+- Branch/commit: feat/issue-26-sprint-4; Plan 06 dependency update pending on docs/plan-06-acceptance-unblock
 - Source document: docs/plans/05-domain-migration/05-domain-migration-plan.md
 - Direct source-doc execution waiver: not applicable
+
+## Plan 06 Acceptance Dependency
+
+Plan 05 Sprint 5+ must not resume until the Plan 06 runtime skill acceptance
+harness is in place and deterministic acceptance is green for every Sprint 1-4
+migrated skill, or the affected case has an explicit `skip-host-capability`
+classification. The required continuation checks are:
+
+- `bash tests/runtime-smoke/run.sh --mode matrix`
+- `bash tests/runtime-smoke/run.sh --mode deterministic`
+- `bash scripts/ci/all.sh`
+
+Product-in-the-loop smoke is a quarantined/manual evidence lane, not a required
+Sprint 5 blocker. Product prompt execution remains skipped by default unless an
+operator supplies isolated provider/auth state; any `blocked-design` product
+result must be recorded before migration proceeds past the affected surface.
 
 ## Task Ledger
 
@@ -61,7 +77,9 @@
 | `agent-runtime render --product claude --update-golden` | pass | Refreshed Claude golden snapshots | `tests/golden/claude/` |
 | `bash scripts/ci/sandbox-install-rehearsal.sh` | pass | Dry-run install skill-list diff passed for Claude and Codex | n/a |
 | `agent-runtime audit-drift` | pass | Root audit clean; only documented product manifest info differences | n/a |
-| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-6 passed | n/a |
+| `bash tests/runtime-smoke/run.sh --mode matrix` | pass | Plan 06 acceptance matrix covers all 19 migrated Sprint 1-4 skill ids plus quarantined product prompt cases. | n/a |
+| `bash tests/runtime-smoke/run.sh --mode deterministic` | pass | Plan 06 deterministic gate passed for all 19 migrated Sprint 1-4 skill ids. | temp run root cleaned |
+| `bash scripts/ci/all.sh` | pass | Full local gate stack positions 1-7 passed, including deterministic runtime skill smoke. | n/a |
 | `bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke` | pending | Sprint 6 scratch delivery smoke | n/a |
 | `agent-runtime install --product claude --dry-run` | pending | Sprint 8 effective config check | n/a |
 | `agent-runtime install --product codex --dry-run` | pending | Sprint 8 effective config check | n/a |
@@ -76,6 +94,9 @@
 
 - Any missing nils-cli binary or required flag blocks the affected skill body
   and must be logged in `docs/source/extraction-backlog.md`.
+- Sprint 5+ must not continue unless Plan 06 deterministic acceptance is green
+  for Sprint 1-4 migrated skills, or an affected case has an explicit
+  `skip-host-capability` classification.
 - Sprint 6 delivery smoke requires a scratch fork/branch and must not target
   `graysurf/agent-runtime-kit` `main`.
 - Sprint 9 requires GitHub admin permission on `graysurf/agent-kit` and
@@ -88,3 +109,4 @@
 - 2026-05-22: Bootstrapped issue-backed execution state for GitHub issue #26 because the issue had source/plan snapshots but no `execute-from-tracking-issue:state:v1` comment.
 - 2026-05-22: Completed Sprint 1 through Sprint 4 in branch `feat/issue-26-sprint-4`: added meta, media, browser, and evidence portable skill source bodies; wired manifests, product plugin metadata, link maps, sandbox expected skill pins, and golden snapshots; added `docs/source/extraction-backlog.md` with no selected-scope extraction blockers.
 - 2026-05-22: Validation passed: `bash scripts/ci/all.sh`, selected `plan-tooling split-prs` checks, full `plan-tooling batches` sweep, `agent-runtime audit-drift`, and `bash scripts/ci/sandbox-install-rehearsal.sh`.
+- 2026-05-22: Recorded Plan 06 acceptance dependency before Sprint 5+ resumes: deterministic runtime smoke is the required gate; product smoke remains manual/quarantined until isolated provider/auth execution is supplied.
