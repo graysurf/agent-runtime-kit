@@ -8,8 +8,8 @@
 - Execution window: Sprint 2 Task 2.1 meta skill probes
 - Current task: Task 2.1 PR checkpoint
 - Next task: Task 2.2 add media and browser probes
-- Last updated: 2026-05-22 15:19 CST
-- Branch/commit/PR: feat/runtime-smoke-meta-probes; commit pending; PR pending
+- Last updated: 2026-05-22 15:22 CST
+- Branch/commit/PR: feat/runtime-smoke-meta-probes; `231845d`; https://github.com/graysurf/agent-runtime-kit/pull/30
 - Source document: docs/plans/06-runtime-skill-acceptance-harness/06-runtime-skill-acceptance-harness-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/28
@@ -44,6 +44,7 @@
 - 2026-05-22 14:59 CST: Opened ready PR https://github.com/graysurf/agent-runtime-kit/pull/29 for Sprint 1 review/checks.
 - 2026-05-22 15:13 CST: Merged Sprint 1 PR #29 at `c428829` and started Sprint 2 Task 2.1 from updated `main`.
 - 2026-05-22 15:19 CST: Implemented meta deterministic probes for six meta skills and validated targeted/runtime smoke gates plus `bash scripts/ci/all.sh`.
+- 2026-05-22 15:22 CST: Opened ready PR https://github.com/graysurf/agent-runtime-kit/pull/30 for Task 2.1 review/checks.
 
 ## Validation
 
