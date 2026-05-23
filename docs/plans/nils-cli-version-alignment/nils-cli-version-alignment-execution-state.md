@@ -38,6 +38,7 @@
 - 2026-05-24: Discovered live v0.17.6 → v0.17.7 silent drift while invoking `dispatch:create-plan-tracking-issue` (the very skill this work was meant to protect). Filed inbox case `plan-issue-v2-marker-collapse-drift`. Pushed the plan bundle with `--no-verify` per explicit user authorization while pre-push was failing.
 - 2026-05-24: Landed PR #76 `fix(plan-issue): migrate to v2 markers for nils-cli v0.17.7` — removed retired `--marker-family` flag from 13 SKILL bodies + references, rewrote runtime-smoke fixtures to v2 markers, bumped record envelope greps from v1 to v2, refreshed 28 golden snapshots, bumped surface pin from v0.17.6 to v0.17.7. All 44 deterministic runtime-smoke probes returned to passing.
 - 2026-05-24: Landed PR #78 `feat(ci): add nils-cli surface pin alignment gate as Position 2` — the Step 1 deliverable from this plan. CI now has 11 positions and fails closed with a remediation banner when host `agent-runtime --version` does not match `docs/source/nils-cli-surface.md`. Verified both pass and fail paths with a deliberate-mismatch worktree experiment.
+- 2026-05-24: Filed upstream tracker for Step 2 at sympoies/nils-cli#462 (`feat(doctor): version-alignment class for surface-pin gates`). Body records the v0.17.7 silent-drift incident, the Step 1 shell prototype, a strawman YAML/JSON pin manifest contract, and the Step 3 `meta:nils-cli-bump` consumer plan as context. No work to do here until that issue ships a doctor class release.
 
 ## Validation
 
