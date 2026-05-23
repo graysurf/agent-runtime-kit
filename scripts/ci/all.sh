@@ -167,7 +167,7 @@ done
 # protocol. The expected check count is documented in that plan's execution
 # state; bump SHAPE_EXPECTED_MIN_CHECKS together with a recorded reason.
 # -----------------------------------------------------------------------------
-SHAPE_EXPECTED_MIN_CHECKS=65
+SHAPE_EXPECTED_MIN_CHECKS=70
 SHAPE_OUT_DIR="${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/ci-all"
 mkdir -p "$SHAPE_OUT_DIR"
 SHAPE_JSON="$SHAPE_OUT_DIR/shape-diagnostic.json"

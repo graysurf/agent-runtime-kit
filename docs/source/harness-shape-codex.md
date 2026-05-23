@@ -48,7 +48,7 @@ Scope rules:
   (`manifests/skills.yaml:7-9`). Dispatch / PR skills that depend on
   the v0.17.5 release boundary pin `forge-cli`, `plan-issue`, or
   `plan-tooling` at `>=0.17.5`
-  (`manifests/skills.yaml:416-650`).
+  (`manifests/skills.yaml:481-715`).
 - Live Codex Desktop acceptance is separate from the deterministic
   version floor: `codex debug prompt-input` must show required skills
   in a fresh session (`docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:29-40`).
@@ -281,9 +281,9 @@ can pivot to a uniform table:
   (`docs/source/inventory-target-architecture.md:545-554`,
   `manifests/product-capabilities.yaml:15-22`).
 - arkit source: `core/skills/<domain>/<skill>/`, rendered to
-  `build/codex/plugins/<domain>/skills/<skill>/`; 44 Codex skill
+  `build/codex/plugins/<domain>/skills/<skill>/`; 49 Codex skill
   entries are declared in `manifests/skills.yaml`
-  (`manifests/skills.yaml:12-650`).
+  (`manifests/skills.yaml:12-715`).
 - arkit install mechanism: one non-recursive directory symlink per
   active skill folder under `$CODEX_HOME/skills/<domain>/<skill>/`
   (`targets/codex/link-map.yaml:7-12`,
@@ -297,7 +297,7 @@ can pivot to a uniform table:
   deterministic mode exercises representative skills; live Codex
   Desktop acceptance requires `codex debug prompt-input`
   (`DEVELOPMENT.md:157-178`,
-  `tests/sandbox/codex/expected-skills.txt:1-44`,
+  `tests/sandbox/codex/expected-skills.txt:1-49`,
   `docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
 - arkit support today: **shipped (rendered + directory symlink)**.
 

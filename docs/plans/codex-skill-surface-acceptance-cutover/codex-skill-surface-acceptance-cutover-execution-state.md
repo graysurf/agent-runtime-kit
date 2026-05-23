@@ -124,6 +124,16 @@
   `docs/source/inventory-target-architecture.md`; no additional
   durable doc moves were required at closeout.
 
+## Maintenance Evidence
+
+- 2026-05-24: importing five prompt-style conversation skills
+  (`actionable-advice`, `actionable-knowledge`, `orchestrator-first`,
+  `parallel-first`, `test-first`) expanded the Codex skill-surface shape
+  diagnostic from 65 to 70 checks. Updated
+  `SHAPE_EXPECTED_MIN_CHECKS=70` in `scripts/ci/all.sh` after
+  `agent-runtime doctor --class skill-surface --product codex --format json`
+  reported `checks=70`, `ok=70`, `warn=0`, `block=0`, `exit_code=0`.
+
 ## Task Ledger
 
 | ID | Status | Task | Evidence | Notes |
