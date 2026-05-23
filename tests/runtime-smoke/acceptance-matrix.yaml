@@ -72,10 +72,10 @@ cases:
     skill_id: meta.heuristic-inbox
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: create temp inbox root
-    invocation: heuristic-inbox initialize or validate temp inbox
+    setup: resolve shared heuristic-system root and migrated retained records
+    invocation: heuristic-inbox list shared root and strict-verify retained records
     expected_exit_code: 0
-    expected_artifacts: temp inbox record
+    expected_artifacts: shared root list and strict verification reports
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

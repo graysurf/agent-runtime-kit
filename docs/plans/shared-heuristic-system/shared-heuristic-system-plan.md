@@ -79,6 +79,8 @@ both product surfaces.
   - `core/policies/heuristic-system/README.md`
   - `core/policies/heuristic-system/error-inbox/README.md`
   - `core/policies/heuristic-system/operation-records/README.md`
+  - `core/policies/heuristic-system/error-inbox/archive/2026/deliver-gitlab-mr-skipped-pipeline-and-cleanup/ENTRY.md`
+  - `core/policies/heuristic-system/operation-records/github-pr-required-check-gating/RECORD.md`
   - `docs/plans/shared-heuristic-system/shared-heuristic-system-execution-state.md`
 - **Description**: Create the product-independent policy root, active inbox
   README, operation-records README, and migrated retained case folders. Migrate
@@ -104,6 +106,7 @@ both product surfaces.
   - `docs/source/inventory-target-architecture.md`
   - `core/skills/meta/heuristic-inbox/SKILL.md.tera`
   - `core/skills/evidence/skill-usage/SKILL.md.tera`
+  - `core/skills/reporting/project-retro/SKILL.md.tera`
   - `core/hooks/shared/skill-usage-reminder.py`
   - Related generated and golden output under `build/` and `tests/golden/`
 - **Description**: Replace the stale per-product state placement and legacy

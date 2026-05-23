@@ -118,8 +118,8 @@ Then pass that explicit path with `--history-dir <dir> --write` only if the user
      HEURISTIC_SYSTEM movement, and optional typed inputs when provided.
    - Mark theme statements as inference when they connect multiple deterministic signals into a narrative about the work.
    - Keep commit-type mix, hotspots, author summaries, validation signals, and HEURISTIC_SYSTEM movement compact.
-   - Treat HEURISTIC_SYSTEM records as read-only operational evidence. Do not create, mutate, promote, or archive inbox entries from this
-     workflow; use `heuristic-error-inbox` for that lifecycle.
+   - Treat Heuristic System records as read-only operational evidence. Do not create, mutate, promote, or archive inbox entries from this
+     workflow; use `heuristic-inbox` for that lifecycle.
    - Mark inference explicitly when connecting several deterministic signals into a habit, risk, or follow-up recommendation.
 
 6. Handle typed JSONL inputs.
@@ -141,7 +141,7 @@ Then pass that explicit path with `--history-dir <dir> --write` only if the user
   report schema implementation.
 - `project-retro` may summarize `skill-usage` or other workflow evidence only when it is provided as an explicit JSONL/path input or appears
   in local git history.
-- `project-retro` reads HEURISTIC_SYSTEM records but never replaces the `heuristic-error-inbox` lifecycle workflow.
+- `project-retro` reads Heuristic System records but never replaces the `heuristic-inbox` lifecycle workflow.
 - The CLI owns deterministic data collection and path-safe writes; the skill owns user-facing judgment, primary-theme synthesis, and
   follow-up framing.
 
