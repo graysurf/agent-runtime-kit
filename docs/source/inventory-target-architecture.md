@@ -167,6 +167,11 @@ Status: source document for the first implementation discussion
   `$CODEX_HOME/plugins` remains audit/compatibility metadata rather than a
   plugin loader. Do not expose individual `SKILL.md` file symlinks as the
   active Codex discovery surface.
+- 2026-05-23 (SUPPORT_MATRIX pointer pass) — added a Purpose-section pointer
+  to the new root-level `SUPPORT_MATRIX.md` so readers can find the unified
+  Codex × Claude coverage view without re-deriving it from this document.
+  The matrix is a derived human-readable view; this document and the
+  manifests under `manifests/` remain the source of truth.
 
 ## Purpose
 
@@ -179,6 +184,10 @@ currently split between:
 The new repository should own shared skills, workflows, hooks, policy docs,
 plugin metadata, install/link management, and drift detection. Codex and Claude
 should become product targets rather than separate source repositories.
+
+For the unified Codex × Claude coverage view derived from this architecture, see
+[`SUPPORT_MATRIX.md`](../../SUPPORT_MATRIX.md) at the repo root. Per-product
+narrative detail lives in `docs/source/harness-shape-{codex,claude}.md`.
 
 ## Current State Inventory
 

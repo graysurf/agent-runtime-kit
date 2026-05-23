@@ -1,9 +1,9 @@
 # Harness Shape — Codex
 
 - Date: 2026-05-23
-- Status: empirical observation; input to a future repo-root
-  `SUPPORT_MATRIX.md` schema design. Not yet a delivery contract on its
-  own.
+- Status: empirical observation; this file is the per-product
+  narrative input to the root-level `SUPPORT_MATRIX.md`. For the
+  unified Codex × Claude long-format table, see [`SUPPORT_MATRIX.md`](../../SUPPORT_MATRIX.md).
 - Companion doc:
   `docs/source/harness-shape-claude.md`.
 
