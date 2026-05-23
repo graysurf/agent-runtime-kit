@@ -16,8 +16,12 @@ Prereqs:
   binary directory to `PATH`.
 - Run from the target git repository root unless an explicit repository or plan
   path is supplied.
-- Existing plan bundles have a valid `Read First` section and a committed
-  primary source artifact, URL source, or explicit plan-only waiver.
+- The source markdown and plan markdown are both committed and pushed to a
+  remote (any branch is acceptable) so their commit SHAs resolve for anyone
+  reading the issue. A URL-only source or an explicit plan-only waiver can
+  substitute for the source artifact, but the plan markdown itself must always
+  be committed and pushed.
+- Existing plan bundles have a valid `Read First` section.
 - Live provider mutation is done through `forge-cli`. `plan-issue record`
   renders/audits markdown only; `plan-tooling` validates and models the plan.
 
@@ -39,8 +43,11 @@ Outputs:
 
 Failure modes:
 
-- Plan validation fails, the primary source is uncommitted, or the source/plan
-  comments cannot be rendered.
+- Plan validation fails, the source or plan markdown is uncommitted or
+  unpushed to a remote, or the source/plan comments cannot be rendered.
+- Quality review of the source or plan markdown surfaces blocking findings
+  (unclear scope, missing or shallow `Read First`, incoherent grouping,
+  obvious gaps) and the caller cannot resolve them before issue creation.
 - Provider auth, repository resolution, issue creation, comment creation, or
   dashboard edit fails.
 - The issue body drifts from the dashboard/comment record after creation.
@@ -108,14 +115,23 @@ preview. Do not use `plan-issue start-plan` for lightweight tracking issues.
 ## Workflow
 
 1. Resolve the plan, source, repository, title, labels, and output directory.
-2. Run `plan-tooling validate`; stop on plan syntax, source, or grouping
+2. Confirm the source markdown (when present) and plan markdown are committed
+   and pushed to a remote; stop and request a commit/push if either SHA cannot
+   be resolved remotely.
+3. Run `plan-tooling validate`; stop on plan syntax, source, or grouping
    errors.
-3. Render the initial tracking dashboard with pending durable-record links.
-4. Render source, plan, and initial state comments through
+4. Quality-review the source and plan markdown before they are immortalized in
+   the issue. The main agent assesses scope clarity, `Read First`
+   completeness, grouping coherence, and obvious gaps. Blocking findings must
+   be fixed (with re-commit and re-push) before proceeding; ambiguous or
+   high-impact findings stop and ask the user instead of being silently
+   patched.
+5. Render the initial tracking dashboard with pending durable-record links.
+6. Render source, plan, and initial state comments through
    `plan-issue record render-comment --marker-family compat`.
-5. In live mode, create the issue through `forge-cli issue create`, post the
+7. In live mode, create the issue through `forge-cli issue create`, post the
    rendered comments, then re-render/edit the dashboard with exact comment URLs.
-6. Run `plan-issue record audit --profile tracking` against the issue body and
+8. Run `plan-issue record audit --profile tracking` against the issue body and
    comments. Record the issue URL and snapshot URLs in the execution state.
 
 ## Boundary
