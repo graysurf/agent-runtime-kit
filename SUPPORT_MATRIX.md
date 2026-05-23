@@ -44,7 +44,7 @@ Each row is one `(surface, product)` pair.
 | `mechanism` | One-line summary of how `agent-runtime-kit` ships into the surface (or `—` when `state` is `not-applicable` or `not-shipped`). |
 | `source_artifact` | Repo-relative path of the checked-in source, or `—` when nothing is shipped. Multi-path entries are newline-separated inside the cell. |
 | `min_product` | Product `min_version` from `manifests/runtime-roots.yaml` when the row is gated by the product harness; `n/a` when the row is `not-applicable` to that product or when no product floor is enforced (repo-local prompts, etc.). |
-| `min_nils_cli` | nils-cli surface pin (currently `v0.17.5`) when arkit relies on `agent-runtime` or a capability binary to ship the row; `n/a` when no nils-cli call is on the path. |
+| `min_nils_cli` | nils-cli surface pin (current snapshot at `docs/source/nils-cli-surface.md`; minimum version a row needs to operate, which may be older than the current snapshot) when arkit relies on `agent-runtime` or a capability binary to ship the row; `n/a` when no nils-cli call is on the path. |
 | `ci_acceptance` | CI gate position(s) from `scripts/ci/all.sh` (see `DEVELOPMENT.md:157-178`) that exercise the row, or `—` when no gate covers it. |
 | `live_acceptance` | Live-session acceptance protocol (e.g. `codex debug prompt-input`, fresh Claude session) separate from CI; `—` when no live protocol is wired in. |
 | `source_manifest` | Pointer to the manifest entry or design doc paragraph the row is derived from. |
@@ -73,7 +73,7 @@ Each row is one `(surface, product)` pair.
 - Claude: `min_version` **2.1.145**, `recommended_version` 2.1.145,
   `min_version_effective_from` 2026-06-03, probe `claude --version`
   (`manifests/runtime-roots.yaml:29-38`).
-- nils-cli surface: snapshot **v0.17.6**
+- nils-cli surface: snapshot **v0.17.7**
   (`docs/source/nils-cli-surface.md:1-15`).
 - Per-skill nils-cli floors: `manifests/skills.yaml` `required_clis`;
   tighter than the surface-level pin where a specific binary is
@@ -164,7 +164,7 @@ need the plan's view of the same drift vectors.
   `recommended_version` / `min_version_effective_from` for either
   product → refresh the affected `min_product` cells in this file in
   the same PR.
-- `docs/source/nils-cli-surface.md` rolls past `v0.17.5` →
+- `docs/source/nils-cli-surface.md` rolls past `v0.17.7` →
   refresh `min_nils_cli` cells and the surface-pin paragraph.
 - A new CI gate position is added or removed in
   `scripts/ci/all.sh` (`DEVELOPMENT.md:157-178`) → refresh

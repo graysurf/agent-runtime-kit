@@ -17,7 +17,7 @@ Use this playbook only when the user explicitly requests offline rehearsal.
 plan-tooling validate --file "$PLAN" --format text --explain
 plan-issue record render-dashboard --profile dispatch --out "$ISSUE_BODY" --state-dir "$STATE_DIR"
 plan-issue record build-dispatch-ledger --plan "$PLAN" --strategy auto --default-pr-grouping group --out "$DISPATCH_LEDGER" --state-dir "$STATE_DIR"
-plan-issue record render-comment --profile dispatch --marker-family shared --kind state --content-file "$DISPATCH_STATE" --out "$STATE_COMMENT" --state-dir "$STATE_DIR"
+plan-issue record render-comment --profile dispatch --kind state --content-file "$DISPATCH_STATE" --out "$STATE_COMMENT" --state-dir "$STATE_DIR"
 plan-issue record audit --profile dispatch --body-file "$ISSUE_BODY" --comments-json "$COMMENTS_JSON" --format json --state-dir "$STATE_DIR"
 plan-issue record closeout-gate --profile dispatch --body-file "$ISSUE_BODY" --comments-json "$COMMENTS_JSON" --require-session --require-validation --approval "$APPROVAL" --linked-pr "#123" --format json --state-dir "$STATE_DIR"
 ```

@@ -82,7 +82,6 @@ reason argument:
 ```bash
 plan-issue record render-comment \
   --profile tracking \
-  --marker-family compat \
   --kind closeout \
   --content-file "$CLOSEOUT_MD" \
   --out "$CLOSEOUT_COMMENT"
@@ -96,11 +95,11 @@ forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 
 Required lightweight comments:
 
-- `<!-- plan-tracking-issue:snapshot:v1 kind=source -->`
-- `<!-- plan-tracking-issue:snapshot:v1 kind=plan -->`
-- `<!-- execute-from-tracking-issue:state:v1 -->`
-- `<!-- execute-from-tracking-issue:session:v1 -->`
-- `<!-- execute-from-tracking-issue:validation:v1 -->`
+- `<!-- plan-issue-record:v2 role=source profile=tracking -->`
+- `<!-- plan-issue-record:v2 role=plan profile=tracking -->`
+- `<!-- plan-issue-record:v2 role=state profile=tracking -->`
+- `<!-- plan-issue-record:v2 role=session profile=tracking -->`
+- `<!-- plan-issue-record:v2 role=validation profile=tracking -->`
 
 Closeout comment marker:
 

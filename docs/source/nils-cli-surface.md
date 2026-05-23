@@ -1,18 +1,18 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-23
+- Snapshot date: 2026-05-24
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls ~/Project/sympoies/nils-cli/crates/`
-- Active `git describe --tags` output: `v0.17.6`
-- Head commit: `5d4c415` (PR [#452](https://github.com/sympoies/nils-cli/pull/452), "chore(release): bump cli versions to 0.17.6" — release-only bump that ships `forge-cli issue list` from [#450](https://github.com/sympoies/nils-cli/pull/450) and the `forge-cli pr deliver` post-merge `gh exit 1` tolerance fix from [#451](https://github.com/sympoies/nils-cli/pull/451))
-- Release: [`v0.17.6`](https://github.com/sympoies/nils-cli/releases/tag/v0.17.6), Homebrew tap formula at [`Formula/nils-cli.rb@ccf4542`](https://github.com/sympoies/homebrew-tap/blob/ccf4542/Formula/nils-cli.rb)
-- Prior pin: `v0.17.5` at `d309881` (Codex skill surface doctor release)
+- Active `git describe --tags` output: `v0.17.7`
+- Head commit: `9c1d6e2` (PR [#453](https://github.com/sympoies/nils-cli/pull/453) "plan-issue-cli: v2 marker collapse + audit/dashboard rewrite", [#454](https://github.com/sympoies/nils-cli/pull/454) "live record open/post/close + strict v2 gate", [#455](https://github.com/sympoies/nils-cli/pull/455) "hide retired record subs + closeout fixture", [#456](https://github.com/sympoies/nils-cli/pull/456) "v3 CHANGELOG + consumer migration notes", and [#460](https://github.com/sympoies/nils-cli/pull/460) "fix(forge-cli): propagate --repo into every backend argv (#457)" — plan-issue `record` envelopes bump from v1 to v2, the `--marker-family` flag is retired, and `plan-issue-record:v2` is the only marker family accepted by `audit --profile {tracking,dispatch}`)
+- Release: [`v0.17.7`](https://github.com/sympoies/nils-cli/releases/tag/v0.17.7), Homebrew tap formula at [`Formula/nils-cli.rb@75a02dd`](https://github.com/sympoies/homebrew-tap/blob/75a02dd/Formula/nils-cli.rb)
+- Prior pin: `v0.17.6` at `5d4c415` (`forge-cli issue list`, `forge-cli pr deliver` post-merge `gh exit 1` tolerance fix)
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli minor
-release (the next bump after `v0.17.6`).
+release (the next bump after `v0.17.7`).
 
 Notes on derivation:
 
@@ -54,7 +54,7 @@ Notes on derivation:
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
 | `nils-test-support`         | (library only)                                                                                                      | Integration-test harness; test-only, never appears in `required_clis`.                                                                                                                                                                                                 |
-| `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names.                                                                                                             |
+| `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names. As of `v0.17.7`, `record render-comment` / `render-dashboard` / `build-dispatch-ledger` / `audit` bump from `v1` to `v2`, the `--marker-family compat|shared` flag is retired, and the only accepted marker is `plan-issue-record:v2 role=<source|plan|state|session|validation|review|closeout> profile=<tracking|dispatch>`. Consumer migration tracked in this repo's `core/policies/heuristic-system/error-inbox/plan-issue-v2-marker-collapse-drift/`. |
 | `plan-tooling`              | `plan-tooling`                                                                                                      | Plan bundle linter / validator.                                                                                                                                                                                                                                        |
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |

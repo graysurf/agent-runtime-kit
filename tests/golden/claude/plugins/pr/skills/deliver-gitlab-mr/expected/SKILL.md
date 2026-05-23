@@ -132,7 +132,6 @@ plan-issue record closeout-gate \
 
 plan-issue record render-comment \
   --profile tracking \
-  --marker-family compat \
   --kind closeout \
   --content-file "$CLOSEOUT_MD" \
   --out "$CLOSEOUT_COMMENT"
@@ -143,9 +142,11 @@ forge-cli --provider gitlab issue close "$ISSUE" --repo "$OWNER_REPO" --format j
 ```
 
 For dispatch profile issues, swap `--profile tracking` for `--profile
-dispatch`, `--marker-family compat` for `--marker-family shared`, and add
-`--require-review` to the closeout-gate invocation. The audit step in this
-block determines the profile.
+dispatch` and add `--require-review` to the closeout-gate invocation. The
+v2 marker family `plan-issue-record:v2` covers both tracking and dispatch
+through the `--profile` flag; the retired `--marker-family compat` /
+`shared` flags are not accepted by `plan-issue >=0.17.7`. The audit step
+in this block determines the profile.
 
 ## Workflow
 

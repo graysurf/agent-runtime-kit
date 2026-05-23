@@ -185,7 +185,6 @@ run_create_dispatch_lane_probe() {
   write_dispatch_session_record "$session"
   plan-issue record render-comment \
     --profile dispatch \
-    --marker-family shared \
     --kind session \
     --content-file "$session" \
     --out "$comment" \
@@ -197,8 +196,8 @@ run_create_dispatch_lane_probe() {
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$out"
   grep -q '"provider":"github"' "$out"
   grep -q '"dispatch"' "$out"
-  grep -q '"schema_version":"plan-issue-cli.record.render.comment.v1"' "$render_out"
-  grep -q '<!-- issue-backed-plan:session:v1 profile=dispatch -->' "$comment"
+  grep -q '"schema_version":"plan-issue-cli.record.render.comment.v2"' "$render_out"
+  grep -q '<!-- plan-issue-record:v2 role=session profile=dispatch -->' "$comment"
   grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$issue_comment_out"
 }
 

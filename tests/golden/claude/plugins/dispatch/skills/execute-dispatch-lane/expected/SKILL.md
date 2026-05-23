@@ -77,7 +77,6 @@ Render the issue-visible lane update:
 ```bash
 plan-issue record render-comment \
   --profile dispatch \
-  --marker-family shared \
   --kind session \
   --content-file "$LANE_SESSION_MD" \
   --out "$LANE_SESSION_COMMENT"

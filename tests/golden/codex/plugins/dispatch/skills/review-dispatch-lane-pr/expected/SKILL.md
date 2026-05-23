@@ -79,7 +79,6 @@ Render the issue-visible review update:
 ```bash
 plan-issue record render-comment \
   --profile dispatch \
-  --marker-family shared \
   --kind review \
   --content-file "$DISPATCH_REVIEW_MD" \
   --out "$DISPATCH_REVIEW_COMMENT"

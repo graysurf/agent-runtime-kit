@@ -9,23 +9,26 @@ subagent task lanes, PR linkage, review evidence, and final close gates.
 - Dispatch ledger and state comments are runtime truth for lanes, PR links, and
   row status.
 - Issue-hosted source and plan snapshots are durable restart context.
-- New dispatch issues use the shared `issue-backed-plan:* profile=dispatch`
-  marker family. Existing `deliver-dispatch-plan:*` or `dispatch-plan:*`
-  comments remain recoverable through audit.
-- Do not reuse lightweight `execute-from-tracking-issue:*` markers for dispatch
-  issues.
+- New dispatch issues use the shared `plan-issue-record:v2 profile=dispatch`
+  marker family (rendered by `plan-issue record render-comment --profile
+  dispatch --kind <role>` on `plan-issue >=0.17.7`). Older
+  `issue-backed-plan:*:v1 profile=dispatch` and `execute-from-tracking-issue:*`
+  comments remain readable but no longer round-trip; reopen any closed gate
+  by rendering a fresh v2 comment.
+- Do not reuse `profile=tracking` markers for dispatch issues; the audit
+  filter rejects them as unsupported for the dispatch profile.
 
 ## Markers
 
 Standalone marker lines for new dispatch records:
 
-- `<!-- issue-backed-plan:snapshot:v1 kind=source profile=dispatch -->`
-- `<!-- issue-backed-plan:snapshot:v1 kind=plan profile=dispatch -->`
-- `<!-- issue-backed-plan:state:v1 profile=dispatch -->`
-- `<!-- issue-backed-plan:session:v1 profile=dispatch -->`
-- `<!-- issue-backed-plan:validation:v1 profile=dispatch -->`
-- `<!-- issue-backed-plan:review:v1 profile=dispatch -->`
-- `<!-- issue-backed-plan:closeout:v1 profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=source profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=plan profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=state profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=session profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=validation profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=review profile=dispatch -->`
+- `<!-- plan-issue-record:v2 role=closeout profile=dispatch -->`
 
 Ignore marker strings inside copied source snapshots, fenced code blocks,
 quotes, and examples. When several valid comments share a marker, the latest
