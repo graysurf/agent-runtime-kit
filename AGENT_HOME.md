@@ -13,8 +13,6 @@
   `CLAUDE.md`, so neither Codex nor Claude reads the same policy twice when
   this source repository is the active project and a project-local
   `AGENTS.md` / `CLAUDE.md` is also present.
-- `$HOME/.agents` may exist as a compatibility alias for older Codex sessions
-  and skill discovery. Do not route new runtime-kit paths through it.
 - It must be safe as fallback policy for unrelated workspaces, not only this
   repo.
 - A closer project or directory `AGENTS.md` / `CLAUDE.md` can override or
@@ -99,7 +97,9 @@
   directly until the home-scope docs catalog is moved into
   `agent-runtime-kit`.
 - Do not use `$HOME/.agents` or ambient `AGENT_HOME` as the docs-home
-  indirection; it may be present only as a compatibility alias.
+  indirection. The `$HOME/.agents` alias is retired; live Codex skill
+  discovery works from `$HOME/.codex/skills` directly against the
+  runtime-kit build output.
 - Required context sequence:
   - new session or task: `startup`
   - repository edits, tests, commits, or delivery:

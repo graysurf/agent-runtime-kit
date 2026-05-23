@@ -28,7 +28,11 @@
   `$HOME/.codex`
 - Live Claude home:
   `$HOME/.claude`
-- `$HOME/.agents` currently links to `$HOME/.config/agent-kit`.
+- `$HOME/.agents` is the retired compatibility alias from earlier Codex
+  sessions. It is no longer required for skill discovery; if it is absent
+  on a host, Codex loads runtime-kit skills through `$HOME/.codex/skills`
+  directly. Rollback (recreate alias) is preserved in the
+  `codex-skill-surface-acceptance-cutover` plan rollback artifacts only.
 
 ## Important Boundaries
 

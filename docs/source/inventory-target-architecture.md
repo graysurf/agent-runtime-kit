@@ -189,8 +189,12 @@ Path: `$HOME/.config/agent-kit`
 Observed role:
 
 - Current Codex-oriented source of truth.
-- `$HOME/.agents` is a symlink to this repo.
-- `$HOME/.codex/AGENTS.md` links to `$HOME/.agents/AGENT_HOME.md`.
+- `$HOME/.agents` was historically a symlink to this repo and is now
+  retired; live Codex skill discovery loads from
+  `$HOME/.codex/skills/<domain>/<skill>` symlinks pointing directly at
+  the runtime-kit build output, without any `$HOME/.agents` indirection.
+- `$HOME/.codex/AGENTS.md` symlinks directly to
+  `agent-runtime-kit/AGENT_HOME.md`.
 - Codex hook source lives under `hooks/codex/`.
 - Codex hook activation is managed by syncing a managed block into
   `$HOME/.codex/config.toml`, not by symlinking the full config file.

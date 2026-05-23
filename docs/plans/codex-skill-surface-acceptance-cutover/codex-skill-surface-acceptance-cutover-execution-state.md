@@ -2,14 +2,14 @@
 
 ## Current State
 
-- Status: in-progress
-- Target scope: Sprint 1 and Sprint 2 (delivered together in one PR); Sprint 3 deferred to a live Codex Desktop window
+- Status: complete
+- Target scope: Sprint 1, Sprint 2, and Sprint 3 — all delivered
 - Execution window: 2026-05-23
 - Staged execution confirmation: not applicable
-- Current task: Sprint 2 (shape gate wiring)
-- Next task: open delivery PR after specialist review pass
+- Current task: closeout
+- Next task: run plan-tracking-issue-closeout to close issue #55
 - Last updated: 2026-05-23 CST
-- Branch/commit/PR: `feat/issue-55-codex-skill-surface-cutover`; PR pending
+- Branch/commit/PR: Sprint 1+2 merged via `feat/issue-55-codex-skill-surface-cutover` → PR #56 (`b5bc07b`); Sprint 3 closeout via `feat/issue-55-alias-retirement` → PR pending
 - Source document: docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/55
@@ -26,10 +26,18 @@
   the nils-cli release contract releases all four binaries together; leaving
   one binary behind would split the consumer surface. No new pins are added
   for surfaces that did not previously declare one.
-- Live acceptance signal: deferred. Sprint 3 still owns the exact
-  `codex debug prompt-input` pass/fail signal.
-- `$HOME/.agents` retention: deferred. Sprint 3 still owns the alias
-  retire/observe/defer decision.
+- Live acceptance signal: resolved. `codex debug prompt-input` lists every
+  required acceptance skill from `agent-runtime-kit/build/codex/plugins/<domain>/skills/<skill>/SKILL.md`
+  (loaded through `$HOME/.codex/skills/<domain>/<skill>` symlinks). Pass
+  signal: each required skill name appears as a `- <name>: ...` entry in
+  the `<skills_instructions>` block with a file path under the runtime-kit
+  build tree.
+- `$HOME/.agents` retention: resolved. The alias was already absent on the
+  canonical workstation before the live window opened; Codex Desktop loads
+  all required skills without it. The alias is treated as retired. Rollback
+  command remains documented in
+  `sprint3-codex/rollback-commands-reviewed.txt` and in the plan's Rollback
+  plan; durable docs no longer treat the alias as a runtime-kit path.
 
 ## Sprint 1 Evidence
 
@@ -71,6 +79,51 @@
   call out shape validation as a preflight, not as live Desktop
   acceptance.
 
+## Sprint 3 Evidence
+
+- Task 3.1: pre-live backup captured in
+  `${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/plan-issue-delivery/codex-skill-surface-acceptance-cutover/sprint3-codex/`.
+  Key state: `alias-state-before.txt` records `$HOME/.agents` as
+  `absent` at the start of the window; `discovery-env-before.txt`
+  records shell and launchctl `AGENT_HOME`, `AGENT_DOCS_HOME`, and
+  `CODEX_HOME`; `rollback-commands-reviewed.txt` records the exact
+  restore command (`ln -sfn "$HOME/.config/agent-kit" "$HOME/.agents"`).
+- Task 3.2: `codex debug prompt-input` ran in a fresh Codex Desktop
+  session with `$HOME/.agents` absent. Full JSON saved as
+  `sprint3-codex/codex-debug-prompt-input-without-agents.json`. The
+  rendered `<skills_instructions>` block lists every required
+  acceptance skill — `discussion-to-implementation-doc`,
+  `handoff-session-prompt`, `execute-plan-tracking-issue`,
+  `deliver-plan-tracking-issue`, and `semantic-commit` — each pointing
+  at a file under
+  `agent-runtime-kit/build/codex/plugins/<domain>/skills/<skill>/SKILL.md`.
+  Additional sanity checks from the same window:
+  `agent-runtime install --product codex --dry-run` exit 0 with
+  `actions=121`, all no-op; `bash tests/runtime-smoke/run.sh --mode
+  install --product codex` reports `install.codex status=pass
+  skill_count=44`; `agent-docs --docs-home "$HOME/.codex" resolve
+  --context startup --strict --format checklist` exit 0;
+  `bash tests/runtime-smoke/run.sh --mode product --product codex
+  --probe-only` reports `product.codex.probe status=pass`.
+- Task 3.3: `$HOME/.agents` is treated as retired. The alias was
+  already absent on the canonical workstation at the start of the
+  test window, so no rename was performed and no restore was needed.
+  `AGENT_HOME.md` and project `AGENTS.md` updated to remove the
+  "currently links" and "may exist as a compatibility alias"
+  presentations; the docs-home indirection guard in `AGENT_HOME.md`
+  now names the alias as retired. Rollback command remains documented
+  in the rollback evidence file and in this plan's `Rollback plan`
+  section.
+- Task 3.4: rollback is the single-shot `ln -sfn
+  "$HOME/.config/agent-kit" "$HOME/.agents"`. Dry-run verification:
+  the command resolves against an existing source
+  (`$HOME/.config/agent-kit`) and would create a symlink at
+  `$HOME/.agents` without touching any Codex auth, session, history,
+  log, or cache state. Durable shape-vs-live rules were promoted in
+  Sprint 2 to `DEVELOPMENT.md` (position 6 description) and
+  `docs/source/inventory-target-architecture.md`; no additional
+  durable doc moves were required at closeout.
+
 ## Task Ledger
 
 | ID | Status | Task | Evidence | Notes |
@@ -82,29 +135,7 @@
 | Task 2.2 | done | Fail-loud parser for shape findings | inline `jq` parser in `scripts/ci/all.sh` | warn=0, block=0, baseline-count asserted |
 | Task 2.3 | done | Refresh render/golden/sandbox | `agent-runtime render --update-golden`, audit-drift, sandbox expected skills | No unplanned drift |
 | Task 2.4 | done | Document shape-vs-live boundary | DEVELOPMENT.md, inventory-target-architecture.md, codex-skill-discovery-cutover execution state | Shape labeled as preflight, not live acceptance |
-| Task 3.1 | deferred | Pre-live dry-run and backup checks | — | Deferred to live acceptance window |
-| Task 3.2 | deferred | Fresh Codex Desktop acceptance window | — | Requires fresh Codex Desktop session and `codex debug prompt-input` |
-| Task 3.3 | deferred | Record alias retention decision | — | Pending Task 3.2 outcome |
-| Task 3.4 | deferred | Rollback proof and closeout | — | Pending Task 3.3 outcome |
-
-## Sprint 3 Handoff
-
-Sprint 3 is intentionally deferred from this delivery. Resuming work
-requires:
-
-1. Run `agent-runtime doctor --class skill-surface --product codex` from
-   the deterministic gate to confirm the shape preflight still passes.
-2. Record current `$HOME/.agents` target and any discovery-relevant
-   launch environment.
-3. Open a reversible test window, disable or rename `$HOME/.agents`,
-   start a fresh Codex Desktop session, and capture
-   `codex debug prompt-input` evidence for the required skills:
-   `conversation.discussion-to-implementation-doc`,
-   `conversation.handoff-session-prompt`,
-   `dispatch.execute-plan-tracking-issue`,
-   `dispatch.deliver-plan-tracking-issue`, `meta.semantic-commit`.
-4. Record the alias retention decision and rollback evidence before
-   permanently retiring `$HOME/.agents`.
-
-The `execute-plan-tracking-issue` skill can resume from this state
-when the live window is open.
+| Task 3.1 | done | Pre-live dry-run and backup checks | `sprint3-codex/alias-state-before.txt`, `sprint3-codex/discovery-env-before.txt`, `sprint3-codex/rollback-commands-reviewed.txt`, `sprint3-codex/doctor-skill-surface-codex.json`, `sprint3-codex/install-codex-dry-run.stderr` | Alias was already absent at start of window |
+| Task 3.2 | done | Fresh Codex Desktop acceptance window | `sprint3-codex/codex-debug-prompt-input-without-agents.json`, `sprint3-codex/codex-debug-prompt-input-required-skill-string-probes.txt`, `sprint3-codex/agent-docs-codex-home-startup-during-window.txt`, `sprint3-codex/runtime-smoke-install*`, `sprint3-codex/runtime-smoke-product-probe*` | 5/5 required skills visible via `$HOME/.codex/skills/<domain>/<skill>` → runtime-kit build output |
+| Task 3.3 | done | Record alias retention decision | AGENT_HOME.md + project AGENTS.md updated; rollback command preserved in plan rollback artifacts | Decision: retired in practice (alias was already absent) |
+| Task 3.4 | done | Rollback proof and closeout | Rollback command verified by inspection; shape-vs-live promoted in Sprint 2 | Issue #55 ready for plan-tracking-issue-closeout |
