@@ -43,8 +43,8 @@ User follow-up requested verification: dry-runs against `forge-cli
 
 ## Evidence
 
-- Raw record: `<workspace>/out/.../20260523-225156-deliver-closeout-cli-drift-skill-usage/skill-usage.record.json`
-- PR #74 specialist review findings (ingested below as `evidence/pr74-specialist-findings.jsonl`): `<workspace>/out/.../20260523-224224-forge-cli-closeout-cli-fix-review/findings.jsonl`
+- Raw record: `<workspace>/out/.../skill-usage.record.json`
+- PR #74 specialist review findings (ingested below as `evidence/pr74-specialist-findings.jsonl`): `<workspace>/out/.../forge-cli-closeout-cli-fix-review/findings.jsonl`
 - PR #71 specialist review findings (where the two findings were originally surfaced and deferred): scratch dir already pruned after PR merge; the findings can be reconstructed from PR #71's delivery review outcome comment on the PR conversation tab.
 - Dry-run verifying `--reason completed` is rejected: `forge-cli issue close 99999 --dry-run --format json --reason completed` → `ok=false, code=unknown-subcommand`.
 - Dry-run verifying `forge-cli issue view` lacks comments: `forge-cli issue view 67 --format json --dry-run` → backend plan `["gh","issue","view","67","--json","number,url,state,title,labels,assignees,body"]`.
