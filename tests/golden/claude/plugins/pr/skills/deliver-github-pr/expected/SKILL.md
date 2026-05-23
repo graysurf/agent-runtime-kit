@@ -14,6 +14,9 @@ Prereqs:
   `PATH`.
 - `review-specialists` is installed from the released nils-cli package and
   available on `PATH`.
+- `gh` is available on `PATH` (used by `forge-cli` and by the Step 10
+  chained closeout to fetch issue comments — `forge-cli issue view --format
+  json` under forge-cli 0.17.6 returns body fields only).
 - `gh auth status` succeeds for the target GitHub host when running live mode.
 - The working tree contains only the intended delivery changes.
 - Local validation and review findings have been resolved before merge.
@@ -99,22 +102,24 @@ forge-cli --provider github pr merge "$PR_NUMBER" --method squash
 
 Run the post-merge chained closeout when the PR body references a linked
 tracking or dispatch issue via `Refs #<issue>` (default, unless
-`--no-closeout` or `--no-merge`):
+`--no-closeout` or `--no-merge`). Fetch the body + comments through `gh`
+because `forge-cli issue view --format json` omits comments under
+forge-cli 0.17.6:
 
 ```bash
-forge-cli issue view "$ISSUE" --repo "$OWNER_REPO" --format json >"$ISSUE_JSON"
-jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_COMMENTS_JSON"
+jq -r .body "$ISSUE_COMMENTS_JSON" >"$ISSUE_BODY"
 
 plan-issue record audit \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON" \
+  --comments-json "$ISSUE_COMMENTS_JSON" \
   --format json
 
 plan-issue record closeout-gate \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON" \
+  --comments-json "$ISSUE_COMMENTS_JSON" \
   --require-complete \
   --require-session \
   --require-validation \
@@ -131,7 +136,7 @@ plan-issue record render-comment \
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
 forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
-forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
+forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 ```
 
 For dispatch profile issues, swap `--profile tracking` for `--profile
@@ -168,16 +173,19 @@ block determines the profile.
 10. After merge, if the PR body referenced a linked tracking or dispatch
    issue via `Refs #<issue>` and `--no-closeout` was not supplied, run the
    chained closeout inline. Re-fetch the issue body and comments through
-   `forge-cli issue view --format json`, run `plan-issue record audit` to
-   identify the profile (`tracking` or `dispatch`), then run
-   `plan-issue record closeout-gate` with the matching profile and the
-   merged PR ref. On gate pass, render the closeout comment through
-   `plan-issue record render-comment --kind closeout`, post it through
-   `forge-cli issue comment`, repair the dashboard through `forge-cli
-   issue edit`, and close the issue through `forge-cli issue close
-   --reason completed`. On gate fail, stop the chain, leave the issue
-   open with the unblock action surfaced by the failing step, and
-   recommend rerunning `plan-tracking-issue-closeout` (tracking) or
+   `gh issue view "$ISSUE" --json body,comments` (forge-cli 0.17.6's
+   `issue view --format json` returns the body fields only; the comments
+   array is required for `plan-issue record audit|closeout-gate
+   --comments-json`). Run `plan-issue record audit` to identify the
+   profile (`tracking` or `dispatch`), then run `plan-issue record
+   closeout-gate` with the matching profile and the merged PR ref. On
+   gate pass, render the closeout comment through `plan-issue record
+   render-comment --kind closeout`, post it through `forge-cli issue
+   comment`, repair the dashboard through `forge-cli issue edit`, and
+   close the issue through `forge-cli issue close` (no `--reason`;
+   forge-cli 0.17.6 rejects it). On gate fail, stop the chain, leave
+   the issue open with the unblock action surfaced by the failing step,
+   and recommend rerunning `plan-tracking-issue-closeout` (tracking) or
    `dispatch-plan-closeout` (dispatch) directly to diagnose or complete.
    This step never runs when `--no-merge` was used.
 11. Record the PR URL, check evidence, review outcome, merge commit, chained

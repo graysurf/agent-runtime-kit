@@ -14,6 +14,9 @@ Prereqs:
   `PATH`.
 - `review-specialists` is installed from the released nils-cli package and
   available on `PATH`.
+- `glab` is available on `PATH` (used by `forge-cli` and by the Step 10
+  chained closeout to fetch issue comments — `forge-cli issue view --format
+  json` under forge-cli 0.17.6 returns body fields only).
 - `glab auth status` succeeds for the target GitLab host when running live mode.
 - The working tree contains only the intended delivery changes.
 - Local validation and review findings have been resolved before merge.
@@ -99,22 +102,27 @@ forge-cli --provider gitlab pr merge "$MR_NUMBER" --method squash
 
 Run the post-merge chained closeout when the MR description references a
 linked tracking or dispatch issue via `Refs #<issue>` (default, unless
-`--no-closeout` or `--no-merge`):
+`--no-closeout` or `--no-merge`). Fetch the body + comments through
+`glab` because `forge-cli issue view --format json` omits comments under
+forge-cli 0.17.6. `glab issue view --comments --output json` returns
+both the issue body and the comments array; reshape it into the
+`{body, comments}` payload that `plan-issue record` expects:
 
 ```bash
-forge-cli --provider gitlab issue view "$ISSUE" --repo "$OWNER_REPO" --format json >"$ISSUE_JSON"
-jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+glab issue view "$ISSUE" --repo "$OWNER_REPO" --comments --output json >"$ISSUE_RAW"
+jq '{body: .description, comments: (.notes // .comments // [])}' "$ISSUE_RAW" >"$ISSUE_COMMENTS_JSON"
+jq -r .body "$ISSUE_COMMENTS_JSON" >"$ISSUE_BODY"
 
 plan-issue record audit \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON" \
+  --comments-json "$ISSUE_COMMENTS_JSON" \
   --format json
 
 plan-issue record closeout-gate \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON" \
+  --comments-json "$ISSUE_COMMENTS_JSON" \
   --require-complete \
   --require-session \
   --require-validation \
@@ -131,7 +139,7 @@ plan-issue record render-comment \
 
 forge-cli --provider gitlab issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
 forge-cli --provider gitlab issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
-forge-cli --provider gitlab issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
+forge-cli --provider gitlab issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 ```
 
 For dispatch profile issues, swap `--profile tracking` for `--profile
@@ -168,16 +176,20 @@ block determines the profile.
 10. After merge, if the MR description referenced a linked tracking or
    dispatch issue via `Refs #<issue>` and `--no-closeout` was not supplied,
    run the chained closeout inline. Re-fetch the issue body and comments
-   through `forge-cli --provider gitlab issue view --format json`, run
-   `plan-issue record audit` to identify the profile (`tracking` or
-   `dispatch`), then run `plan-issue record closeout-gate` with the
-   matching profile and the merged MR ref (e.g. `!$MR_NUMBER`). On gate
-   pass, render the closeout comment through `plan-issue record
-   render-comment --kind closeout`, post it through `forge-cli --provider
-   gitlab issue comment`, repair the dashboard through `forge-cli
-   --provider gitlab issue edit`, and close the issue through `forge-cli
-   --provider gitlab issue close --reason completed`. On gate fail, stop
-   the chain, leave the issue open with the unblock action surfaced by the
+   through `glab issue view "$ISSUE" --comments --output json` (forge-cli
+   0.17.6's `issue view --format json` returns the body fields only; the
+   comments array is required for `plan-issue record audit|closeout-gate
+   --comments-json`). Reshape into `{body, comments}` via `jq` so the
+   `plan-issue` input contract is satisfied. Run `plan-issue record
+   audit` to identify the profile (`tracking` or `dispatch`), then run
+   `plan-issue record closeout-gate` with the matching profile and the
+   merged MR ref (e.g. `!$MR_NUMBER`). On gate pass, render the closeout
+   comment through `plan-issue record render-comment --kind closeout`,
+   post it through `forge-cli --provider gitlab issue comment`, repair
+   the dashboard through `forge-cli --provider gitlab issue edit`, and
+   close the issue through `forge-cli --provider gitlab issue close` (no
+   `--reason`; forge-cli 0.17.6 rejects it). On gate fail, stop the
+   chain, leave the issue open with the unblock action surfaced by the
    failing step, and recommend rerunning `plan-tracking-issue-closeout`
    (tracking) or `dispatch-plan-closeout` (dispatch) directly to diagnose
    or complete. This step never runs when `--no-merge` was used.
