@@ -54,7 +54,7 @@ agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev -
   the acceptance matrix, temporary runtime-home install smoke, and fixture
   workspaces.
 - `tests/projects/`: stable project-local overlay smoke fixtures.
-- `scripts/ci/all.sh`: current CI gate stack, positions 1-8.
+- `scripts/ci/all.sh`: current CI gate stack, positions 1-10.
 
 ## Documentation Changes
 
@@ -161,9 +161,21 @@ That currently performs:
 3. `agent-runtime render --product claude`
 4. render-golden refresh plus `git diff --exit-code -- tests/golden/`
 5. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
-6. sandbox install rehearsal dry-run plus expected skill-list diff
-7. `bash tests/runtime-smoke/run.sh --mode deterministic`
-8. `bash tests/projects/project-local-smoke/run.sh`
+6. `agent-runtime doctor --class skill-surface --product codex` shape preflight
+7. sandbox install rehearsal dry-run plus expected skill-list diff
+8. `bash tests/runtime-smoke/run.sh --mode deterministic`
+9. `bash tests/projects/project-local-smoke/run.sh`
+10. `bash tests/hooks/run.sh`
+
+The skill-surface shape diagnostic at position 6 is a deterministic
+preflight, not live Codex Desktop acceptance. It validates only the
+runtime-kit source/link-map surface that Codex would discover; live skill
+visibility still requires `codex debug prompt-input` in a fresh Codex
+Desktop session. See
+`docs/plans/codex-skill-surface-acceptance-cutover/` for the live
+acceptance protocol. When the source surface grows new entries, bump
+`SHAPE_EXPECTED_MIN_CHECKS` in `scripts/ci/all.sh` and record the reason
+in the cutover execution state.
 
 For targeted checks:
 

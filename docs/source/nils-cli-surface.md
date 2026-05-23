@@ -1,17 +1,18 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-22
+- Snapshot date: 2026-05-23
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls ~/Project/sympoies/nils-cli/crates/`
-- Active `git describe --tags` output: `v0.17.1`
-- Head commit: `38d581a` (`chore(release): bump cli versions to 0.17.1` — forge-cli pending-check compatibility release)
-- Prior pin: `v0.17.0` at `c1a86d6` (forge-cli GitHub checks field-set compatibility release)
+- Active `git describe --tags` output: `v0.17.5`
+- Head commit: `a260510` (PR [#447](https://github.com/sympoies/nils-cli/pull/447), "Add Codex skill surface doctor" — adds `agent-runtime doctor --class skill-surface`)
+- Release: [`v0.17.5`](https://github.com/sympoies/nils-cli/releases/tag/v0.17.5), Homebrew tap [`nils-cli-v0.17.5`](https://github.com/sympoies/homebrew-tap/releases/tag/nils-cli-v0.17.5)
+- Prior pin: `v0.17.1` at `38d581a` (forge-cli pending-check compatibility release)
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli minor
-release (the next bump after `v0.17.1`).
+release (the next bump after `v0.17.5`).
 
 Notes on derivation:
 
@@ -29,7 +30,7 @@ Notes on derivation:
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight.                                                                                                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
-| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.17.1`, this repo consumes released `render`, `install`, `uninstall`, `doctor`, `audit-drift`, `gc-backups`, `restore-backups`, and `purge-state` bodies through Homebrew. |
+| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.17.5`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, and `purge-state` bodies through Homebrew. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
 | `agent-workflow-primitives` | `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate.                                                                                                                                                      |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
@@ -40,7 +41,7 @@ Notes on derivation:
 | `api-websocket`             | `api-websocket`                                                                                                     | WebSocket API testing CLI.                                                                                                                                                                                                                                             |
 | `cli-template`              | `cli-template`                                                                                                      | Internal template/example crate. Marked `excluded` in `docs/specs/completion-coverage-matrix-v1.md`; manifests should not pin against it.                                                                                                                              |
 | `codex-cli`                 | `codex-cli`                                                                                                         | Codex runtime helper. Alias family `cx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
-| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.17.1`, GitHub checks use the `gh 2.92.0` compatible field set required by PR close/deliver smoke.                                                                                                                                      |
+| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.17.5`, GitHub checks use the `gh 2.92.0` compatible field set required by PR close/deliver smoke; no surface-level changes beyond `v0.17.1`.                                                                                            |
 | `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
 | `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                       |

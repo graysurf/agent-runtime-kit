@@ -8,9 +8,10 @@
 # Avoid associative arrays, mapfile, and `${var,,}` lowercasing.
 #
 # Required on PATH (installed via `brew install sympoies/tap/nils-cli`):
-#   - agent-runtime  (subcommands: render, audit-drift)
+#   - agent-runtime  (subcommands: render, audit-drift, doctor)
 #   - plan-tooling   (subcommand: validate)
-#   - python3        (for offline runtime-smoke loopback/sample probes)
+#   - python3        (for offline runtime-smoke loopback/sample probes,
+#                    and for parsing the skill-surface doctor JSON output)
 
 set -euo pipefail
 
@@ -109,27 +110,111 @@ for fixture in "${drift_fixtures[@]}"; do
 done
 
 # -----------------------------------------------------------------------------
-# Position 6 — sandbox install rehearsal
+# Position 6 — Codex skill-surface shape diagnostic (preflight, not live)
+#
+# Shape validation only. Live Codex Desktop discovery still requires
+# `codex debug prompt-input` in a fresh session — see
+# docs/plans/codex-skill-surface-acceptance-cutover/ for the live acceptance
+# protocol. The expected check count is documented in that plan's execution
+# state; bump SHAPE_EXPECTED_MIN_CHECKS together with a recorded reason.
 # -----------------------------------------------------------------------------
-banner 6 "sandbox install rehearsal (dry-run skill-list diff)"
+SHAPE_EXPECTED_MIN_CHECKS=65
+SHAPE_OUT_DIR="${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/ci-all"
+mkdir -p "$SHAPE_OUT_DIR"
+SHAPE_JSON="$SHAPE_OUT_DIR/shape-diagnostic.json"
+SHAPE_SUMMARY="$SHAPE_OUT_DIR/shape-diagnostic.summary"
+
+banner 6 "agent-runtime doctor --class skill-surface --product codex"
+agent-runtime doctor \
+  --class skill-surface \
+  --product codex \
+  --format json \
+  --source-root "$REPO_ROOT" \
+  >"$SHAPE_JSON"
+
+SHAPE_VERDICT="$(
+  SHAPE_JSON_PATH="$SHAPE_JSON" \
+    SHAPE_EXPECTED_MIN_CHECKS="$SHAPE_EXPECTED_MIN_CHECKS" \
+    python3 - <<'PY'
+import json
+import os
+import sys
+
+path = os.environ["SHAPE_JSON_PATH"]
+expected_min = int(os.environ["SHAPE_EXPECTED_MIN_CHECKS"])
+with open(path, "r", encoding="utf-8") as fh:
+    data = json.load(fh)
+
+exit_code = data.get("exit_code")
+checks = data.get("checks")
+ok = data.get("ok")
+warn = data.get("warn")
+block = data.get("block")
+findings = data.get("findings") or []
+boundary = data.get("acceptance_boundary", "")
+
+errors = []
+if exit_code != 0:
+    errors.append("doctor exit_code=%r (expected 0)" % exit_code)
+if not isinstance(checks, int) or checks < expected_min:
+    errors.append(
+        "checks=%r below documented baseline %d "
+        "(bump SHAPE_EXPECTED_MIN_CHECKS in scripts/ci/all.sh "
+        "and record the reason in "
+        "docs/plans/codex-skill-surface-acceptance-cutover/"
+        "codex-skill-surface-acceptance-cutover-execution-state.md)"
+        % (checks, expected_min)
+    )
+if ok != checks:
+    errors.append("ok=%r != checks=%r" % (ok, checks))
+if warn != 0:
+    errors.append("warn=%r (expected 0)" % warn)
+if block != 0:
+    errors.append("block=%r (expected 0)" % block)
+if findings:
+    errors.append("findings present: %d entries" % len(findings))
+
+print("checks=%s ok=%s warn=%s block=%s exit_code=%s findings=%d"
+      % (checks, ok, warn, block, exit_code, len(findings)))
+print("acceptance-boundary: %s" % boundary)
+if errors:
+    print()
+    print("skill-surface shape gate FAILED:")
+    for err in errors:
+        print("  - " + err)
+    sys.exit(1)
+PY
+)" || {
+  printf '%s\n' "$SHAPE_VERDICT" >&2
+  printf '%s\n' "$SHAPE_VERDICT" >"$SHAPE_SUMMARY"
+  echo "ci/all.sh: skill-surface shape gate failed (artifact: $SHAPE_JSON)" >&2
+  exit 1
+}
+printf '%s\n' "$SHAPE_VERDICT"
+printf '%s\n' "$SHAPE_VERDICT" >"$SHAPE_SUMMARY"
+
+# -----------------------------------------------------------------------------
+# Position 7 — sandbox install rehearsal
+# -----------------------------------------------------------------------------
+banner 7 "sandbox install rehearsal (dry-run skill-list diff)"
 bash scripts/ci/sandbox-install-rehearsal.sh
 
 # -----------------------------------------------------------------------------
-# Position 7 — deterministic runtime skill smoke
+# Position 8 — deterministic runtime skill smoke
 # -----------------------------------------------------------------------------
-banner 7 "runtime skill deterministic smoke"
+banner 8 "runtime skill deterministic smoke"
 bash tests/runtime-smoke/run.sh --mode deterministic
 
 # -----------------------------------------------------------------------------
-# Position 8 — project-local overlay smoke
+# Position 9 — project-local overlay smoke
 # -----------------------------------------------------------------------------
-banner 8 "project-local overlay smoke"
+banner 9 "project-local overlay smoke"
 bash tests/projects/project-local-smoke/run.sh
 
 # -----------------------------------------------------------------------------
-# Position 9 — shared hook contract smoke
+# Position 10 — shared hook contract smoke
 # -----------------------------------------------------------------------------
-banner 9 "shared hook contract smoke"
+banner 10 "shared hook contract smoke"
 bash tests/hooks/run.sh
 
-printf '\nci/all.sh: positions 1-9 OK\n'
+printf '\nci/all.sh: positions 1-10 OK\n'
