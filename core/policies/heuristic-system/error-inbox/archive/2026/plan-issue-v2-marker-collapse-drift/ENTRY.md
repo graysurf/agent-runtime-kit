@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-24
 - Area: plan-issue record contract; dispatch + pr runtime-smoke probes; dispatch domain skill specs
 - Severity: medium
@@ -79,6 +79,9 @@ breaks:
   `error: unexpected argument '--marker-family' found`, not the
   expected v2 envelope.
 - Upstream release notes for sympoies/nils-cli v0.17.7 list "consumer migration notes" under What's Changed (PR sympoies/nils-cli#456); upstream signalled the break.
+- Tracking issue: graysurf/agent-runtime-kit#79
+- v2 marker consumer migration PR: graysurf/agent-runtime-kit#76
+- Surface-pin alignment gate PR: graysurf/agent-runtime-kit#78
 
 ## Current Workaround
 
@@ -138,17 +141,19 @@ it mechanically.
 
 ## Next Action
 
-Open a separate v2-migration PR that touches:
+None. The v2 marker collapse migration is resolved by PR #76 (v2 marker
+consumer migration across SKILL bodies, runtime-smoke fixtures, and
+goldens) and PR #78 (Position 2 surface-pin alignment CI gate). Tracker
+issue #79 carries the retrospective record. Durable outcome links are
+recorded below.
 
-1. `tests/runtime-smoke/cases/dispatch/run.sh`
-2. `tests/runtime-smoke/cases/pr/run.sh`
-3. `core/skills/dispatch/create-plan-tracking-issue/SKILL.md.tera`
-   plus sibling dispatch skill bodies that still reference v1
-   markers.
-4. `tests/golden/` snapshots regenerated after the skill rewrites.
-5. `docs/source/nils-cli-surface.md` rolled to the active host
-   version, `README.md` Version baseline row, `SUPPORT_MATRIX.md`
-   cells refreshed.
+## Outcomes
 
-Reference this entry from that PR's description so future PRs touching
-the same surface can find the migration ledger without re-deriving it.
+- Tracking issue: graysurf/agent-runtime-kit#79
+- v2 marker consumer migration PR: graysurf/agent-runtime-kit#76
+- Surface-pin alignment gate PR: graysurf/agent-runtime-kit#78
+
+## Archive
+
+- Archived: 2026-05-23
+- Reason: Completed entry archived out of the active error inbox.
