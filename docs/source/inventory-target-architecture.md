@@ -542,7 +542,12 @@ matching loader for each Claude concept. It does not.
   `codex debug prompt-input` in the May 2026 cutover environment. The
   generated prompt input lists `$HOME/.codex/skills` as a skill root, while
   `$HOME/.codex/plugins/<domain>/skills` is not listed as a runtime-kit
-  discovery root.
+  discovery root. `scripts/ci/all.sh` position 6 (`agent-runtime doctor
+  --class skill-surface --product codex`) is the deterministic preflight
+  that checks the source/link-map shape feeding this root; it is not a
+  substitute for live Codex Desktop acceptance, which still requires
+  `codex debug prompt-input` in a fresh session per
+  `docs/plans/codex-skill-surface-acceptance-cutover/`.
 - `~/.codex/config.toml` — TOML config with custom hooks declared
   inline. The runtime kit writes only into the
   `# >>> agent-runtime-kit:hooks >>>` managed block; everything outside
