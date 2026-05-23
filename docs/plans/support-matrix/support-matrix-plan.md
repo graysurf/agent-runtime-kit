@@ -100,11 +100,9 @@ before any automation discussion.
   - Every `not-applicable` row cites the reality-check section.
   - `min_product_version` reads `0.130.0` for every Codex row
     sourced from `manifests/runtime-roots.yaml`.
+  - The two row counts emitted by the validation block are equal.
 - **Validation**:
-  - Row count for Codex equals the primitive count in
-    `harness-shape-codex.md`.
-  - `grep '^\\| .* \\| codex \\|' SUPPORT_MATRIX.md | wc -l` matches
-    that count.
+  - `expected=$(grep -c '^### [0-9]\\+\\.' docs/source/harness-shape-codex.md); actual=$(grep -c '^| .* | codex |' SUPPORT_MATRIX.md); echo expected=$expected actual=$actual; [ "$expected" = "$actual" ]`
 
 ### Task 1.3: Populate Claude rows
 
@@ -124,11 +122,9 @@ before any automation discussion.
   - `min_nils_cli` matches the surface-level pin `v0.17.5` unless a
     skill-level `required_clis` floor is tighter (heuristic-inbox,
     state_home rows).
+  - The two row counts emitted by the validation block are equal.
 - **Validation**:
-  - Row count for Claude equals the primitive count in
-    `harness-shape-claude.md`.
-  - `grep '^\\| .* \\| claude \\|' SUPPORT_MATRIX.md | wc -l` matches
-    that count.
+  - `expected=$(grep -c '^### [0-9]\\+\\.' docs/source/harness-shape-claude.md); actual=$(grep -c '^| .* | claude |' SUPPORT_MATRIX.md); echo expected=$expected actual=$actual; [ "$expected" = "$actual" ]`
 
 ### Task 1.4: Cross-link from inventory doc and shape docs
 
@@ -166,8 +162,11 @@ before any automation discussion.
   - Task 1.3
 - **Acceptance criteria**:
   - `agent-runtime audit-drift` exits `0` against the working tree.
-  - Any allowlist entry has a `reason` value pointing back at this
-    plan.
+  - Either `drift-audit.allow.yaml` gained one new entry with a
+    `reason` pointing at this plan, or the execution-state task
+    ledger Notes column for Task 1.5 records that no allowlist entry
+    was needed. The decision must be visible in either the YAML or
+    the ledger so a future reviewer can audit the choice.
 - **Validation**:
   - `agent-runtime audit-drift`
   - `agent-runtime audit-drift --format json | jq '.findings'`
@@ -201,18 +200,27 @@ the bundle, run the multi-lens code review, and deliver the bundle to
     1 Task 1.1; `Next Action` references the first Sprint 2 task.
 - **Validation**:
   - `plan-tooling validate --file docs/plans/support-matrix/support-matrix-plan.md --explain`
-  - `plan-issue record audit --profile tracking --dashboard docs/plans/support-matrix/tracking-issue/dashboard.md --comments-dir docs/plans/support-matrix/tracking-issue/`
-    (run only if the binary surface supports `--comments-dir`; document
-    the alternative invocation otherwise).
+  - Re-render each artifact to a temp file and diff against the
+    committed copy to confirm determinism:
+    `plan-issue record render-dashboard --profile tracking --status in-progress --target-scope "ship root-level SUPPORT_MATRIX.md as unified harness coverage view" --current "Sprint 1 Task 1.1 — pin row schema" --next-action "Sprint 1 Task 1.2 — populate Codex rows" --validation pending --approval pending --title "SUPPORT_MATRIX.md design and delivery" --out /tmp/dashboard.rerender.md && diff -u docs/plans/support-matrix/tracking-issue/dashboard.md /tmp/dashboard.rerender.md`
+  - `plan-issue record audit` is deferred to Sprint 3 Task 3.2,
+    when a live `gh issue view --json comments` payload is available
+    as the audit input.
 
 ### Task 2.2: Multi-lens specialist review
 
 - **Location**:
   - new evidence record under `<state_home>/out/projects/<repo>/<run-id>-support-matrix-review/`.
-- **Description**: Run the `code-review:code-review-specialists` skill
+- **Description**: Allocate the evidence directory through
+  `agent-out project --topic support-matrix-review --mkdir`; capture
+  its absolute path before the review starts so re-runs reuse the
+  same record. Run the `code-review:code-review-specialists` skill
   across the plan bundle and the tracking-issue artifacts. Capture
-  blocking, warn, and informational findings with file:line cites. Do
-  not auto-apply fixes; record findings for the next task.
+  blocking, warn, and informational findings with file:line cites in
+  the allocated dir as `findings.jsonl`, then run
+  `review-specialists validate / merge / render` to produce the
+  specialist report. Do not auto-apply fixes; record findings for the
+  next task.
 - **Dependencies**:
   - Task 2.1
 - **Acceptance criteria**:
@@ -232,7 +240,11 @@ the bundle, run the multi-lens code review, and deliver the bundle to
 - **Description**: Address every blocking finding; address warn
   findings unless explicitly deferred with a one-line waiver in the
   execution state. Re-run `plan-tooling validate` and re-render
-  tracking-issue artifacts if content changed.
+  tracking-issue artifacts if content changed. The lifecycle-comment
+  `--commit` SHA stays at the pre-commit base (the `origin/main` HEAD
+  the worktree branched from); Sprint 3 Task 3.1 re-renders against
+  the post-merge SHA, and the only expected diff at that point is the
+  `Commit:` field of each lifecycle comment.
 - **Dependencies**:
   - Task 2.2
 - **Acceptance criteria**:
@@ -313,20 +325,32 @@ implementation work has a real issue to attach to.
 
 - **Location**:
   - GitHub `graysurf/agent-runtime-kit` issues.
-- **Description**: `forge-cli issue create --provider github --label
-  plan` with the re-rendered dashboard, then post the three lifecycle
-  comments. Re-render the dashboard with the resulting comment URLs
-  and edit the issue body. This is the only live mutation in the
-  plan; confirm with the user before executing.
+- **Description**: Preflight first — `forge-cli issue list --repo
+  graysurf/agent-runtime-kit --label plan --state open --format
+  json | jq '.[] | select(.title=="SUPPORT_MATRIX.md design and
+  delivery")'`. If a match exists from an earlier partial run,
+  resume by posting any missing lifecycle comments and editing the
+  dashboard rather than creating a duplicate. Otherwise run
+  `forge-cli issue create --provider github --label plan` with the
+  re-rendered dashboard, immediately record the returned issue
+  number into a scratch file in the worktree, then post the three
+  lifecycle comments and edit the issue body with the resulting
+  comment URLs. This is the only live mutation in the plan; confirm
+  with the user before executing.
 - **Dependencies**:
   - Task 3.1
 - **Acceptance criteria**:
   - Issue exists with `plan` label and the three lifecycle comments
     attached.
   - Issue body Current Dashboard references the three comment URLs.
+  - The scratch file holding the issue number is created before any
+    `issue comment` call so a mid-flight failure can resume against
+    the same issue.
+  - Exactly one open issue carries the plan title; rerunning the
+    task with the preflight check produces zero duplicates.
 - **Validation**:
-  - `forge-cli issue list --repo graysurf/agent-runtime-kit --label plan --format json`
-  - `plan-issue record audit --profile tracking --marker-family compat --dir docs/plans/support-matrix/tracking-issue`
+  - `forge-cli issue list --repo graysurf/agent-runtime-kit --label plan --state open --format json`
+  - `gh issue view "$(jq -r .number issue-number.json)" --json comments > comments.json && plan-issue record audit --profile tracking --body-file dashboard.md --comments-json comments.json --format text`
 
 ### Task 3.3: Record issue URL in execution state
 

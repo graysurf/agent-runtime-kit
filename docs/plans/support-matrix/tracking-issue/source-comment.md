@@ -85,9 +85,10 @@ drift-audit class).
   equivalent); the matrix must mark these `not-applicable` rather than
   `not-shipped`.
 - [F4] `DEVELOPMENT.md` lines 157-168 describe the current CI gate
-  stack (positions 1-10). The matrix should not be wired in as a
-  parsed CI gate; if drift audit later grows a `support-matrix` class,
-  it consumes the manifests behind the matrix, not the markdown.
+  stack (positions 1-10). The matrix is not wired in as a parsed CI
+  gate. If a future plan adds a `support-matrix` drift class, that
+  class should read the manifests behind the matrix and not parse the
+  markdown view itself.
 
 ## Open Questions Carried Into Execution
 
@@ -97,7 +98,11 @@ drift-audit class).
   subcommand in nils-cli?
 - Should `drift-audit` add a dedicated `support-matrix` class, or
   should the matrix be re-rendered fresh each invocation and diffed
-  against the committed copy (cheaper, same effect)?
+  against the committed copy (cheaper, same effect)? This plan
+  defers the drift-class question to a future plan; Sprint 1 ships
+  a hand-authored matrix without an automated parity check, so
+  silent drift between the matrix and the shape docs remains a
+  known gap until that follow-up lands.
 - Does the matrix belong at the repo root (`SUPPORT_MATRIX.md`) or
   under `docs/source/`? Root is more discoverable; `docs/source/`
   matches the placement policy for design artifacts.
