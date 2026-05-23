@@ -51,29 +51,78 @@ banner 1 "plan-tooling validate --format text --explain"
 plan-tooling validate --format text --explain
 
 # -----------------------------------------------------------------------------
-# Position 2 — render codex
+# Position 2 — nils-cli surface pin alignment
+#
+# Compares the host's `agent-runtime --version` against the pin recorded in
+# `docs/source/nils-cli-surface.md`. The pin line is matched by the literal
+# prefix '- Active `git describe --tags` output:' so a future reorder of
+# the snapshot header makes a parse miss visible in the gate banner. Closes
+# the silent-drift class identified by the heuristic-inbox case
+# `plan-issue-v2-marker-collapse-drift`: a brew upgrade past the surface
+# pin used to leave downstream gates running against a binary the fixtures
+# and skill bodies were not written for.
 # -----------------------------------------------------------------------------
-banner 2 "agent-runtime render --product codex"
+banner 2 "nils-cli surface pin vs agent-runtime --version"
+SURFACE_DOC="docs/source/nils-cli-surface.md"
+# shellcheck disable=SC2016
+# Single quotes intentional: the grep / sed patterns embed literal
+# backticks from the snapshot doc and must not be expanded by the shell.
+PIN_LINE="$(grep -E '^- Active `git describe --tags` output:' "$SURFACE_DOC" | head -n 1)"
+if [ -z "$PIN_LINE" ]; then
+  echo "ci/all.sh: nils-cli surface pin line not found in $SURFACE_DOC" >&2
+  echo "  expected line prefix: - Active \`git describe --tags\` output:" >&2
+  exit 1
+fi
+# shellcheck disable=SC2016
+SURFACE_PIN="$(printf '%s\n' "$PIN_LINE" | sed -E 's/^- Active `git describe --tags` output: `([^`]+)`.*$/\1/')"
+HOST_VERSION_RAW="$(agent-runtime --version 2>/dev/null | awk 'NR==1 {print $NF}')"
+if [ -z "$HOST_VERSION_RAW" ]; then
+  echo "ci/all.sh: agent-runtime --version produced no output" >&2
+  exit 1
+fi
+case "$HOST_VERSION_RAW" in
+  v*) HOST_TAG="$HOST_VERSION_RAW" ;;
+  *) HOST_TAG="v$HOST_VERSION_RAW" ;;
+esac
+if [ "$SURFACE_PIN" != "$HOST_TAG" ]; then
+  echo "ci/all.sh: nils-cli surface pin mismatch" >&2
+  echo "  pinned in $SURFACE_DOC : $SURFACE_PIN" >&2
+  echo "  host agent-runtime    : $HOST_TAG" >&2
+  echo "  parsed line           : $PIN_LINE" >&2
+  echo >&2
+  echo "  Remediation:" >&2
+  echo "  - If the snapshot doc is stale, refresh the pin (and any related" >&2
+  echo "    consumers under core/skills/, tests/runtime-smoke/, tests/golden/)" >&2
+  echo "    to match the host, then re-run scripts/ci/all.sh." >&2
+  echo "  - If the host is stale, run: brew upgrade sympoies/tap/nils-cli" >&2
+  exit 1
+fi
+printf 'nils-cli surface pin: %s   host: %s   aligned\n' "$SURFACE_PIN" "$HOST_TAG"
+
+# -----------------------------------------------------------------------------
+# Position 3 — render codex
+# -----------------------------------------------------------------------------
+banner 3 "agent-runtime render --product codex"
 agent-runtime render --product codex
 
 # -----------------------------------------------------------------------------
-# Position 3 — render claude
+# Position 4 — render claude
 # -----------------------------------------------------------------------------
-banner 3 "agent-runtime render --product claude"
+banner 4 "agent-runtime render --product claude"
 agent-runtime render --product claude
 
 # -----------------------------------------------------------------------------
-# Position 4 — golden diff (rendered build vs committed golden tree)
+# Position 5 — golden diff (rendered build vs committed golden tree)
 # -----------------------------------------------------------------------------
-banner 4 "git diff --exit-code tests/golden/ (after --update-golden refresh)"
+banner 5 "git diff --exit-code tests/golden/ (after --update-golden refresh)"
 agent-runtime render --product codex --update-golden >/dev/null
 agent-runtime render --product claude --update-golden >/dev/null
 git diff --exit-code -- tests/golden/
 
 # -----------------------------------------------------------------------------
-# Position 5 — audit-drift (root sweep + four hermetic fixtures)
+# Position 6 — audit-drift (root sweep + four hermetic fixtures)
 # -----------------------------------------------------------------------------
-banner 5 "agent-runtime audit-drift (root + tests/drift fixtures)"
+banner 6 "agent-runtime audit-drift (root + tests/drift fixtures)"
 agent-runtime audit-drift
 
 drift_fixtures=(
@@ -110,7 +159,7 @@ for fixture in "${drift_fixtures[@]}"; do
 done
 
 # -----------------------------------------------------------------------------
-# Position 6 — Codex skill-surface shape diagnostic (preflight, not live)
+# Position 7 — Codex skill-surface shape diagnostic (preflight, not live)
 #
 # Shape validation only. Live Codex Desktop discovery still requires
 # `codex debug prompt-input` in a fresh session — see
@@ -124,7 +173,7 @@ mkdir -p "$SHAPE_OUT_DIR"
 SHAPE_JSON="$SHAPE_OUT_DIR/shape-diagnostic.json"
 SHAPE_SUMMARY="$SHAPE_OUT_DIR/shape-diagnostic.summary"
 
-banner 6 "agent-runtime doctor --class skill-surface --product codex"
+banner 7 "agent-runtime doctor --class skill-surface --product codex"
 agent-runtime doctor \
   --class skill-surface \
   --product codex \
@@ -194,27 +243,27 @@ printf '%s\n' "$SHAPE_VERDICT"
 printf '%s\n' "$SHAPE_VERDICT" >"$SHAPE_SUMMARY"
 
 # -----------------------------------------------------------------------------
-# Position 7 — sandbox install rehearsal
+# Position 8 — sandbox install rehearsal
 # -----------------------------------------------------------------------------
-banner 7 "sandbox install rehearsal (dry-run skill-list diff)"
+banner 8 "sandbox install rehearsal (dry-run skill-list diff)"
 bash scripts/ci/sandbox-install-rehearsal.sh
 
 # -----------------------------------------------------------------------------
-# Position 8 — deterministic runtime skill smoke
+# Position 9 — deterministic runtime skill smoke
 # -----------------------------------------------------------------------------
-banner 8 "runtime skill deterministic smoke"
+banner 9 "runtime skill deterministic smoke"
 bash tests/runtime-smoke/run.sh --mode deterministic
 
 # -----------------------------------------------------------------------------
-# Position 9 — project-local overlay smoke
+# Position 10 — project-local overlay smoke
 # -----------------------------------------------------------------------------
-banner 9 "project-local overlay smoke"
+banner 10 "project-local overlay smoke"
 bash tests/projects/project-local-smoke/run.sh
 
 # -----------------------------------------------------------------------------
-# Position 10 — shared hook contract smoke
+# Position 11 — shared hook contract smoke
 # -----------------------------------------------------------------------------
-banner 10 "shared hook contract smoke"
+banner 11 "shared hook contract smoke"
 bash tests/hooks/run.sh
 
-printf '\nci/all.sh: positions 1-10 OK\n'
+printf '\nci/all.sh: positions 1-11 OK\n'

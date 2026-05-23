@@ -57,7 +57,7 @@ agent-docs resolve --context project-dev --strict --format checklist
   the acceptance matrix, temporary runtime-home install smoke, and fixture
   workspaces.
 - `tests/projects/`: stable project-local overlay smoke fixtures.
-- `scripts/ci/all.sh`: current CI gate stack, positions 1-10.
+- `scripts/ci/all.sh`: current CI gate stack, positions 1-11.
 
 ## Documentation Changes
 
@@ -160,17 +160,25 @@ bash scripts/ci/all.sh
 That currently performs:
 
 1. `plan-tooling validate --format text --explain`
-2. `agent-runtime render --product codex`
-3. `agent-runtime render --product claude`
-4. render-golden refresh plus `git diff --exit-code -- tests/golden/`
-5. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
-6. `agent-runtime doctor --class skill-surface --product codex` shape preflight
-7. sandbox install rehearsal dry-run plus expected skill-list diff
-8. `bash tests/runtime-smoke/run.sh --mode deterministic`
-9. `bash tests/projects/project-local-smoke/run.sh`
-10. `bash tests/hooks/run.sh`
+2. nils-cli surface pin alignment: parse the tag from `docs/source/nils-cli-surface.md` and compare it to `agent-runtime --version`; fail closed on mismatch with a remediation banner
+3. `agent-runtime render --product codex`
+4. `agent-runtime render --product claude`
+5. render-golden refresh plus `git diff --exit-code -- tests/golden/`
+6. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
+7. `agent-runtime doctor --class skill-surface --product codex` shape preflight
+8. sandbox install rehearsal dry-run plus expected skill-list diff
+9. `bash tests/runtime-smoke/run.sh --mode deterministic`
+10. `bash tests/projects/project-local-smoke/run.sh`
+11. `bash tests/hooks/run.sh`
 
-The skill-surface shape diagnostic at position 6 is a deterministic
+Position 2 closes the silent-drift class identified by the inbox case
+`plan-issue-v2-marker-collapse-drift`: before this gate, a `brew upgrade
+sympoies/tap/nils-cli` past the surface pin would leave downstream
+positions running against a binary the fixtures, skill bodies, and
+goldens were not written for. The gate emits a remediation banner
+naming both the pinned tag and the host's `agent-runtime --version`.
+
+The skill-surface shape diagnostic at position 7 is a deterministic
 preflight, not live Codex Desktop acceptance. It validates only the
 runtime-kit source/link-map surface that Codex would discover; live skill
 visibility still requires `codex debug prompt-input` in a fresh Codex
