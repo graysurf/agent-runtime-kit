@@ -145,8 +145,8 @@
   close.
 - Branch: `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, 3–6 words;
   ticket id `ABC-123` → `feat/abc-123-<slug>`).
-- Confirm a 1–2 sentence summary the user has approved before opening — never
-  derive title / body from `git log -1`.
+- Draft an accurate 1–2 sentence summary grounded in the actual diff before
+  opening — never derive title / body from `git log -1`.
 - Never force-push `main`.
 
 ## Files, Hooks, And Validation
