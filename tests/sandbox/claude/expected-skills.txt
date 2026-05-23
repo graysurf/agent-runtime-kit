@@ -1,8 +1,13 @@
 browser.browser-session
 browser.canary-check
 code-review.code-review-specialists
+conversation.actionable-advice
+conversation.actionable-knowledge
 conversation.discussion-to-implementation-doc
 conversation.handoff-session-prompt
+conversation.orchestrator-first
+conversation.parallel-first
+conversation.test-first
 dispatch.create-plan-tracking-issue
 dispatch.deliver-dispatch-plan
 dispatch.deliver-plan-tracking-issue

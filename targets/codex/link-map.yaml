@@ -183,6 +183,18 @@ entries:
     destination: plugins/conversation/skills
     recursive: true
 
+  - id: conversation.actionable-advice.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/actionable-advice
+    destination: skills/conversation/actionable-advice
+    recursive: false
+
+  - id: conversation.actionable-knowledge.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/actionable-knowledge
+    destination: skills/conversation/actionable-knowledge
+    recursive: false
+
   - id: conversation.discussion-to-implementation-doc.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/conversation/skills/discussion-to-implementation-doc
@@ -193,6 +205,24 @@ entries:
     kind: symlinked-file
     source: build/codex/plugins/conversation/skills/handoff-session-prompt
     destination: skills/conversation/handoff-session-prompt
+    recursive: false
+
+  - id: conversation.orchestrator-first.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/orchestrator-first
+    destination: skills/conversation/orchestrator-first
+    recursive: false
+
+  - id: conversation.parallel-first.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/parallel-first
+    destination: skills/conversation/parallel-first
+    recursive: false
+
+  - id: conversation.test-first.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/test-first
+    destination: skills/conversation/test-first
     recursive: false
 
   - id: evidence.plugin-manifest

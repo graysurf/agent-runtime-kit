@@ -7,12 +7,32 @@
   },
   "skills": [
     {
+      "id": "actionable-advice",
+      "source": "core/skills/conversation/actionable-advice"
+    },
+    {
+      "id": "actionable-knowledge",
+      "source": "core/skills/conversation/actionable-knowledge"
+    },
+    {
       "id": "discussion-to-implementation-doc",
       "source": "core/skills/conversation/discussion-to-implementation-doc"
     },
     {
       "id": "handoff-session-prompt",
       "source": "core/skills/conversation/handoff-session-prompt"
+    },
+    {
+      "id": "orchestrator-first",
+      "source": "core/skills/conversation/orchestrator-first"
+    },
+    {
+      "id": "parallel-first",
+      "source": "core/skills/conversation/parallel-first"
+    },
+    {
+      "id": "test-first",
+      "source": "core/skills/conversation/test-first"
     }
   ]
 }
