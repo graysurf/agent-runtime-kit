@@ -88,6 +88,11 @@ Status: source document for the first implementation discussion
   variable, its fallback rule, and doctor reporting expectation (L4).
   Still deferred: M4 unsafe-drift scoring, L2 install-flag de-bloat,
   L5 overlay merge semantics, and the three red-team threads.
+- 2026-05-23 (shared Heuristic System pass) — moved retained Heuristic System
+  policy, active inbox, archive, and operation records to one shared
+  `core/policies/heuristic-system/` root. Product `state_home` remains for raw
+  runtime evidence and transient output only; curated retained records now use
+  the public `heuristic-inbox` workflow and explicit CLI paths.
 - 2026-05-20 (specialist-review batch 2) — spec-depth pass:
   rewrote Drift Detection with a composite `unsafe` score
   (path / keyword / entropy at 0.4 each; block ≥ 0.8, warn at single
@@ -212,10 +217,10 @@ Observed role:
   - `statusline` configuration via `settings.json`.
   - `.claude-plugin/plugin.json` per plugin.
   - `.claude-plugin/marketplace.json` (local marketplace).
-- The Heuristic System lives under `HEURISTIC_SYSTEM.md` plus
-  `heuristic-system/operation-records/` and `heuristic-system/error-inbox/`.
-  It is currently claude-kit-local but topic-portable and is a candidate for
-  `core/` ownership.
+- The legacy Claude Heuristic System sources live under `HEURISTIC_SYSTEM.md`
+  plus `heuristic-system/operation-records/` and
+  `heuristic-system/error-inbox/`. The shared retained-record owner is now
+  `core/policies/heuristic-system/` in agent-runtime-kit.
 - Project-local overlay contract: many skills (`bench`, `demo`, `deploy`,
   `pre-pr`, `release`, `bootstrap`) dispatch to
   `<target-repo>/.agents/scripts/<name>.sh`. Each consuming repo owns the real
@@ -276,7 +281,7 @@ Important existing contract:
   binaries; they do not re-implement the underlying logic.
 - Many present-day skills in claude-kit / agent-kit duplicate logic that
   already exists as a nils-cli binary (`semantic-commit`, `agent-docs`,
-  `agent-scope-lock`, `heuristic-error-inbox`, `api-test-runner`, `issue:*` →
+  `agent-scope-lock`, `heuristic-inbox`, `api-test-runner`, `issue:*` →
   `forge-cli issue`, `code-review:*` → `review-specialists`, `pr:*` →
   `forge-cli`, `dispatch:*` → `plan-issue` / `plan-tooling`,
   `macos-agent-ops` → `macos-agent`). Migration is largely the act of rewriting
@@ -893,34 +898,41 @@ the full implementation. Drift audit accepts this if `skills.yaml`-style
 
 ## Heuristic System Placement
 
-The Heuristic System (workflow failure → durable knowledge pipeline currently
-documented in claude-kit's `HEURISTIC_SYSTEM.md`) splits cleanly across the
-core/target boundary:
+The Heuristic System (workflow failure to durable knowledge pipeline) now has
+one shared retained-record root in this repository. Product runtime homes still
+own transient evidence, caches, logs, and ordinary `skill-usage` output, but
+curated retained improvement records converge under `core/`.
 
 | Surface | Location | Notes |
 | --- | --- | --- |
 | Policy doc (`HEURISTIC_SYSTEM.md`) | `core/policies/heuristic-system/HEURISTIC_SYSTEM.md` | Product-independent routing rules |
-| Operation records | `core/policies/heuristic-system/operation-records/<slug>.md` | Cross-product reusable lessons |
-| Error inbox (active) | `<state_home>/heuristic-system/error-inbox/` | Per-product writable state, not tracked |
-| Error inbox (archive) | `<state_home>/heuristic-system/error-inbox/archive/YYYY/` | Pruned by retention policy |
-| Skill driver | `core/skills/meta/heuristic-error-inbox/` | Same skill body for both products |
+| Error inbox (active) | `core/policies/heuristic-system/error-inbox/` | Shared curated improvement trackers |
+| Error inbox (archive) | `core/policies/heuristic-system/error-inbox/archive/YYYY/` | Completed retained trackers |
+| Operation records | `core/policies/heuristic-system/operation-records/<slug>/RECORD.md` | Cross-product reusable lessons |
+| Runtime evidence | `<state_home>/out/...` or project output roots | Raw or detailed records linked from curated cases, not copied by default |
+| Skill driver | `core/skills/meta/heuristic-inbox/` | Same public skill body for both products |
 
 Rationale:
 
 - Policy and routing rules do not depend on product. They belong in `core/`.
-- Active inbox entries are writable runtime state. Tracking them creates
-  noise and merge conflicts; they belong under `state_home`.
-- Operation records that capture cross-product lessons (skill workflow
-  failures, install pitfalls) should be reusable and live in `core/`.
-- A claude-only or codex-only lesson can live under
-  `targets/<product>/policies/heuristic-system/operation-records/` and is
-  read in addition to core records.
+- Curated inbox entries are retained improvement records, not raw logs. They
+  belong in the shared policy root so Codex and Claude see the same backlog and
+  archive.
+- Runtime evidence can be noisy and host-specific. It remains under
+  `state_home` or project output directories and is linked from curated records
+  only when useful.
+- Operation records that capture cross-product lessons should be reusable and
+  live in `core/`.
+- A product-only lesson can still be called out inside the shared case, but the
+  default retained location should not fork by product.
 
-Migration note: existing `heuristic-system/error-inbox/` under claude-kit must
-move into the per-product `state_home` during the migration phase. Archived
-entries in `archive/YYYY/` are preserved as-is — the path moves, not the
-content. The CLI side moves to the `heuristic-inbox` nils-cli binary; the
-skill body wraps that binary rather than re-implementing inbox parsing.
+Migration note: existing `heuristic-system/` trees under legacy agent-kit,
+Claude config, or old product homes are migration sources. The public runtime
+skill name is `heuristic-inbox`; `heuristic-error-inbox` is legacy naming only.
+The released nils-cli binary accepts explicit paths, so shared-root workflows
+should pass `--inbox-dir core/policies/heuristic-system/error-inbox` for list
+operations and explicit case folders for verify, status update, evidence
+ingest, and archive operations.
 
 ## CLI Boundary: nils-cli Owns The CLI Surface
 

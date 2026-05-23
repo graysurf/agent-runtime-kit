@@ -106,17 +106,40 @@ run_agent_scope_lock_probe() {
 }
 
 run_heuristic_inbox_probe() {
-  local out="$META_ARTIFACTS_DIR/heuristic-inbox.json"
-  local inbox_dir="$TMP_ROOT/heuristic-system/error-inbox"
+  local shared_root="$REPO_ROOT/core/policies/heuristic-system"
+  local inbox_dir="$shared_root/error-inbox"
+  local archived_case="$inbox_dir/archive/2026/deliver-gitlab-mr-skipped-pipeline-and-cleanup"
+  local operation_record="$shared_root/operation-records/github-pr-required-check-gating"
+  local product out
   require_meta_bin heuristic-inbox || return 1
-  mkdir -p "$inbox_dir"
-  (
-    cd "$META_WORKSPACE"
-    heuristic-inbox list --inbox-dir "$inbox_dir" --format json
-  ) >"$out" 2>&1
-  grep -q '"schema_version": "cli.heuristic-inbox.list.v1"' "$out"
-  grep -q '"ok": true' "$out"
-  grep -q '"entries": \[\]' "$out"
+  test -f "$shared_root/HEURISTIC_SYSTEM.md"
+  test -d "$inbox_dir"
+  test -d "$archived_case"
+  test -d "$operation_record"
+
+  for product in codex claude; do
+    out="$META_ARTIFACTS_DIR/heuristic-inbox.${product}.json"
+    (
+      cd "$META_WORKSPACE"
+      export AGENT_RUNTIME_PRODUCT="$product"
+      export AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT="$shared_root"
+      heuristic-inbox list \
+        --inbox-dir "$AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT/error-inbox" \
+        --include-archived \
+        --format json
+    ) >"$out" 2>&1
+    grep -q '"schema_version": "cli.heuristic-inbox.list.v1"' "$out"
+    grep -q '"ok": true' "$out"
+    grep -q 'Deliver GitLab MR Skipped Pipeline And Cleanup Gaps' "$out"
+  done
+
+  heuristic-inbox verify "$archived_case" --strict --format json \
+    >"$META_ARTIFACTS_DIR/heuristic-inbox.archived-case.verify.json"
+  grep -q '"ok": true' "$META_ARTIFACTS_DIR/heuristic-inbox.archived-case.verify.json"
+
+  heuristic-inbox verify "$operation_record" --strict --format json \
+    >"$META_ARTIFACTS_DIR/heuristic-inbox.operation-record.verify.json"
+  grep -q '"ok": true' "$META_ARTIFACTS_DIR/heuristic-inbox.operation-record.verify.json"
 }
 
 run_repo_retro_probe() {
@@ -179,7 +202,7 @@ record_case "meta.bench" "project-local bench shim executed fixture script" run_
 record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap || failures=1
 record_case "meta.demo" "project-local demo shim executed fixture script" run_project_local_shim_probe demo || failures=1
 record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy || failures=1
-record_case "meta.heuristic-inbox" "heuristic inbox empty-list probe passed against temp inbox" run_heuristic_inbox_probe || failures=1
+record_case "meta.heuristic-inbox" "heuristic inbox shared-root list and strict verification passed" run_heuristic_inbox_probe || failures=1
 record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" run_project_local_shim_probe pre-pr || failures=1
 record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release || failures=1
 record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1

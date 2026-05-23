@@ -13,6 +13,9 @@ Prereqs:
 - `skill-usage` is installed from the released nils-cli package and available on `PATH`.
 - The skill identity, user-request summary, and output directory are explicit.
 - Writes to a given record directory are serialized by the caller.
+- Raw `skill-usage` records are runtime evidence. Promote only curated,
+  reusable follow-up gaps into `heuristic-inbox` cases under the shared
+  Heuristic System root.
 
 Inputs:
 
@@ -49,7 +52,10 @@ skill-usage verify --out /tmp/skill --format json
 2. Link child evidence records instead of duplicating their content.
 3. Record failures when they affect outcome, repair, or future maintainability.
 4. Record final outcome and verify the record before using it as durable evidence.
+5. When verified evidence exposes an important unresolved or reusable
+   skill-contract gap, create a curated `heuristic-inbox` case instead of
+   committing the raw record.
 
 ## Boundary
 
-`skill-usage` owns the invocation record envelope. The caller owns the actual skill behavior and must serialize writes to one record directory.
+`skill-usage` owns the invocation record envelope. The caller owns the actual skill behavior, must serialize writes to one record directory, and decides whether a separate curated `heuristic-inbox` follow-up is warranted.
