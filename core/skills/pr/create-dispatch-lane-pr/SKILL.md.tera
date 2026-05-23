@@ -73,7 +73,6 @@ primitive:
 ```bash
 plan-issue record render-comment \
   --profile dispatch \
-  --marker-family shared \
   --kind session \
   --content-file "$DISPATCH_SESSION_FILE" \
   --out "$DISPATCH_SESSION_COMMENT"
@@ -97,7 +96,7 @@ forge-cli --provider github --repo "$REPO" issue comment "$PLAN_ISSUE" \
 6. Run `forge-cli --provider github pr create ...` to create the draft lane PR.
 7. Write the PR URL back to the owning issue timeline by rendering a dispatch
    `session` comment with `plan-issue record render-comment --profile dispatch
-   --marker-family shared`, then posting it through `forge-cli issue comment`.
+  `, then posting it through `forge-cli issue comment`.
    Use `plan-issue link-pr` only for pre-record compatibility issues that
    already use a `Task Decomposition` body.
 

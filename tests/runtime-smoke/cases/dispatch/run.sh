@@ -140,12 +140,12 @@ write_tracking_comments_json() {
   local path="$1"
   cat >"$path" <<'JSON'
 {"comments":[
-{"body":"<!-- plan-tracking-issue:snapshot:v1 kind=source -->\n\n## Source Snapshot\n\n- Status: open","url":"https://github.com/example/repo/issues/1#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
-{"body":"<!-- plan-tracking-issue:snapshot:v1 kind=plan -->\n\n## Plan Snapshot","url":"https://github.com/example/repo/issues/1#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
-{"body":"<!-- execute-from-tracking-issue:state:v1 -->\n\n## Execution State\n\n- Status: complete\n\n| ID | Status | Task | Evidence | Notes |\n| --- | --- | --- | --- | --- |\n| S1T1 | done | Validate dispatch smoke | #123 | runtime smoke |","url":"https://github.com/example/repo/issues/1#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
-{"body":"<!-- execute-from-tracking-issue:session:v1 -->\n\n## Execution Session\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
-{"body":"<!-- execute-from-tracking-issue:validation:v1 -->\n\n## Validation Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
-{"body":"<!-- code-review-specialists:review:v1 -->\n\n## Review Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
+{"body":"<!-- plan-issue-record:v2 role=source profile=tracking -->\n\n## Source Snapshot\n\n- Status: open","url":"https://github.com/example/repo/issues/1#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
+{"body":"<!-- plan-issue-record:v2 role=plan profile=tracking -->\n\n## Plan Snapshot","url":"https://github.com/example/repo/issues/1#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
+{"body":"<!-- plan-issue-record:v2 role=state profile=tracking -->\n\n## Execution State\n\n- Status: complete\n\n| ID | Status | Task | Evidence | Notes |\n| --- | --- | --- | --- | --- |\n| S1T1 | done | Validate dispatch smoke | #123 | runtime smoke |","url":"https://github.com/example/repo/issues/1#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
+{"body":"<!-- plan-issue-record:v2 role=session profile=tracking -->\n\n## Execution Session\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
+{"body":"<!-- plan-issue-record:v2 role=validation profile=tracking -->\n\n## Validation Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
+{"body":"<!-- plan-issue-record:v2 role=review profile=tracking -->\n\n## Review Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
 JSON
 }
 
@@ -153,12 +153,12 @@ write_dispatch_comments_json() {
   local path="$1"
   cat >"$path" <<'JSON'
 {"comments":[
-{"body":"<!-- issue-backed-plan:snapshot:v1 kind=source profile=dispatch -->\n\n## Source Snapshot\n\n- Status: open","url":"https://github.com/example/repo/issues/2#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
-{"body":"<!-- issue-backed-plan:snapshot:v1 kind=plan profile=dispatch -->\n\n## Plan Snapshot","url":"https://github.com/example/repo/issues/2#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
-{"body":"<!-- issue-backed-plan:state:v1 profile=dispatch -->\n\n## Execution State\n\n- Status: complete\n- PR: #123\n\n## Dispatch Ledger\n\n| Task | Summary | Sprint | Owner/Subagent | Branch | Worktree | Execution Mode | PR Group | PR | Status | Validation | Review | Notes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| S1T1 | Validate dispatch smoke | S1 | subagent-s1-t1 | issue/s1-t1 | issue-s1-t1 | pr-shared | smoke | #123 | done | pass | pass | runtime smoke |","url":"https://github.com/example/repo/issues/2#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
-{"body":"<!-- issue-backed-plan:session:v1 profile=dispatch -->\n\n## Execution Session\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
-{"body":"<!-- issue-backed-plan:validation:v1 profile=dispatch -->\n\n## Validation Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
-{"body":"<!-- issue-backed-plan:review:v1 profile=dispatch -->\n\n## Review Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
+{"body":"<!-- plan-issue-record:v2 role=source profile=dispatch -->\n\n## Source Snapshot\n\n- Status: open","url":"https://github.com/example/repo/issues/2#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
+{"body":"<!-- plan-issue-record:v2 role=plan profile=dispatch -->\n\n## Plan Snapshot","url":"https://github.com/example/repo/issues/2#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
+{"body":"<!-- plan-issue-record:v2 role=state profile=dispatch -->\n\n## Execution State\n\n- Status: complete\n- PR: #123\n\n## Dispatch Ledger\n\n| Task | Summary | Sprint | Owner/Subagent | Branch | Worktree | Execution Mode | PR Group | PR | Status | Validation | Review | Notes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| S1T1 | Validate dispatch smoke | S1 | subagent-s1-t1 | issue/s1-t1 | issue-s1-t1 | pr-shared | smoke | #123 | done | pass | pass | runtime smoke |","url":"https://github.com/example/repo/issues/2#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
+{"body":"<!-- plan-issue-record:v2 role=session profile=dispatch -->\n\n## Execution Session\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
+{"body":"<!-- plan-issue-record:v2 role=validation profile=dispatch -->\n\n## Validation Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
+{"body":"<!-- plan-issue-record:v2 role=review profile=dispatch -->\n\n## Review Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
 JSON
 }
 
@@ -199,14 +199,13 @@ build_tracking_record_fixture() {
     --out "$PLAN_BODY_PATH" >"$dashboard_out" 2>&1
   plan-issue record render-comment \
     --profile tracking \
-    --marker-family compat \
     --kind state \
     --content-file "$state_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
   write_tracking_comments_json "$COMMENTS_JSON_PATH"
 
-  grep -q 'plan-issue-cli.record.render.dashboard.v1' "$dashboard_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$state_out"
+  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$state_out"
 }
 
 build_dispatch_record_fixture() {
@@ -244,15 +243,14 @@ build_dispatch_record_fixture() {
     --out "$PLAN_TASK_SPEC_PATH" >"$ledger_out" 2>&1
   plan-issue record render-comment \
     --profile dispatch \
-    --marker-family shared \
     --kind state \
     --content-file "$state_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
   write_dispatch_comments_json "$COMMENTS_JSON_PATH"
 
-  grep -q 'plan-issue-cli.record.render.dashboard.v1' "$dashboard_out"
-  grep -q 'plan-issue-cli.record.build.dispatch.ledger.v1' "$ledger_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$state_out"
+  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
+  grep -q 'plan-issue-cli.record.build.dispatch.ledger.v2' "$ledger_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$state_out"
   grep -q '^## Dispatch Ledger' "$PLAN_TASK_SPEC_PATH"
 }
 
@@ -342,7 +340,7 @@ run_create_plan_tracking_issue_probe() {
     --format json \
     --state-dir "$DISPATCH_STATE_DIR" >"$audit_out" 2>&1
 
-  grep -q '"missing_required":\\[\\]' "$audit_out"
+  grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"profile":"tracking"' "$audit_out"
 }
 
@@ -378,7 +376,6 @@ COMMENT
     --state-dir "$DISPATCH_STATE_DIR" >"$gate_out" 2>&1
   plan-issue record render-comment \
     --profile tracking \
-    --marker-family compat \
     --kind closeout \
     --content-file "$closeout_md" \
     --out "$comment_body" \
@@ -415,8 +412,8 @@ COMMENT
     --format json >"$close_out" 2>&1
 
   grep -q '"ready":true' "$gate_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$render_out"
-  grep -q 'plan-issue-cli.record.render.dashboard.v1' "$dashboard_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$render_out"
+  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
   grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$comment_out"
   grep -q '"schema_version":"cli.forge-cli.issue.edit.v1"' "$edit_out"
   grep -q '"schema_version":"cli.forge-cli.issue.close.v1"' "$close_out"
@@ -443,7 +440,7 @@ run_deliver_dispatch_plan_probe() {
     "$specialist_out" \
     --testing --maintainability
 
-  grep -q '"missing_required":\\[\\]' "$audit_out"
+  grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '^## Dispatch Ledger' "$PLAN_TASK_SPEC_PATH"
   grep -q '"forced_specialists"' "$specialist_out"
 }
@@ -476,7 +473,6 @@ COMMENT
     --state-dir "$DISPATCH_STATE_DIR" >"$gate_out" 2>&1
   plan-issue record render-comment \
     --profile dispatch \
-    --marker-family shared \
     --kind closeout \
     --content-file "$closeout_md" \
     --out "$closeout_comment" \
@@ -495,8 +491,8 @@ COMMENT
     --state-dir "$DISPATCH_STATE_DIR" >"$dashboard_out" 2>&1
 
   grep -q '"ready":true' "$gate_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$render_out"
-  grep -q 'plan-issue-cli.record.render.dashboard.v1' "$dashboard_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$render_out"
+  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
 }
 
 run_execute_from_tracking_issue_probe() {
@@ -519,7 +515,7 @@ run_execute_from_tracking_issue_probe() {
     --dry-run --format json \
     pr view 123 >"$pr_view_out" 2>&1
 
-  grep -q '"missing_required":\\[\\]' "$audit_out"
+  grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"schema_version":"cli.forge-cli.pr.view.v1"' "$pr_view_out"
 }
 
@@ -546,7 +542,6 @@ run_deliver_tracking_issue_probe() {
   write_record_content "$validation_md" tracking
   plan-issue record render-comment \
     --profile tracking \
-    --marker-family compat \
     --kind validation \
     --content-file "$validation_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$validation_out" 2>&1
@@ -557,7 +552,7 @@ run_deliver_tracking_issue_probe() {
   grep -q '"maintainability"' "$specialist_out"
   grep -q '"testing"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.checks.v1"' "$checks_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$validation_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$validation_out"
 }
 
 run_dispatch_pr_review_probe() {
@@ -584,7 +579,6 @@ run_dispatch_pr_review_probe() {
   write_record_content "$review_md" dispatch
   plan-issue record render-comment \
     --profile dispatch \
-    --marker-family shared \
     --kind review \
     --content-file "$review_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$review_out" 2>&1
@@ -592,7 +586,7 @@ run_dispatch_pr_review_probe() {
   grep -q '"schema_version": "cli.review-evidence.verify.v1"' "$verify_out"
   grep -q '"suggested_specialists"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.comment.v1"' "$comment_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$review_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$review_out"
 }
 
 run_dispatch_subagent_pr_probe() {
@@ -624,14 +618,13 @@ run_dispatch_subagent_pr_probe() {
   write_record_content "$session_md" dispatch
   plan-issue record render-comment \
     --profile dispatch \
-    --marker-family shared \
     --kind session \
     --content-file "$session_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$session_out" 2>&1
 
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$create_out"
   grep -q '"dispatch"' "$create_out"
-  grep -q 'plan-issue-cli.record.render.comment.v1' "$session_out"
+  grep -q 'plan-issue-cli.record.render.comment.v2' "$session_out"
 }
 
 failures=0

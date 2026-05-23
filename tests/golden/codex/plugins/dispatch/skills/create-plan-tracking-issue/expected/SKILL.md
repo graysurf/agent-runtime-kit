@@ -12,7 +12,7 @@ Prereqs:
 
 - `plan-tooling`, `plan-issue`, and `forge-cli` are available on `PATH`.
   The lifecycle record commands require
-  `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli debug
+  `plan-issue >=0.17.7`; before release, prepend the scoped nils-cli debug
   binary directory to `PATH`.
 - Run from the target git repository root unless an explicit repository or plan
   path is supplied.
@@ -76,7 +76,6 @@ plan-issue record render-dashboard \
 
 plan-issue record render-comment \
   --profile tracking \
-  --marker-family compat \
   --kind source \
   --path "$SOURCE" \
   --commit "$(git rev-parse HEAD)" \
@@ -85,7 +84,6 @@ plan-issue record render-comment \
 
 plan-issue record render-comment \
   --profile tracking \
-  --marker-family compat \
   --kind plan \
   --path "$PLAN" \
   --commit "$(git rev-parse HEAD)" \
@@ -128,7 +126,10 @@ preview. Do not use `plan-issue start-plan` for lightweight tracking issues.
    patched.
 5. Render the initial tracking dashboard with pending durable-record links.
 6. Render source, plan, and initial state comments through
-   `plan-issue record render-comment --marker-family compat`.
+   `plan-issue record render-comment --profile tracking --kind <source|plan|state>`.
+   The rendered marker family is `plan-issue-record:v2`; the retired
+   `--marker-family compat` / `shared` flags are not accepted by
+   `plan-issue >=0.17.7`.
 7. In live mode, create the issue through `forge-cli issue create`, post the
    rendered comments, then re-render/edit the dashboard with exact comment URLs.
 8. Run `plan-issue record audit --profile tracking` against the issue body and

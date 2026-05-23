@@ -96,13 +96,13 @@ plan-issue record build-dispatch-ledger \
   --default-pr-grouping group \
   --out "$DISPATCH_LEDGER"
 
-plan-issue record render-comment --profile dispatch --marker-family shared --kind plan \
+plan-issue record render-comment --profile dispatch --kind plan \
   --path "$PLAN" \
   --commit "$(git rev-parse HEAD)" \
   --content-file "$PLAN" \
   --out "$PLAN_COMMENT"
 
-plan-issue record render-comment --profile dispatch --marker-family shared --kind state \
+plan-issue record render-comment --profile dispatch --kind state \
   --content-file "$DISPATCH_STATE" \
   --out "$STATE_COMMENT"
 ```
@@ -144,7 +144,7 @@ plan-issue record closeout-gate \
   --linked-pr "#$FINAL_PR" \
   --format json
 
-plan-issue record render-comment --profile dispatch --marker-family shared --kind closeout \
+plan-issue record render-comment --profile dispatch --kind closeout \
   --content-file "$CLOSEOUT_MD" --out "$CLOSEOUT_COMMENT"
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
@@ -188,7 +188,7 @@ Use `plan-tooling split-prs` for PR grouping analysis only. Do not create a
     --require-session --require-validation --require-review --approval
     "$APPROVAL" --linked-pr "#$FINAL_PR"`, render a closeout comment
     through `plan-issue record render-comment --profile dispatch
-    --marker-family shared --kind closeout`, post the closeout comment
+    --kind closeout`, post the closeout comment
     through `forge-cli issue comment`, repair the final dashboard through
     `forge-cli issue edit`, then close the issue through `forge-cli
     issue close` (no `--reason`; forge-cli 0.17.6 rejects it). Stop the

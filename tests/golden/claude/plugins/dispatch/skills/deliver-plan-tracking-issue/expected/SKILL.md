@@ -104,7 +104,7 @@ review-evidence verify --out "$REVIEW_OUT" --format json
 Render issue-visible state after delivery events:
 
 ```bash
-plan-issue record render-comment --profile tracking --marker-family compat --kind validation \
+plan-issue record render-comment --profile tracking --kind validation \
   --content-file "$VALIDATION_MD" --out "$VALIDATION_COMMENT"
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$VALIDATION_COMMENT" --format json
 ```
@@ -128,7 +128,7 @@ plan-issue record closeout-gate \
   --linked-pr "#$PR_NUMBER" \
   --format json
 
-plan-issue record render-comment --profile tracking --marker-family compat --kind closeout \
+plan-issue record render-comment --profile tracking --kind closeout \
   --content-file "$CLOSEOUT_MD" --out "$CLOSEOUT_COMMENT"
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
@@ -169,9 +169,9 @@ forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
     `plan-issue record closeout-gate --profile tracking --require-complete
     --require-session --require-validation --approval "$APPROVAL"
     --linked-pr "#$PR_NUMBER"`, render a closeout comment through
-    `plan-issue record render-comment --profile tracking --marker-family
-    compat --kind closeout`, post the closeout comment through `forge-cli
-    issue comment`, repair the final dashboard through `forge-cli issue
+    `plan-issue record render-comment --profile tracking --kind closeout`,
+    post the closeout comment through `forge-cli issue comment`, repair the
+    final dashboard through `forge-cli issue
     edit`, then close the issue through `forge-cli issue close` (no
     `--reason`; forge-cli 0.17.6 rejects it). Stop the chain on any step
     failure, leave the issue open with the exact unblock action surfaced

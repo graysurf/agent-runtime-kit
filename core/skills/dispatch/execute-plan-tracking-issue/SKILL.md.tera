@@ -73,11 +73,11 @@ forge-cli pr create \
 Render the execution comments and dashboard:
 
 ```bash
-plan-issue record render-comment --profile tracking --marker-family compat --kind state \
+plan-issue record render-comment --profile tracking --kind state \
   --content-file "$STATE_MD" --out "$STATE_COMMENT"
-plan-issue record render-comment --profile tracking --marker-family compat --kind session \
+plan-issue record render-comment --profile tracking --kind session \
   --content-file "$SESSION_MD" --out "$SESSION_COMMENT"
-plan-issue record render-comment --profile tracking --marker-family compat --kind validation \
+plan-issue record render-comment --profile tracking --kind validation \
   --content-file "$VALIDATION_MD" --out "$VALIDATION_COMMENT"
 plan-issue record render-dashboard --profile tracking \
   --state-url "$STATE_URL" \
@@ -90,11 +90,11 @@ plan-issue record render-dashboard --profile tracking \
 ## Issue Contract Selection
 
 - Lightweight tracking issues use the compatibility marker family:
-  - `<!-- plan-tracking-issue:snapshot:v1 kind=source -->`
-  - `<!-- plan-tracking-issue:snapshot:v1 kind=plan -->`
-  - `<!-- execute-from-tracking-issue:state:v1 -->`
-  - `<!-- execute-from-tracking-issue:session:v1 -->`
-  - `<!-- execute-from-tracking-issue:validation:v1 -->`
+  - `<!-- plan-issue-record:v2 role=source profile=tracking -->`
+  - `<!-- plan-issue-record:v2 role=plan profile=tracking -->`
+  - `<!-- plan-issue-record:v2 role=state profile=tracking -->`
+  - `<!-- plan-issue-record:v2 role=session profile=tracking -->`
+  - `<!-- plan-issue-record:v2 role=validation profile=tracking -->`
 - The mutable issue body is only a dashboard. The latest valid state comment is
   the durable task ledger and should keep the canonical columns
   `ID | Status | Task | Evidence | Notes`.
@@ -112,7 +112,7 @@ plan-issue record render-dashboard --profile tracking \
 5. Implement only the selected task scope and run validation.
 6. Create or update the PR through `forge-cli`.
 7. Post state, session, and validation comments rendered by
-   `plan-issue record render-comment --marker-family compat`.
+   `plan-issue record render-comment`.
 8. Re-render and edit the dashboard with latest comment URLs, validation
    summary, PR references, blockers, and next action.
 9. Before merge, closeout, or final success reporting, run

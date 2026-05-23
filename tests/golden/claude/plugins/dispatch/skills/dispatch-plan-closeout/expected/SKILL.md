@@ -87,7 +87,6 @@ without a reason argument:
 ```bash
 plan-issue record render-comment \
   --profile dispatch \
-  --marker-family shared \
   --kind closeout \
   --content-file "$CLOSEOUT_MD" \
   --out "$CLOSEOUT_COMMENT"
