@@ -165,7 +165,10 @@ need the plan's view of the same drift vectors.
   product → refresh the affected `min_product` cells in this file in
   the same PR.
 - `docs/source/nils-cli-surface.md` rolls past `v0.17.7` →
-  refresh `min_nils_cli` cells and the surface-pin paragraph.
+  refresh `min_nils_cli` cells and the surface-pin paragraph. The
+  Position 2 surface-pin alignment gate in `scripts/ci/all.sh` fails
+  closed whenever this refresh lags the host `agent-runtime --version`,
+  so an unsynced bump is loud rather than silent.
 - A new CI gate position is added or removed in
   `scripts/ci/all.sh` (`DEVELOPMENT.md:157-178`) → refresh
   `ci_acceptance` cells that reference it.
