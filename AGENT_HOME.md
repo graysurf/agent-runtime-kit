@@ -174,19 +174,27 @@
 
 `HEURISTIC_SYSTEM.md` (under `core/policies/heuristic-system/` in the
 `agent-runtime-kit` checkout) defines how skill workflow failures get
-compressed into durable knowledge. When a skill misbehaves, gets worked
-around, or produces a useful lesson, route the signal by the table below:
+compressed into durable knowledge. When a skill or nils-cli primitive
+misbehaves, gets worked around, or produces a useful lesson, route the
+signal by the table below:
 
 | Signal | Route |
 | --- | --- |
 | Transient failure fixed in the same turn | No durable artifact; mention in reply only |
-| Unresolved, important workflow gap | `heuristic-error-inbox new --from-skill-usage <record>` |
+| Unresolved, important workflow gap | `heuristic-inbox new --from-skill-usage <record>` |
 | Reproducible bug | Focused test or script fix |
+| Suspected nils-cli / primitive bug | `heuristic-inbox new` with nils-cli version, minimal repro, upstream issue link if found, and skill-side workaround |
 | Repeated, cross-skill failure | `heuristic-system/operation-records/<slug>.md` |
 | Stable project policy | `AGENT_HOME.md` / project `AGENTS.md` / `CLAUDE.md` / the skill's `SKILL.md` |
+
+For suspected nils-cli / primitive bugs, skim
+<https://github.com/sympoies/nils-cli> issues and recent releases before
+filing — link the matching upstream issue from the inbox entry instead of
+duplicating it. If web access is unavailable, open the inbox entry anyway
+and note that the upstream check is pending.
 
 Active inbox lives at `core/policies/heuristic-system/error-inbox/` in the
 `agent-runtime-kit` checkout. After an entry is `promoted` or `wontfix`
 with no remaining next action, archive it under
 `core/policies/heuristic-system/error-inbox/archive/YYYY/` via the
-`heuristic-error-inbox` skill — never delete in place.
+`heuristic-inbox` skill — never delete in place.
