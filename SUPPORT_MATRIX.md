@@ -73,7 +73,7 @@ Each row is one `(surface, product)` pair.
 - Claude: `min_version` **2.1.145**, `recommended_version` 2.1.145,
   `min_version_effective_from` 2026-06-03, probe `claude --version`
   (`manifests/runtime-roots.yaml:29-38`).
-- nils-cli surface: snapshot **v0.17.5**
+- nils-cli surface: snapshot **v0.17.6**
   (`docs/source/nils-cli-surface.md:1-15`).
 - Per-skill nils-cli floors: `manifests/skills.yaml` `required_clis`;
   tighter than the surface-level pin where a specific binary is
