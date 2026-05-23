@@ -6,8 +6,9 @@
   defaults live in `AGENT_HOME.md`, loaded by Codex via
   `$HOME/.codex/AGENTS.md` and by Claude via `$HOME/.claude/CLAUDE.md`
   (both symlinks point at this repo's `AGENT_HOME.md`).
-- `./CLAUDE.md` in this repo is a symlink to this file so Claude reads the
-  same repo-local rules without maintaining a second copy.
+- `./CLAUDE.md` in this repo is a one-line file containing `@AGENTS.md`,
+  using Claude Code's import syntax so Claude reads the same repo-local
+  rules without maintaining a second copy.
 
 ## Project Purpose
 
