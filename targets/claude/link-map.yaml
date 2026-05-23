@@ -126,3 +126,8 @@ entries:
     kind: symlinked-file
     source: core/hooks/shared
     destination: hooks
+
+  - id: claude-kit.marketplace
+    kind: plugin-manifest-copy
+    source: targets/claude/.claude-plugin/marketplace.json
+    destination: .claude-plugin/marketplace.json
