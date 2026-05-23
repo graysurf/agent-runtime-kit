@@ -25,11 +25,14 @@ agent-runtime --version
 plan-tooling --version
 ```
 
-Before repository edits, run the home-scope preflight:
+Before repository edits, export `AGENT_DOCS_HOME` to this checkout and run
+the home-scope preflight (the CLI reads `AGENT_DOCS_HOME` from env when
+`--docs-home` is omitted):
 
 ```bash
-agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context startup --strict --format checklist
-agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev --strict --format checklist
+export AGENT_DOCS_HOME="$PWD"   # or the absolute path to the agent-runtime-kit checkout
+agent-docs resolve --context startup --strict --format checklist
+agent-docs resolve --context project-dev --strict --format checklist
 ```
 
 ## Repo Layout
