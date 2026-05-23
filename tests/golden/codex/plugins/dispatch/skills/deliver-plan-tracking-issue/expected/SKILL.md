@@ -10,10 +10,12 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue`, `forge-cli`, `review-evidence`, and
-  `review-specialists` are available on `PATH`. Lifecycle record commands
-  require `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli
-  debug binary directory to `PATH`.
+- `plan-tooling`, `plan-issue`, `forge-cli`, `review-evidence`,
+  `review-specialists`, and `gh` are available on `PATH`. Lifecycle record
+  commands require `plan-issue >=0.17.4`; before release, prepend the
+  scoped nils-cli debug binary directory to `PATH`. `gh` is required for
+  the chained closeout in Step 11 because `forge-cli issue view --format
+  json` (forge-cli 0.17.6) does not include comments.
 - The target issue has recoverable plan/task state and linked source context.
 - The target issue is a lightweight plan-tracking issue. If the issue contains
   dispatch profile comments, subagent lane records, or dispatch ledger state,
@@ -107,9 +109,14 @@ plan-issue record render-comment --profile tracking --marker-family compat --kin
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$VALIDATION_COMMENT" --format json
 ```
 
-Run the chained closeout inline (default, unless `--no-closeout`):
+Run the chained closeout inline (default, unless `--no-closeout`).
+Fetch the body + comments through `gh` because `forge-cli issue view
+--format json` omits comments under forge-cli 0.17.6:
 
 ```bash
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_COMMENTS_JSON"
+jq -r .body "$ISSUE_COMMENTS_JSON" >"$ISSUE_BODY"
+
 plan-issue record closeout-gate \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
@@ -126,7 +133,7 @@ plan-issue record render-comment --profile tracking --marker-family compat --kin
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
 forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
-forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
+forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 ```
 
 ## Workflow
@@ -157,18 +164,21 @@ forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format 
 11. After completion approval, run the chained closeout inline unless
     `--no-closeout` was supplied. The sequence mirrors
     `plan-tracking-issue-closeout` exactly: re-fetch the latest issue body
-    and comments, run `plan-issue record closeout-gate --profile tracking
-    --require-complete --require-session --require-validation --approval
-    "$APPROVAL" --linked-pr "#$PR_NUMBER"`, render a closeout comment
-    through `plan-issue record render-comment --profile tracking
-    --marker-family compat --kind closeout`, post the closeout comment
-    through `forge-cli issue comment`, repair the final dashboard through
-    `forge-cli issue edit`, then close the issue through `forge-cli issue
-    close --reason completed`. Stop the chain on any step failure, leave
-    the issue open with the exact unblock action surfaced by the failing
-    step, and recommend rerunning `plan-tracking-issue-closeout` directly
-    to diagnose or complete. If the issue is a dispatch runtime, route to
-    `dispatch-plan-closeout` instead.
+    and comments through `gh issue view --json body,comments` (forge-cli
+    0.17.6's `issue view --format json` does not include comments), run
+    `plan-issue record closeout-gate --profile tracking --require-complete
+    --require-session --require-validation --approval "$APPROVAL"
+    --linked-pr "#$PR_NUMBER"`, render a closeout comment through
+    `plan-issue record render-comment --profile tracking --marker-family
+    compat --kind closeout`, post the closeout comment through `forge-cli
+    issue comment`, repair the final dashboard through `forge-cli issue
+    edit`, then close the issue through `forge-cli issue close` (no
+    `--reason`; forge-cli 0.17.6 rejects it). Stop the chain on any step
+    failure, leave the issue open with the exact unblock action surfaced
+    by the failing step, and recommend rerunning
+    `plan-tracking-issue-closeout` directly to diagnose or complete. If
+    the issue is a dispatch runtime, route to `dispatch-plan-closeout`
+    instead.
 12. Leave the issue open with an exact unblock action if any gate fails or
     if `--no-closeout` was supplied.
 

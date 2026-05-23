@@ -10,10 +10,14 @@ description:
 
 Prereqs:
 
-- `plan-issue`, `forge-cli`, `review-evidence`, and `review-specialists` are
-  available on `PATH`. The lifecycle record commands require
+- `plan-issue`, `forge-cli`, `review-evidence`, `review-specialists`, and
+  `gh` are available on `PATH`. The lifecycle record commands require
   `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli debug
-  binary directory to `PATH`.
+  binary directory to `PATH`. `gh` is required because `forge-cli issue
+  view --format json` (forge-cli 0.17.6) does not include comments —
+  `plan-issue record audit|closeout-gate --comments-json` needs a payload
+  with the `comments` array, which `gh issue view --json body,comments`
+  returns directly.
 - The target issue was created or maintained by `deliver-dispatch-plan` and has
   dispatch profile lifecycle comments plus a dispatch ledger.
 - The main agent is acting as orchestrator/reviewer only; implementation
@@ -48,9 +52,15 @@ Failure modes:
 
 ## Entrypoint
 
-Audit and gate dispatch state:
+Audit and gate dispatch state. Fetch the body + comments through `gh`
+(or `glab` on the GitLab side); `forge-cli issue view --format json`
+only returns the body fields and would resolve `--comments-json` to an
+empty comment set:
 
 ```bash
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_COMMENTS_JSON"
+jq -r .body "$ISSUE_COMMENTS_JSON" >"$ISSUE_BODY"
+
 plan-issue record audit \
   --profile dispatch \
   --body-file "$ISSUE_BODY" \
@@ -70,7 +80,9 @@ plan-issue record closeout-gate \
   --format json
 ```
 
-Render and apply closeout:
+Render and apply closeout. `forge-cli issue close` (forge-cli 0.17.6)
+does not accept `--reason`; the backend `gh issue close <id>` runs
+without a reason argument:
 
 ```bash
 plan-issue record render-comment \
@@ -82,7 +94,7 @@ plan-issue record render-comment \
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
 forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
-forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
+forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 ```
 
 ## Workflow

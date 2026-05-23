@@ -10,9 +10,13 @@ description:
 
 Prereqs:
 
-- `forge-cli` and `plan-issue` are available on `PATH`. The lifecycle record
-  commands require `plan-issue >=0.17.4`; before release, prepend the scoped
-  nils-cli debug binary directory to `PATH`.
+- `forge-cli`, `plan-issue`, and `gh` are available on `PATH`. The lifecycle
+  record commands require `plan-issue >=0.17.4`; before release, prepend the
+  scoped nils-cli debug binary directory to `PATH`. `gh` is required because
+  `forge-cli issue view --format json` (forge-cli 0.17.6) does not include
+  comments — `plan-issue record audit|closeout-gate --comments-json` needs a
+  payload with the `comments` array, which `gh issue view --json
+  body,comments` returns directly.
 - The issue was created by `create-plan-tracking-issue` or carries equivalent
   lightweight source/plan/state/session/validation comments.
 - User approval, project-policy approval, or issue-visible approval evidence is
@@ -44,10 +48,14 @@ Failure modes:
 
 ## Entrypoint
 
-Audit and gate the issue:
+Audit and gate the issue. Fetch the body + comments through `gh` (or
+`glab` on the GitLab side); `forge-cli issue view --format json` only
+returns the body fields and would resolve `--comments-json` to an empty
+comment set:
 
 ```bash
-forge-cli issue view "$ISSUE" --repo "$OWNER_REPO" --format json >"$ISSUE_JSON"
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_COMMENTS_JSON"
+jq -r .body "$ISSUE_COMMENTS_JSON" >"$ISSUE_BODY"
 
 plan-issue record audit \
   --profile tracking \
@@ -67,7 +75,9 @@ plan-issue record closeout-gate \
   --format json
 ```
 
-Render closeout and close:
+Render closeout and close. `forge-cli issue close` (forge-cli 0.17.6) does
+not accept `--reason`; the backend `gh issue close <id>` runs without a
+reason argument:
 
 ```bash
 plan-issue record render-comment \
@@ -79,7 +89,7 @@ plan-issue record render-comment \
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
 forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
-forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
+forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 ```
 
 ## Marker Contract
