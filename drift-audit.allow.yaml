@@ -25,3 +25,5 @@ unsafe_allow:
     reason: "Conversation workflow skills contain public safety instructions about omitting sensitive values; they do not contain credentials."
   - path: "build/*/plugins/conversation/skills/*/SKILL.md"
     reason: "Rendered conversation workflow skills mirror the public source safety instructions and do not contain credentials."
+  - path: "targets/claude/scripts/memory-snapshot.sh"
+    reason: "Help text contains an example output filename with an embedded date; the high-entropy match is the date string, not a credential."
