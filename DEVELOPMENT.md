@@ -35,9 +35,10 @@ agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev -
 ## Repo Layout
 
 - `core/`: portable source content.
-- `CODEX_AGENTS.md`: Codex home-scope policy source linked by
-  `$HOME/.codex/AGENTS.md`; this filename is intentionally distinct from
-  project-local `AGENTS.md`.
+- `AGENT_HOME.md`: shared home-scope policy source for both Codex and Claude
+  Code, linked by `$HOME/.codex/AGENTS.md` and `$HOME/.claude/CLAUDE.md`;
+  this filename is intentionally distinct from project-local `AGENTS.md` /
+  `CLAUDE.md` so neither tool reads the same policy twice in this repo.
 - `targets/`: Codex and Claude adapter surfaces.
 - `manifests/`: machine-checkable source of truth for skills, plugins,
   products, runtime roots, and CLI tools.

@@ -143,11 +143,23 @@ Status: source document for the first implementation discussion
   findings from the original specialist review are now landed; no
   remaining deferred items.
 - 2026-05-22 (home policy cutover pass) — clarified that the Codex home-scope
-  policy source is the root `CODEX_AGENTS.md` file in this repo, not a rendered
+  policy source is the root `AGENT_HOME.md` file in this repo, not a rendered
   `AGENTS.md` source and not `$HOME/.agents`; `$CODEX_HOME/AGENTS.md` links
   directly to that file so Codex does not read duplicate `AGENTS.md` files when
   this repo is the active project. Home-scope `agent-docs` still pins its
   checked-out docs home explicitly until those runbooks migrate.
+- 2026-05-23 (shared home-policy cutover pass) — renamed the home-scope
+  policy source file from `CODEX_AGENTS.md` to `AGENT_HOME.md` and pointed
+  both `$HOME/.codex/AGENTS.md` and `$HOME/.claude/CLAUDE.md` at it so the
+  same merged policy now serves Codex and Claude Code without maintaining
+  two near-identical files. The Claude-only PR/MR slash-skill table was
+  removed; Codex-only items (delegation modes, evidence tag spec,
+  semantic-commit autostage, runtime-config hook block) were generalized
+  to apply to both tools. Project-local `AGENTS.md` is now version-
+  controlled in this repo and `./CLAUDE.md` is a symlink to it so Claude
+  picks up the same repo-local scope without a second copy. Earlier
+  changelog entries still mention `CODEX_AGENTS.md`; those describe the
+  state at that date.
 - 2026-05-23 (Codex skill discovery cutover pass) — updated the Codex reality
   check from prompt/config-only activation to the verified local skill root:
   runtime-kit skills are installed as domain-nested symlinked skill folders
@@ -178,7 +190,7 @@ Observed role:
 
 - Current Codex-oriented source of truth.
 - `$HOME/.agents` is a symlink to this repo.
-- `$HOME/.codex/AGENTS.md` links to `$HOME/.agents/CODEX_AGENTS.md`.
+- `$HOME/.codex/AGENTS.md` links to `$HOME/.agents/AGENT_HOME.md`.
 - Codex hook source lives under `hooks/codex/`.
 - Codex hook activation is managed by syncing a managed block into
   `$HOME/.codex/config.toml`, not by symlinking the full config file.
@@ -415,7 +427,7 @@ product adapters:
 
 ```text
 agent-runtime-kit/
-  CODEX_AGENTS.md             # Codex home-scope policy, linked by ~/.codex/AGENTS.md
+  AGENT_HOME.md             # Codex home-scope policy, linked by ~/.codex/AGENTS.md
   core/                       # portable, product-independent source of truth
     policies/                 # commit/PR rules, agent-docs gates, heuristic system, secrets
     skills/<domain>/<skill>/  # skill bodies, assets, scripts
@@ -483,7 +495,7 @@ resolve product paths; runtime resolution is the adapter's job.
 `targets/codex/` owns Codex-specific activation:
 
 - `$CODEX_HOME/AGENTS.md` link target policy. For the home-scope Codex prompt,
-  this repo uses root `CODEX_AGENTS.md` as the source file and links
+  this repo uses root `AGENT_HOME.md` as the source file and links
   `$CODEX_HOME/AGENTS.md` directly to it.
 - `.codex-plugin/plugin.json` generation or storage
   *(local convention; not a Codex upstream contract — see
@@ -524,7 +536,7 @@ matching loader for each Claude concept. It does not.
 **What Codex actually reads at session start:**
 
 - `~/.codex/AGENTS.md` — primary agent prompt. Read on every session
-  start. Can be a symlink. The runtime kit uses root `CODEX_AGENTS.md`
+  start. Can be a symlink. The runtime kit uses root `AGENT_HOME.md`
   as this source.
 - `~/.codex/skills/**/SKILL.md` — local skill discovery root observed from
   `codex debug prompt-input` in the May 2026 cutover environment. The
@@ -565,7 +577,7 @@ drift purposes only — Codex never opens it.
 **Home-scope prompt source invariant:**
 
 The checked-out source file for Codex's home-scope prompt is
-`<source_root>/CODEX_AGENTS.md`. `$CODEX_HOME/AGENTS.md` may symlink directly
+`<source_root>/AGENT_HOME.md`. `$CODEX_HOME/AGENTS.md` may symlink directly
 to it. Do not use `<source_root>/AGENTS.md` for this source because Codex also
 loads project-local `AGENTS.md` files while developing this repository; using
 the same filename for both surfaces would cause duplicate global/project policy
@@ -686,7 +698,7 @@ location independent of either product. The migration explicitly drops
 `AGENT_HOME` / `$HOME/.agents`: any reference to them in legacy `agent-kit`
 content is rewritten to product-native paths during render.
 The Codex home prompt is the deliberate source-link exception:
-`$CODEX_HOME/AGENTS.md` links directly to `<source_root>/CODEX_AGENTS.md` so the
+`$CODEX_HOME/AGENTS.md` links directly to `<source_root>/AGENT_HOME.md` so the
 source filename stays distinct from project-local `AGENTS.md`.
 
 | Root | Meaning | Codex value | Claude value | Target rule |
@@ -1205,7 +1217,7 @@ Recommended behavior:
 
 Product-specific examples:
 
-- Codex: link `~/.codex/AGENTS.md` to `<source_root>/CODEX_AGENTS.md`, expose
+- Codex: link `~/.codex/AGENTS.md` to `<source_root>/AGENT_HOME.md`, expose
   runtime-kit skills under `~/.codex/skills`, sync managed hooks into
   `~/.codex/config.toml`, retain plugin metadata for audit only, and leave
   auth/history/logs/cache untouched.

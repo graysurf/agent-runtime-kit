@@ -25,7 +25,7 @@ TRAILING_PUNCTUATION = ".,;:)]}'\"`"
 TEXT_SUFFIXES = {".md", ".mdx", ".rst", ".txt"}
 ACTIVE_BASENAMES = {
     "AGENTS.md",
-    "CODEX_AGENTS.md",
+    "AGENT_HOME.md",
     "DEVELOPMENT.md",
     "HEURISTIC_SYSTEM.md",
     "README.md",
