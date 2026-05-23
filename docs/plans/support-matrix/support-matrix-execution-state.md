@@ -71,5 +71,21 @@
   without a corresponding `SUPPORT_MATRIX.md` row;
   `manifests/runtime-roots.yaml` bumps a `min_version` /
   `min_version_effective_from` without a matrix refresh; the nils-cli
-  surface snapshot moves past `v0.17.5` and the matrix still cites
+  surface snapshot moves past `v0.17.6` and the matrix still cites
   the old pin.
+
+## Postscript: nils-cli v0.17.6 follow-through
+
+- The `gh issue list` invocation used during the live Sprint 3.2 run
+  was a workaround for the absent `forge-cli issue list` subcommand at
+  the time of execution. The subcommand shipped in nils-cli `v0.17.6`
+  (sympoies/nils-cli PR #450), so the plan's recorded preflight and
+  validation commands now match the available binary surface without
+  needing a workaround.
+- The `forge-cli pr deliver` "ok=false, BackendError, but the PR is
+  actually merged" trap that produced the empty PR #63 squash artifact
+  during the live Sprint 2 delivery was fixed in nils-cli `v0.17.6`
+  (sympoies/nils-cli PR #451). Future deliveries under v0.17.6 will
+  re-fetch PR state on `BackendError` and accept `state=merged` as
+  success, so the failure shape that produced #63 is no longer
+  reachable through the deliver chain.
