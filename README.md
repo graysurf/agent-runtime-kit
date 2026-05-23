@@ -6,11 +6,9 @@ templates are edited here in one tree; product-specific runtime homes
 (`$HOME/.codex`, `$HOME/.claude`) are regenerated from this source instead of
 being hand-edited, so the two products stop drifting apart.
 
-> **Status: mid-migration.** This repo is replacing the retired Codex-oriented
-> `agent-kit` and Claude-oriented `claude-kit` source trees. Render, golden
-> output, drift audit, sandbox install rehearsal, and the project-overlay
-> smoke harness are stable; per-surface ship state is tracked in
-> [`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md).
+Per-surface ship state — which Codex and Claude harness primitives are
+rendered, partial, or not shipped — is tracked in
+[`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md).
 
 ## Version baseline
 
@@ -41,7 +39,9 @@ core/                     manifests/         targets/
                               │ agent-runtime install --apply
                               ▼
        live_home: $HOME/.codex   $HOME/.claude       (managed runtime)
-       state_home: $AGENT_HOME/out/                  (writable artifacts)
+       state_home: $XDG_STATE_HOME/agent-runtime-kit/{codex,claude}/
+                   override via CODEX_AGENT_STATE_HOME / CLAUDE_KIT_STATE_HOME
+                   (writable artifacts under <state_home>/out/ and /backups/)
 ```
 
 - `core/` — product-independent source: skills, shared hook scripts, policy
@@ -52,7 +52,8 @@ core/                     manifests/         targets/
   content becomes product-native files through `link-map.yaml`.
 - `build/` — generated render output, pinned by `tests/golden/`.
 - `live_home` / `state_home` — managed by `agent-runtime install` and
-  `agent-out`. Runtime state is **never** tracked in this repo.
+  `agent-out`; each product has its own `state_home` (Codex and Claude do
+  not share an `out/` tree). Runtime state is **never** tracked in this repo.
 - `AGENT_DOCS.toml` — project-local entries the `agent-docs` preflight reads
   to gate edits, tests, and skill authoring.
 
@@ -138,4 +139,3 @@ AGENTS.md       ← project-scope policy (this repo)
 - [`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md) — per-surface ship state, acceptance lanes, version pins.
 - [`AGENT_HOME.md`](AGENT_HOME.md) — global agent policy loaded by both products.
 - [`AGENTS.md`](AGENTS.md) — project-scope policy and current boundaries.
-- [`docs/source/inventory-target-architecture.md`](docs/source/inventory-target-architecture.md) — full architecture, runtime-root model, migration plan.
