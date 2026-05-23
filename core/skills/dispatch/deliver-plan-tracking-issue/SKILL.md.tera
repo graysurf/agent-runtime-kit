@@ -30,6 +30,10 @@ Inputs:
 - Review evidence, specialist review outcome, and explicit
   fixed/residual/follow-up/deferred/no-action disposition for every meaningful
   finding.
+- Optional `--no-closeout` to stop the workflow after delivery readiness checks
+  and before any chained closeout. Use when closeout is owned by a separate
+  downstream skill invocation or by a human reviewer. Does not bypass the merge
+  step; PR delivery still completes.
 
 Outputs:
 
@@ -44,6 +48,10 @@ Outputs:
   `plan-issue record` after execution, PR review, PR merge, and final
   completion.
 - Closeout readiness evidence when the selected scope completes the issue.
+- When chained closeout runs (default, unless `--no-closeout` was supplied
+  or any closeout gate rejects): a closed provider issue, a rendered
+  `tracking-issue-closeout:v1` comment, and a final dashboard repaired to
+  link the closeout comment URL.
 
 Failure modes:
 
@@ -99,6 +107,28 @@ plan-issue record render-comment --profile tracking --marker-family compat --kin
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$VALIDATION_COMMENT" --format json
 ```
 
+Run the chained closeout inline (default, unless `--no-closeout`):
+
+```bash
+plan-issue record closeout-gate \
+  --profile tracking \
+  --body-file "$ISSUE_BODY" \
+  --comments-json "$ISSUE_COMMENTS_JSON" \
+  --require-complete \
+  --require-session \
+  --require-validation \
+  --approval "$APPROVAL" \
+  --linked-pr "#$PR_NUMBER" \
+  --format json
+
+plan-issue record render-comment --profile tracking --marker-family compat --kind closeout \
+  --content-file "$CLOSEOUT_MD" --out "$CLOSEOUT_COMMENT"
+
+forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
+forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
+forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --reason completed --format json
+```
+
 ## Workflow
 
 1. Resolve issue state, plan path, selected task/sprint, and close policy.
@@ -124,9 +154,23 @@ forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$VALIDATION_C
 10. Before merge or final success, verify the latest lightweight state is
     closeout-ready: status `complete`, all task rows `done` or `deferred`,
     validation/PR evidence present, and dashboard links current.
-11. Close through `plan-tracking-issue-closeout` after completion approval. If
-    the issue is a dispatch runtime, use `dispatch-plan-closeout` instead.
-12. Leave the issue open with an exact unblock action if any gate fails.
+11. After completion approval, run the chained closeout inline unless
+    `--no-closeout` was supplied. The sequence mirrors
+    `plan-tracking-issue-closeout` exactly: re-fetch the latest issue body
+    and comments, run `plan-issue record closeout-gate --profile tracking
+    --require-complete --require-session --require-validation --approval
+    "$APPROVAL" --linked-pr "#$PR_NUMBER"`, render a closeout comment
+    through `plan-issue record render-comment --profile tracking
+    --marker-family compat --kind closeout`, post the closeout comment
+    through `forge-cli issue comment`, repair the final dashboard through
+    `forge-cli issue edit`, then close the issue through `forge-cli issue
+    close --reason completed`. Stop the chain on any step failure, leave
+    the issue open with the exact unblock action surfaced by the failing
+    step, and recommend rerunning `plan-tracking-issue-closeout` directly
+    to diagnose or complete. If the issue is a dispatch runtime, route to
+    `dispatch-plan-closeout` instead.
+12. Leave the issue open with an exact unblock action if any gate fails or
+    if `--no-closeout` was supplied.
 
 ## Boundary
 
@@ -136,3 +180,12 @@ retained review records. `code-review-specialists` supplies read-only
 specialist review. This workflow owns lightweight issue execution, review
 judgment, repair decisions, issue-visible finding dispositions, delivery
 outcome comment URLs, and final status reporting.
+
+The chained closeout in Step 11 reuses the same `plan-issue record
+closeout-gate`, `plan-issue record render-comment --kind closeout`, and
+`forge-cli issue close` calls that `plan-tracking-issue-closeout` wraps;
+that skill remains the canonical reference for the sequence and the
+recovery surface when chaining fails or when `--no-closeout` is supplied.
+The boundary does not move: `plan-issue record` still owns gate
+evaluation and marker rendering, and `forge-cli` still owns the provider
+close call.
