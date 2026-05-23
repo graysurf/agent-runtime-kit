@@ -3,13 +3,13 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: implementation complete; PR delivery pending
+- Status: review fix complete; merge and issue closeout pending
 - Target scope: Sprint 1 shared policy and runtime guidance
 - Execution window: Sprint 1
-- Current task: Sprint 1 implementation complete
-- Next task: open PR, run specialist review, then merge/closeout if gates pass
+- Current task: PR review fix complete
+- Next task: push review fix, mark PR ready, merge, and close tracking issue
 - Last updated: 2026-05-23
-- Branch/commit/PR: feat/shared-heuristic-system; plan commit d730abf; implementation commit f3b58c3; PR pending
+- Branch/commit/PR: feat/shared-heuristic-system; plan commit d730abf; implementation commit f3b58c3; PR #54
 - Source document: docs/plans/shared-heuristic-system/shared-heuristic-system-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/53
@@ -46,6 +46,8 @@
 - 2026-05-23: Opened tracking issue #53 with source, plan, and initial state snapshots; `plan-issue record audit --profile tracking` reported no missing required markers.
 - 2026-05-23: Implemented the shared Heuristic System root, migrated one archived inbox case and one operation record from legacy agent-kit, updated rendered skill/hook guidance, and extended meta runtime smoke for shared-root verification.
 - 2026-05-23: Clean-tree `bash scripts/ci/all.sh` passed positions 1-9 after implementation commit `f3b58c3`.
+- 2026-05-23: Opened draft PR #54 and provider checks reported success with zero required checks.
+- 2026-05-23: Specialist review found stale legacy architecture references in `docs/source/inventory-target-architecture.md`; fixed them before final PR delivery.
 
 ## Validation
 
@@ -64,6 +66,7 @@
 | `agent-runtime audit-drift` | pass | Clean with documented intentional plugin manifest differences only. | n/a |
 | `bash tests/hooks/run.sh` | pass | 9 shared hook contract tests passed. | n/a |
 | `bash scripts/ci/all.sh` | pass | Clean-tree full local gate passed positions 1-9, including render/golden, drift audit, sandbox rehearsal, deterministic runtime smoke, project overlay smoke, and hook smoke. | n/a |
+| `review-specialists scope --base origin/main --testing --maintainability --security --red-team --format json` | pass | Delivery review scope selected testing, maintainability, security, and red-team lenses for PR #54. | `/Users/terry/.config/agent-kit/out/projects/graysurf__agent-runtime-kit/20260523-125753-shared-heuristic-system-review/scope.json` |
 
 ## Notes
 

@@ -217,10 +217,10 @@ Observed role:
   - `statusline` configuration via `settings.json`.
   - `.claude-plugin/plugin.json` per plugin.
   - `.claude-plugin/marketplace.json` (local marketplace).
-- The Heuristic System lives under `HEURISTIC_SYSTEM.md` plus
-  `heuristic-system/operation-records/` and `heuristic-system/error-inbox/`.
-  It is currently claude-kit-local but topic-portable and is a candidate for
-  `core/` ownership.
+- The legacy Claude Heuristic System sources live under `HEURISTIC_SYSTEM.md`
+  plus `heuristic-system/operation-records/` and
+  `heuristic-system/error-inbox/`. The shared retained-record owner is now
+  `core/policies/heuristic-system/` in agent-runtime-kit.
 - Project-local overlay contract: many skills (`bench`, `demo`, `deploy`,
   `pre-pr`, `release`, `bootstrap`) dispatch to
   `<target-repo>/.agents/scripts/<name>.sh`. Each consuming repo owns the real
@@ -281,7 +281,7 @@ Important existing contract:
   binaries; they do not re-implement the underlying logic.
 - Many present-day skills in claude-kit / agent-kit duplicate logic that
   already exists as a nils-cli binary (`semantic-commit`, `agent-docs`,
-  `agent-scope-lock`, `heuristic-error-inbox`, `api-test-runner`, `issue:*` →
+  `agent-scope-lock`, `heuristic-inbox`, `api-test-runner`, `issue:*` →
   `forge-cli issue`, `code-review:*` → `review-specialists`, `pr:*` →
   `forge-cli`, `dispatch:*` → `plan-issue` / `plan-tooling`,
   `macos-agent-ops` → `macos-agent`). Migration is largely the act of rewriting
