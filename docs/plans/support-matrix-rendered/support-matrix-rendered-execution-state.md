@@ -13,11 +13,22 @@
 - Next task: Sprint 1 Task 1.2 — add surface registry + acceptance
   schema.
 - Last updated: 2026-05-23
-- Branch: feat/support-matrix-rendered
+- Branch: feat/support-matrix-rendered-live-issue
 - Source document:
   docs/plans/support-matrix-rendered/support-matrix-rendered-discussion-source.md
 - Plan document:
   docs/plans/support-matrix-rendered/support-matrix-rendered-plan.md
+- Plan-bundle PR (merged):
+  <https://github.com/graysurf/agent-runtime-kit/pull/68>
+  (merge commit `f8d8a6b15645d3197a754fa09ccdde55391d4ec3`).
+- Live tracking issue:
+  <https://github.com/graysurf/agent-runtime-kit/issues/69>
+  - Source comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/69#issuecomment-4525581127>
+  - Plan comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/69#issuecomment-4525581207>
+  - State comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/69#issuecomment-4525581261>
 - Closed predecessor plan (cite-only, do not reopen):
   docs/plans/support-matrix/ — tracking issue
   <https://github.com/graysurf/agent-runtime-kit/issues/64>
