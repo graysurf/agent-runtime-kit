@@ -124,7 +124,11 @@ before any automation discussion.
     state_home rows).
   - The two row counts emitted by the validation block are equal.
 - **Validation**:
-  - `expected=$(grep -c '^### [0-9]\\+\\.' docs/source/harness-shape-claude.md); actual=$(grep -c '^| .* | claude |' SUPPORT_MATRIX.md); echo expected=$expected actual=$actual; [ "$expected" = "$actual" ]`
+  - `expected=$(grep -c '^### [0-9]\\+\\.' docs/source/harness-shape-codex.md); actual=$(grep -c '^| .* | claude |' SUPPORT_MATRIX.md); echo expected=$expected actual=$actual; [ "$expected" = "$actual" ]`
+    (expected is sourced from `harness-shape-codex.md` because the
+    Codex shape doc enumerates the union of primitives, while the
+    Claude shape doc only enumerates Claude-side primitives; the
+    extra Claude rows are codex-only surfaces marked `not-applicable`)
 
 ### Task 1.4: Cross-link from inventory doc and shape docs
 

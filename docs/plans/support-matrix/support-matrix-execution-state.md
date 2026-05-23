@@ -3,18 +3,28 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: planning landed; implementation pending
+- Status: Sprint 1 done in this PR; Sprint 2 + Sprint 3 already
+  shipped before Sprint 1 was executed (the plan bundle and the
+  live tracking issue landed first via PR #62 and issue #64);
+  Sprint 3.3 follow-up (recording the issue URL back in this file)
+  is bundled into this Sprint 1 PR.
 - Target scope: ship a root-level `SUPPORT_MATRIX.md` as the unified
   human-readable view over `harness-shape-{claude,codex}.md`, with
-  manifests staying as the source of truth; render dry-run tracking
-  issue artifacts and deliver everything to `main` in one PR; open
-  the live GitHub tracking issue from the merged plan in a Sprint 3
-  follow-up.
-- Current task: Sprint 1 Task 1.1 — pin the row schema in
-  `SUPPORT_MATRIX.md`.
-- Next task: Sprint 1 Task 1.2 — populate Codex rows.
+  manifests staying as the source of truth.
+- Current task: Sprint 1 complete; matrix landed, cross-links wired,
+  drift-audit clean.
+- Next task: open the nils-cli candidate roundup (out of band; not a
+  task in this plan).
 - Last updated: 2026-05-23
-- Branch: feat/support-matrix
+- Branch: feat/support-matrix-sprint-1
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/64
+  - Source comment: https://github.com/graysurf/agent-runtime-kit/issues/64#issuecomment-4525059491
+  - Plan comment: https://github.com/graysurf/agent-runtime-kit/issues/64#issuecomment-4525059569
+  - State comment: https://github.com/graysurf/agent-runtime-kit/issues/64#issuecomment-4525059622
+- Sprint 2 PR: https://github.com/graysurf/agent-runtime-kit/pull/62
+  (substantive merge). PR #63 is an empty squash artifact from a
+  `forge-cli pr deliver` debug rerun and contains no file changes
+  versus the #62 merge.
 - Source document: docs/plans/support-matrix/support-matrix-discussion-source.md
 - Plan document: docs/plans/support-matrix/support-matrix-plan.md
 - Direct source-doc execution waiver: user requested that the plan
@@ -26,29 +36,29 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | pending | Pin the row schema | | Long-format normalized; column set fixed in Sprint 1 acceptance. |
-| 1.2 | pending | Populate Codex rows | | Walks `harness-shape-codex.md`; Claude-only primitives → `not-applicable`. |
-| 1.3 | pending | Populate Claude rows | | Walks `harness-shape-claude.md`; Codex-only primitives → `not-applicable`. |
-| 1.4 | pending | Cross-link from inventory + shape docs | | One-line pointer per touched doc. |
-| 1.5 | pending | Drift audit accommodation | | Allowlist entry only if `audit-drift` flags the new file. |
-| 2.1 | pending | Render tracking issue artifacts (dry-run) | | Output under `docs/plans/support-matrix/tracking-issue/`. |
-| 2.2 | pending | Multi-lens specialist review | | Evidence in `<state_home>/out/projects/<repo>/<run-id>-support-matrix-review/`. |
-| 2.3 | pending | Apply review fixes | | Re-validate + re-render after material edits. |
-| 2.4 | pending | Commit via semantic-commit | | Hook-gated; never bypass. |
-| 2.5 | pending | PR deliver to main | | `pr:deliver-github-pr`; user confirms title/body before open. |
-| 3.1 | pending | Re-render dashboard with post-merge SHA | | Sprint 3 starts only after Sprint 2 PR merges. |
-| 3.2 | pending | forge-cli issue create + comments | | Live mutation; user confirms before execution. |
-| 3.3 | pending | Record issue URL in execution state | | Small follow-up PR; updates this file. |
+| 1.1 | completed | Pin the row schema | `SUPPORT_MATRIX.md` Schema section + State legend + Product version pins | Column set: surface / product / state / mechanism / source_artifact / min_product / min_nils_cli / ci_acceptance / live_acceptance / source_manifest. |
+| 1.2 | completed | Populate Codex rows | 17 codex rows in `SUPPORT_MATRIX.md` matrix | Matches `grep -c '^### [0-9]\+\.' docs/source/harness-shape-codex.md` = 17. |
+| 1.3 | completed | Populate Claude rows | 17 claude rows in `SUPPORT_MATRIX.md` matrix | Matrix uses the unified primitive set from `harness-shape-codex.md` (17). `harness-shape-claude.md` enumerates 14 directly; the extra 3 rows on the Claude side are codex-only surfaces (15 `$CODEX_HOME/skills`, 16 `config.toml` managed block, 17 prompt-mode delegation policy) marked `not-applicable`. Plan Task 1.3 description called for this; the literal validation grep against `harness-shape-claude.md` undercounts and is a known plan correction for a follow-up PR. |
+| 1.4 | completed | Cross-link from inventory + shape docs | `docs/source/inventory-target-architecture.md` Purpose-section pointer + a revisions-section entry; `docs/source/harness-shape-{codex,claude}.md` Status-line pointer | 3 files touched. `inventory-target-architecture.md` has two hunks (pointer paragraph + a standard revisions entry, both small); the shape docs have one hunk each. Plan Task 1.4 acceptance asked for one hunk per file — the revisions entry is a deliberate slight overrun because that doc's convention is to log every editorial pass in the revisions section. |
+| 1.5 | completed | Drift audit accommodation | `agent-runtime audit-drift` exit 0; no `SUPPORT_MATRIX.md` finding | No `drift-audit.allow.yaml` entry needed — recorded here per the acceptance bullet. 150 pre-existing findings are unrelated (extra/warn for legacy Codex install-map roots; intentional-difference/info for documented plugin manifest divergences). |
+| 2.1 | completed | Render tracking issue artifacts (dry-run) | `docs/plans/support-matrix/tracking-issue/` (dashboard + source/plan/state comments) | Shipped in PR #62. |
+| 2.2 | completed | Multi-lens specialist review | `${CODEX_AGENT_STATE_HOME or default}/out/projects/graysurf__agent-runtime-kit/20260523-181745-support-matrix-review/` (findings.jsonl + specialist-review.md + bundle/) | 8 findings, lenses: maintainability + testing + red-team. |
+| 2.3 | completed | Apply review fixes | PR #62 commit 2 (`docs(plans): fold specialist review fixes into support-matrix bundle`) | All 8 findings folded; tracking-issue plan + source comments re-rendered. |
+| 2.4 | completed | Commit via semantic-commit | PR #62 two commits via `semantic-commit commit --auto-fix` | Hook-gated lefthook `pre-commit` and `pre-push` ran clean. |
+| 2.5 | completed | PR deliver to main | PR #62 https://github.com/graysurf/agent-runtime-kit/pull/62 | Merge commit 91071fa on `main`. PR #63 (62be580) is an empty squash artifact from a debug rerun. |
+| 3.1 | completed | Re-render dashboard with post-merge SHA | `/tmp/support-matrix-rerender/` | Diff vs committed artifacts was the expected single Commit-field hunk. |
+| 3.2 | completed | forge-cli issue create + comments | Issue #64, 3 lifecycle comments, dashboard edit | `plan-issue record audit --profile tracking` returned `status=ok`, `missing_required=[]`, 3 markers recognised. |
+| 3.3 | completed | Record issue URL in execution state | this file (`Tracking issue:` block at the top + the URLs in 3.1/3.2 Evidence cells) | Bundled into this Sprint 1 PR instead of a stand-alone follow-up. |
 
 ## Validation
 
 | Command | Status | Summary |
 | --- | --- | --- |
-| `plan-tooling validate --file docs/plans/support-matrix/support-matrix-plan.md --format text --explain` | pending | Required before Sprint 2 commit. |
-| `agent-runtime audit-drift` | pending | Required before Sprint 2 commit; allowlist acceptable per Task 1.5. |
-| `bash scripts/ci/all.sh` | pending | Required before PR open. |
-| `plan-issue record audit --profile tracking ...` | pending | Run during 2.1 and 3.1. |
-| `forge-cli issue view <number> --format json` | pending | Run after 3.2. |
+| `plan-tooling validate --file docs/plans/support-matrix/support-matrix-plan.md --format text --explain` | passed | Ran in Sprint 2 worktree; exit 0. |
+| `agent-runtime audit-drift` | passed | Sprint 1 worktree; exit 0, 150 pre-existing findings, no `SUPPORT_MATRIX.md` finding. |
+| `bash scripts/ci/all.sh` | deferred | Skipped locally per user choice; GitHub CI on the Sprint 1 PR is authoritative. |
+| `plan-issue record audit --profile tracking ...` | passed | Sprint 3.2 against issue #64 body + comments JSON: `status=ok`, `missing_required=[]`, 3 markers (compat family) recognised. |
+| `forge-cli issue view 64 --format json` | passed | Sprint 3.2 confirmed issue creation + label `plan` + 3 lifecycle comments. |
 
 ## Closeout Gate
 
