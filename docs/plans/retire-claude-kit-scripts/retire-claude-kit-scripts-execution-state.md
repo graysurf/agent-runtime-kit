@@ -20,14 +20,14 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | pending | Add Claude-only scripts to arkit | | Source files live in claude-kit `scripts/`; verbatim copy expected. |
-| 1.2 | pending | Add runtime-agnostic helpers to arkit | | Strip any `claude-kit` string from migrated content. |
-| 1.3 | pending | Add Claude command surface to arkit | | Keep `$HOME/.claude/scripts/<name>.sh` invocation path stable. |
+| 1.1 | pending | Add Claude-only scripts to arkit | | `memory-snapshot.sh` only; `doctor.sh` and `upstream-drift.sh` dropped per scope refinement. |
+| 1.2 | pending | Add runtime-agnostic helpers to arkit | | `new-project-skill.sh`, `plan-issue-adapter`. |
+| 1.3 | pending | Add Claude command surface to arkit | | `new-project-skill.md`, `memory-clean.md`. `/doctor` dropped. |
 | 1.4 | pending | Wire link-map entries | | New `symlinked-file` entries only; no `recursive: true` needed. |
-| 2.1 | pending | Live install onto `~/.claude/` | | Use an overlay path so apply only mutates scripts + commands. |
-| 2.2 | pending | Smoke-test migrated surfaces | | Includes fresh Claude session check for slash commands. |
+| 2.1 | pending | Live install onto `~/.claude/` | | `agent-runtime install --product claude --apply`. |
+| 2.2 | pending | Smoke-test migrated surfaces | | `--help` smoke for each migrated entry. |
 | 3.1 | pending | Drop duplicated dispatchers and slash commands | | Plan-level decision: `plugin:meta:*` skills replace them. |
-| 3.2 | pending | Drop claude-kit-only infrastructure | | `scripts/ci/`, install wiring, pre-commit hook. |
+| 3.2 | pending | Drop claude-kit-only infrastructure | | scripts/ci/, install wiring, pre-commit hook, plus dropped `doctor.sh`/`upstream-drift.sh`/`drift-baseline.json`. |
 | 3.3 | pending | Record archive marker on claude-kit | | `MOVED.md` should link the tracking issue. |
 
 ## Validation

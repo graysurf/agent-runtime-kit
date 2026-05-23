@@ -131,3 +131,13 @@ entries:
     kind: plugin-manifest-copy
     source: targets/claude/.claude-plugin/marketplace.json
     destination: .claude-plugin/marketplace.json
+
+  - id: claude.scripts-tree
+    kind: symlinked-file
+    source: targets/claude/scripts
+    destination: scripts
+
+  - id: claude.commands-tree
+    kind: symlinked-file
+    source: targets/claude/commands
+    destination: commands

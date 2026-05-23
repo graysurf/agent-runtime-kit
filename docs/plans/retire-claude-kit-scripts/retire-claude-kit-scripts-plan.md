@@ -21,12 +21,13 @@ moved.
 
 - In scope:
   - New `agent-runtime-kit/targets/claude/scripts/` source directory holding
-    `doctor.sh`, `memory-snapshot.sh`, `upstream-drift.sh`, and
-    `drift-baseline.json`.
+    `memory-snapshot.sh` only.
   - New `agent-runtime-kit/targets/claude/commands/` source directory holding
-    `doctor.md`, `new-project-skill.md`, and `memory-clean.md`.
-  - New runtime-agnostic `agent-runtime-kit/scripts/` entries
-    `new-project-skill.sh` and `plan-issue-adapter`.
+    `new-project-skill.md` and `memory-clean.md`.
+  - New `agent-runtime-kit/targets/claude/scripts/` entries
+    `new-project-skill.sh` and `plan-issue-adapter` (parked under the Claude
+    target until a Codex consumer surfaces and warrants promotion to a
+    shared `core/scripts/` location).
   - `targets/claude/link-map.yaml` entries that install each new file under
     `~/.claude/scripts/<name>` and `~/.claude/commands/<name>` respectively.
   - Live install verification on the user's `~/.claude/` home.
@@ -39,6 +40,11 @@ moved.
   - Deleting the claude-kit checkout or remote repository.
   - Rewriting any migrated script's behavior or interface.
   - Adding new behavior to `plugin:meta:*` skills.
+  - Migrating `doctor.sh`, `upstream-drift.sh`, or
+    `docs/drift-baseline.json` — these are claude-kit-install-specific
+    health checks that lose meaning after claude-kit retires and are dropped
+    instead of migrated. Use `agent-runtime doctor` for runtime-kit health.
+  - Migrating the `/doctor` slash command (no longer has a backing script).
 
 ## Sprint 1: arkit takes ownership
 
@@ -51,36 +57,36 @@ scripts and slash commands without yet removing the claude-kit copy.
 ### Task 1.1: Add Claude-only scripts to arkit
 
 - **Location**:
-  - `targets/claude/scripts/doctor.sh`
   - `targets/claude/scripts/memory-snapshot.sh`
-  - `targets/claude/scripts/upstream-drift.sh`
-  - `targets/claude/scripts/drift-baseline.json`
-- **Description**: Copy the three Claude-only operator scripts and the drift
-  baseline from claude-kit `scripts/` and `docs/drift-baseline.json` into the
-  Claude target. Preserve script behavior, argument parsing, and exit codes
-  unchanged. Keep shebang and `set -euo pipefail`. No content rewrite in this
-  task.
+- **Description**: Copy `memory-snapshot.sh` from claude-kit `scripts/` into
+  the Claude target. Preserve script behavior, argument parsing, and exit
+  codes unchanged. Scrub the lone `claude-kit`-named comment in the safety
+  notice; do not change any runtime branch. `doctor.sh` and
+  `upstream-drift.sh` are explicitly dropped (see Out of scope) and not
+  migrated.
 - **Dependencies**:
   - none
 - **Acceptance criteria**:
-  - Each migrated file is byte-equivalent to its claude-kit source aside from
-    header comments noting the new location.
-  - `bash targets/claude/scripts/doctor.sh --help` works from the arkit
-    checkout.
+  - Migrated file is functionally identical to its claude-kit source aside
+    from the safety-notice comment.
+  - `bash targets/claude/scripts/memory-snapshot.sh --help` works from the
+    arkit checkout.
 - **Validation**:
-  - `bash targets/claude/scripts/doctor.sh --help`
-  - `bash targets/claude/scripts/upstream-drift.sh --help`
+  - `bash targets/claude/scripts/memory-snapshot.sh --help`
 
 ### Task 1.2: Add runtime-agnostic helpers to arkit
 
 - **Location**:
-  - `scripts/new-project-skill.sh`
-  - `scripts/plan-issue-adapter`
-- **Description**: Move `new-project-skill.sh` and the `plan-issue-adapter`
-  binary into a runtime-agnostic `scripts/` directory at the arkit root.
-  Do not change adapter argument parsing; `--runtime claude|codex|opencode`
-  must keep working. Update any embedded path strings that referenced
-  `claude-kit` to use neutral wording.
+  - `targets/claude/scripts/new-project-skill.sh`
+  - `targets/claude/scripts/plan-issue-adapter`
+- **Description**: Land `new-project-skill.sh` and the `plan-issue-adapter`
+  binary under `targets/claude/scripts/` for now. The behavior is
+  runtime-agnostic, but no Codex consumer exists today and arkit-root
+  `scripts/` is reserved for runtime-kit-only operator helpers (e.g.
+  `setup.sh`, `scripts/ci/`). When a Codex consumer surfaces, promote the
+  source to `core/scripts/` and link it from both `targets/<runtime>/`
+  link-maps. Do not change adapter argument parsing; `--runtime
+  claude|codex|opencode` must keep working.
 - **Dependencies**:
   - none
 - **Acceptance criteria**:
@@ -94,14 +100,13 @@ scripts and slash commands without yet removing the claude-kit copy.
 ### Task 1.3: Add Claude command surface to arkit
 
 - **Location**:
-  - `targets/claude/commands/doctor.md`
   - `targets/claude/commands/new-project-skill.md`
   - `targets/claude/commands/memory-clean.md`
-- **Description**: Migrate the three slash commands that back surviving
-  scripts (or, for `memory-clean`, a surviving skill wrapper). Rewrite the
-  embedded shell snippet to call `bash $HOME/.claude/scripts/<name>.sh`
-  unchanged — the install destination path is preserved deliberately so
-  invocations and muscle memory survive the migration.
+- **Description**: Migrate the two slash commands worth keeping. The
+  embedded shell snippet still calls `bash $HOME/.claude/scripts/<name>.sh`
+  — the install destination path is preserved deliberately so invocations
+  and muscle memory survive the migration. The `/doctor` slash command is
+  explicitly dropped along with `doctor.sh`.
 - **Dependencies**:
   - none
 - **Acceptance criteria**:
@@ -115,14 +120,15 @@ scripts and slash commands without yet removing the claude-kit copy.
 
 - **Location**:
   - `targets/claude/link-map.yaml`
-- **Description**: Add `symlinked-file` entries that install every file
-  added in Tasks 1.1–1.3 into the live Claude home:
-  - `targets/claude/scripts/<name>` → `scripts/<name>` (for the three Claude
-    operator scripts and `drift-baseline.json`)
-  - `scripts/<name>` → `scripts/<name>` (for `new-project-skill.sh` and
-    `plan-issue-adapter`)
-  - `targets/claude/commands/<name>` → `commands/<name>` (for the three slash
-    commands)
+- **Description**: Add two `symlinked-file` directory entries that point
+  the live Claude home at the new arkit-owned trees:
+  - `targets/claude/scripts/` → `scripts` (single directory symlink, same
+    pattern as `hooks/`)
+  - `targets/claude/commands/` → `commands` (single directory symlink)
+  Per-file entries were considered but trigger an extra/warn `audit-drift`
+  finding because arkit's repo-root `scripts/` would also be scanned as a
+  tracked install-map root. A single directory symlink satisfies the audit
+  and matches the existing `hooks` precedent.
 - **Dependencies**:
   - Task 1.1, Task 1.2, Task 1.3
 - **Acceptance criteria**:
@@ -148,20 +154,21 @@ not through claude-kit.
   - `$HOME/.claude/scripts`
   - `$HOME/.claude/commands`
 - **Description**: Run `agent-runtime install --product claude --apply`
-  against the real Claude home with a scripts-and-commands overlay so the
-  install only mutates the two new surfaces. Verify every link points into
-  the arkit checkout rather than the claude-kit checkout.
+  against the real Claude home so the install creates the new scripts and
+  commands symlinks. Verify every survivor link points into the arkit
+  checkout rather than the claude-kit checkout. Stale claude-kit entries
+  (the `~/.claude/scripts` and `~/.claude/commands` directory symlinks plus
+  any per-file symlinks no longer in the arkit link-map) are removed in
+  Sprint 3 after the new arkit links are in place.
 - **Dependencies**:
   - Task 1.4
 - **Acceptance criteria**:
-  - `readlink "$HOME/.claude/scripts/doctor.sh"` resolves into
-    `agent-runtime-kit/targets/claude/scripts/`.
-  - `readlink "$HOME/.claude/scripts/new-project-skill.sh"` resolves into
-    `agent-runtime-kit/scripts/`.
-  - `readlink "$HOME/.claude/commands/doctor.md"` resolves into
-    `agent-runtime-kit/targets/claude/commands/`.
-  - No live `~/.claude/scripts/*` or `~/.claude/commands/*` entry resolves
-    into the claude-kit checkout after the apply step.
+  - `readlink "$HOME/.claude/scripts"` resolves to
+    `agent-runtime-kit/targets/claude/scripts`.
+  - `readlink "$HOME/.claude/commands"` resolves to
+    `agent-runtime-kit/targets/claude/commands`.
+  - After Sprint 3 cleanup, no live `~/.claude/scripts*` or
+    `~/.claude/commands*` entry resolves into the claude-kit checkout.
 - **Validation**:
   - `agent-runtime install --source-root "$PWD" --product claude --live-home "$HOME/.claude" --state-home "$state_home" --overlay-path /tmp/agent-runtime-kit-claude-scripts-commands-overlay.yaml --dry-run`
   - `agent-runtime install --source-root "$PWD" --product claude --live-home "$HOME/.claude" --state-home "$state_home" --overlay-path /tmp/agent-runtime-kit-claude-scripts-commands-overlay.yaml --apply`
@@ -173,23 +180,20 @@ not through claude-kit.
   - live Claude home
 - **Description**: Run each migrated script and slash command against the
   installed link to confirm the behavior survived the move. Exercise
-  `doctor.sh` in both text and JSON modes, `upstream-drift.sh` against the
-  migrated baseline, and `new-project-skill.sh --help`. Use a fresh Claude
-  session to drive `/doctor`, `/new-project-skill --help`, and
-  `/memory-clean --dry-run` so the slash-command path is exercised end to
-  end.
+  `memory-snapshot.sh --help`, `new-project-skill.sh --help`, and
+  `plan-issue-adapter --help`. A fresh Claude session is not required at
+  this point — the slash commands are exercised after Sprint 3 once the
+  stale claude-kit entries are gone.
 - **Dependencies**:
   - Task 2.1
 - **Acceptance criteria**:
-  - `bash ~/.claude/scripts/doctor.sh --json` exits zero or warns only.
-  - `bash ~/.claude/scripts/upstream-drift.sh` resolves the baseline at the
-    arkit-managed path.
-  - Slash commands invoked from a fresh Claude session execute the migrated
-    script without `command not found`.
+  - `bash ~/.claude/scripts/memory-snapshot.sh --help` exits zero.
+  - `bash ~/.claude/scripts/new-project-skill.sh --help` exits zero.
+  - `~/.claude/scripts/plan-issue-adapter --help` exits zero.
 - **Validation**:
-  - `bash $HOME/.claude/scripts/doctor.sh`
-  - `bash $HOME/.claude/scripts/doctor.sh --json`
-  - `bash $HOME/.claude/scripts/upstream-drift.sh`
+  - `bash $HOME/.claude/scripts/memory-snapshot.sh --help`
+  - `bash $HOME/.claude/scripts/new-project-skill.sh --help`
+  - `$HOME/.claude/scripts/plan-issue-adapter --help`
 
 ## Sprint 3: Retire claude-kit script wiring
 
@@ -226,11 +230,17 @@ not through claude-kit.
 
 - **Location**:
   - claude-kit `scripts/ci/`
+  - claude-kit `scripts/doctor.sh`
+  - claude-kit `scripts/upstream-drift.sh`
   - claude-kit `scripts/_plugins.env`
   - claude-kit `scripts/_symlinks.env`
+  - claude-kit `commands/doctor.md`
+  - claude-kit `docs/drift-baseline.json`
   - claude-kit `install.sh`, `uninstall.sh`, `.githooks/pre-commit`
 - **Description**: Remove claude-kit's repo-local CI gates, install wiring,
-  and pre-commit hook. None of these have a consumer once claude-kit stops
+  pre-commit hook, plus `doctor.sh` and `upstream-drift.sh` (claude-kit
+  health checks that are explicitly dropped rather than migrated — see plan
+  Out of scope). None of these have a consumer once claude-kit stops
   receiving commits.
 - **Dependencies**:
   - Task 2.2
