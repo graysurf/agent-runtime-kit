@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 #
-# new-project-skill.sh — scaffold a project-local Claude Code skill in the
-# current git repo under the nils-cli-style layout:
+# new-claude-project-skill.sh — scaffold a project-local skill so Claude
+# Code picks it up in the current git repo.
 #
-#   <repo>/.agents/skills/<name>/SKILL.md           (tracked)
-#   <repo>/.agents/skills/<name>/scripts/<name>.sh  (tracked)
-#   <repo>/.claude/skills -> ../.agents/skills      (gitignored)
+# Layout written:
+#
+#   <repo>/.agents/skills/<name>/SKILL.md           (tracked, canonical source)
+#   <repo>/.agents/skills/<name>/scripts/<name>.sh  (tracked, stub)
+#   <repo>/.claude/skills -> ../.agents/skills      (gitignored, Claude entry)
+#
+# The `.agents/skills/` tree follows the Codex/nils-cli skill convention so
+# the source can be promoted later, but Claude Code does not read it
+# directly — the `.claude/skills` symlink is the part that actually exposes
+# the skill to Claude. This script's reason for existing is that bridging
+# step; without it, Claude would not see the skill regardless of how good
+# the SKILL.md is.
 #
 # Also:
 #   - Adds `.claude/` to .gitignore when missing.
@@ -19,7 +28,7 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  new-project-skill.sh <skill-name> [--description "..."]
+  new-claude-project-skill.sh <skill-name> [--description "..."]
 
 Arguments:
   <skill-name>         kebab-case, must contain at least one hyphen. Convention:
