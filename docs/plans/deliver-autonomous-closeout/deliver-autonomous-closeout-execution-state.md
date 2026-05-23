@@ -14,12 +14,10 @@
   `deliver-dispatch-plan`.
 - Last updated: 2026-05-23
 - Branch: feat/deliver-autonomous-closeout
-- Tracking issue: pending (created via
-  `dispatch:create-plan-tracking-issue` after this bundle is
-  committed; URL recorded back here as part of the same session).
-  - Source comment: pending
-  - Plan comment: pending
-  - State comment: pending
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/67
+  - Source comment: https://github.com/graysurf/agent-runtime-kit/issues/67#issuecomment-4525539159
+  - Plan comment: https://github.com/graysurf/agent-runtime-kit/issues/67#issuecomment-4525539240
+  - State comment: https://github.com/graysurf/agent-runtime-kit/issues/67#issuecomment-4525539317
 - PR: pending (opened via `pr:deliver-github-pr` after Sprint 3.4).
 - Source document: `docs/plans/deliver-autonomous-closeout/deliver-autonomous-closeout-plan.md`
 - Discussion source: docs/plans/deliver-autonomous-closeout/deliver-autonomous-closeout-discussion-source.md
