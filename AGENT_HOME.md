@@ -92,36 +92,38 @@
 
 - `agent-docs` is the mandatory home-scope dispatch contract before
   implementation, external lookup, or skill lifecycle work.
-- Always pin resolution with `--docs-home` to the actual checked-out docs
-  home. In the current migration environment, use `$HOME/.config/agent-kit`
-  directly until the home-scope docs catalog is moved into
-  `agent-runtime-kit`.
-- Do not use `$HOME/.agents` or ambient `AGENT_HOME` as the docs-home
-  indirection. The `$HOME/.agents` alias is retired; live Codex skill
-  discovery works from `$HOME/.codex/skills` directly against the
-  runtime-kit build output.
+- `agent-docs` resolves its catalog from `$AGENT_DOCS_HOME` (or the
+  `--docs-home` flag). Export `AGENT_DOCS_HOME` to point at the active
+  `agent-runtime-kit` checkout (the home-scope docs catalog now lives in
+  this repo, not in the retired `$HOME/.config/agent-kit`).
+- Do not use `$HOME/.agents` or `$AGENT_HOME` as the docs-home indirection.
+  `$AGENT_HOME` is reserved for `agent-out` artifacts (runtime-kit state
+  tree). The `$HOME/.agents` alias is retired; live Codex skill discovery
+  works from `$HOME/.codex/skills` directly against the runtime-kit build
+  output.
 - Required context sequence:
   - new session or task: `startup`
   - repository edits, tests, commits, or delivery:
     `startup` → `project-dev`
   - technical research or external verification: `startup` → `task-tools`
   - skill lifecycle work: `startup` → `skill-dev`
-- Resolve each required context in strict checklist mode:
-  `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context <context> --strict --format checklist`
+- Resolve each required context in strict checklist mode (with
+  `AGENT_DOCS_HOME` exported, `--docs-home` may be omitted):
+  `agent-docs resolve --context <context> --strict --format checklist`
 - Concrete preflight sequence before edits/tests/commits:
   1. Determine runtime intent (`startup`, `project implementation`,
      `technical research`, `skill authoring`).
-  2. `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context startup --strict --format checklist`
+  2. `agent-docs resolve --context startup --strict --format checklist`
   3. Run the strict gate for the active intent:
      - Project implementation:
-       `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context project-dev --strict --format checklist`
+       `agent-docs resolve --context project-dev --strict --format checklist`
      - Technical research:
-       `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context task-tools --strict --format checklist`
+       `agent-docs resolve --context task-tools --strict --format checklist`
      - Skill authoring:
-       `agent-docs --docs-home "$HOME/.config/agent-kit" resolve --context skill-dev --strict --format checklist`
+       `agent-docs resolve --context skill-dev --strict --format checklist`
   4. If any required doc is missing or strict resolve fails, stop write
      actions and run
-     `agent-docs --docs-home "$HOME/.config/agent-kit" baseline --check --target all --strict --format text`.
+     `agent-docs baseline --check --target all --strict --format text`.
   5. Proceed with edits/tests/commits only when required preflight docs are
      `status=present`.
 - New repository bootstrap (missing baseline docs): run `agent-doc-init` and
@@ -154,8 +156,9 @@
 - For temporary/debug artifacts without a project-defined output path, create
   a project run directory with `agent-out project --topic <topic> --mkdir`.
 - Do not override established tool/workflow artifact contracts; use
-  `agent-out audit` before cleaning or enforcing
-  `$HOME/.config/agent-kit/out/`.
+  `agent-out audit` before cleaning or enforcing the runtime-kit state
+  tree (`$AGENT_HOME/out/`, normally
+  `${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/out/`).
 - Do not create durable discussion or decision artifacts unless asked,
   required by project rules, or clearly reusable.
 - Hooks may enforce mechanical guardrails, but hooks do not replace policy.
@@ -169,10 +172,10 @@
 
 ## Heuristic System
 
-`HEURISTIC_SYSTEM.md` (under `$HOME/.config/agent-kit/`) defines how skill
-workflow failures get compressed into durable knowledge. When a skill
-misbehaves, gets worked around, or produces a useful lesson, route the signal
-by the table below:
+`HEURISTIC_SYSTEM.md` (under `core/policies/heuristic-system/` in the
+`agent-runtime-kit` checkout) defines how skill workflow failures get
+compressed into durable knowledge. When a skill misbehaves, gets worked
+around, or produces a useful lesson, route the signal by the table below:
 
 | Signal | Route |
 | --- | --- |
@@ -182,8 +185,8 @@ by the table below:
 | Repeated, cross-skill failure | `heuristic-system/operation-records/<slug>.md` |
 | Stable project policy | `AGENT_HOME.md` / project `AGENTS.md` / `CLAUDE.md` / the skill's `SKILL.md` |
 
-Active inbox lives at `heuristic-system/error-inbox/` under
-`$HOME/.config/agent-kit/`. After an entry is `promoted` or `wontfix` with no
-remaining next action, archive it under
-`heuristic-system/error-inbox/archive/YYYY/` via the `heuristic-error-inbox`
-skill — never delete in place.
+Active inbox lives at `core/policies/heuristic-system/error-inbox/` in the
+`agent-runtime-kit` checkout. After an entry is `promoted` or `wontfix`
+with no remaining next action, archive it under
+`core/policies/heuristic-system/error-inbox/archive/YYYY/` via the
+`heuristic-error-inbox` skill — never delete in place.

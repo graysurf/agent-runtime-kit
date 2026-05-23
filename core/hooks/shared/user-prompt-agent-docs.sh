@@ -73,7 +73,8 @@ fi
 [[ "$matched" -eq 0 ]] && exit 0
 
 product="${AGENT_RUNTIME_PRODUCT:-agent-runtime}"
-docs_home="${AGENT_RUNTIME_DOCS_HOME:-$HOME/.config/agent-kit}"
+docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
+[[ -z "$docs_home" ]] && exit 0
 reminder="[agent-runtime-kit:${product}] This repo has AGENTS.md. Before implementation edits, run the agent-docs preflight:
   agent-docs --docs-home \"${docs_home}\" resolve --context startup --strict --format checklist
   agent-docs --docs-home \"${docs_home}\" resolve --context project-dev --strict --format checklist

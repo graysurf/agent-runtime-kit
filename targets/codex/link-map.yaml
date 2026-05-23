@@ -458,7 +458,7 @@ entries:
 
       [[hooks.UserPromptSubmit.hooks]]
       type = "command"
-      command = "AGENT_RUNTIME_PRODUCT=codex AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$CODEX_HOME/hooks/user-prompt-agent-docs.sh\""
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/user-prompt-agent-docs.sh\""
       timeout = 10
       statusMessage = "agent-runtime-kit: Remind agent-docs preflight"
 
@@ -473,7 +473,7 @@ entries:
 
       [[hooks.SessionStart.hooks]]
       type = "command"
-      command = "AGENT_RUNTIME_PRODUCT=codex AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$CODEX_HOME/hooks/session-start-healthcheck.sh\""
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/session-start-healthcheck.sh\""
       timeout = 20
       statusMessage = "agent-runtime-kit: Check baseline health"
 

@@ -7,7 +7,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "AGENT_RUNTIME_PRODUCT=claude AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$HOME/.claude/hooks/user-prompt-agent-docs.sh\"",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/user-prompt-agent-docs.sh\"",
           "statusMessage": "agent-runtime-kit: Remind agent-docs preflight"
         },
         {
@@ -41,7 +41,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "AGENT_RUNTIME_PRODUCT=claude AGENT_RUNTIME_DOCS_HOME=\"$HOME/.config/agent-kit\" \"$HOME/.claude/hooks/session-start-healthcheck.sh\"",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/session-start-healthcheck.sh\"",
           "statusMessage": "agent-runtime-kit: Check baseline health"
         }
       ]

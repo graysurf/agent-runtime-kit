@@ -19,7 +19,8 @@ python_bin="$(command -v python3 || true)"
 [[ -z "$python_bin" ]] && exit 0
 
 product="${AGENT_RUNTIME_PRODUCT:-agent-runtime}"
-docs_home="${AGENT_RUNTIME_DOCS_HOME:-$HOME/.config/agent-kit}"
+docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
+[[ -z "$docs_home" ]] && exit 0
 stamp_dir="$HOME/.cache/agent-runtime-kit"
 stamp="$stamp_dir/health-${product}-$(date +%Y%m%d).stamp"
 [[ -f "$stamp" ]] && exit 0
