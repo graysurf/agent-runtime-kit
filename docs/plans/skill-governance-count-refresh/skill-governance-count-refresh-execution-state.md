@@ -3,19 +3,19 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: planned
+- Status: in-progress
 - Target scope: active skill-count refresh integration in skill governance and lifecycle workflows
 - Execution window: Sprint 1-3
 - Current task: Task 1.1
 - Next task: implement count-refresh fixture coverage after governance count modes exist
 - Last updated: 2026-05-25
-- Branch/commit/PR: pending
+- Branch/commit/PR: `742099a` pushed to `origin/main`; PR pending
 - Source document: docs/plans/skill-governance-count-refresh/skill-governance-count-refresh-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/100
+- Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/100#issuecomment-4529540312
+- Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/100#issuecomment-4529540372
+- Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/100#issuecomment-4529540410
 
 ## Task Ledger
 
@@ -46,15 +46,18 @@
   user-approved design direction: integrate count refresh into
   `skill-governance-audit`, update create/remove workflows, and keep
   `sync-runtime-skills` check-only for repository files.
+- 2026-05-25: Pushed commit `742099a`, opened tracking issue #100 with
+  `plan-issue record open`, and read-back audited the source, plan, and initial
+  state comments.
 
 ## Validation
 
 | Command | Status | Summary | Artifact |
 | --- | --- | --- | --- |
 | `plan-tooling validate --file docs/plans/skill-governance-count-refresh/skill-governance-count-refresh-plan.md --format text --explain` | passed | Plan bundle structural validation passed. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260525-015315-skill-governance-count-refresh/plan-tooling-validate.txt` |
-| `plan-issue record open --dry-run --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/skill-governance-count-refresh` | pending | Preview before live issue creation. | n/a |
-| `plan-issue record open --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/skill-governance-count-refresh` | pending | Open tracking issue after bundle commit is pushed. | n/a |
-| `plan-issue record audit --profile tracking --body-file "$ISSUE_BODY" --comments-json "$ISSUE_JSON" --format json` | pending | Read-back audit after live issue creation. | n/a |
+| `plan-issue record open --dry-run --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/skill-governance-count-refresh` | passed | Preview generated source, plan, and state snapshots with selected labels. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260525-015315-skill-governance-count-refresh/record-open-dry-run.json` |
+| `plan-issue record open --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/skill-governance-count-refresh` | passed | Opened tracking issue #100 with source, plan, and initial state comments. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260525-015315-skill-governance-count-refresh/record-open-live.json` |
+| `plan-issue record audit --profile tracking --body-file "$ISSUE_BODY" --comments-json "$ISSUE_JSON" --format json` | passed | Read-back audit recognized source, plan, and state records with no missing required markers. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260525-015315-skill-governance-count-refresh/issue-100-audit.json` |
 
 ## Residual Risk
 
