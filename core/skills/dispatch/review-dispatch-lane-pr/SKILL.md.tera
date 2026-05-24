@@ -10,10 +10,8 @@ description:
 
 Prereqs:
 
-- `forge-cli`, `plan-issue`, `review-evidence`, and `review-specialists` are
-  available on `PATH`. Dispatch lifecycle comment rendering requires
-  `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli debug
-  binary directory to `PATH`.
+- `forge-cli`, `plan-issue >=0.20.0`, `review-evidence`, and
+  `review-specialists` are available on `PATH`.
 - Target PR, issue, task ID or lane, and review decision are known.
 - Provider auth is available for live PR comments, edits, merges, and issue
   comments.
@@ -35,8 +33,7 @@ Outputs:
   with reason/evidence for every decision.
 - PR comment, PR body update, merge, close, or follow-up request through
   `forge-cli`.
-- Dispatch review or session comment rendered through `plan-issue record` and
-  posted to the issue.
+- Dispatch review or session comment posted through `plan-issue record post`.
 - Decision-scoped evidence with exact PR comment URLs, issue comment URLs, and
   selected findings when used.
 
@@ -74,16 +71,15 @@ forge-cli pr comment "$PR_NUMBER" \
   --format json
 ```
 
-Render the issue-visible review update:
+Post the issue-visible review update:
 
 ```bash
-plan-issue record render-comment \
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
   --profile dispatch \
   --kind review \
-  --content-file "$DISPATCH_REVIEW_MD" \
-  --out "$DISPATCH_REVIEW_COMMENT"
-
-forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$DISPATCH_REVIEW_COMMENT" --format json
+  --payload-file "$DISPATCH_REVIEW_PAYLOAD" \
+  --summary-file "$DISPATCH_REVIEW_MD"
 ```
 
 Merge or close only after review evidence and issue-visible dispatch state are
@@ -110,9 +106,9 @@ forge-cli pr close "$PR_NUMBER" --provider github --repo "$OWNER_REPO"
    for meaningful review items.
 6. Use `forge-cli pr comment` for follow-up requests or approval evidence.
 7. Use `forge-cli pr edit` when PR body hygiene must be repaired before merge.
-8. Render and post a dispatch review/session comment that records the review
-   outcome, selected findings, validation, PR comment URLs, and next lane
-   status.
+8. Post a dispatch review/session comment that records the review outcome,
+   selected findings, validation, PR comment URLs, and next lane status through
+   `plan-issue record post`.
 9. Merge, close, or request follow-up through `forge-cli` according to the
    review decision.
 10. Record exact PR comment URLs and issue-state evidence in the dispatch
@@ -121,8 +117,8 @@ forge-cli pr close "$PR_NUMBER" --provider github --repo "$OWNER_REPO"
 ## Boundary
 
 `review-evidence` owns durable review records. `forge-cli` owns provider PR
-comment/edit/merge/close operations. `plan-issue record` owns dispatch comment
-rendering. The skill body owns review judgment, lane-continuity decisions,
+comment/edit/merge/close operations. `plan-issue record` owns dispatch
+lifecycle comments. The skill body owns review judgment, lane-continuity decisions,
 specialist used/skipped rationale, and whether a finding blocks merge.
 
 ## References

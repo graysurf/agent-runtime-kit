@@ -710,9 +710,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp plan bundle and tracking lifecycle record output
-    invocation: plan-tooling validate plus plan-issue record render-dashboard/render-comment/audit
+    invocation: plan-tooling validate plus plan-issue record open/post/repair-dashboard/audit
     expected_exit_code: 0
-    expected_artifacts: tracking dashboard, comment render JSON, and audit JSON
+    expected_artifacts: tracking open JSON, dashboard repair JSON, post JSON, and audit JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -722,10 +722,10 @@ cases:
     skill_id: dispatch.deliver-dispatch-plan
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render shared dispatch dashboard, ledger, and lifecycle comments
-    invocation: plan-tooling validate plus plan-issue record build-dispatch-ledger/audit and specialist scope probes
+    setup: repair shared dispatch dashboard and post lifecycle comments
+    invocation: plan-tooling validate/split-prs plus plan-issue record post/repair-dashboard/audit and specialist scope probes
     expected_exit_code: 0
-    expected_artifacts: dispatch dashboard, ledger, audit JSON, and specialist scope JSON
+    expected_artifacts: dispatch dashboard repair JSON, split JSON, audit JSON, and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -735,10 +735,10 @@ cases:
     skill_id: dispatch.dispatch-plan-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render shared dispatch issue body and close gate fixture
-    invocation: plan-issue record audit/closeout-gate/render-comment/render-dashboard
+    setup: build shared dispatch close fixture
+    invocation: plan-issue record close with deterministic fixture
     expected_exit_code: 0
-    expected_artifacts: dispatch gate JSON, closeout comment render, and final dashboard render
+    expected_artifacts: dispatch close JSON with closeout preview and final dashboard
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -748,10 +748,10 @@ cases:
     skill_id: dispatch.plan-tracking-issue-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render lightweight closeout dashboard/comment fixtures
-    invocation: plan-issue record closeout-gate/render-comment/render-dashboard plus forge-cli issue dry-runs
+    setup: build lightweight closeout fixture
+    invocation: plan-issue record close with deterministic fixture
     expected_exit_code: 0
-    expected_artifacts: tracking gate JSON, render JSON, and forge-cli issue dry-run JSON
+    expected_artifacts: tracking close JSON with closeout preview and final dashboard
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
