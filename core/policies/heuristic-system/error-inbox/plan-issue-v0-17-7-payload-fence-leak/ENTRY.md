@@ -2,8 +2,7 @@
 
 ## Status
 
-- Status: upstream fixed; v0.18.0 live verified; local surface
-  pin/archive pending
+- Status: open
 - First observed: 2026-05-24
 - Area: plan-issue record contract; `dispatch:create-plan-tracking-issue`
   and any skill that consumes `plan-issue record open` output
@@ -15,6 +14,8 @@
 - Source upstream bad release: sympoies/nils-cli v0.17.7
 - Source upstream fixed release: sympoies/nils-cli v0.18.0, published
   2026-05-24T08:32:50Z
+- Resolution state: upstream fixed and v0.18.0 live verified; local
+  surface pin/archive still pending.
 - Source local context: `docs/source/nils-cli-surface.md` is still pinned
   at `v0.17.7`; verification below used an installed v0.18.0 host. The
   previous v2 marker migration (inbox case
