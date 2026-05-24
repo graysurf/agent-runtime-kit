@@ -142,6 +142,26 @@ run_heuristic_inbox_probe() {
   grep -q '"ok": true' "$META_ARTIFACTS_DIR/heuristic-inbox.operation-record.verify.json"
 }
 
+run_heuristic_session_closeout_probe() {
+  local body="$REPO_ROOT/core/skills/meta/heuristic-session-closeout/SKILL.md.tera"
+  local shared_root="$REPO_ROOT/core/policies/heuristic-system"
+  local out="$META_ARTIFACTS_DIR/heuristic-session-closeout.contract.txt"
+
+  test -f "$body"
+  test -d "$shared_root/error-inbox"
+  test -d "$shared_root/operation-records"
+  grep -q "session's goal has been achieved" "$body"
+  grep -q "heuristic-inbox verify" "$body"
+  grep -q "semantic-commit" "$body"
+  grep -q "push origin main" "$body"
+  grep -q "Do not include unrelated staged or unstaged changes" "$body"
+  {
+    printf 'body=%s\n' "$body"
+    printf 'shared_root=%s\n' "$shared_root"
+    printf 'verified=session-goal-trigger commit-boundary retained-record-routing\n'
+  } >"$out"
+}
+
 run_lifecycle_skill_probe() {
   local skill="$1"
   local fixture="$2"
@@ -273,6 +293,7 @@ record_case "meta.bootstrap" "project-local bootstrap shim executed fixture scri
 record_case "meta.demo" "project-local demo shim executed fixture script" run_project_local_shim_probe demo || failures=1
 record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy || failures=1
 record_case "meta.heuristic-inbox" "heuristic inbox shared-root list and strict verification passed" run_heuristic_inbox_probe || failures=1
+record_case "meta.heuristic-session-closeout" "session closeout contract preserves retained heuristic records on main" run_heuristic_session_closeout_probe || failures=1
 record_case "meta.create-skill" "skill lifecycle create surface and governance fixture passed" run_create_skill_probe || failures=1
 record_case "meta.create-project-skill" "project skill lifecycle create surface and fixture passed" run_create_project_skill_probe || failures=1
 record_case "meta.remove-skill" "skill lifecycle removal surface and governance fixture passed" run_remove_skill_probe || failures=1

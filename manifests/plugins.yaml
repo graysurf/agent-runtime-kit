@@ -32,6 +32,7 @@ plugins:
       - meta.deploy
       - meta.agent-scope-lock
       - meta.heuristic-inbox
+      - meta.heuristic-session-closeout
       - meta.create-skill
       - meta.create-project-skill
       - meta.remove-skill

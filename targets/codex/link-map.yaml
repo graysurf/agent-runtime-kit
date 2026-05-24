@@ -102,6 +102,12 @@ entries:
     destination: skills/meta/heuristic-inbox
     recursive: false
 
+  - id: meta.heuristic-session-closeout.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/heuristic-session-closeout
+    destination: skills/meta/heuristic-session-closeout
+    recursive: false
+
   - id: meta.create-skill.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/create-skill

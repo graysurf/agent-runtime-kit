@@ -79,6 +79,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.heuristic-session-closeout.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.heuristic-session-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: inspect session-closeout skill surface and shared root
+    invocation: verify session goal achieved trigger and retained-record commit boundaries
+    expected_exit_code: 0
+    expected_artifacts: source contract and shared-root verification guidance
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.create-skill.shared-cli.deterministic
     product: shared-cli
     domain: meta

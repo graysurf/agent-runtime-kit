@@ -182,6 +182,21 @@ skills:
       heuristic-inbox: ">=0.16.0"
     state_out_mode: runtime
 
+  - id: meta.heuristic-session-closeout
+    domain: meta
+    source: core/skills/meta/heuristic-session-closeout
+    products:
+      codex:
+        name: heuristic-session-closeout
+        render_to: plugins/meta/skills/heuristic-session-closeout/SKILL.md
+      claude:
+        name: heuristic-session-closeout
+        render_to: plugins/meta/skills/heuristic-session-closeout/SKILL.md
+    required_clis:
+      heuristic-inbox: ">=0.16.0"
+      semantic-commit: ">=0.16.0"
+    state_out_mode: runtime
+
   - id: meta.create-skill
     domain: meta
     source: core/skills/meta/create-skill
