@@ -196,6 +196,11 @@ labels:
     color: b60205
     description: Blocked on an external dependency or explicit decision.
     applies_to: [issue, pr, mr]
+  - name: "state::closed"
+    group: state
+    color: cfd3d7
+    description: Closed provider record with no active next action.
+    applies_to: [issue, pr, mr]
   - name: "state::needs-info"
     group: state
     color: d4c5f9

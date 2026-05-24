@@ -1,0 +1,290 @@
+schema: forge-label-classification-rules.v1
+catalog: manifests/forge-labels.yaml
+
+scope:
+  providers: [github, gitlab]
+  artifacts: [issue, pr, mr]
+  compatibility_labels:
+    - issue
+    - plan
+
+selection:
+  issue:
+    required_groups: [type, area, state]
+    optional_groups: [priority, severity, provider, workflow]
+    default_state: state::needs-triage
+  pr:
+    required_groups: [type, area, size]
+    optional_groups: [state, risk, provider, workflow]
+  mr:
+    required_groups: [type, area, size]
+    optional_groups: [state, risk, provider, workflow]
+
+precedence:
+  - exact workflow markers
+  - explicit title prefixes
+  - body section headings
+  - keyword families
+  - fallback defaults
+
+rules:
+  type:
+    - label: type::bug
+      title_prefixes: ["fix(", "fix:", "bug:"]
+      any:
+        - "bug"
+        - "regression"
+        - "broken"
+        - "incident"
+        - "outage"
+    - label: type::spike
+      title_prefixes: ["explore:", "spike:", "investigate:"]
+      any:
+        - "explore"
+        - "spike"
+        - "investigate"
+        - "feasibility"
+    - label: type::docs
+      title_prefixes: ["docs(", "docs:"]
+      any:
+        - "documentation"
+        - "docs-only"
+        - "policy"
+        - "readme"
+    - label: type::test
+      title_prefixes: ["test(", "test:"]
+      any:
+        - "test coverage"
+        - "coverage gate"
+    - label: type::refactor
+      title_prefixes: ["refactor(", "refactor:"]
+      any:
+        - "refactor"
+        - "restructure"
+        - "no behavior change"
+    - label: type::chore
+      title_prefixes: ["chore(", "chore:", "release:"]
+      any:
+        - "dependency"
+        - "maintenance"
+        - "bootstrap"
+    - label: type::feature
+      title_prefixes: ["feat(", "feat:", "feature:", "add ", "create ", "implement ", "plan:"]
+      any:
+        - "add "
+        - "create "
+        - "implement "
+        - "new "
+        - "capability"
+    - label: type::improvement
+      fallback: true
+
+  area:
+    - label: area::skills
+      title_any:
+        - "skill"
+        - "skills"
+        - "dispatch"
+      any:
+        - "skill"
+        - "skills"
+        - "SKILL.md"
+        - "dispatch"
+        - "plan-issue record"
+        - "pr skill"
+    - label: area::cli
+      title_any:
+        - "cli"
+        - "agent-run"
+        - "plan-issue"
+        - "doctor"
+        - "forge-cli"
+      any:
+        - "cli"
+        - "command"
+        - "forge-cli"
+        - "agent-run"
+        - "plan-issue"
+        - "doctor --class"
+    - label: area::runtime
+      title_any:
+        - "runtime"
+        - "docker"
+        - "container"
+        - "codex"
+        - "claude"
+      any:
+        - "runtime"
+        - "install"
+        - "render"
+        - "codex"
+        - "claude"
+        - "docker"
+        - "container"
+        - "live home"
+    - label: area::ci
+      title_any:
+        - "ci"
+        - "coverage"
+        - "gate"
+        - "checks"
+      any:
+        - "ci"
+        - "coverage"
+        - "gate"
+        - "workflow"
+        - "checks"
+    - label: area::provider
+      title_any:
+        - "github"
+        - "gitlab"
+        - "provider"
+        - "label taxonomy"
+        - "forge label"
+      any:
+        - "github"
+        - "gitlab"
+        - "provider"
+        - "pull request"
+        - "merge request"
+    - label: area::docs
+      title_any:
+        - "docs"
+        - "documentation"
+        - "support_matrix"
+        - "readme"
+      any:
+        - "docs"
+        - "documentation"
+        - "policy"
+        - "support_matrix"
+        - "source document"
+    - label: area::infra
+      any:
+        - "packaging"
+        - "homebrew"
+        - "repository infrastructure"
+    - label: area::runtime
+      fallback: true
+
+  state:
+    - label: state::closed
+      provider_state: [closed, merged]
+    - label: state::blocked
+      any:
+        - "blocked"
+        - "cannot complete"
+        - "waiting on"
+    - label: state::needs-info
+      any:
+        - "needs information"
+        - "needs more information"
+        - "missing context"
+    - label: state::needs-decision
+      any:
+        - "decide"
+        - "decision"
+        - "proposal"
+        - "explore"
+        - "open to revision"
+    - label: state::ready
+      any:
+        - "ready for implementation"
+        - "ready-for-implementation"
+        - "acceptance criteria"
+        - "desired outcome"
+        - "expected outcome"
+    - label: state::needs-triage
+      fallback: true
+
+  priority:
+    - label: priority::p1
+      any:
+        - "blocked on"
+        - "downstream"
+        - "active pr"
+        - "must"
+        - "next"
+    - label: priority::p2
+      any:
+        - "ready"
+        - "acceptance criteria"
+        - "desired outcome"
+    - label: priority::p3
+      any:
+        - "explore"
+        - "opportunistic"
+        - "future"
+
+  provider:
+    - label: provider::both
+      any:
+        - "github and gitlab"
+        - "github/gitlab"
+        - "both providers"
+        - "pr/mr"
+    - label: provider::github
+      any:
+        - "github"
+    - label: provider::gitlab
+      any:
+        - "gitlab"
+    - label: provider::neutral
+      fallback: true
+
+  workflow:
+    - label: workflow::plan
+      any:
+        - "plan:"
+        - "plan bundle"
+        - "planning issue"
+        - "current dashboard"
+    - label: workflow::tracking
+      any:
+        - "durable tracking surface"
+        - "tracking issue"
+        - "execution state"
+        - "linked prs"
+    - label: workflow::dispatch
+      any:
+        - "dispatch"
+        - "lane"
+    - label: workflow::follow-up
+      any:
+        - "follow-up"
+        - "unresolved"
+        - "ready for implementation"
+
+  size:
+    - label: size::xl
+      any:
+        - "extra-large"
+        - "should be split"
+    - label: size::l
+      any:
+        - "broad"
+        - "multiple surfaces"
+        - "runtime-smoke"
+        - "goldens"
+        - "full ci"
+    - label: size::m
+      any:
+        - "multiple related"
+        - "docs and tests"
+    - label: size::s
+      fallback: true
+
+  risk:
+    - label: risk::high
+      any:
+        - "security"
+        - "data loss"
+        - "do not merge"
+    - label: risk::medium
+      any:
+        - "blocked"
+        - "migration"
+        - "multiple surfaces"
+        - "full ci cannot complete"
+    - label: risk::low
+      fallback: true

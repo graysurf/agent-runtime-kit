@@ -3,12 +3,15 @@
 `manifests/forge-labels.yaml` is the machine-readable catalog for GitHub
 issues / PRs and GitLab issues / MRs. `forge-cli label audit|ensure` consumes
 that catalog; this policy defines how agents choose and apply the labels.
+`manifests/forge-label-classification-rules.yaml` records the first shared
+agent classification heuristics for consistent triage and review.
 
 ## Required Selection
 
 - Issues: choose one `type::` label, one primary `area::` label, and a
   `state::` label. Use `state::needs-triage` unless a more specific state is
-  known.
+  known. When re-labeling historical closed records, use `state::closed` unless
+  a more specific reopened workflow state is being recorded.
 - Bug, incident, or security issues: add one `severity::` label when impact is
   known. Severity describes impact, not scheduling order.
 - Triaged issues: add one `priority::` label when scheduling order is known.
@@ -53,3 +56,16 @@ that catalog; this policy defines how agents choose and apply the labels.
 - Repo-local `area::` extensions are allowed when a repository needs a primary
   area outside the shared catalog. Shared automation should still prefer the
   cataloged core areas when one fits.
+
+## Agent Classification Rules
+
+- Use the classification rules manifest as the default routing aid when
+  re-labeling existing provider records.
+- Treat rule output as an agent recommendation, not an override of explicit
+  issue text or user direction.
+- Remove stale labels from exclusive taxonomy groups before applying the new
+  selected label for that group. Keep compatibility labels such as `plan` and
+  `issue` during rollout.
+- If a record matches multiple areas, pick the primary area that owns the next
+  implementation or review action; mention secondary concerns in the issue or
+  PR comment instead of stacking exclusive `area::` labels.
