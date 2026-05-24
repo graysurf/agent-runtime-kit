@@ -250,6 +250,19 @@ pull_source() {
   run_cmd git -C "$SOURCE_ROOT" pull --ff-only
 }
 
+check_source_counts() {
+  local audit_script="$SOURCE_ROOT/scripts/ci/skill-governance-audit.sh"
+
+  if [ ! -f "$audit_script" ]; then
+    err "source root is missing skill governance audit: $audit_script"
+    exit 2
+  fi
+
+  log "checking source skill counts"
+  print_cmd bash "$audit_script" --check-counts
+  bash "$audit_script" --check-counts
+}
+
 render_product() {
   local product="$1"
   log "rendering product=$product"
@@ -413,6 +426,7 @@ main() {
   log "$PROG_NAME starting (source_root=$SOURCE_ROOT product=$PRODUCT apply=$APPLY no_pull=$NO_PULL no_verify=$NO_VERIFY)"
 
   pull_source
+  check_source_counts
   for product in $(selected_products); do
     render_product "$product"
     install_product "$product"

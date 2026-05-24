@@ -17,6 +17,9 @@ Prereqs:
   `scripts/sync-runtime-skills.sh`.
 - First-time host bootstrap has already been handled by `scripts/setup.sh`.
 - `git` is available. `agent-runtime` is required for `--apply` refreshes.
+- The source checkout passes
+  `bash scripts/ci/skill-governance-audit.sh --check-counts`; sync checks
+  count freshness but never runs update mode.
 
 Inputs:
 
@@ -31,11 +34,13 @@ Outputs:
 - The script's stdout/stderr and exit code.
 - A concise summary of whether pull, render, install, doctor, and Codex
   prompt-input verification were planned, skipped, or completed.
+- A read-only source count check before any render/install step.
 
 Failure modes:
 
 - The source checkout cannot be resolved or lacks the refresh script.
 - `git pull --ff-only` fails before render/install.
+- Active skill-count references drift from `manifests/skills.yaml`.
 - `agent-runtime render`, `install`, or `doctor --class skill-surface` fails.
 - Codex prompt-input verification fails when Codex is selected and available.
 
@@ -82,12 +87,16 @@ bash scripts/sync-runtime-skills.sh --apply --no-pull
    - `--no-pull`
    - `--no-verify`
    - `--source-root <path>`
-4. Before an `--apply` run, state that the command may mutate the selected
+4. Let the script run its read-only
+   `bash scripts/ci/skill-governance-audit.sh --check-counts` source readiness
+   gate after checkout resolution/pull and before render/install. `--no-verify`
+   does not skip this gate because it only controls post-install verification.
+5. Before an `--apply` run, state that the command may mutate the selected
    local runtime homes (`$CODEX_HOME`/`$HOME/.codex`, `$HOME/.claude`, and
    runtime-kit state homes).
-5. Run the script from the checkout root and let it own pull, render, install,
+6. Run the script from the checkout root and let it own pull, render, install,
    doctor, and Codex prompt-input sequencing.
-6. Report the final summary line and the first failing command if the script
+7. Report the final summary line and the first failing command if the script
    exits non-zero.
 
 ## Boundary
