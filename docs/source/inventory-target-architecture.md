@@ -221,7 +221,7 @@ Observed role:
 - Public skills use a multi-level layout under `skills/`, for example:
   `skills/workflows/...`, `skills/tools/...`, `skills/automation/...`.
 
-Observed skill count:
+Legacy inventory snapshot:
 
 - `77` unique `SKILL.md` directories under `$HOME/.config/agent-kit/skills`.
 
@@ -262,7 +262,7 @@ Observed role:
   `<target-repo>/.agents/scripts/<name>.sh`. Each consuming repo owns the real
   implementation; claude-kit only ships the entry-point shim.
 
-Observed skill count:
+Legacy inventory snapshot:
 
 - `84` unique `SKILL.md` directories across `$HOME/.config/claude/plugins`
   and `$HOME/.config/claude/skills`.
@@ -700,8 +700,10 @@ checks `path_override` against the product's live layout.
 
 #### Skill Naming Collision Policy
 
-Codex (77 skills) and Claude (84 skills) have overlapping and divergent
-inventories. The policy:
+The legacy bootstrap inventory recorded Codex (77 skills) and Claude
+(84 skills) as overlapping and divergent surfaces. The current runtime-kit
+manifest is the maintained source of truth for active cross-product skills.
+The policy:
 
 1. **Identical name + identical behaviour** → single canonical source under
    `core/skills/<domain>/<skill>/`, both products render from it.
