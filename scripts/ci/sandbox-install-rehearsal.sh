@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # scripts/ci/sandbox-install-rehearsal.sh — Plan 04 CI gate position 6.
 #
-# The product CLIs do not yet expose a stable `--home <dir> --list-skills`
-# contract, so this gate uses the released `agent-runtime install --dry-run`
-# plan as the skill-list source. It extracts canonical skill ids from planned
-# skill directory or legacy SKILL.md symlink surfaces and diffs them against
-# committed pins.
+# Uses `agent-runtime list-skills --format json` (cli.agent-runtime.list-skills.v1)
+# as the source of truth for the per-product skill list, then diffs against the
+# committed `tests/sandbox/<product>/expected-skills.txt` pin. Falls back to
+# the legacy dry-run-text regex parser when `list-skills` is not available on
+# the installed `agent-runtime`, so this script keeps working against
+# pre-0.22.0 binaries during rollout.
 
 set -euo pipefail
 
@@ -43,19 +44,41 @@ validate_expected_file() {
   fi
 }
 
-extract_skill_ids() {
+# Probe whether the installed agent-runtime exposes the `list-skills`
+# subcommand. Returns 0 when available, 1 otherwise. This keeps the
+# rehearsal compatible with pre-0.22.0 binaries during release rollout.
+has_list_skills() {
+  agent-runtime list-skills --help >/dev/null 2>&1
+}
+
+extract_skill_ids_via_list_skills() {
+  local product="$1"
+  local out="$2"
+  local live_home="$3"
+  require_bin jq
+  agent-runtime list-skills \
+    --source-root "$REPO_ROOT" \
+    --product "$product" \
+    --live-home "$live_home" \
+    --format json \
+    >"$TMP_ROOT/${product}.list-skills.json"
+  jq -r '.skills[].id' "$TMP_ROOT/${product}.list-skills.json" | sort -u >"$out"
+}
+
+extract_skill_ids_via_dry_run_regex() {
   local product="$1"
   local dry_run_output="$2"
+  local out="$3"
 
   case "$product" in
     codex)
       {
         sed -n 's#.* (\([a-z0-9][a-z0-9._-]*\)\.codex-skill-dir)#\1#p' "$dry_run_output"
         sed -n 's#.* /.*skills/\([^/][^/]*\)/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output"
-      } | sort -u
+      } | sort -u >"$out"
       ;;
     *)
-      sed -n 's#.* /.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u
+      sed -n 's#.* /.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u >"$out"
       ;;
   esac
 }
@@ -82,7 +105,12 @@ run_product() {
     exit 1
   fi
 
-  extract_skill_ids "$product" "$dry_run_output" >"$observed"
+  if [[ "${USE_LIST_SKILLS:-1}" = "1" ]] && has_list_skills; then
+    extract_skill_ids_via_list_skills "$product" "$observed" "$live_home"
+  else
+    extract_skill_ids_via_dry_run_regex "$product" "$dry_run_output" "$observed"
+  fi
+
   if [ ! -s "$observed" ]; then
     echo "sandbox-install-rehearsal.sh: no SKILL.md surfaces found in dry-run output for $product" >&2
     cat "$dry_run_output" >&2
