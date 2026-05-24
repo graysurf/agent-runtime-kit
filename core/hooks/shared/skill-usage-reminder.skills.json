@@ -179,57 +179,49 @@
     "skill": "deliver-dispatch-plan",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["deliver-dispatch-plan", "deliver dispatch plan"],
+    "aliases": ["deliver-dispatch-plan", "deliver dispatch plan", "create-dispatch-plan", "create dispatch plan", "dispatch plan"],
     "reason": "Dispatch plan delivery coordinates sprint execution, subagent PRs, and acceptance gates.",
     "record_when": "The workflow dispatches, reviews, merges, or advances plan-driven issue sprints."
   },
   {
-    "skill": "create-plan",
+    "skill": "discussion-to-implementation-doc",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["create-plan", "create plan"],
-    "reason": "Plan creation writes durable implementation artifacts that guide later execution.",
-    "record_when": "The workflow creates or updates a durable docs/plans implementation bundle."
+    "aliases": ["discussion-to-implementation-doc", "discussion to implementation doc", "review-to-improvement-doc", "review to improvement doc"],
+    "reason": "Implementation and improvement source docs preserve durable context for later execution.",
+    "record_when": "The workflow creates or updates a durable discussion, review, risk, or improvement source document."
   },
   {
-    "skill": "create-dispatch-plan",
+    "skill": "create-plan-tracking-issue",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["create-dispatch-plan", "create dispatch plan", "dispatch plan"],
-    "reason": "Dispatch plans add sprint, PR lane, and subagent execution metadata.",
-    "record_when": "The workflow creates or updates a dispatch-ready execution-modeling plan."
+    "aliases": ["create-plan-tracking-issue", "create plan tracking issue"],
+    "reason": "Plan-tracking issue creation turns a plan bundle into provider-side lifecycle state.",
+    "record_when": "The workflow creates or previews a provider issue for a plan bundle."
   },
   {
-    "skill": "execute-from-plan",
+    "skill": "deliver-plan-tracking-issue",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["execute-from-plan", "execute from plan"],
-    "reason": "Plan execution performs implementation work against a durable execution-state ledger.",
-    "record_when": "The workflow resumes, edits, validates, or updates execution state from a plan."
+    "aliases": ["deliver-plan-tracking-issue", "deliver plan tracking issue"],
+    "reason": "Plan-tracking delivery executes, reviews, merges, and closes issue-backed plan work.",
+    "record_when": "The workflow implements, reviews, merges, or advances a lightweight issue-backed plan."
   },
   {
-    "skill": "execute-plan-parallel",
+    "skill": "execute-plan-tracking-issue",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["execute-plan-parallel", "execute plan parallel"],
-    "reason": "Parallel plan execution dispatches subagents, integrates changes, and validates results.",
-    "record_when": "The workflow dispatches, integrates, validates, or updates state for plan tasks."
+    "aliases": ["execute-plan-tracking-issue", "execute plan tracking issue", "execute-from-plan", "execute from plan"],
+    "reason": "Plan-tracking execution resumes implementation against issue-hosted plan state.",
+    "record_when": "The workflow resumes, edits, validates, or updates execution state from an issue-backed plan."
   },
   {
-    "skill": "docs-plan-cleanup",
+    "skill": "parallel-first",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["docs-plan-cleanup", "docs plan cleanup"],
-    "reason": "Plan cleanup removes or reconciles durable coordination artifacts.",
-    "record_when": "The workflow audits, edits, removes, or reconciles docs/plans artifacts."
-  },
-  {
-    "skill": "durable-artifact-cleanup",
-    "tier": "default",
-    "match_mode": "action_or_explicit",
-    "aliases": ["durable-artifact-cleanup", "durable artifact cleanup"],
-    "reason": "Durable artifact cleanup removes obsolete implementation artifacts after execution.",
-    "record_when": "The workflow audits, removes, rehomes, or reconciles durable implementation artifacts."
+    "aliases": ["parallel-first", "parallel first", "execute-plan-parallel", "execute plan parallel"],
+    "reason": "Parallel-first workflows can dispatch subagents, integrate changes, and validate results.",
+    "record_when": "The workflow dispatches, integrates, validates, or updates state for parallel task lanes."
   },
   {
     "skill": "sync-runtime-skills",

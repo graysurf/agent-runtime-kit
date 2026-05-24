@@ -26,12 +26,12 @@ result.
 
 ## Prefer More Specific Workflows
 
-- Use `execute-plan-parallel` when an existing markdown plan should be executed
-  through parallel subagents.
-- Use `execute-from-plan` when a durable plan and execution-state ledger should
-  drive long-running work.
-- Use `dispatch-issue-closeout`, `deliver-dispatch-plan`, and `dispatch-subagent-pr` for
-  GitHub issue, sprint, PR, and task-lane execution.
+- Use `deliver-plan-tracking-issue` or `execute-plan-tracking-issue` when an
+  issue-backed plan and execution-state ledger should drive long-running work.
+- Use `deliver-dispatch-plan`, `execute-dispatch-lane`,
+  `create-dispatch-lane-pr`, `review-dispatch-lane-pr`, and
+  `dispatch-plan-closeout` for GitHub issue, sprint, PR, and task-lane
+  execution.
 - Use this protocol only for cross-skill ad-hoc delegation after the active
   entrypoint has authorized subagents.
 

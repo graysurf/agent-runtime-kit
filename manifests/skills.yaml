@@ -694,7 +694,6 @@ skills:
         render_to: plugins/pr/skills/close-github-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
-      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.close-gitlab-mr
@@ -709,7 +708,6 @@ skills:
         render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
-      review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
   - id: pr.deliver-github-pr

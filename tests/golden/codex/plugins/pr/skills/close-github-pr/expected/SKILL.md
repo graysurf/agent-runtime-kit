@@ -12,8 +12,6 @@ Prereqs:
 
 - `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
-- `review-specialists` is installed from the released nils-cli package and
-  available on `PATH` when the user requests pre-close specialist review.
 - `gh auth status` succeeds for the target GitHub host when running live mode.
 - The target PR number is known.
 - Required validation, review findings, and issue-backed completion gates have
@@ -25,8 +23,8 @@ Inputs:
 - Merge method when the repo requires a method other than the `forge-cli`
   default.
 - Optional `--keep-branch` when source branch deletion is not desired.
-- Optional user-requested pre-close specialist review through
-  `code-review-specialists`.
+- Optional user-requested pre-close review through the matching `code-review-*`
+  skill.
 - A decision to merge, mark ready, wait for checks, or abandon-close the PR.
 - Issue-backed close gate evidence when the PR would complete or auto-close a
   lightweight tracking issue or dispatch plan issue.
@@ -35,7 +33,7 @@ Outputs:
 
 - Check-state evidence from `forge-cli pr checks` or
   `forge-cli pr wait-checks`.
-- User-requested pre-close specialist review completed before merge, when
+- User-requested pre-close review completed before merge, when
   requested, with no concrete findings waiting on user decision.
 - Ready-for-review transition when needed.
 - A merged PR through `forge-cli pr merge`, or a closed unmerged PR through
@@ -48,7 +46,7 @@ Failure modes:
   allowance, or provider auth fails.
 - Issue-backed completion state is incomplete for a PR that would close or
   finalize a tracking issue.
-- User-requested pre-close specialist review reports concrete findings that
+- User-requested pre-close review reports concrete findings that
   need a user decision before merge.
 - The installed `forge-cli` is older than the manifest floor. Upgrade nils-cli
   before relying on GitHub checks, ready, or merge operations.
@@ -64,11 +62,9 @@ forge-cli --provider github pr ready "$PR_NUMBER"
 forge-cli --provider github pr merge "$PR_NUMBER" --method merge
 ```
 
-Optional user-requested review gate:
-
-```bash
-review-specialists scope --base "$BASE_REF" --format json
-```
+When the user requests review, run the matching read-only `code-review-*`
+workflow before continuing; do not inline review orchestration into this close
+workflow.
 
 Only abandon a PR when that is the requested outcome:
 
@@ -82,10 +78,13 @@ forge-cli --provider github pr close "$PR_NUMBER"
    before changing it.
 2. Resolve review findings and run required local validation.
 3. If the user explicitly requested review, specialist review, or review before
-   close, run the optional `code-review-specialists` gate before final merge.
-   Resolve the PR base branch, keep the specialist workflow read-only, honor its
-   scope and skip rules unless the user forced a lens, and stop before merge if
-   concrete findings need a decision.
+   close, choose the lightest matching read-only review workflow before final
+   merge: `code-review-quick-pass` for routine diffs,
+   `code-review-focused-lens` for explicit lenses,
+   `code-review-pre-merge-gate` for final delivery gates, and
+   `code-review-specialists` only for broad or risky full-bundle review. Resolve
+   the PR base branch and stop before merge if concrete findings need a
+   decision.
 4. Run `forge-cli --provider github pr wait-checks "$PR_NUMBER"` to gate on
    required provider checks.
 5. For plan-tracking issues, require complete issue-backed state and closeout
