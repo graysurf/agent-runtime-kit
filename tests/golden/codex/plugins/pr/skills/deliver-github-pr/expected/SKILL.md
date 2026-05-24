@@ -79,6 +79,34 @@ Failure modes:
 - The installed `forge-cli` is older than the manifest floor. Upgrade nils-cli
   before relying on GitHub delivery macro checks, ready, or merge operations.
 
+## Body Format
+
+Use `agent-runtime pr-body render` as the canonical formatter. Do not submit a
+hand-written minimum body that only contains `## Summary` and `## Test plan`.
+
+Feature PR bodies render these sections, in order:
+
+- `## Summary`
+- `## Changes`
+- `## Test-First Evidence`
+- `## Test plan`
+- `## Risk / Notes`
+
+Bug PR bodies render these sections, in order:
+
+- `## Summary`
+- `## Problem`
+- `## Reproduction`
+- `## Issues Found`
+- `## Fix Approach`
+- `## Test-First Evidence`
+- `## Test plan`
+- `## Risk / Notes`
+
+For issue-backed tracking or dispatch work, put provider references in the
+rendered narrative as non-closing refs such as `Refs #<issue>`; do not use
+provider auto-close keywords in the PR body.
+
 ## Entrypoint
 
 Render the body with `agent-runtime` before calling the delivery macro:
