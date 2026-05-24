@@ -225,6 +225,25 @@ run_semantic_commit_probe() {
   ) >"$out" 2>&1
 }
 
+run_sync_runtime_skills_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.dry-run.txt"
+
+  (
+    cd "$REPO_ROOT"
+    bash scripts/sync-runtime-skills.sh \
+      --source-root "$REPO_ROOT" \
+      --product codex \
+      --no-pull
+  ) >"$out" 2>&1
+
+  grep -q "git pull skipped (--no-pull)" "$out"
+  grep -q "agent-runtime render" "$out"
+  grep -q "agent-runtime install" "$out"
+  grep -q "agent-runtime doctor" "$out"
+  grep -q "codex debug prompt-input" "$out"
+  grep -q "summary: synced skills for codex; mode=dry-run; doctor=planned" "$out"
+}
+
 run_project_local_shim_probe() {
   local name="$1"
   local script="$REPO_ROOT/tests/projects/project-local-smoke/.agents/scripts/${name}.sh"
@@ -262,5 +281,6 @@ record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" ru
 record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release || failures=1
 record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1
 record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe || failures=1
+record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
 
 exit "$failures"

@@ -200,6 +200,14 @@
     "record_when": "The workflow audits, removes, rehomes, or reconciles durable implementation artifacts."
   },
   {
+    "skill": "sync-runtime-skills",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["sync-runtime-skills", "sync runtime skills", "refresh runtime skills", "update runtime skills"],
+    "reason": "Runtime skill refreshes can mutate live Codex or Claude homes and should keep validation evidence visible.",
+    "record_when": "The workflow runs or materially prepares scripts/sync-runtime-skills.sh with --apply."
+  },
+  {
     "skill": "create-skill",
     "tier": "exact-only",
     "match_mode": "action_or_explicit",
