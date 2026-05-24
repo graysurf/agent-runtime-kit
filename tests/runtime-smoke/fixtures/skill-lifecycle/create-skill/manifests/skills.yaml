@@ -1,0 +1,15 @@
+schema_version: 1
+
+skills:
+  - id: fixture.sample-prose
+    domain: fixture
+    source: core/skills/fixture/sample-prose
+    products:
+      codex:
+        name: sample-prose
+        render_to: plugins/fixture/skills/sample-prose/SKILL.md
+      claude:
+        name: sample-prose
+        render_to: plugins/fixture/skills/sample-prose/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime

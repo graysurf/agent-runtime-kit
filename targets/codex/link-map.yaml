@@ -102,6 +102,18 @@ entries:
     destination: skills/meta/heuristic-inbox
     recursive: false
 
+  - id: meta.create-skill.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/create-skill
+    destination: skills/meta/create-skill
+    recursive: false
+
+  - id: meta.remove-skill.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/remove-skill
+    destination: skills/meta/remove-skill
+    recursive: false
+
   - id: meta.pre-pr.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/pre-pr

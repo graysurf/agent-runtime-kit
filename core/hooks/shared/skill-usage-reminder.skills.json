@@ -204,16 +204,8 @@
     "tier": "exact-only",
     "match_mode": "action_or_explicit",
     "aliases": ["create-skill"],
-    "reason": "Skill lifecycle changes affect future agent behavior and should be traceable when invoked.",
-    "record_when": "The workflow scaffolds, edits, validates, or commits a new tracked skill."
-  },
-  {
-    "skill": "create-project-skill",
-    "tier": "exact-only",
-    "match_mode": "action_or_explicit",
-    "aliases": ["create-project-skill"],
-    "reason": "Project-local skill lifecycle changes affect future project agent behavior.",
-    "record_when": "The workflow scaffolds, edits, validates, or commits a project-local skill."
+    "reason": "Repo-owned skill lifecycle changes affect future agent behavior and should be traceable when invoked.",
+    "record_when": "The workflow scaffolds, edits, validates, or commits a new runtime-kit skill."
   },
   {
     "skill": "remove-skill",

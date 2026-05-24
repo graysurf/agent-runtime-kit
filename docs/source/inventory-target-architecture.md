@@ -93,6 +93,12 @@ Status: source document for the first implementation discussion
   `core/policies/heuristic-system/` root. Product `state_home` remains for raw
   runtime evidence and transient output only; curated retained records now use
   the public `heuristic-inbox` workflow and explicit CLI paths.
+- 2026-05-24 (skill lifecycle management pass) — added repo-owned lifecycle
+  workflow skills for `create-skill` and `remove-skill`; `skill-governance` is
+  intentionally a repo/CI audit script, not a user-facing skill. Stable
+  mutation, dry-run/apply plans, or machine-readable lifecycle reference graphs
+  still belong in `sympoies/nils-cli` before skills consume them through
+  `required_clis`.
 - 2026-05-20 (specialist-review batch 2) — spec-depth pass:
   rewrote Drift Detection with a composite `unsafe` score
   (path / keyword / entropy at 0.4 each; block ≥ 0.8, warn at single

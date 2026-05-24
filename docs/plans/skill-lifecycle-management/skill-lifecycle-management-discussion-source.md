@@ -32,13 +32,17 @@ ported verbatim.
 Add this capability, but make it `agent-runtime-kit` native:
 
 - Keep agent-facing orchestration as narrow skills, not one broad umbrella.
-- Put repo-owned skill lifecycle surfaces in the existing `meta` domain unless
-  implementation shows that a separate `skill-management` plugin is warranted.
+- Put repo-owned user-facing lifecycle surfaces in the existing `meta` domain
+  unless implementation shows that a separate `skill-management` plugin is
+  warranted.
 - Treat deterministic mutation and validation as either released nils-cli
   behavior or thin repo scripts that call released nils-cli. Do not recreate a
   large Bash/Python mutation layer inside skill bodies.
 - Exclude project-local `.agents/skills` scaffolding from v1. The retired
   `.agents` alias and project-overlay behavior need a separate design pass.
+- Execution adjustment (2026-05-24): `skill-governance` is not a user-facing
+  skill. Governance lands as a repo/CI validation tool invoked by
+  `create-skill`, `remove-skill`, and `scripts/ci/all.sh`.
 
 ## Confirmed Facts
 
@@ -85,12 +89,11 @@ Add this capability, but make it `agent-runtime-kit` native:
 ## Decisions
 
 - [D1] Implement this as a lifecycle family, not a copied folder:
-  `create-skill`, `remove-skill`, and `skill-governance` are the natural v1
-  surfaces.
+  `create-skill` and `remove-skill` are the natural v1 user-facing skill
+  surfaces; governance is a repo/CI tool.
 - [D2] Use `meta` as the default domain:
   `core/skills/meta/create-skill`,
-  `core/skills/meta/remove-skill`, and
-  `core/skills/meta/skill-governance`.
+  and `core/skills/meta/remove-skill`.
 - [D3] Defer `create-project-skill`. The legacy behavior targets
   `.agents/skills`, while this repo has moved away from `$HOME/.agents` as a
   live indirection. A project-overlay skill should be designed separately.
@@ -105,7 +108,7 @@ Add this capability, but make it `agent-runtime-kit` native:
   `docs/plans/**` history by default. It should purge active source,
   manifest, target, test, golden, sandbox, hook/reminder, and maintained docs
   references, then fail if active references remain.
-- [D6] `skill-governance` should validate the lifecycle contract:
+- [D6] The governance audit should validate the lifecycle contract:
   source folder shape, Tera skill body presence, manifest/source consistency,
   plugin containment, product render paths, `required_clis` pins, reminder
   metadata, golden/sandbox/runtime-smoke coverage, and absence of legacy
@@ -116,8 +119,8 @@ Add this capability, but make it `agent-runtime-kit` native:
   and own judgment, sequencing, and review guidance.
 - [D8] The old `skill-usage-reminder.skills.json` entries for
   `create-skill` and `remove-skill` remain useful. `skill-governance` should
-  get reminder metadata only if it becomes an agent-invoked workflow rather
-  than a passive CI validator.
+  not get reminder metadata because it is a validation tool, not an
+  agent-invoked workflow.
 
 ## Scope
 
@@ -185,7 +188,7 @@ Add this capability, but make it `agent-runtime-kit` native:
 - Fail if active references remain outside allowed historical/retained-record
   areas.
 
-### `skill-governance`
+### Governance audit tool
 
 - Validate source folder anatomy for `core/skills/**`.
 - Validate `SKILL.md.tera` front matter, H1, and required contract sections.
@@ -258,8 +261,8 @@ it through durable artifact cleanup or promote the stable lifecycle policy into
   Default: decide during plan generation after checking nils-cli surface
   conventions.
 - Should `skill-governance` be a user-invoked skill, a CI-only validator, or
-  both? Default: make it a skill only if agents should invoke it during
-  lifecycle work.
+  both? Resolved during execution: make governance a repo/CI validation tool
+  invoked by lifecycle skills and CI, not a user-facing skill.
 - Should `create-project-skill` return later as a project-overlay workflow?
   Default: defer until project-local overlay semantics are stable.
 - Should lifecycle helpers allow new plugin domains automatically? Default:

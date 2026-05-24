@@ -79,6 +79,32 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.create-skill.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.create-skill
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/fixtures/skill-lifecycle/create-skill
+    setup: use repo-owned skill lifecycle fixture
+    invocation: verify create-skill source, manifests, sandbox pins, and governance fixture audit
+    expected_exit_code: 0
+    expected_artifacts: rendered skill files and governance fixture report
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.remove-skill.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.remove-skill
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/fixtures/skill-lifecycle/remove-skill
+    setup: use repo-owned skill lifecycle fixture
+    invocation: verify remove-skill source, dry-run reference classes, and governance fixture audit
+    expected_exit_code: 0
+    expected_artifacts: rendered skill files and governance fixture report
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.repo-retro.shared-cli.deterministic
     product: shared-cli
     domain: meta

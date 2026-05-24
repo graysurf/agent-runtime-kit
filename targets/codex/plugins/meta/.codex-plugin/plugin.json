@@ -1,7 +1,7 @@
 {
   "name": "meta",
   "version": "0.1.0",
-  "description": "Core workflow primitives for docs, output paths, project-local shims, scope locks, heuristic cases, retrospectives, and semantic commits.",
+  "description": "Core workflow primitives for docs, output paths, project-local shims, skill lifecycle changes, scope locks, heuristic cases, retrospectives, and semantic commits.",
   "author": {
     "name": "graysurf"
   },
@@ -37,6 +37,14 @@
     {
       "id": "heuristic-inbox",
       "source": "core/skills/meta/heuristic-inbox"
+    },
+    {
+      "id": "create-skill",
+      "source": "core/skills/meta/create-skill"
+    },
+    {
+      "id": "remove-skill",
+      "source": "core/skills/meta/remove-skill"
     },
     {
       "id": "pre-pr",

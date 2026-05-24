@@ -1,0 +1,38 @@
+---
+name: sample-prose
+description:
+  Fixture prose skill used to prove create-skill governance coverage.
+---
+
+# Sample Prose
+
+## Contract
+
+Prereqs:
+
+- This fixture is not installed into product runtimes.
+
+Inputs:
+
+- None.
+
+Outputs:
+
+- A complete source/manifest/plugin/acceptance shape for governance tests.
+
+Failure modes:
+
+- The fixture is incomplete.
+
+## Entrypoint
+
+No command.
+
+## Workflow
+
+1. Read the fixture.
+2. Validate its lifecycle metadata.
+
+## Boundary
+
+This fixture is test-only.

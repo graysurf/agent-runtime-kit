@@ -1,0 +1,15 @@
+schema_version: 1
+
+skills:
+  - id: fixture.removable-skill
+    domain: fixture
+    source: core/skills/fixture/removable-skill
+    products:
+      codex:
+        name: removable-skill
+        render_to: plugins/fixture/skills/removable-skill/SKILL.md
+      claude:
+        name: removable-skill
+        render_to: plugins/fixture/skills/removable-skill/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime

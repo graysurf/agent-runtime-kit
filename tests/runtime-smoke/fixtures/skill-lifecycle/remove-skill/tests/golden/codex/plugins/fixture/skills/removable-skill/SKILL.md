@@ -1,0 +1,3 @@
+# Removable Skill
+
+Rendered fixture.

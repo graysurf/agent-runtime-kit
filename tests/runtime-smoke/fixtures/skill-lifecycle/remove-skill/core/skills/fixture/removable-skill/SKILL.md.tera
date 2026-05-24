@@ -1,0 +1,38 @@
+---
+name: removable-skill
+description:
+  Fixture skill used to prove remove-skill dry-run reference coverage.
+---
+
+# Removable Skill
+
+## Contract
+
+Prereqs:
+
+- Test-only fixture.
+
+Inputs:
+
+- None.
+
+Outputs:
+
+- Active references for removal tests.
+
+Failure modes:
+
+- Fixture coverage is incomplete.
+
+## Entrypoint
+
+No command.
+
+## Workflow
+
+1. Classify references.
+2. Retain historical plan records.
+
+## Boundary
+
+This fixture is test-only.

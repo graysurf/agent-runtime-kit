@@ -1,0 +1,10 @@
+- source: core/skills/fixture/removable-skill
+- skills-manifest: manifests/skills.yaml
+- plugin-containment: manifests/plugins.yaml
+- product-render: targets/codex/plugins/fixture and targets/claude/plugins/fixture
+- golden: tests/golden/codex and tests/golden/claude fixture outputs
+- sandbox: tests/sandbox/codex and tests/sandbox/claude expected skill pins
+- runtime-smoke: tests/runtime-smoke/acceptance-matrix.yaml
+- reminder: core/hooks/shared/skill-usage-reminder.skills.json
+- maintained-doc: docs/source/removable-skill.md
+- historical-doc-retained: docs/plans/removable-skill-history.md
