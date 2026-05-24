@@ -160,7 +160,7 @@ bash scripts/ci/all.sh
 That currently performs:
 
 1. `plan-tooling validate --format text --explain`
-2. nils-cli surface pin alignment: parse the tag from `docs/source/nils-cli-surface.md` and compare it to `agent-runtime --version`; fail closed on mismatch with a remediation banner
+2. nils-cli surface floor alignment: parse the tag from `docs/source/nils-cli-surface.md` and require `agent-runtime --version` to be greater than or equal to it; fail closed when the host is below the documented floor
 3. `agent-runtime render --product codex`
 4. `agent-runtime render --product claude`
 5. render-golden refresh plus `git diff --exit-code -- tests/golden/`
@@ -171,12 +171,13 @@ That currently performs:
 10. `bash tests/projects/project-local-smoke/run.sh`
 11. `bash tests/hooks/run.sh`
 
-Position 2 closes the silent-drift class identified by the inbox case
-`plan-issue-v2-marker-collapse-drift`: before this gate, a `brew upgrade
-sympoies/tap/nils-cli` past the surface pin would leave downstream
-positions running against a binary the fixtures, skill bodies, and
-goldens were not written for. The gate emits a remediation banner
-naming both the pinned tag and the host's `agent-runtime --version`.
+Position 2 closes the stale-host class identified by the inbox case
+`plan-issue-v2-marker-collapse-drift`: before this gate, a host below the
+documented nils-cli surface could leave downstream positions running against a
+binary the fixtures, skill bodies, and goldens were not written for. Newer host
+binaries are allowed; later gates still catch render, drift, and smoke
+incompatibilities. The gate emits a remediation banner naming both the
+documented floor and the host's `agent-runtime --version`.
 
 The skill-surface shape diagnostic at position 7 is a deterministic
 preflight, not live Codex Desktop acceptance. It validates only the
