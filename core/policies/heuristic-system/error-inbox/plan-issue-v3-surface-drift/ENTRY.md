@@ -15,6 +15,9 @@ Skill `meta/heuristic-inbox` ended with `pass`. Summary: Prepared source evidenc
 
 - Raw record: `<workspace>/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-212652-plan-issue-v3-surface-drift/skill-usage/skill-usage.record.json`
 - Summary: linked `skill-usage.record.v1` envelope; raw runtime details remain in the evidence location.
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/93
+- Plan bundle:
+  `docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md`
 
 ## Impact
 

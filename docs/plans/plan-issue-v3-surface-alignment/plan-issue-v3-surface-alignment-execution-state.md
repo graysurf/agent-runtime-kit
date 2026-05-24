@@ -3,19 +3,19 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: planning
+- Status: in-progress
 - Target scope: runtime-kit skill surface alignment and nils-cli retired helper removal
 - Execution window: Sprint 1-3
-- Current task: create source and plan bundle
-- Next task: validate bundle, open tracking issue, and begin Sprint 1 edits
+- Current task: begin Sprint 1 runtime-kit skill surface edits
+- Next task: update lightweight tracking skill family
 - Last updated: 2026-05-24
-- Branch/commit/PR: feat/plan-issue-v3-surface / pending / pending
+- Branch/commit/PR: feat/plan-issue-v3-surface / 2c6a97d / pending
 - Source document: docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/93
+- Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889172
+- Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889245
+- Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889341
 - Delivery PR: pending
 - Session snapshot: pending
 - Validation snapshot: pending
@@ -72,6 +72,9 @@
   `heuristic-inbox verify --strict`.
 - 2026-05-24: Created discussion source, plan, and execution-state bundle for
   issue-backed delivery.
+- 2026-05-24: Pushed branch `feat/plan-issue-v3-surface`, opened tracking
+  issue #93 with `plan-issue record open`, and read-back audited source, plan,
+  and initial state comments.
 
 ## Validation
 
@@ -79,3 +82,6 @@
 | --- | --- | --- | --- |
 | `heuristic-inbox verify core/policies/heuristic-system/error-inbox/plan-issue-v3-surface-drift --strict --format json` | passed | New inbox entry strict validation passed. | local output |
 | `plan-tooling validate --file docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md --format text --explain` | passed | Plan bundle structural validation passed. | local output |
+| `plan-issue record open --dry-run --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/plan-issue-v3-surface-alignment` | passed | Preview produced hidden payload carriers and no visible `plan-issue-record` code fence. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-213350-plan-issue-v3-tracker/record-open-dry-run.json` |
+| `plan-issue record open --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/plan-issue-v3-surface-alignment` | passed | Created tracking issue #93 with source, plan, and initial state comments. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-213350-plan-issue-v3-tracker/record-open-live.json` |
+| `plan-issue record audit --profile tracking --body-file .../issue-93-body.md --comments-json .../issue-93.json --format json` | passed | GitHub read-back audit returned `missing_required:[]`, `unsupported_markers:[]`, `recognized_count:3`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-213350-plan-issue-v3-tracker/issue-93-audit.json` |
