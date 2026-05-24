@@ -179,7 +179,7 @@ Verified on 2026-05-24 with installed nils-cli v0.18.0:
 - Local artifacts:
 
   ```text
-  /Users/terry/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-171249-skill-lifecycle-management-tracker/
+  $HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-171249-skill-lifecycle-management-tracker/
   ```
 
 ## Current Workaround

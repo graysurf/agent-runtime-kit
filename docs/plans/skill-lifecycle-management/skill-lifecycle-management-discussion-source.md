@@ -43,7 +43,7 @@ Add this capability, but make it `agent-runtime-kit` native:
 ## Confirmed Facts
 
 - [U1] The user asked to evaluate adding the legacy
-  `/Users/terry/Project/graysurf/agent-kit/skills/tools/skill-management`
+  `$HOME/Project/graysurf/agent-kit/skills/tools/skill-management`
   capability into this repo for managing this repo's skills.
 - [A1] Local inspection found the legacy tree contains `create-skill`,
   `create-project-skill`, `remove-skill`, `skill-governance`, and a grouping
@@ -276,7 +276,7 @@ it through durable artifact cleanup or promote the stable lifecycle policy into
 - `core/docs/schemas/skills.schema.json`
 - `core/docs/schemas/plugins.schema.json`
 - Legacy reference:
-  `/Users/terry/Project/graysurf/agent-kit/skills/tools/skill-management`
+  `$HOME/Project/graysurf/agent-kit/skills/tools/skill-management`
 
 ## Recommended Next Artifact
 
