@@ -9,7 +9,7 @@
 - Current task: Draft PR review and live-home drift follow-up
 - Next task: decide whether to clean up `heuristic-session-closeout` live drift before merging runtime-kit PR #94
 - Last updated: 2026-05-24
-- Branch/commit/PR: feat/plan-issue-v3-surface / 8d1b721 / https://github.com/graysurf/agent-runtime-kit/pull/94
+- Branch/commit/PR: feat/plan-issue-v3-surface / latest pushed branch head / https://github.com/graysurf/agent-runtime-kit/pull/94
 - Source document: docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/93
@@ -19,8 +19,8 @@
 - Delivery PR: https://github.com/graysurf/agent-runtime-kit/pull/94
 - Cross-repo nils-cli PR: https://github.com/sympoies/nils-cli/pull/475 (`a774607`)
 - Session snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993496
-- Validation snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993905
-- Latest state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528999060
+- Validation snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4529050597
+- Latest state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4529050598
 - Review snapshot: pending
 - Heuristic inbox entry: core/policies/heuristic-system/error-inbox/plan-issue-v3-surface-drift/ENTRY.md
 - Cross-repo implementation target: /Users/terry/Project/sympoies/nils-cli
