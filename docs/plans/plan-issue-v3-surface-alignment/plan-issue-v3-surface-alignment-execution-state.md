@@ -20,7 +20,7 @@
 - Cross-repo nils-cli PR: https://github.com/sympoies/nils-cli/pull/475
 - Session snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993496
 - Validation snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993905
-- Latest state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528994315
+- Latest state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528999060
 - Review snapshot: pending
 - Heuristic inbox entry: core/policies/heuristic-system/error-inbox/plan-issue-v3-surface-drift/ENTRY.md
 - Cross-repo implementation target: /Users/terry/Project/sympoies/nils-cli
@@ -121,6 +121,6 @@
 | `bash scripts/ci/all.sh` | blocked | Source/golden gates reached position 6; `agent-runtime audit-drift` failed on unrelated live runtime extra surface `heuristic-session-closeout`. | live-home drift |
 | `plan-issue record post --kind session --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted session snapshot with runtime-kit #94 and nils-cli #475 links. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993496 |
 | `plan-issue record post --kind validation --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted validation snapshot with partial status and live-home drift blocker. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993905 |
-| `plan-issue record post --kind state --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted latest state snapshot with PR links and blocker. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528994315 |
+| `plan-issue record post --kind state --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted latest state snapshot with PR links and blocker. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528999060 |
 | `plan-issue record repair-dashboard --issue 93 --repo graysurf/agent-runtime-kit --format json` | passed | Repaired issue #93 dashboard with latest session, validation, state, PR links, and blocker. | local output |
-| `plan-issue record audit --profile tracking --body-file ... --comments-json ... --format json` | passed | Final read-back audit returned `missing_required:[]`, `unsupported_markers:[]`, `recognized_count:6`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-221706-plan-issue-v3-prs/issue-93-final-audit.json` |
+| `plan-issue record audit --profile tracking --body-file ... --comments-json ... --format json` | passed | Final read-back audit returned `missing_required:[]`, `unsupported_markers:[]`, `recognized_count:7`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-221706-plan-issue-v3-prs/issue-93-final-audit.json` |
