@@ -135,6 +135,7 @@ AGENTS.md       ← project-scope policy (this repo)
 
 ## Next reading
 
+- [`core/skills/README.md`](core/skills/README.md) — skill catalog by category and series.
 - [`DEVELOPMENT.md`](DEVELOPMENT.md) — setup, validation gates, release boundary.
 - [`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md) — per-surface ship state, acceptance lanes, version pins.
 - [`AGENT_HOME.md`](AGENT_HOME.md) — global agent policy loaded by both products.
