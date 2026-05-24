@@ -59,7 +59,7 @@ core/                     manifests/         targets/
 
 ## What's inside `core/skills/`
 
-Ten skill domains, currently rendered into 44 active Codex entries and 10
+Ten skill domains, currently rendered into 56 active Codex entries and 10
 Claude plugins:
 
 `browser` · `code-review` · `conversation` · `dispatch` · `evidence` ·
@@ -67,7 +67,8 @@ Claude plugins:
 
 Representative skills: `pr:deliver-github-pr`,
 `dispatch:deliver-plan-tracking-issue`, `evidence:test-first-evidence`,
-`meta:semantic-commit`, `reporting:project-retro`, `media:screen-record`.
+`issue:issue-triage`, `meta:semantic-commit`, `reporting:project-retro`,
+`media:screen-record`.
 The authoritative list with `required_clis` floors is `manifests/skills.yaml`;
 per-surface ship state with file:line citations is in
 [`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md).

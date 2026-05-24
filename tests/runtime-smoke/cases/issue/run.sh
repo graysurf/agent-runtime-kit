@@ -69,7 +69,38 @@ run_issue_follow_up_probe() {
   grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$comment_out"
 }
 
+run_issue_triage_probe() {
+  local status_out="$ISSUE_ARTIFACTS_DIR/inbox-status.json"
+  local list_out="$ISSUE_ARTIFACTS_DIR/inbox-list.json"
+  local next_out="$ISSUE_ARTIFACTS_DIR/inbox-next.json"
+  local view_out="$ISSUE_ARTIFACTS_DIR/triage-view.json"
+  require_issue_bin forge-cli || return 1
+
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    inbox status \
+    --item-type issue >"$status_out" 2>&1
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    inbox list \
+    --item-type issue >"$list_out" 2>&1
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    inbox next \
+    --item-type issue \
+    --limit 3 >"$next_out" 2>&1
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    issue view 123 >"$view_out" 2>&1
+
+  grep -q '"schema_version":"cli.forge-cli.inbox.status.v1"' "$status_out"
+  grep -q '"schema_version":"cli.forge-cli.inbox.list.v1"' "$list_out"
+  grep -q '"schema_version":"cli.forge-cli.inbox.next.v1"' "$next_out"
+  grep -q '"schema_version":"cli.forge-cli.issue.view.v1"' "$view_out"
+}
+
 failures=0
 record_case "issue.issue-follow-up" "forge-cli issue create/view/comment dry-run probes passed" run_issue_follow_up_probe || failures=1
+record_case "issue.issue-triage" "forge-cli inbox issue triage dry-run probes passed" run_issue_triage_probe || failures=1
 
 exit "$failures"

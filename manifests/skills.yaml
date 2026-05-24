@@ -553,6 +553,20 @@ skills:
       web-evidence: ">=0.17.1"
     state_out_mode: runtime
 
+  - id: issue.issue-triage
+    domain: issue
+    source: core/skills/issue/issue-triage
+    products:
+      codex:
+        name: issue-triage
+        render_to: plugins/issue/skills/issue-triage/SKILL.md
+      claude:
+        name: issue-triage
+        render_to: plugins/issue/skills/issue-triage/SKILL.md
+    required_clis:
+      forge-cli: ">=0.17.5"
+    state_out_mode: runtime
+
   - id: code-review.code-review-specialists
     domain: code-review
     source: core/skills/code-review/code-review-specialists

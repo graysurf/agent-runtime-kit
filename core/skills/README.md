@@ -13,7 +13,7 @@ human index for scanning the skill catalog by category and skill series.
 | `conversation` | 7 | Advice, knowledge, handoff, work modes |
 | `dispatch` | 8 | Plan-tracking issues, dispatch plans, dispatch lanes |
 | `evidence` | 6 | Evidence records, impact scans, cross-checks |
-| `issue` | 1 | Durable issue follow-up |
+| `issue` | 2 | Issue triage and durable follow-up |
 | `media` | 2 | Image conversion, screen capture |
 | `meta` | 18 | Runtime primitives, script dispatchers, skill lifecycle, heuristics |
 | `pr` | 7 | GitHub PRs, GitLab MRs, dispatch-lane PRs |
@@ -72,6 +72,7 @@ human index for scanning the skill catalog by category and skill series.
 
 | Series | Skill | Purpose |
 | --- | --- | --- |
+| Issue triage | [issue-triage](./issue/issue-triage/) | Reviews open GitHub or GitLab issues from `forge-cli inbox`, classifies readiness and blockers, and recommends execution order. |
 | Durable issue follow-up | [issue-follow-up](./issue/issue-follow-up/) | Opens or continues a GitHub or GitLab issue as the durable timeline for a discovered problem, blocker, or handoff. |
 
 ## Media

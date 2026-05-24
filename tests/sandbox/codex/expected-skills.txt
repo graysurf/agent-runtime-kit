@@ -23,6 +23,7 @@ evidence.skill-usage
 evidence.test-first-evidence
 evidence.web-evidence
 issue.issue-follow-up
+issue.issue-triage
 media.image-processing
 media.screen-record
 meta.agent-docs

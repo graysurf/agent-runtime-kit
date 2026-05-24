@@ -1,7 +1,7 @@
 {
   "name": "issue",
   "version": "0.1.0",
-  "description": "Provider issue follow-up workflows backed by forge-cli issue lifecycle commands.",
+  "description": "Provider issue triage and follow-up workflows backed by forge-cli issue lifecycle commands.",
   "author": {
     "name": "graysurf"
   },

@@ -625,6 +625,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: issue.issue-triage.shared-cli.deterministic
+    product: shared-cli
+    domain: issue
+    skill_id: issue.issue-triage
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: none
+    invocation: forge-cli inbox issue list/next/status and issue view dry-run surfaces
+    expected_exit_code: 0
+    expected_artifacts: forge-cli inbox and issue view dry-run provider commands
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: code-review.code-review-specialists.shared-cli.deterministic
     product: shared-cli
     domain: code-review

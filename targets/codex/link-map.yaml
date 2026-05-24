@@ -325,6 +325,12 @@ entries:
     destination: skills/issue/issue-follow-up
     recursive: false
 
+  - id: issue.issue-triage.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/issue/skills/issue-triage
+    destination: skills/issue/issue-triage
+    recursive: false
+
   - id: code-review.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/code-review/.codex-plugin/plugin.json
