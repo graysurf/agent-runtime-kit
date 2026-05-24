@@ -70,6 +70,7 @@ Classify matches before editing:
 After apply approval and edits:
 
 ```bash
+bash scripts/ci/skill-governance-audit.sh --update-counts
 bash scripts/ci/skill-governance-audit.sh
 agent-runtime render --product codex --update-golden
 agent-runtime render --product claude --update-golden
@@ -89,7 +90,9 @@ bash scripts/ci/all.sh
 5. Remove the source directory and manifest entry.
 6. Remove plugin containment and product metadata for the target skill.
 7. Remove rendered/golden/sandbox/runtime-smoke/hook/reminder references.
-8. Update maintained docs that list active skills or skill counts.
+8. Run `bash scripts/ci/skill-governance-audit.sh --update-counts` to refresh
+   maintained active skill-count surfaces without touching historical
+   `docs/plans/**` records.
 9. Re-run the reference inventory and fail if active references remain outside
    the allowed historical set.
 10. Run governance, render, sandbox, runtime-smoke, and full CI validation.

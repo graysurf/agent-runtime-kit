@@ -64,6 +64,7 @@ $EDITOR manifests/plugins.yaml
 After editing, run governance and render validation:
 
 ```bash
+bash scripts/ci/skill-governance-audit.sh --update-counts
 bash scripts/ci/skill-governance-audit.sh
 agent-runtime render --product codex --update-golden
 agent-runtime render --product claude --update-golden
@@ -92,9 +93,11 @@ bash scripts/ci/all.sh
 7. Add reminder metadata only when agents should invoke the skill as a workflow.
 8. Add runtime-smoke matrix coverage and any case-runner probe needed to prove
    the skill surface.
-9. Render both products, refresh golden snapshots, run governance audit, and
+9. Run `bash scripts/ci/skill-governance-audit.sh --update-counts` after the
+   source, manifest, sandbox, and runtime-smoke surfaces are in place.
+10. Render both products, refresh golden snapshots, run governance audit, and
    run the relevant smoke checks.
-10. Leave staging, commit, PR creation, and issue state updates to the caller's
+11. Leave staging, commit, PR creation, and issue state updates to the caller's
     delivery workflow.
 
 ## Boundary

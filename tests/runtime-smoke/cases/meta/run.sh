@@ -257,6 +257,8 @@ run_sync_runtime_skills_probe() {
   ) >"$out" 2>&1
 
   grep -q "git pull skipped (--no-pull)" "$out"
+  grep -q "skill-governance-audit.sh --check-counts" "$out"
+  grep -q "skill-governance-audit: counts OK" "$out"
   grep -q "agent-runtime render" "$out"
   grep -q "agent-runtime install" "$out"
   grep -q "agent-runtime doctor" "$out"

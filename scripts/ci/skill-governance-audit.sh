@@ -10,27 +10,41 @@ MODE="repo"
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/ci/skill-governance-audit.sh [--fixture create|remove|create-project|remove-project]
+Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh]
 
 Checks:
-  default                  Validate active repo source/manifests/plugins/reminders.
-  --fixture create         Validate the create-skill fixture completeness.
-  --fixture remove         Validate the remove-skill dry-run fixture coverage.
-  --fixture create-project Validate the create-project-skill fixture completeness.
-  --fixture remove-project Validate the remove-project-skill dry-run fixture coverage.
+  default                   Validate active repo source/manifests/plugins/reminders/counts.
+  --check-counts            Check maintained active skill-count references only.
+  --update-counts           Refresh maintained active skill-count references.
+  --fixture create          Validate the create-skill fixture completeness.
+  --fixture remove          Validate the remove-skill dry-run fixture coverage.
+  --fixture create-project  Validate the create-project-skill fixture completeness.
+  --fixture remove-project  Validate the remove-project-skill dry-run fixture coverage.
+  --fixture count-refresh   Validate stale count detection and whitelist updates.
 USAGE
 }
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --check-counts)
+      MODE="count-check"
+      shift
+      ;;
+    --update-counts)
+      MODE="count-update"
+      shift
+      ;;
     --fixture)
       if [ "$#" -lt 2 ]; then
-        echo "skill-governance-audit: --fixture requires create|remove" >&2
+        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh" >&2
         exit 2
       fi
       case "$2" in
         create | remove | create-project | remove-project)
           MODE="$2-fixture"
+          ;;
+        count-refresh)
+          MODE="count-refresh-fixture"
           ;;
         *)
           echo "skill-governance-audit: unsupported fixture: $2" >&2
@@ -56,12 +70,48 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 
 MODE = sys.argv[1]
 ROOT = Path(sys.argv[2])
+
+
+COUNT_TARGETS = [
+    {
+        "path": "docs/source/harness-shape-codex.md",
+        "label": "Codex local skill root declaration",
+        "pattern": r"(?P<prefix>; )(?P<count>\d+)(?P<suffix> Codex skill\s+entries are declared)",
+    },
+    {
+        "path": "docs/source/harness-shape-codex.md",
+        "label": "Codex sandbox expected skill range",
+        "pattern": r"(?P<prefix>tests/sandbox/codex/expected-skills\.txt:1-)(?P<count>\d+)(?P<suffix>)",
+    },
+    {
+        "path": "tests/runtime-smoke/expected/install-summary.json",
+        "label": "Codex install expected skill count",
+        "pattern": r"(?P<prefix>\"id\":\"install\.codex\"[^}\n]*\"skill_count\":)(?P<count>\d+)(?P<suffix>)",
+    },
+    {
+        "path": "tests/runtime-smoke/expected/install-summary.json",
+        "label": "Claude install expected skill count",
+        "pattern": r"(?P<prefix>\"id\":\"install\.claude\"[^}\n]*\"skill_count\":)(?P<count>\d+)(?P<suffix>)",
+    },
+    {
+        "path": "tests/runtime-smoke/product/expected/product-summary.json",
+        "label": "Codex product install expected skill count",
+        "pattern": r"(?P<prefix>\"id\":\"product\.codex\.install\"[^}\n]*\"skill_count\":)(?P<count>\d+)(?P<suffix>)",
+    },
+    {
+        "path": "tests/runtime-smoke/product/expected/product-summary.json",
+        "label": "Claude product install expected skill count",
+        "pattern": r"(?P<prefix>\"id\":\"product\.claude\.install\"[^}\n]*\"skill_count\":)(?P<count>\d+)(?P<suffix>)",
+    },
+]
 
 
 def fail(message: str) -> None:
@@ -71,7 +121,11 @@ def fail(message: str) -> None:
 
 def read(path: Path) -> str:
     if not path.exists():
-        fail(f"missing required file: {path.relative_to(ROOT)}")
+        try:
+            rel = path.relative_to(ROOT)
+        except ValueError:
+            rel = path
+        fail(f"missing required file: {rel}")
     return path.read_text(encoding="utf-8")
 
 
@@ -138,6 +192,66 @@ def parse_skills(path: Path) -> list[dict[str, object]]:
     if current is not None:
         entries.append(current)
     return entries
+
+
+def active_skill_count(root: Path) -> int:
+    return len(parse_skills(root / "manifests" / "skills.yaml"))
+
+
+def apply_count_targets(root: Path, update: bool) -> tuple[int, list[str]]:
+    count = active_skill_count(root)
+    changes: list[str] = []
+
+    for target in COUNT_TARGETS:
+        rel = Path(str(target["path"]))
+        if rel.parts[:2] == ("docs", "plans"):
+            fail(f"count target is outside maintained whitelist: {rel}")
+
+        path = root / rel
+        text = read(path)
+        pattern = re.compile(str(target["pattern"]))
+        matches = list(pattern.finditer(text))
+        label = str(target["label"])
+        if len(matches) != 1:
+            fail(
+                f"count target pattern must match exactly once: "
+                f"{rel} label={label!r} matches={len(matches)}"
+            )
+
+        match = matches[0]
+        old = match.group("count")
+        updated = pattern.sub(
+            lambda item: f"{item.group('prefix')}{count}{item.group('suffix')}",
+            text,
+            count=1,
+        )
+        if updated != text:
+            changes.append(f"{rel}: {label} {old}->{count}")
+            if update:
+                path.write_text(updated, encoding="utf-8")
+
+    return count, changes
+
+
+def validate_counts(root: Path) -> int:
+    count, changes = apply_count_targets(root, update=False)
+    if changes:
+        fail("active skill count drift: " + "; ".join(changes))
+    return count
+
+
+def update_counts(root: Path) -> None:
+    count, changes = apply_count_targets(root, update=True)
+    if changes:
+        print(
+            "skill-governance-audit: counts updated "
+            f"skills={count} targets={len(COUNT_TARGETS)}"
+        )
+    else:
+        print(
+            "skill-governance-audit: counts OK "
+            f"skills={count} targets={len(COUNT_TARGETS)}"
+        )
 
 
 def parse_plugins(path: Path) -> list[dict[str, object]]:
@@ -322,9 +436,11 @@ def validate_repo() -> None:
     if "skill-governance" in exact:
         fail("skill-governance is a repo governance tool, not a user-facing skill")
 
+    count = validate_counts(ROOT)
     print(
         "skill-governance-audit: repo OK "
-        f"skills={len(skills)} plugins={len(plugins)} lifecycle={len(lifecycle_ids)}"
+        f"skills={len(skills)} plugins={len(plugins)} lifecycle={len(lifecycle_ids)} "
+        f"count_targets={len(COUNT_TARGETS)} active_count={count}"
     )
 
 
@@ -454,8 +570,54 @@ def validate_remove_project_fixture() -> None:
     print("skill-governance-audit: remove-project fixture OK classes=5 retained_history=true")
 
 
+def validate_count_refresh_fixture() -> None:
+    fixture = ROOT / "tests" / "runtime-smoke" / "fixtures" / "skill-lifecycle" / "count-refresh"
+    expected_root = fixture / "expected"
+    history_rel = Path("docs/plans/stale-skill-count-history.md")
+
+    with tempfile.TemporaryDirectory(prefix="skill-count-refresh-") as tmp:
+        work_root = Path(tmp) / "fixture"
+        shutil.copytree(fixture, work_root)
+
+        history_before = read(work_root / history_rel)
+        _, drift = apply_count_targets(work_root, update=False)
+        if not drift:
+            fail("count-refresh fixture did not start with stale maintained counts")
+
+        apply_count_targets(work_root, update=True)
+        _, remaining = apply_count_targets(work_root, update=False)
+        if remaining:
+            fail("count-refresh fixture still has drift after update: " + "; ".join(remaining))
+
+        for rel in [
+            Path("docs/source/harness-shape-codex.md"),
+            Path("tests/runtime-smoke/expected/install-summary.json"),
+            Path("tests/runtime-smoke/product/expected/product-summary.json"),
+        ]:
+            actual = read(work_root / rel)
+            expected = read(expected_root / rel)
+            if actual != expected:
+                fail(f"count-refresh fixture mismatch after update: {rel}")
+
+        if read(work_root / history_rel) != history_before:
+            fail("count-refresh fixture rewrote historical docs/plans content")
+
+    print(
+        "skill-governance-audit: count-refresh fixture OK "
+        f"updated_targets={len(COUNT_TARGETS)} historical_docs_retained=true"
+    )
+
+
 if MODE == "repo":
     validate_repo()
+elif MODE == "count-check":
+    count = validate_counts(ROOT)
+    print(
+        "skill-governance-audit: counts OK "
+        f"skills={count} targets={len(COUNT_TARGETS)}"
+    )
+elif MODE == "count-update":
+    update_counts(ROOT)
 elif MODE == "create-fixture":
     validate_create_fixture()
 elif MODE == "remove-fixture":
@@ -464,6 +626,8 @@ elif MODE == "create-project-fixture":
     validate_create_project_fixture()
 elif MODE == "remove-project-fixture":
     validate_remove_project_fixture()
+elif MODE == "count-refresh-fixture":
+    validate_count_refresh_fixture()
 else:
     fail(f"unknown mode: {MODE}")
 PY

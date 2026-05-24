@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "mode": "product",
+  "counts": {
+    "pass": 4,
+    "fail": 0,
+    "skip-host-capability": 10,
+    "blocked-design": 0
+  },
+  "results": [
+    {"id":"product.codex.probe","product":"codex","status":"pass","skill_count":1,"note":"isolation=supported"},
+    {"id":"product.codex.install","product":"codex","status":"pass","skill_count":2,"note":"installed current skills into temp product live_home"},
+    {"id":"product.claude.probe","product":"claude","status":"pass","skill_count":1,"note":"isolation=supported"},
+    {"id":"product.claude.install","product":"claude","status":"pass","skill_count":2,"note":"installed current skills into temp product live_home"}
+  ]
+}
