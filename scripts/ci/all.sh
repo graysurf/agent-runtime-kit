@@ -45,10 +45,13 @@ require_bin agent-runtime
 require_bin python3
 
 # -----------------------------------------------------------------------------
-# Position 1 — plan bundle validation
+# Position 1 — plan bundle and skill lifecycle governance validation
 # -----------------------------------------------------------------------------
-banner 1 "plan-tooling validate --format text --explain"
+banner 1 "plan-tooling validate + skill-governance audit"
 plan-tooling validate --format text --explain
+bash scripts/ci/skill-governance-audit.sh
+bash scripts/ci/skill-governance-audit.sh --fixture create
+bash scripts/ci/skill-governance-audit.sh --fixture remove
 
 # -----------------------------------------------------------------------------
 # Position 2 — nils-cli surface floor alignment
@@ -205,7 +208,7 @@ done
 # protocol. The expected check count is documented in that plan's execution
 # state; bump SHAPE_EXPECTED_MIN_CHECKS together with a recorded reason.
 # -----------------------------------------------------------------------------
-SHAPE_EXPECTED_MIN_CHECKS=70
+SHAPE_EXPECTED_MIN_CHECKS=72
 SHAPE_OUT_DIR="${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/ci-all"
 mkdir -p "$SHAPE_OUT_DIR"
 SHAPE_JSON="$SHAPE_OUT_DIR/shape-diagnostic.json"

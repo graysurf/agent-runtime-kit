@@ -1,0 +1,11 @@
+schema_version: 1
+
+plugins:
+  - id: fixture
+    domain: fixture
+    contained_skills:
+      - fixture.sample-prose
+    product_manifests:
+      codex: targets/codex/plugins/fixture/.codex-plugin/plugin.json
+      claude: targets/claude/plugins/fixture/.claude-plugin/plugin.json
+    install_policy: always

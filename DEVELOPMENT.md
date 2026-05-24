@@ -83,6 +83,20 @@ those helpers through a thin shell wrapper when a product expects an executable
 script. If the helper becomes cross-skill, semver-sensitive, or relied on for
 stable machine output, extract it to nils-cli and declare it in `required_clis`.
 
+## Skill Lifecycle Changes
+
+Use the `meta:create-skill` and `meta:remove-skill` skills for repo-owned managed
+skill additions and removals. They are user-facing workflow checklists for
+source, manifests, product render output, sandbox pins, runtime-smoke coverage,
+and retained historical records.
+
+`skill-governance` is not a user-facing skill. The repo-owned governance check is
+`bash scripts/ci/skill-governance-audit.sh`, with fixture modes for create/remove
+lifecycle coverage. If lifecycle work needs deterministic mutation, dry-run/apply
+plans, or machine-readable reference graphs, implement that primitive in
+`sympoies/nils-cli`, release it, then declare the consumed binary in
+`required_clis`.
+
 ## Coupled nils-cli Work
 
 Many changes in this repo need unreleased `nils-cli` behavior. Keep that work
@@ -159,7 +173,7 @@ bash scripts/ci/all.sh
 
 That currently performs:
 
-1. `plan-tooling validate --format text --explain`
+1. `plan-tooling validate --format text --explain` plus `scripts/ci/skill-governance-audit.sh` repo/create/remove fixture checks
 2. nils-cli surface floor alignment: parse the tag from `docs/source/nils-cli-surface.md` and require `agent-runtime --version` to be greater than or equal to it; fail closed when the host is below the documented floor
 3. `agent-runtime render --product codex`
 4. `agent-runtime render --product claude`
@@ -186,13 +200,16 @@ visibility still requires `codex debug prompt-input` in a fresh Codex
 Desktop session. See
 `docs/plans/codex-skill-surface-acceptance-cutover/` for the live
 acceptance protocol. When the source surface grows new entries, bump
-`SHAPE_EXPECTED_MIN_CHECKS` in `scripts/ci/all.sh` and record the reason
-in the cutover execution state.
+`SHAPE_EXPECTED_MIN_CHECKS` only if the doctor-reported check count changes;
+record the reason in the cutover execution state.
 
 For targeted checks:
 
 ```bash
 plan-tooling validate --format text --explain
+bash scripts/ci/skill-governance-audit.sh
+bash scripts/ci/skill-governance-audit.sh --fixture create
+bash scripts/ci/skill-governance-audit.sh --fixture remove
 agent-runtime audit-drift
 agent-runtime audit-drift --source-root tests/drift/source-manifest-missing/
 bash scripts/ci/sandbox-install-rehearsal.sh

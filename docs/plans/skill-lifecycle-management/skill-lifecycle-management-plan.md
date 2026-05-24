@@ -4,8 +4,9 @@
 
 Deliver repo-native skill lifecycle management for `agent-runtime-kit` so
 agents can add, validate, and remove managed skills without reviving the
-legacy `agent-kit` path model. The v1 workflow is a narrow lifecycle family:
-`skill-governance` first, `create-skill` second, and `remove-skill` third.
+legacy `agent-kit` path model. The v1 workflow is narrow: a repo governance
+audit tool first, the `create-skill` user-facing skill second, and the
+`remove-skill` user-facing skill third.
 
 This plan keeps deterministic mutation and parsing out of skill prose. If the
 implementation needs stable YAML edits, reference graph output, or dry-run
@@ -21,9 +22,8 @@ behavior are explicitly deferred.
   - [Q1] Deterministic primitive shape: decide during implementation whether
     stable mutation belongs under an `agent-runtime skill ...` command or a
     separate lifecycle binary, after checking `nils-cli` conventions.
-  - [Q2] `skill-governance` invocation mode: make it an agent-invoked skill
-    only if lifecycle work needs a first-class workflow surface; otherwise keep
-    the same checks as CI or repo-script validation.
+  - [Q2] `skill-governance` invocation mode: resolved during execution as a
+    repo/CI validation tool, not a user-facing skill.
   - [Q3] `create-project-skill`: defer until project-local overlay semantics
     are designed separately.
   - [Q4] New plugin domains: require an explicit `--new-domain` flag or user
@@ -32,9 +32,9 @@ behavior are explicitly deferred.
 ## Scope
 
 - In scope:
-  - Add or plan the repo-native lifecycle surfaces:
-    `meta:skill-governance`, `meta:create-skill`, and
-    `meta:remove-skill`.
+  - Add the repo-native lifecycle surfaces `meta:create-skill` and
+    `meta:remove-skill`, plus a repo governance audit tool called by those
+    workflows and CI.
   - Validate canonical source shape under `core/skills/<domain>/<skill>/`,
     manifest consistency in `manifests/skills.yaml` and
     `manifests/plugins.yaml`, product render paths under `targets/<product>/`,
@@ -80,37 +80,34 @@ consistent.
 **PR grouping intent**: group
 **Execution Profile**: serial
 
-### Task 1.1: Define skill-governance workflow surface
+### Task 1.1: Add skill lifecycle governance audit
 
 - **Location**:
-  - `core/skills/meta/skill-governance/SKILL.md.tera`
-  - `manifests/skills.yaml`
-  - `manifests/plugins.yaml`
-  - `core/hooks/shared/skill-usage-reminder.skills.json`
-- **Description**: Add the `meta:skill-governance` skill only if execution
-  confirms agents should invoke it during lifecycle work. The skill body must
-  describe when to run governance, which local checks it owns, when to stop for
-  user approval, and how it distinguishes repo policy from `nils-cli`
-  deterministic behavior. Register the skill in `manifests/skills.yaml` and
-  `manifests/plugins.yaml`; add reminder metadata only if the surface is
-  agent-invoked rather than CI-only.
+  - `scripts/ci/skill-governance-audit.sh`
+  - `tests/runtime-smoke/fixtures/skill-lifecycle/`
+  - `scripts/ci/all.sh`
+- **Description**: Add a repo validation tool, not a user-facing skill. The
+  audit validates source/manifest/plugin/reminder consistency, product render
+  paths, `required_clis` floors, runtime-smoke matrix coverage, sandbox
+  expected skill lists, and lifecycle create/remove fixtures. Wire it into the
+  CI gate so governance runs automatically before skill lifecycle changes are
+  delivered.
 - **Dependencies**:
   - none
 - **Complexity**: 3
 - **Acceptance criteria**:
-  - A maintainer can tell whether `skill-governance` is an agent skill, a CI
-    validator, or both from the committed diff.
-  - Any new skill entry uses the existing `meta` plugin and declares concrete
-    `required_clis` values or an explicit empty map.
-  - The skill body avoids legacy `$AGENT_HOME`, `$HOME/.agents`, and
-    top-level `skills/...` assumptions.
-  - Reminder metadata is present only if agents are expected to invoke the
-    workflow.
+  - Governance is implemented as `scripts/ci/skill-governance-audit.sh`, not as
+    `core/skills/meta/skill-governance`.
+  - The audit fails on missing source/manifest/plugin/reminder/runtime-smoke or
+    sandbox coverage for active skills.
+  - The audit has fixture coverage for create-skill completeness and
+    remove-skill dry-run reference classes.
+  - `scripts/ci/all.sh` invokes the governance audit and its fixtures.
 - **Validation**:
-  - `agent-runtime render --product codex`
-  - `agent-runtime render --product claude`
-  - `agent-runtime doctor --class skill-surface --product codex`
-  - `agent-runtime doctor --class skill-surface --product claude`
+  - `bash scripts/ci/skill-governance-audit.sh`
+  - `bash scripts/ci/skill-governance-audit.sh --fixture create`
+  - `bash scripts/ci/skill-governance-audit.sh --fixture remove`
+  - `bash scripts/ci/all.sh`
 
 ### Task 1.2: Add governance validation coverage
 
@@ -337,9 +334,9 @@ The tracking issue is complete when:
 
 - Sprint 1 through Sprint 4 tasks are landed on `main` or explicitly closed as
   not needed with issue-visible evidence.
-- `meta:skill-governance`, `meta:create-skill`, and `meta:remove-skill` are
-  either implemented and validated or have a documented replacement boundary
-  accepted by the maintainer.
+- `meta:create-skill`, `meta:remove-skill`, and the governance audit tool are
+  implemented and validated, or have a documented replacement boundary accepted
+  by the maintainer.
 - Adding one sample low-risk prose skill through the workflow produces a
   complete source/manifest/render/golden/sandbox delta and passes targeted
   validation.

@@ -1,0 +1,14 @@
+{
+  "name": "fixture",
+  "version": "0.1.0",
+  "description": "Fixture plugin for removal coverage.",
+  "author": {
+    "name": "graysurf"
+  },
+  "skills": [
+    {
+      "id": "removable-skill",
+      "source": "core/skills/fixture/removable-skill"
+    }
+  ]
+}

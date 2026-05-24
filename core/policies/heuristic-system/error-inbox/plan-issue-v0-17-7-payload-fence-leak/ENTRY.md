@@ -10,14 +10,16 @@
 - Source upstream issue: sympoies/nils-cli#463 (closed 2026-05-24)
 - Source upstream PRs: sympoies/nils-cli#453, #454; fixed by #464
   (`fix(plan-issue): hide record payload comments`, merged as
-  `740abb918bc2a938f014c59de9af3e68104a94d9`)
+  `740abb918bc2a938f014c59de9af3e68104a94d9`); #465 shipped in the
+  same fixed release.
 - Source upstream bad release: sympoies/nils-cli v0.17.7
 - Source upstream fixed release: sympoies/nils-cli v0.18.0, published
   2026-05-24T08:32:50Z
 - Resolution state: upstream fixed and v0.18.0 live verified; local
-  surface pin/archive still pending.
-- Source local context: `docs/source/nils-cli-surface.md` is still pinned
-  at `v0.17.7`; verification below used an installed v0.18.0 host. The
+  surface pin is included in PR #85, with archive pending after merge
+  and issue #84 closeout.
+- Source local context: `docs/source/nils-cli-surface.md` is refreshed
+  to `v0.18.0`; verification below used an installed v0.18.0 host. The
   previous v2 marker migration (inbox case
   `plan-issue-v2-marker-collapse-drift`, now archived) covered the
   flag/schema breaks but did not catch this rendering regression because
@@ -177,6 +179,11 @@ Verified on 2026-05-24 with installed nils-cli v0.18.0:
   --format text --explain` passed, and the pre-push hook ran
   `scripts/ci/all.sh` positions 1-11 successfully before pushing
   `feat/skill-lifecycle-management-plan`.
+- Full delivery validation for graysurf/agent-runtime-kit#84:
+  `bash scripts/ci/all.sh` passed positions 1-11 after implementing
+  `meta.create-skill`, `meta.remove-skill`, and
+  `scripts/ci/skill-governance-audit.sh`; PR #85 records the local
+  v0.18.0 surface pin and issue lifecycle evidence.
 - Local artifacts:
 
   ```text
@@ -240,8 +247,6 @@ case landed (`plan-issue-v2-marker-collapse-drift`), expanded from
 
 ## Next Action
 
-- Roll `docs/source/nils-cli-surface.md` from `v0.17.7` to `v0.18.0`
-  when the repo is ready to require the fixed surface.
-- After the surface pin is rolled forward and validated, archive this
-  entry under the heuristic-system error-inbox archive instead of
-  keeping it as an open workaround.
+- After the skill lifecycle management PR lands with the v0.18.0 surface pin and
+  issue #84 lifecycle evidence, set this entry to `promoted` and archive it
+  under `error-inbox/archive/2026/`.

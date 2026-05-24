@@ -1,0 +1,1 @@
+fixture.removable-skill

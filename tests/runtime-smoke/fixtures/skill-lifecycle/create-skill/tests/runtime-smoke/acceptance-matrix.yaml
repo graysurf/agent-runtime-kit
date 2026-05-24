@@ -1,0 +1,16 @@
+schema_version: 1
+
+cases:
+  - id: fixture.sample-prose.shared-cli.deterministic
+    product: shared-cli
+    domain: fixture
+    skill_id: fixture.sample-prose
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: render fixture surfaces
+    invocation: verify prose fixture source and rendered surfaces
+    expected_exit_code: 0
+    expected_artifacts: rendered skill files
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none

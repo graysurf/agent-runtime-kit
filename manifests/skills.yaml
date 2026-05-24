@@ -164,6 +164,34 @@ skills:
       heuristic-inbox: ">=0.16.0"
     state_out_mode: runtime
 
+  - id: meta.create-skill
+    domain: meta
+    source: core/skills/meta/create-skill
+    products:
+      codex:
+        name: create-skill
+        render_to: plugins/meta/skills/create-skill/SKILL.md
+      claude:
+        name: create-skill
+        render_to: plugins/meta/skills/create-skill/SKILL.md
+    required_clis:
+      agent-runtime: ">=0.18.0"
+    state_out_mode: runtime
+
+  - id: meta.remove-skill
+    domain: meta
+    source: core/skills/meta/remove-skill
+    products:
+      codex:
+        name: remove-skill
+        render_to: plugins/meta/skills/remove-skill/SKILL.md
+      claude:
+        name: remove-skill
+        render_to: plugins/meta/skills/remove-skill/SKILL.md
+    required_clis:
+      agent-runtime: ">=0.18.0"
+    state_out_mode: runtime
+
   - id: meta.pre-pr
     domain: meta
     source: core/skills/meta/pre-pr
