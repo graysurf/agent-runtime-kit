@@ -30,10 +30,19 @@ the home-scope preflight (the CLI reads `AGENT_DOCS_HOME` from env when
 `--docs-home` is omitted):
 
 ```bash
-export AGENT_DOCS_HOME="$PWD"   # or the absolute path to the agent-runtime-kit checkout
+export AGENT_DOCS_HOME="$PWD"
 agent-docs resolve --context startup --strict --format checklist
 agent-docs resolve --context project-dev --strict --format checklist
 ```
+
+## Refreshing Runtime Skills
+
+After a skill source change lands, use `scripts/sync-runtime-skills.sh` for the
+daily refresh path. It pulls the active checkout, renders Codex and Claude
+targets, installs the rendered surfaces into the runtime homes, and runs the
+skill-surface doctor probes; it is dry-run by default and writes only with
+`--apply`. Keep `scripts/setup.sh` for first-time host bootstrap and CLI tool
+installation.
 
 ## Repo Layout
 
@@ -72,10 +81,10 @@ Durable runtime behavior belongs in `sympoies/nils-cli`: render, install,
 uninstall, doctor, drift audit, JSON contracts, exit-code contracts, parsers,
 and shared capability binaries.
 
-Top-level repository scripts under `scripts/` are Bash glue. They may bootstrap a
-host, chain CI gates, compare fixture output, or call released nils-cli binaries.
-Keep them compatible with macOS system Bash 3.2 and Linux Bash; avoid Bash 4-only
-features unless the script declares a narrower host contract.
+Top-level repository scripts under `scripts/` are Bash glue. They may bootstrap
+a host, chain CI gates, compare fixture output, or call released nils-cli
+binaries. Keep them compatible with macOS system Bash 3.2 and Linux Bash; avoid
+Bash 4-only features unless the script declares a narrower host contract.
 
 Python is acceptable for skill-local helpers under `core/skills/**/bin/` when the
 logic is owned by one skill and does not define a shared runtime contract. Render
@@ -176,8 +185,12 @@ bash scripts/ci/all.sh
 
 That currently performs:
 
-1. `plan-tooling validate --format text --explain` plus `scripts/ci/skill-governance-audit.sh` repo/create/remove fixture checks
-2. nils-cli surface floor alignment: parse the tag from `docs/source/nils-cli-surface.md` and require `agent-runtime --version` to be greater than or equal to it; fail closed when the host is below the documented floor
+1. `plan-tooling validate --format text --explain` plus
+   `scripts/ci/skill-governance-audit.sh` repo/create/remove fixture checks
+2. nils-cli surface floor alignment: parse the tag from
+   `docs/source/nils-cli-surface.md` and require `agent-runtime --version` to be
+   greater than or equal to it; fail closed when the host is below the
+   documented floor
 3. `agent-runtime render --product codex`
 4. `agent-runtime render --product claude`
 5. render-golden refresh plus `git diff --exit-code -- tests/golden/`
@@ -233,10 +246,14 @@ bash tests/runtime-smoke/run.sh --mode product --product codex
 bash tests/runtime-smoke/run.sh --mode product --product claude
 bash tests/runtime-smoke/run.sh --mode product --product codex --probe-only
 bash tests/runtime-smoke/run.sh --mode product --product claude --probe-only
-bash tests/runtime-smoke/run.sh --mode product --format json > /tmp/runtime-smoke-product-summary.json
-diff -u tests/runtime-smoke/product/expected/product-summary.json /tmp/runtime-smoke-product-summary.json
+bash tests/runtime-smoke/run.sh --mode product --format json \
+  > /tmp/runtime-smoke-product-summary.json
+diff -u tests/runtime-smoke/product/expected/product-summary.json \
+  /tmp/runtime-smoke-product-summary.json
 if bash tests/smoke/deliver-lifecycle.sh; then exit 1; else test $? -ne 0; fi
-bash tests/smoke/deliver-lifecycle.sh --scratch-fork graysurf/agent-runtime-kit-smoke --scratch-branch agent-runtime-kit-delivery-smoke
+bash tests/smoke/deliver-lifecycle.sh \
+  --scratch-fork graysurf/agent-runtime-kit-smoke \
+  --scratch-branch agent-runtime-kit-delivery-smoke
 ```
 
 Runtime smoke install mode creates temporary Codex and Claude `live_home` and
