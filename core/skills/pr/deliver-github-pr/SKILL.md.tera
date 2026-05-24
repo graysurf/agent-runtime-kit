@@ -10,6 +10,8 @@ description:
 
 Prereqs:
 
+- `agent-runtime` is installed from the released nils-cli package and available
+  on `PATH`.
 - `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
 - `review-specialists` is installed from the released nils-cli package and
@@ -24,7 +26,7 @@ Prereqs:
 Inputs:
 
 - Delivery kind: `feature` or `bug`.
-- PR title and body file.
+- PR title and body section files for `agent-runtime pr-body render`.
 - Optional head branch, base branch, merge method, reviewers, and timeout.
 - Optional `--no-merge` when the workflow should stop after checks.
 - Optional `--no-closeout` to stop the workflow after delivery readiness checks
@@ -79,7 +81,24 @@ Failure modes:
 
 ## Entrypoint
 
-Use the released CLI directly:
+Render the body with `agent-runtime` before calling the delivery macro:
+
+```bash
+agent-runtime pr-body render \
+  --kind feature \
+  --summary-file "$SUMMARY_FILE" \
+  --changes-file "$CHANGES_FILE" \
+  --test-first-file "$TEST_FIRST_FILE" \
+  --test-plan-file "$TEST_PLAN_FILE" \
+  --risk-file "$RISK_FILE" \
+  --out "$PR_BODY"
+```
+
+For bug PRs, use `--kind bug` with `--problem-file`,
+`--reproduction-file`, `--issues-file`, and `--fix-approach-file` in place of
+`--changes-file`.
+
+Use the released provider CLI directly:
 
 ```bash
 forge-cli pr deliver \
@@ -151,7 +170,10 @@ in this block determines the profile.
    outcome.
 2. Inspect linked issues and closing references. For issue-backed plan work,
    prefer `Refs #<issue>` until the appropriate closeout gate has passed.
-3. Prepare a PR body with `## Summary` and `## Test plan`.
+3. Write the narrative content into section files, then render the PR body with
+   `agent-runtime pr-body render --kind feature|bug ... --out "$PR_BODY"`.
+   Do not hand-write the section scaffolding. Keep linked issue references
+   non-closing, e.g. `Refs #<issue>`.
 4. Run `forge-cli pr deliver` with the GitHub provider, selected base, and
    `--no-merge` so checks complete before the mandatory review gate. If the
    macro stops for a concrete blocker before checks are green, fix the blocker
