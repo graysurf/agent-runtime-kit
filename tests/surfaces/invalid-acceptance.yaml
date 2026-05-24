@@ -1,0 +1,39 @@
+schema_version: 1
+
+surfaces:
+  - id: invalid-acceptance
+    ordinal: 1
+    name: "invalid acceptance"
+    products:
+      codex:
+        state: shipped
+        mechanism: "invalid fixture"
+        source_artifacts: []
+        min_product: "0.130.0"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            command: "true"
+            note: "must not combine command and note"
+            success:
+              regex: "ok"
+          - kind: live
+            note: "manual"
+            descriptive_only: true
+        source_manifest:
+          - "tests/surfaces/invalid-acceptance.yaml"
+      claude:
+        state: shipped
+        mechanism: "invalid fixture"
+        source_artifacts: []
+        min_product: "2.1.145"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "manual"
+            descriptive_only: true
+          - kind: live
+            note: "manual"
+            descriptive_only: true
+        source_manifest:
+          - "tests/surfaces/invalid-acceptance.yaml"

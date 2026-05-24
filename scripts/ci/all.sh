@@ -154,17 +154,24 @@ banner 4 "agent-runtime render --product claude"
 agent-runtime render --product claude
 
 # -----------------------------------------------------------------------------
-# Position 5 — golden diff (rendered build vs committed golden tree)
+# Position 5 — render shared support matrix
 # -----------------------------------------------------------------------------
-banner 5 "git diff --exit-code tests/golden/ (after --update-golden refresh)"
+banner 5 "agent-runtime render --target support-matrix"
+agent-runtime render --target support-matrix
+
+# -----------------------------------------------------------------------------
+# Position 6 — golden diff (rendered build vs committed golden tree)
+# -----------------------------------------------------------------------------
+banner 6 "git diff --exit-code tests/golden/ (after --update-golden refresh)"
 agent-runtime render --product codex --update-golden >/dev/null
 agent-runtime render --product claude --update-golden >/dev/null
+agent-runtime render --target support-matrix --update-golden >/dev/null
 git diff --exit-code -- tests/golden/
 
 # -----------------------------------------------------------------------------
-# Position 6 — audit-drift (root sweep + four hermetic fixtures)
+# Position 7 — audit-drift (root sweep + four hermetic fixtures)
 # -----------------------------------------------------------------------------
-banner 6 "agent-runtime audit-drift (root + tests/drift fixtures)"
+banner 7 "agent-runtime audit-drift (root + tests/drift fixtures)"
 agent-runtime audit-drift
 
 drift_fixtures=(
@@ -201,7 +208,13 @@ for fixture in "${drift_fixtures[@]}"; do
 done
 
 # -----------------------------------------------------------------------------
-# Position 7 — Codex skill-surface shape diagnostic (preflight, not live)
+# Position 8 — surface registry schema + executable acceptance
+# -----------------------------------------------------------------------------
+banner 8 "validate surfaces manifest + executable acceptance"
+bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
+
+# -----------------------------------------------------------------------------
+# Position 9 — Codex skill-surface shape diagnostic (preflight, not live)
 #
 # Shape validation only. Live Codex Desktop discovery still requires
 # `codex debug prompt-input` in a fresh session — see
@@ -215,7 +228,7 @@ mkdir -p "$SHAPE_OUT_DIR"
 SHAPE_JSON="$SHAPE_OUT_DIR/shape-diagnostic.json"
 SHAPE_SUMMARY="$SHAPE_OUT_DIR/shape-diagnostic.summary"
 
-banner 7 "agent-runtime doctor --class skill-surface --product codex"
+banner 9 "agent-runtime doctor --class skill-surface --product codex"
 agent-runtime doctor \
   --class skill-surface \
   --product codex \
@@ -285,27 +298,27 @@ printf '%s\n' "$SHAPE_VERDICT"
 printf '%s\n' "$SHAPE_VERDICT" >"$SHAPE_SUMMARY"
 
 # -----------------------------------------------------------------------------
-# Position 8 — sandbox install rehearsal
+# Position 10 — sandbox install rehearsal
 # -----------------------------------------------------------------------------
-banner 8 "sandbox install rehearsal (dry-run skill-list diff)"
+banner 10 "sandbox install rehearsal (dry-run skill-list diff)"
 bash scripts/ci/sandbox-install-rehearsal.sh
 
 # -----------------------------------------------------------------------------
-# Position 9 — deterministic runtime skill smoke
+# Position 11 — deterministic runtime skill smoke
 # -----------------------------------------------------------------------------
-banner 9 "runtime skill deterministic smoke"
+banner 11 "runtime skill deterministic smoke"
 bash tests/runtime-smoke/run.sh --mode deterministic
 
 # -----------------------------------------------------------------------------
-# Position 10 — project-local overlay smoke
+# Position 12 — project-local overlay smoke
 # -----------------------------------------------------------------------------
-banner 10 "project-local overlay smoke"
+banner 12 "project-local overlay smoke"
 bash tests/projects/project-local-smoke/run.sh
 
 # -----------------------------------------------------------------------------
-# Position 11 — shared hook contract smoke
+# Position 13 — shared hook contract smoke
 # -----------------------------------------------------------------------------
-banner 11 "shared hook contract smoke"
+banner 13 "shared hook contract smoke"
 bash tests/hooks/run.sh
 
-printf '\nci/all.sh: positions 1-11 OK\n'
+printf '\nci/all.sh: positions 1-13 OK\n'
