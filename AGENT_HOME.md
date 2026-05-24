@@ -137,16 +137,17 @@
 - Pre-commit: follow `DEVELOPMENT.md` to run the relevant tests/checks before
   committing.
 
-## PR / MR Rules
+## Issue / PR / MR Rules
 
-- Direct `gh pr create` / `glab mr create` are blocked by hook. Use the
-  active tool's PR/MR delivery skill (e.g. `forge-cli pr deliver` or the
-  matching `pr:deliver-*` skill) which runs preflight → create → wait CI →
-  close.
-- For provider issues, PRs, and MRs, select labels from
-  `manifests/forge-labels.yaml` and follow
-  `core/policies/forge-label-taxonomy.md` when the active project provides
-  that catalog.
+- For agent-owned provider issues, PRs, and MRs, use the active workflow or
+  `forge-cli` surface instead of raw provider commands. Direct `gh pr create`
+  / `glab mr create` are blocked by hook; PR/MR delivery should go through the
+  active delivery skill.
+- Labels describe the record's type, area, state or size, and workflow for
+  triage and automation. When the active project provides
+  `manifests/forge-labels.yaml`, select labels from that catalog and follow
+  `core/policies/forge-label-taxonomy.md`; current CLI / skill surfaces handle
+  ensure, validation, and application details.
 - Branch: `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, 3–6 words;
   ticket id `ABC-123` → `feat/abc-123-<slug>`).
 - Draft an accurate 1–2 sentence summary grounded in the actual diff before
