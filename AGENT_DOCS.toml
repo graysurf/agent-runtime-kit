@@ -1,3 +1,21 @@
+# This checkout can act as the home docs catalog when AGENT_DOCS_HOME points
+# here. Keep repo-only requirements at `scope = "project"`; they apply to this
+# repository and linked worktrees, but are skipped for unrelated projects.
+#
+# Use `scope = "global"` only for docs that should be inherited by unrelated
+# project repositories when this checkout is the docs home. Global entries are
+# still resolved from this checkout, so `path` must point at a tracked file here.
+#
+# Global-scope example:
+#
+# [[document]]
+# context = "startup"
+# scope = "global"
+# path = "docs/source/<shared-home-scope-doc>.md"
+# required = true
+# when = "always"
+# notes = "Cross-repo guidance inherited from AGENT_DOCS_HOME for any project"
+
 [[document]]
 context = "project-dev"
 scope = "project"
