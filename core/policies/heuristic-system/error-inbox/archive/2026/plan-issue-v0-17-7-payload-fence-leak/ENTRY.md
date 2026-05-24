@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-24
 - Area: plan-issue record contract; `dispatch:create-plan-tracking-issue`
   and any skill that consumes `plan-issue record open` output
@@ -16,8 +16,8 @@
 - Source upstream fixed release: sympoies/nils-cli v0.18.0, published
   2026-05-24T08:32:50Z
 - Resolution state: upstream fixed and v0.18.0 live verified; local
-  surface pin is included in PR #85, with archive pending after merge
-  and issue #84 closeout.
+  surface pin and issue #84 lifecycle evidence are included in PR #85,
+  and this case is archived.
 - Source local context: `docs/source/nils-cli-surface.md` is refreshed
   to `v0.18.0`; verification below used an installed v0.18.0 host. The
   previous v2 marker migration (inbox case
@@ -247,6 +247,12 @@ case landed (`plan-issue-v2-marker-collapse-drift`), expanded from
 
 ## Next Action
 
-- After the skill lifecycle management PR lands with the v0.18.0 surface pin and
-  issue #84 lifecycle evidence, set this entry to `promoted` and archive it
-  under `error-inbox/archive/2026/`.
+None. Resolved by nils-cli v0.18.0, local surface pin, and issue #84/#85 lifecycle delivery.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/85`
+
+## Archive
+
+- Archived: 2026-05-24
+- Reason: Resolved by nils-cli v0.18.0 and issue #84/#85 lifecycle delivery.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/85`

@@ -30,8 +30,9 @@ still publish personal path fragments if the rendered payload includes them.
 - Live GitHub read-back after manual redaction: #84 body had no personal path,
   comments with personal paths were `0`, and comments containing `$HOME` were
   `3`.
-- Related active case: `plan-issue-v0-17-7-payload-fence-leak` covers the
-  v0.17.7 visible payload-fence rendering regression. It does not cover
+- Related archived case:
+  `archive/2026/plan-issue-v0-17-7-payload-fence-leak` covers the v0.17.7
+  visible payload-fence rendering regression. It does not cover
   provider-bound local-path privacy checks.
 - Existing repository-side guards are insufficient for this class because the
   unsafe string may be introduced into a transient body file or generated

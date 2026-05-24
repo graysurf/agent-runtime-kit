@@ -3,19 +3,23 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: implementation complete; local validation passed; PR delivery pending
+- Status: implementation complete; local validation/review passed; PR merge pending
 - Target scope: Sprint 1-4 skill lifecycle management surface
 - Execution window: Sprint 1-4
-- Current task: PR review and delivery
-- Next task: merge PR, post validation/session state, and close tracker
+- Current task: merge PR #85 and close tracking issue #84
+- Next task: post final state/closeout after PR merge
 - Last updated: 2026-05-24
-- Branch/commit/PR: feat/skill-lifecycle-management (implementation commit pending)
+- Branch/commit/PR: feat/skill-lifecycle-management / b564ed9 / PR #85
 - Source document: docs/plans/skill-lifecycle-management/skill-lifecycle-management-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/84
 - Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4527937190
 - Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4527937281
 - Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4527937384
+- Delivery PR: https://github.com/graysurf/agent-runtime-kit/pull/85
+- Session snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4528027511
+- Validation snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4528027585
+- Review snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4528027621
 - Predecessor issue: none
 
 ## Validation Plan
@@ -65,8 +69,9 @@
   sandbox expected lists, runtime-smoke matrix/cases, and stable docs.
 - 2026-05-24: Verified nils-cli v0.18.0 live (`agent-runtime`,
   `plan-issue`, and `plan-tooling` all report 0.18.0) and refreshed
-  `docs/source/nils-cli-surface.md`. The v0.17.7 payload-fence leak entry now
-  has local resolution evidence pending PR merge/archive.
+  `docs/source/nils-cli-surface.md`. The v0.17.7 payload-fence leak entry is
+  promoted and archived under
+  `core/policies/heuristic-system/error-inbox/archive/2026/plan-issue-v0-17-7-payload-fence-leak/`.
 
 ## Validation
 
