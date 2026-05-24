@@ -2,22 +2,25 @@
 
 - Snapshot date: 2026-05-24
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
-- Source command: `ls ~/Project/sympoies/nils-cli/crates/`
-- Active `git describe --tags` output: `v0.18.0`
-- Head commit: `f4b21ee` (release commit after PR [#464](https://github.com/sympoies/nils-cli/pull/464) "fix(plan-issue): hide record payload comments" and PR [#465](https://github.com/sympoies/nils-cli/pull/465) "Add agent-docs global scope inheritance")
-- Release: [`v0.18.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.18.0), Homebrew tap formula at [`Formula/nils-cli.rb@0a4d567`](https://github.com/sympoies/homebrew-tap/blob/0a4d567dddb806ac34261d2c8c0641689ecae501/Formula/nils-cli.rb)
-- Prior pin: `v0.17.7` at `9c1d6e2` (plan-issue v2 marker collapse, strict record gates, retired record subcommand hiding, v3 migration notes, and forge-cli `--repo` propagation)
+- Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
+  `sympoies/nils-cli` release worktree
+- Active `git describe --tags` output: `v0.19.0`
+- Head commit: `3b74881` (`agent-runtime pr-body render`, v0.19.0 version
+  bump, and strict docs-hygiene fixture cleanup)
+- Release: [`v0.19.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.19.0), Homebrew tap formula at [`Formula/nils-cli.rb@2b14172`](https://github.com/sympoies/homebrew-tap/blob/2b14172/Formula/nils-cli.rb)
+- Prior pin: `v0.18.0` at `f4b21ee` (plan-issue hidden payload carriers and
+  agent-docs global scope inheritance); `v0.19.0` adds the PR body renderer.
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli minor
-release (the next bump after `v0.18.0`).
+release (the next bump after `v0.19.0`).
 
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (32 entries).
+  `crates/` in the source repo (31 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -30,9 +33,9 @@ Notes on derivation:
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight. As of `v0.18.0`, global scope inheritance is available from the released binary.                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
-| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.17.5`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, and `purge-state` bodies through Homebrew. No surface-level changes in `v0.18.0`; new lifecycle skills pin this released floor. |
+| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.19.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
-| `agent-workflow-primitives` | `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate.                                                                                                                                                      |
+| `agent-workflow-primitives` | `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate.                                                                                                                                                      |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
 | `api-grpc`                  | `api-grpc`                                                                                                          | gRPC API testing CLI.                                                                                                                                                                                                                                                  |
 | `api-rest`                  | `api-rest`                                                                                                          | REST API testing CLI.                                                                                                                                                                                                                                                  |
@@ -58,7 +61,6 @@ Notes on derivation:
 | `plan-tooling`              | `plan-tooling`                                                                                                      | Plan bundle linter / validator.                                                                                                                                                                                                                                        |
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |
-| `test-first-evidence`       | `test-first-evidence`                                                                                               | Test-first evidence helper.                                                                                                                                                                                                                                            |
 | `web-evidence`              | `web-evidence`                                                                                                      | Web evidence capture helper.                                                                                                                                                                                                                                           |
 
 ## Refresh procedure

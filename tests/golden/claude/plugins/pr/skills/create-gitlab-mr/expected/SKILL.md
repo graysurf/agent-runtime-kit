@@ -10,6 +10,8 @@ description:
 
 Prereqs:
 
+- `agent-runtime` is installed from the released nils-cli package and available
+  on `PATH`.
 - `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
 - `glab auth status` succeeds for the target GitLab host when running live mode.
@@ -20,7 +22,8 @@ Prereqs:
 Inputs:
 
 - MR kind: `feature` or `bug`.
-- Source branch, base branch, title, and body file.
+- Source branch, base branch, title, and body section files for
+  `agent-runtime pr-body render`.
 - Optional labels and reviewers supported by the target GitLab project.
 - Draft state: draft by default; use `--no-draft` only when the caller has
   explicitly chosen ready-for-review.
@@ -28,20 +31,53 @@ Inputs:
 Outputs:
 
 - A GitLab merge request created by `forge-cli`.
+- A standardized MR body rendered by `agent-runtime pr-body render`, not
+  hand-written section scaffolding.
 - Text or JSON output from the CLI, depending on `--format`.
 - Provider command evidence in `--dry-run` mode.
 
 Failure modes:
 
 - GitLab auth, repo detection, or branch upstream checks fail.
-- The MR body is missing required `forge-cli` sections such as `## Summary` and
-  `## Test plan`.
+- The MR body section files are missing, empty, or fail the
+  `agent-runtime pr-body render` contract.
+- The rendered MR body is missing required `forge-cli` sections such as
+  `## Summary` and `## Test plan`.
 - The branch is not pushed, the base branch is invalid, or the provider rejects
   labels or reviewers.
 
 ## Entrypoint
 
-Use the released CLI directly:
+Render the body with `agent-runtime` before calling the provider layer:
+
+```bash
+agent-runtime pr-body render \
+  --kind feature \
+  --summary-file "$SUMMARY_FILE" \
+  --changes-file "$CHANGES_FILE" \
+  --test-first-file "$TEST_FIRST_FILE" \
+  --test-plan-file "$TEST_PLAN_FILE" \
+  --risk-file "$RISK_FILE" \
+  --out "$MR_BODY_FILE"
+```
+
+For bug MRs, use the bug-specific section files:
+
+```bash
+agent-runtime pr-body render \
+  --kind bug \
+  --summary-file "$SUMMARY_FILE" \
+  --problem-file "$PROBLEM_FILE" \
+  --reproduction-file "$REPRODUCTION_FILE" \
+  --issues-file "$ISSUES_FILE" \
+  --fix-approach-file "$FIX_APPROACH_FILE" \
+  --test-first-file "$TEST_FIRST_FILE" \
+  --test-plan-file "$TEST_PLAN_FILE" \
+  --risk-file "$RISK_FILE" \
+  --out "$MR_BODY_FILE"
+```
+
+Then use the released provider CLI directly:
 
 ```bash
 forge-cli --provider gitlab pr create \
@@ -66,17 +102,20 @@ forge-cli --provider gitlab --dry-run --format json pr create \
 1. Inspect `git status --short --branch` and confirm the branch contains only
    the intended change set.
 2. Push the branch and ensure it has an upstream tracking branch.
-3. Prepare an MR body with at least `## Summary` and `## Test plan`; include
-   validation commands and risk notes in prose.
-4. Run `forge-cli --provider gitlab --dry-run --format json pr create ...` when
-   the command shape or provider resolution needs evidence.
+3. Write the narrative content into section files, then render the MR body with
+   `agent-runtime pr-body render --kind feature|bug ... --out "$MR_BODY_FILE"`.
+   Do not hand-write the section scaffolding or derive the title/body from
+   `git log -1`.
+4. Run `forge-cli --provider gitlab --dry-run --format json pr create ...` before
+   the live create to verify branch/kind/body/provider gates.
 5. Run `forge-cli --provider gitlab pr create ...` to create the draft MR.
 6. Record the MR URL, branch, validation, and any provider failure in the
    execution ledger or issue timeline.
 
 ## Boundary
 
+`agent-runtime pr-body render` owns standardized feature/bug MR body scaffolding.
 `forge-cli` owns provider command rendering, body validation, provider
 detection, and the live `glab mr create` call. The workflow owner owns the MR
-narrative, validation evidence, branch hygiene, and the decision to create a
-draft or ready MR.
+narrative content, validation evidence, branch hygiene, and the decision to
+create a draft or ready MR.
