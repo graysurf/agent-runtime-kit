@@ -120,7 +120,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile "$PROFILE" \
   --linked-pr "$OWNER_REPO!$MR_NUMBER" \
   --approval "$APPROVAL" \
-  --bundle "$PLAN_BUNDLE"
+  --bundle "$PLAN_BUNDLE" \
+  --add-label state::closed \
+  --remove-label state::needs-triage
 ```
 
 Use `profile=tracking` for lightweight plan-tracking issues and
