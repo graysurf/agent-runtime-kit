@@ -47,7 +47,7 @@ behavior are explicitly deferred.
   - Add focused docs or runbook updates only where maintainers need the
     lifecycle contract outside this plan bundle.
 - Out of scope:
-  - Copying the legacy `/Users/terry/Project/graysurf/agent-kit/skills/tools/skill-management`
+  - Copying the legacy `$HOME/Project/graysurf/agent-kit/skills/tools/skill-management`
     tree.
   - Project-local `.agents/skills` scaffolding or any revival of
     `$HOME/.agents` as a live skill-discovery indirection.
