@@ -285,9 +285,9 @@ can pivot to a uniform table:
   (`docs/source/inventory-target-architecture.md:545-554`,
   `manifests/product-capabilities.yaml:15-22`).
 - arkit source: `core/skills/<domain>/<skill>/`, rendered to
-  `build/codex/plugins/<domain>/skills/<skill>/`; 49 Codex skill
+  `build/codex/plugins/<domain>/skills/<skill>/`; 60 Codex skill
   entries are declared in `manifests/skills.yaml`
-  (`manifests/skills.yaml:12-715`).
+  (`manifests/skills.yaml:12-878`).
 - arkit install mechanism: one non-recursive directory symlink per
   active skill folder under `$CODEX_HOME/skills/<domain>/<skill>/`
   (`targets/codex/link-map.yaml:7-12`,
@@ -301,7 +301,7 @@ can pivot to a uniform table:
   deterministic mode exercises representative skills; live Codex
   Desktop acceptance requires `codex debug prompt-input`
   (`DEVELOPMENT.md:157-178`,
-  `tests/sandbox/codex/expected-skills.txt:1-49`,
+  `tests/sandbox/codex/expected-skills.txt:1-60`,
   `docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
 - arkit support today: **shipped (rendered + directory symlink)**.
 
