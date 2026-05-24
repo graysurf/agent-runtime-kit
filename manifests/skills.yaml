@@ -94,7 +94,8 @@ skills:
       claude:
         name: bench
         render_to: plugins/meta/skills/bench/SKILL.md
-    required_clis: {}
+    required_clis:
+      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.bootstrap
@@ -107,7 +108,8 @@ skills:
       claude:
         name: bootstrap
         render_to: plugins/meta/skills/bootstrap/SKILL.md
-    required_clis: {}
+    required_clis:
+      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.sync-runtime-skills
@@ -134,7 +136,8 @@ skills:
       claude:
         name: demo
         render_to: plugins/meta/skills/demo/SKILL.md
-    required_clis: {}
+    required_clis:
+      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.deploy
@@ -147,7 +150,8 @@ skills:
       claude:
         name: deploy
         render_to: plugins/meta/skills/deploy/SKILL.md
-    required_clis: {}
+    required_clis:
+      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.agent-scope-lock
@@ -242,7 +246,8 @@ skills:
       claude:
         name: pre-pr
         render_to: plugins/meta/skills/pre-pr/SKILL.md
-    required_clis: {}
+    required_clis:
+      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.release
@@ -255,7 +260,8 @@ skills:
       claude:
         name: release
         render_to: plugins/meta/skills/release/SKILL.md
-    required_clis: {}
+    required_clis:
+      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.repo-retro

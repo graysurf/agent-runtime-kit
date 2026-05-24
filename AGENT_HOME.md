@@ -169,6 +169,10 @@
   do not track or symlink the whole runtime config file.
 - Prefer project-defined validation commands. If none exist, run the smallest
   meaningful checks and report what was or was not run.
+- When running project build, test, validation, or repository-owned script
+  commands, prefer `agent-run exec --cwd <repo> -- <command> ...` when
+  available so `.envrc` / `.env` handling is explicit in non-interactive agent
+  sessions. Do not run `direnv allow` automatically.
 
 ## Heuristic System
 

@@ -73,7 +73,7 @@ Each row is one `(surface, product)` pair.
 - Claude: `min_version` **2.1.145**, `recommended_version` 2.1.145,
   `min_version_effective_from` 2026-06-03, probe `claude --version`
   (`manifests/runtime-roots.yaml:29-38`).
-- nils-cli surface: snapshot **v0.18.0**
+- nils-cli surface: snapshot **v0.20.0**
   (`docs/source/nils-cli-surface.md:1-15`).
 - Per-skill nils-cli floors: `manifests/skills.yaml` `required_clis`;
   tighter than the surface-level pin where a specific binary is
@@ -92,7 +92,7 @@ Each row is one `(surface, product)` pair.
 | 4. plugin marketplace (`.claude-plugin/marketplace.json`) | codex | not-applicable | Codex has no marketplace API | — | n/a | n/a | — | — | `manifests/product-capabilities.yaml:43`; `docs/source/inventory-target-architecture.md:566-567` |
 | 4. plugin marketplace (`.claude-plugin/marketplace.json`) | claude | shipped | `plugin-manifest-copy` of root marketplace.json | `targets/claude/.claude-plugin/marketplace.json` | 2.1.145 | v0.17.5 | gate 5 (audit-drift), gate 7 | — | `manifests/product-capabilities.yaml:59-63`; `targets/claude/link-map.yaml:130-133` |
 | 5. plugin-scoped skill discovery (`plugins/<p>/skills/<s>/`) | codex | not-applicable | Codex local skills live under `$CODEX_HOME/skills`, not plugin roots; row 15 is the active root | — | n/a | n/a | — | — | `docs/source/inventory-target-architecture.md:545-554, 569-584` |
-| 5. plugin-scoped skill discovery (`plugins/<p>/skills/<s>/`) | claude | shipped | rendered to `build/claude/plugins/<p>/skills/<s>/`, then `symlinked-file` `recursive: true` per plugin | `core/skills/<domain>/<skill>/` → `build/claude/plugins/<p>/skills/<s>/` (10 plugins) | 2.1.145 | v0.17.5 | gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox), gate 8 (runtime-smoke) | — | `manifests/product-capabilities.yaml:62`; `targets/claude/link-map.yaml:20-24` |
+| 5. plugin-scoped skill discovery (`plugins/<p>/skills/<s>/`) | claude | shipped | rendered to `build/claude/plugins/<p>/skills/<s>/`, then `symlinked-file` `recursive: true` per plugin | `core/skills/<domain>/<skill>/` → `build/claude/plugins/<p>/skills/<s>/` (10 plugins) | 2.1.145 | v0.20.0 | gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox), gate 8 (runtime-smoke) | — | `manifests/product-capabilities.yaml:62`; `targets/claude/link-map.yaml:20-24` |
 | 6. slash command files (`commands/<n>.md`) | codex | not-applicable | Codex has no `commands/` loader in the runtime-kit activation surface | — | n/a | n/a | — | — | `docs/source/inventory-target-architecture.md:540-560` |
 | 6. slash command files (`commands/<n>.md`) | claude | shipped | `symlinked-file` of `targets/claude/commands` directory into `~/.claude/commands` (one link, individual command files served from the linked dir) | `targets/claude/commands/new-project-skill.md`, `targets/claude/commands/memory-clean.md` | 2.1.145 | v0.17.5 | gate 7 (sandbox install) | — | `docs/source/inventory-target-architecture.md:228-230`; `targets/claude/link-map.yaml:140-143` |
 | 7. subagent definitions (`agents/<n>.md`) | codex | not-applicable | Codex has no file-backed subagent loader; `AGENT_HOME.md` carries delegation modes as policy text (surface 17) | — | n/a | n/a | — | — | `AGENT_HOME.md:37-49`; `docs/source/inventory-target-architecture.md:226-228` |
@@ -111,7 +111,7 @@ Each row is one `(surface, product)` pair.
 | 13. heuristic system (curated retained records) | claude | shipped | same shared policy root | `core/policies/heuristic-system/` | 2.1.145 | v0.17.5 (`heuristic-inbox`) | gate 8 (runtime-smoke deterministic, meta domain) | — | `docs/source/inventory-target-architecture.md:950-956` |
 | 14. runtime state (`state_home`) | codex | shipped | `CODEX_AGENT_STATE_HOME` env var + `agent-out` runtime allocator | `manifests/runtime-roots.yaml` codex block | 0.130.0 | v0.17.5 (`agent-out >=0.13.0` floor) | gate 5 (drift), gate 7 (doctor `block=0`) | — | `manifests/runtime-roots.yaml:17-23`; `manifests/product-capabilities.yaml:40-42` |
 | 14. runtime state (`state_home`) | claude | shipped | `CLAUDE_KIT_STATE_HOME` env var + `agent-out` runtime allocator | `manifests/runtime-roots.yaml` claude block | 2.1.145 | v0.17.5 (`agent-out >=0.13.0` floor) | gate 5 (drift), gate 7 (doctor `block=0`) | — | `manifests/runtime-roots.yaml:29-35`; `manifests/product-capabilities.yaml:64-66` |
-| 15. Codex local skill root (`$CODEX_HOME/skills/<d>/<s>/`) | codex | shipped | one directory symlink per active skill folder under `$CODEX_HOME/skills/<d>/<s>/` | `core/skills/<domain>/<skill>/` → `build/codex/plugins/<d>/skills/<s>/` (53 entries) | 0.130.0 | v0.18.0 | gate 3 (render), gate 5 (golden), gate 6 (drift), gate 7 (`doctor --class skill-surface --product codex`), gate 8 (sandbox), gate 9 (runtime-smoke) | `codex debug prompt-input` fresh session | `targets/codex/link-map.yaml:7-12, 28-44, 57-127, 343-389`; `manifests/skills.yaml` |
+| 15. Codex local skill root (`$CODEX_HOME/skills/<d>/<s>/`) | codex | shipped | one directory symlink per active skill folder under `$CODEX_HOME/skills/<d>/<s>/` | `core/skills/<domain>/<skill>/` → `build/codex/plugins/<d>/skills/<s>/` (53 entries) | 0.130.0 | v0.20.0 | gate 3 (render), gate 5 (golden), gate 6 (drift), gate 7 (`doctor --class skill-surface --product codex`), gate 8 (sandbox), gate 9 (runtime-smoke) | `codex debug prompt-input` fresh session | `targets/codex/link-map.yaml:7-12, 28-44, 57-127, 343-389`; `manifests/skills.yaml` |
 | 15. Codex local skill root (`$CODEX_HOME/skills/<d>/<s>/`) | claude | not-applicable | Claude uses plugin-scoped skill discovery (surface 5) instead | — | n/a | n/a | — | — | `manifests/product-capabilities.yaml:45-62` |
 | 16. Codex hook registration (`config.toml` managed block) | codex | shipped | `managed-block` sync into `$CODEX_HOME/config.toml`, surface `hooks`, hash-comment markers | `targets/codex/hooks/config.block.toml` | 0.130.0 | v0.17.5 | gate 5 (drift, managed-block presence + marker pair), gate 10 (`tests/hooks/run.sh`) | — | `targets/codex/link-map.yaml:396-401`; `docs/source/inventory-target-architecture.md:1256-1270` |
 | 16. Codex hook registration (`config.toml` managed block) | claude | not-applicable | Claude uses `settings.json` block (surface 9) instead; the two are different upstream primitives | — | n/a | n/a | — | — | `manifests/runtime-roots.yaml:17-38` (`hook_config_strategy` differs per product) |
@@ -164,7 +164,7 @@ need the plan's view of the same drift vectors.
   `recommended_version` / `min_version_effective_from` for either
   product → refresh the affected `min_product` cells in this file in
   the same PR.
-- `docs/source/nils-cli-surface.md` rolls past `v0.18.0` →
+- `docs/source/nils-cli-surface.md` rolls past `v0.20.0` →
   refresh `min_nils_cli` cells and the surface-pin paragraph. The
   Position 2 surface-pin alignment gate in `scripts/ci/all.sh` fails
   closed whenever this refresh lags the host `agent-runtime --version`,

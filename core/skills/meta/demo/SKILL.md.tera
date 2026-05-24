@@ -13,6 +13,8 @@ Prereqs:
 
 - Run from the target repository root unless the user explicitly names another
   repository path.
+- `agent-run` is installed from nils-cli 0.20.0 or newer and available on
+  `PATH`.
 - The target repository owns an executable `.agents/scripts/demo.sh`.
 - Demo behavior is repository-specific and may start local servers, render sample
   data, or print manual verification steps.
@@ -30,15 +32,18 @@ Outputs:
 Failure modes:
 
 - `.agents/scripts/demo.sh` is missing or is not executable.
+- `agent-run` is unavailable or reports a blocked required project
+  environment.
 - The project-local script exits non-zero.
 - The requested repository path is not a directory.
 
 ## Entrypoint
 
-Resolve the repository root, then invoke the project-local script directly:
+Resolve the repository root, then invoke the project-local script through
+`agent-run` so repository `.envrc` / `.env` decisions are explicit:
 
 ```bash
-.agents/scripts/demo.sh "$@"
+agent-run exec --cwd "$repo_root" -- ./.agents/scripts/demo.sh "$@"
 ```
 
 When the script is missing or not executable, report:
@@ -51,7 +56,8 @@ no project-local implementation: .agents/scripts/demo.sh
 
 1. Resolve the target repository root.
 2. Verify `.agents/scripts/demo.sh` exists and is executable.
-3. Run the script from the repository root, passing through user arguments.
+3. Run the script through `agent-run exec --cwd "$repo_root" --`, passing
+   through user arguments.
 4. Relay any local URL, artifact path, or manual check printed by the script.
 5. Do not invent a generic demo flow in runtime-kit.
 
