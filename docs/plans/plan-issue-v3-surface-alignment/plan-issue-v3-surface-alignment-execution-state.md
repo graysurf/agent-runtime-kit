@@ -6,19 +6,21 @@
 - Status: in-progress
 - Target scope: runtime-kit skill surface alignment and nils-cli retired helper removal
 - Execution window: Sprint 1-3
-- Current task: final validation, commits, and PR delivery
-- Next task: publish runtime-kit and nils-cli delivery evidence back to issue #93
+- Current task: PR review and live-home drift follow-up
+- Next task: review draft PRs and decide whether to clean up `heuristic-session-closeout` live drift before merge
 - Last updated: 2026-05-24
-- Branch/commit/PR: feat/plan-issue-v3-surface / 4e2f90a + working tree / pending
+- Branch/commit/PR: feat/plan-issue-v3-surface / 3d1c478 / https://github.com/graysurf/agent-runtime-kit/pull/94
 - Source document: docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/93
 - Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889172
 - Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889245
 - Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889341
-- Delivery PR: pending
-- Session snapshot: pending
-- Validation snapshot: pending
+- Delivery PR: https://github.com/graysurf/agent-runtime-kit/pull/94
+- Cross-repo nils-cli PR: https://github.com/sympoies/nils-cli/pull/475
+- Session snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993496
+- Validation snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993905
+- Latest state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528994315
 - Review snapshot: pending
 - Heuristic inbox entry: core/policies/heuristic-system/error-inbox/plan-issue-v3-surface-drift/ENTRY.md
 - Cross-repo implementation target: /Users/terry/Project/sympoies/nils-cli
@@ -63,7 +65,7 @@
 | 2.1 | done | Update docs, manifests, and rendered outputs | render update + manifest/docs diff | Docs/source, manifests, build outputs, and goldens aligned. |
 | 2.2 | done | Update runtime-smoke and drift checks | deterministic dispatch/pr smoke | Smoke fixtures now exercise v3 only. |
 | 3.1 | done | Remove helper subcommands and active docs/tests in nils-cli | nils-cli local-fast passed | Cross-repo implementation verified in sibling worktree. |
-| 3.2 | in-progress | Verify downstream alignment and update tracking | execution state updated; issue comments pending | Final issue #93 state/validation comments pending. |
+| 3.2 | done | Verify downstream alignment and update tracking | issue #93 session/validation/state comments + final audit | Dashboard repaired; PR review remains outside implementation task. |
 
 ## Session Log
 
@@ -84,6 +86,11 @@
   clippy, nextest, and doc tests passed. Runtime-kit source/golden/smoke gates
   passed; full `scripts/ci/all.sh` is blocked by unrelated live-home drift for
   `heuristic-session-closeout`.
+- 2026-05-24: Opened draft PRs
+  [agent-runtime-kit #94](https://github.com/graysurf/agent-runtime-kit/pull/94)
+  and [nils-cli #475](https://github.com/sympoies/nils-cli/pull/475), then
+  posted session, validation, and state lifecycle comments to issue #93 and
+  repaired the dashboard.
 
 ## Validation
 
@@ -112,3 +119,8 @@
 | `bash tests/projects/project-local-smoke/run.sh` | passed | Project-local smoke passed for bench/bootstrap/demo/deploy/pre-pr/release. | local output |
 | `bash tests/hooks/run.sh` | passed | Shared hook contract tests passed 9/9. | local output |
 | `bash scripts/ci/all.sh` | blocked | Source/golden gates reached position 6; `agent-runtime audit-drift` failed on unrelated live runtime extra surface `heuristic-session-closeout`. | live-home drift |
+| `plan-issue record post --kind session --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted session snapshot with runtime-kit #94 and nils-cli #475 links. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993496 |
+| `plan-issue record post --kind validation --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted validation snapshot with partial status and live-home drift blocker. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993905 |
+| `plan-issue record post --kind state --issue 93 --repo graysurf/agent-runtime-kit` | passed | Posted latest state snapshot with PR links and blocker. | https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528994315 |
+| `plan-issue record repair-dashboard --issue 93 --repo graysurf/agent-runtime-kit --format json` | passed | Repaired issue #93 dashboard with latest session, validation, state, PR links, and blocker. | local output |
+| `plan-issue record audit --profile tracking --body-file ... --comments-json ... --format json` | passed | Final read-back audit returned `missing_required:[]`, `unsupported_markers:[]`, `recognized_count:6`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-221706-plan-issue-v3-prs/issue-93-final-audit.json` |
