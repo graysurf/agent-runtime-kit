@@ -11,7 +11,8 @@ description:
 Prereqs:
 
 - `plan-tooling`, `plan-issue >=0.20.0`, `forge-cli`,
-  `review-evidence`, and `review-specialists` are available on `PATH`.
+  `review-evidence`, and `review-specialists` are available on `PATH`. The
+  `code-review-pre-merge-gate` workflow uses `review-specialists`.
 - The target issue has recoverable plan/task state and linked source context.
 - The target issue is a lightweight plan-tracking issue. If it contains
   dispatch-profile comments or dispatch lane records, route to the dispatch
@@ -28,14 +29,15 @@ Inputs:
 - Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
   `workflow::tracking` for tracking-issue delivery.
 - State/session/validation/review payload JSON and visible summaries.
-- Review evidence, specialist review outcome, and explicit disposition for
+- Review evidence, pre-merge review gate outcome, and explicit disposition for
   every meaningful finding.
 
 Outputs:
 
 - A pushed branch and PR for the selected issue scope.
 - Required checks and review evidence completed before merge.
-- At least `testing` and `maintainability` specialist lenses for every PR.
+- A `code-review-pre-merge-gate` result with at least `testing` and
+  `maintainability` for every PR.
 - Issue-visible state, session, validation, and review comments posted through
   `plan-issue record post`.
 - When closeout runs, `plan-issue record close` posts closeout evidence,
@@ -46,8 +48,8 @@ Failure modes:
 - Issue state is incomplete, stale, or ambiguous.
 - The issue is actually a dispatch runtime.
 - Local or remote validation fails.
-- Specialist review or review-evidence findings remain unresolved or lack an
-  issue-visible disposition.
+- Pre-merge review gate or review-evidence findings remain unresolved or lack
+  an issue-visible disposition.
 - `forge-cli` PR checks, ready, merge, or comment operations fail.
 - `plan-issue record close` rejects the current lifecycle evidence.
 
@@ -86,7 +88,8 @@ forge-cli pr deliver \
   --no-merge
 ```
 
-Record review evidence before merge:
+Run `code-review-pre-merge-gate` and record review evidence before merge. Its
+minimum underlying scope is:
 
 ```bash
 review-specialists scope --base "$BASE_REF" --testing --maintainability --format json
@@ -134,15 +137,15 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
    before the first live PR in that repo. Use `label audit` when mutation is
    not allowed.
 6. Create or deliver the PR with `forge-cli`, using `--no-merge` until checks
-   and specialist review have passed.
-7. Run mandatory specialist review for every PR using:
-   `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`.
+   and the pre-merge review gate have passed.
+7. Run `code-review-pre-merge-gate` for every PR using:
+   `skills/code-review/code-review-pre-merge-gate/SKILL.md`.
 8. Classify and repair review findings. Concrete findings block merge until
    fixed or explicitly dispositioned in issue-visible evidence.
-9. Post the delivery review outcome comment before merge using:
-   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
-10. Merge only after checks, specialist review, review evidence, lifecycle audit,
-   and issue-backed completion gates pass.
+9. Post the delivery review outcome body produced by
+   `code-review-pre-merge-gate` before merge.
+10. Merge only after checks, the pre-merge review gate, review evidence,
+   lifecycle audit, and issue-backed completion gates pass.
 11. Append state, session, validation, and review comments through
    `record post`; include PR labels in the visible summary and repair the
    dashboard after each meaningful lifecycle event.
@@ -160,7 +163,7 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 `plan-issue record` owns lifecycle comments, dashboard repair, audit, strict
 closeout, linked PR provider verification, and issue close. `forge-cli` owns PR
 provider lifecycle. `review-evidence` owns retained review records.
-`code-review-specialists` supplies read-only specialist review. This workflow
-owns lightweight issue execution, review judgment, repair decisions,
+`code-review-pre-merge-gate` supplies the read-only pre-merge review gate. This
+workflow owns lightweight issue execution, review judgment, repair decisions,
 issue-visible finding dispositions, delivery outcome comment URLs, and final
 status reporting.

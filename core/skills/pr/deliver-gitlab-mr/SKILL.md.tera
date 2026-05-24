@@ -12,7 +12,8 @@ Prereqs:
 
 - `agent-runtime`, `forge-cli`, `plan-issue >=0.20.0`, and
   `review-specialists` are installed from the released nils-cli package and
-  available on `PATH`.
+  available on `PATH`. The `code-review-pre-merge-gate` workflow uses
+  `review-specialists`.
 - `glab auth status` succeeds for the target GitLab host when running live mode.
 - The working tree contains only the intended delivery changes.
 - Local validation and review findings have been resolved before merge.
@@ -28,8 +29,7 @@ Inputs:
 - Optional `--no-merge` when the workflow should stop after checks.
 - Optional `--no-closeout` to stop after delivery readiness checks and before
   linked issue closeout.
-- Mandatory pre-merge specialist review using the shared delivery specialist
-  review gate.
+- Mandatory pre-merge review through `code-review-pre-merge-gate`.
 - If the MR description references a linked tracking or dispatch issue, use
   non-closing references such as `Refs #<issue>`; GitLab close keywords are
   refused.
@@ -38,7 +38,7 @@ Outputs:
 
 - A draft or ready GitLab MR opened from the current branch.
 - Pipeline or check state waited through `forge-cli pr wait-checks`.
-- A `code-review-specialists` pass completed before merge with at least
+- A `code-review-pre-merge-gate` result completed before merge with at least
   `testing` and `maintainability`.
 - A delivery review outcome comment posted to the MR before merge.
 - A merged MR through `forge-cli pr merge`, unless `--no-merge` is supplied.
@@ -54,7 +54,7 @@ Failure modes:
   explicit no-checks decision.
 - Selected labels fail catalog validation or the provider rejects label
   application.
-- Mandatory specialist review findings are unresolved or undispositioned.
+- Mandatory pre-merge review gate findings are unresolved or undispositioned.
 - Delivery review outcome comment posting fails.
 - An MR description uses a GitLab auto-close keyword against a linked
   plan-tracking or dispatch issue.
@@ -102,7 +102,7 @@ forge-cli pr deliver \
   --no-merge
 ```
 
-Run the shared review gate before merge:
+Run `code-review-pre-merge-gate` before merge. Its minimum underlying scope is:
 
 ```bash
 review-specialists scope --base "$BASE_REF" --testing --maintainability --format json
@@ -145,12 +145,13 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    `--label-catalog manifests/forge-labels.yaml` when present, and
    `--no-merge` so checks complete before the
    mandatory review gate.
-7. Follow the shared delivery specialist review gate:
-   `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`.
-8. Keep `code-review-specialists` read-only. Repair concrete findings in this
-   delivery workflow, then rerun validation, checks, and affected lenses.
-9. Post the delivery review outcome comment before merge using:
-   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
+7. Run `code-review-pre-merge-gate`:
+   `skills/code-review/code-review-pre-merge-gate/SKILL.md`.
+8. Keep `code-review-pre-merge-gate` read-only. Repair concrete findings in
+   this delivery workflow, then rerun validation, checks, and affected review
+   lenses.
+9. Post the delivery review outcome body produced by
+   `code-review-pre-merge-gate` before merge.
 10. Merge with `forge-cli --provider gitlab pr merge "$MR_NUMBER"` unless
    `--no-merge` is the requested final stop.
 11. After merge, if the MR description referenced a linked tracking or dispatch
@@ -165,7 +166,7 @@ Use `profile=tracking` for lightweight plan-tracking issues and
 
 `forge-cli` owns provider create, checks wait, ready, and merge calls.
 `plan-issue record` owns linked issue lifecycle closeout. The workflow owner
-owns scope judgment, code changes, local validation, specialist review
-decisions, repair loops, delivery outcome comments, and any temporary provider
-fallback decision. MR-description auto-close remains banned for issue-backed
+owns scope judgment, code changes, local validation, pre-merge gate decisions,
+repair loops, delivery outcome comments, and any temporary provider fallback
+decision. MR-description auto-close remains banned for issue-backed
 plan records.

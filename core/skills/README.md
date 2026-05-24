@@ -28,6 +28,9 @@ human index for scanning the skill catalog by category and skill series.
 
 ## Code Review
 
+Routing guidance for the skill family lives in
+[code-review/README.md](./code-review/README.md).
+
 | Series | Skill | Purpose |
 | --- | --- | --- |
 | Quick pass | [code-review-quick-pass](./code-review/code-review-quick-pass/) | Runs a lightweight read-only review for small or ordinary diffs before escalating to specialist review. |
