@@ -10,12 +10,14 @@ MODE="repo"
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/ci/skill-governance-audit.sh [--fixture create|remove]
+Usage: bash scripts/ci/skill-governance-audit.sh [--fixture create|remove|create-project|remove-project]
 
 Checks:
-  default          Validate active repo source/manifests/plugins/reminders.
-  --fixture create Validate the create-skill fixture completeness.
-  --fixture remove Validate the remove-skill dry-run fixture coverage.
+  default                  Validate active repo source/manifests/plugins/reminders.
+  --fixture create         Validate the create-skill fixture completeness.
+  --fixture remove         Validate the remove-skill dry-run fixture coverage.
+  --fixture create-project Validate the create-project-skill fixture completeness.
+  --fixture remove-project Validate the remove-project-skill dry-run fixture coverage.
 USAGE
 }
 
@@ -27,7 +29,7 @@ while [ "$#" -gt 0 ]; do
         exit 2
       fi
       case "$2" in
-        create | remove)
+        create | remove | create-project | remove-project)
           MODE="$2-fixture"
           ;;
         *)
@@ -244,7 +246,17 @@ def validate_repo() -> None:
     claude_ids = sandbox_skill_ids(ROOT, "claude")
     codex_link_ids = codex_link_skill_ids(ROOT)
     semver = re.compile(r"^>=\d+\.\d+\.\d+(?:[-+][A-Za-z0-9._-]+)?$")
-    lifecycle_ids = {"meta.create-skill", "meta.remove-skill"}
+    lifecycle_ids = {
+        "meta.create-skill",
+        "meta.create-project-skill",
+        "meta.remove-skill",
+        "meta.remove-project-skill",
+    }
+    repo_lifecycle_ids = {"meta.create-skill", "meta.remove-skill"}
+    project_lifecycle_ids = {
+        "meta.create-project-skill",
+        "meta.remove-project-skill",
+    }
 
     for skill_id, entry in sorted(by_id.items()):
         domain, skill = skill_id.split(".", 1)
@@ -282,11 +294,16 @@ def validate_repo() -> None:
             if "<TBD" in floor or not semver.match(floor):
                 fail(f"{skill_id} required_clis {cli} has invalid floor {floor!r}")
 
-        if skill_id in lifecycle_ids:
+        if skill_id in repo_lifecycle_ids:
             body = read(ROOT / source / "SKILL.md.tera")
             for needle in ("core/skills", "manifests/skills.yaml", "manifests/plugins.yaml", "agent-runtime"):
                 if needle not in body:
                     fail(f"{skill_id} missing lifecycle contract phrase: {needle}")
+        if skill_id in project_lifecycle_ids:
+            body = read(ROOT / source / "SKILL.md.tera")
+            for needle in (".agents/skills", ".agents/scripts", "git rev-parse --show-toplevel"):
+                if needle not in body:
+                    fail(f"{skill_id} missing project lifecycle contract phrase: {needle}")
 
     reminders = json.loads(read(ROOT / "core" / "hooks" / "shared" / "skill-usage-reminder.skills.json"))
     exact = {
@@ -294,11 +311,14 @@ def validate_repo() -> None:
         for entry in reminders
         if entry.get("tier") == "exact-only"
     }
-    expected_exact = {"create-skill", "remove-skill"}
+    expected_exact = {
+        "create-skill",
+        "create-project-skill",
+        "remove-skill",
+        "remove-project-skill",
+    }
     if not expected_exact.issubset(exact):
         fail(f"missing lifecycle exact-only reminder entries: {sorted(expected_exact - exact)}")
-    if "create-project-skill" in exact:
-        fail("create-project-skill reminder is active but the workflow is deferred")
     if "skill-governance" in exact:
         fail("skill-governance is a repo governance tool, not a user-facing skill")
 
@@ -378,12 +398,72 @@ def validate_remove_fixture() -> None:
     print("skill-governance-audit: remove fixture OK classes=10 retained_history=true")
 
 
+def validate_create_project_fixture() -> None:
+    fixture = ROOT / "tests" / "runtime-smoke" / "fixtures" / "skill-lifecycle" / "create-project-skill"
+    expected = [
+        ".agents/skills/sample-project-skill/SKILL.md",
+        ".agents/skills/sample-project-skill/scripts/sample-project-skill.sh",
+        ".agents/scripts/sample-project-skill.sh",
+        "expected-created-paths.txt",
+    ]
+    for rel in expected:
+        if not (fixture / rel).is_file():
+            fail(f"create-project fixture missing {rel}")
+    body = read(fixture / ".agents" / "skills" / "sample-project-skill" / "SKILL.md")
+    for needle in ("name: sample-project-skill", "## Contract", "## Workflow"):
+        if needle not in body:
+            fail(f"create-project fixture SKILL.md missing {needle!r}")
+    created = {
+        line.strip()
+        for line in read(fixture / "expected-created-paths.txt").splitlines()
+        if line.strip()
+    }
+    for rel in expected[:-1]:
+        if rel not in created:
+            fail(f"create-project fixture expected-created-paths missing {rel}")
+    print("skill-governance-audit: create-project fixture OK skill=sample-project-skill")
+
+
+def validate_remove_project_fixture() -> None:
+    fixture = ROOT / "tests" / "runtime-smoke" / "fixtures" / "skill-lifecycle" / "remove-project-skill"
+    expected_classes = {
+        "project-skill-source",
+        "skill-owned-script",
+        "project-command-wrapper",
+        "maintained-doc",
+        "historical-doc-retained",
+    }
+    dry_run = read(fixture / "expected-dry-run.txt")
+    present = {
+        line.split(":", 1)[0].removeprefix("- ").strip()
+        for line in dry_run.splitlines()
+        if line.startswith("- ")
+    }
+    missing = sorted(expected_classes - present)
+    if missing:
+        fail(f"remove-project fixture missing dry-run classes: {missing}")
+    for rel in [
+        ".agents/skills/removable-project-skill/SKILL.md",
+        ".agents/skills/removable-project-skill/scripts/removable-project-skill.sh",
+        ".agents/scripts/removable-project-skill.sh",
+        "docs/source/removable-project-skill.md",
+        "docs/plans/removable-project-skill-history.md",
+    ]:
+        if not (fixture / rel).is_file():
+            fail(f"remove-project fixture missing {rel}")
+    print("skill-governance-audit: remove-project fixture OK classes=5 retained_history=true")
+
+
 if MODE == "repo":
     validate_repo()
 elif MODE == "create-fixture":
     validate_create_fixture()
 elif MODE == "remove-fixture":
     validate_remove_fixture()
+elif MODE == "create-project-fixture":
+    validate_create_project_fixture()
+elif MODE == "remove-project-fixture":
+    validate_remove_project_fixture()
 else:
     fail(f"unknown mode: {MODE}")
 PY

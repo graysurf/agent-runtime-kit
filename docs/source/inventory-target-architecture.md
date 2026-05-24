@@ -99,6 +99,11 @@ Status: source document for the first implementation discussion
   mutation, dry-run/apply plans, or machine-readable lifecycle reference graphs
   still belong in `sympoies/nils-cli` before skills consume them through
   `required_clis`.
+- 2026-05-24 (project skill lifecycle pass) — added separate
+  `create-project-skill` and `remove-project-skill` workflows for consuming
+  repo `.agents/skills` surfaces. These intentionally do not mutate
+  runtime-kit manifests for the consuming project or revive `$HOME/.agents` as
+  a global discovery alias.
 - 2026-05-20 (specialist-review batch 2) — spec-depth pass:
   rewrote Drift Detection with a composite `unsafe` score
   (path / keyword / entropy at 0.4 each; block ≥ 0.8, warn at single

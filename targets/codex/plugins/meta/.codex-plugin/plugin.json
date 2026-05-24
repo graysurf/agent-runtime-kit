@@ -43,8 +43,16 @@
       "source": "core/skills/meta/create-skill"
     },
     {
+      "id": "create-project-skill",
+      "source": "core/skills/meta/create-project-skill"
+    },
+    {
       "id": "remove-skill",
       "source": "core/skills/meta/remove-skill"
+    },
+    {
+      "id": "remove-project-skill",
+      "source": "core/skills/meta/remove-project-skill"
     },
     {
       "id": "pre-pr",

@@ -108,10 +108,22 @@ entries:
     destination: skills/meta/create-skill
     recursive: false
 
+  - id: meta.create-project-skill.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/create-project-skill
+    destination: skills/meta/create-project-skill
+    recursive: false
+
   - id: meta.remove-skill.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/remove-skill
     destination: skills/meta/remove-skill
+    recursive: false
+
+  - id: meta.remove-project-skill.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/remove-project-skill
+    destination: skills/meta/remove-project-skill
     recursive: false
 
   - id: meta.pre-pr.codex-skill-dir

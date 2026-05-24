@@ -17,6 +17,7 @@ trap cleanup EXIT
 mkdir -p "$OUT_DIR" "$RUNTIME_ROOT/live/codex" "$RUNTIME_ROOT/state/codex"
 
 scripts="bench bootstrap demo deploy pre-pr release"
+project_skill="project-local-skill"
 
 doctor_block_count() {
   local log="$1"
@@ -33,6 +34,30 @@ run_fixture_script() {
     return 1
   fi
 
+  (
+    cd "$FIXTURE_ROOT"
+    PROJECT_LOCAL_SMOKE_OUT="$OUT_DIR" "$script" --runtime-smoke "$name"
+  ) >"$stdout" 2>&1
+  grep -q "project-local-smoke:${name}:called" "$stdout"
+  test -f "$OUT_DIR/${name}.invoked"
+}
+
+run_fixture_skill() {
+  local name="$1"
+  local skill_dir="$FIXTURE_ROOT/.agents/skills/${name}"
+  local script="$skill_dir/scripts/${name}.sh"
+  local stdout="$OUT_DIR/${name}.stdout"
+
+  if [ ! -f "$skill_dir/SKILL.md" ]; then
+    echo "project-local-smoke: missing project skill body: $skill_dir/SKILL.md" >&2
+    return 1
+  fi
+  if [ ! -x "$script" ]; then
+    echo "project-local-smoke: missing executable project skill script: $script" >&2
+    return 1
+  fi
+
+  grep -q "name: ${name}" "$skill_dir/SKILL.md"
   (
     cd "$FIXTURE_ROOT"
     PROJECT_LOCAL_SMOKE_OUT="$OUT_DIR" "$script" --runtime-smoke "$name"
@@ -109,9 +134,10 @@ assert_doctor_missing() {
 for script in $scripts; do
   run_fixture_script "$script"
 done
+run_fixture_skill "$project_skill"
 
 install_temp_runtime
 assert_doctor_wired
 assert_doctor_missing
 
-printf 'project-local-smoke: OK scripts=%s\n' "$scripts"
+printf 'project-local-smoke: OK scripts=%s skill=%s\n' "$scripts" "$project_skill"

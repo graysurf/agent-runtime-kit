@@ -1,0 +1,5 @@
+- project-skill-source: .agents/skills/removable-project-skill
+- skill-owned-script: .agents/skills/removable-project-skill/scripts/removable-project-skill.sh
+- project-command-wrapper: .agents/scripts/removable-project-skill.sh
+- maintained-doc: docs/source/removable-project-skill.md
+- historical-doc-retained: docs/plans/removable-project-skill-history.md

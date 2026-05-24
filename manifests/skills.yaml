@@ -178,6 +178,19 @@ skills:
       agent-runtime: ">=0.18.0"
     state_out_mode: runtime
 
+  - id: meta.create-project-skill
+    domain: meta
+    source: core/skills/meta/create-project-skill
+    products:
+      codex:
+        name: create-project-skill
+        render_to: plugins/meta/skills/create-project-skill/SKILL.md
+      claude:
+        name: create-project-skill
+        render_to: plugins/meta/skills/create-project-skill/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
   - id: meta.remove-skill
     domain: meta
     source: core/skills/meta/remove-skill
@@ -190,6 +203,19 @@ skills:
         render_to: plugins/meta/skills/remove-skill/SKILL.md
     required_clis:
       agent-runtime: ">=0.18.0"
+    state_out_mode: runtime
+
+  - id: meta.remove-project-skill
+    domain: meta
+    source: core/skills/meta/remove-project-skill
+    products:
+      codex:
+        name: remove-project-skill
+        render_to: plugins/meta/skills/remove-project-skill/SKILL.md
+      claude:
+        name: remove-project-skill
+        render_to: plugins/meta/skills/remove-project-skill/SKILL.md
+    required_clis: {}
     state_out_mode: runtime
 
   - id: meta.pre-pr

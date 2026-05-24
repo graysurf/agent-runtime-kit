@@ -33,7 +33,9 @@ plugins:
       - meta.agent-scope-lock
       - meta.heuristic-inbox
       - meta.create-skill
+      - meta.create-project-skill
       - meta.remove-skill
+      - meta.remove-project-skill
       - meta.pre-pr
       - meta.release
       - meta.repo-retro

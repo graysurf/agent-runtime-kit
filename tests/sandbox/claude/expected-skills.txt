@@ -30,12 +30,14 @@ meta.agent-out
 meta.agent-scope-lock
 meta.bench
 meta.bootstrap
+meta.create-project-skill
 meta.create-skill
 meta.demo
 meta.deploy
 meta.heuristic-inbox
 meta.pre-pr
 meta.release
+meta.remove-project-skill
 meta.remove-skill
 meta.repo-retro
 meta.semantic-commit

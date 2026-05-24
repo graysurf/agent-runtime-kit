@@ -86,9 +86,12 @@ stable machine output, extract it to nils-cli and declare it in `required_clis`.
 ## Skill Lifecycle Changes
 
 Use the `meta:create-skill` and `meta:remove-skill` skills for repo-owned managed
-skill additions and removals. They are user-facing workflow checklists for
-source, manifests, product render output, sandbox pins, runtime-smoke coverage,
-and retained historical records.
+skill additions and removals. Use `meta:create-project-skill` and
+`meta:remove-project-skill` for consuming-repo `.agents/skills` additions and
+removals. The managed-skill workflows cover source, manifests, product render
+output, sandbox pins, runtime-smoke coverage, and retained historical records;
+the project-skill workflows must not mutate runtime-kit manifests or product
+render output.
 
 `skill-governance` is not a user-facing skill. The repo-owned governance check is
 `bash scripts/ci/skill-governance-audit.sh`, with fixture modes for create/remove

@@ -208,11 +208,27 @@
     "record_when": "The workflow scaffolds, edits, validates, or commits a new runtime-kit skill."
   },
   {
+    "skill": "create-project-skill",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["create-project-skill"],
+    "reason": "Project-local skill lifecycle changes affect future agent behavior in a consuming repo.",
+    "record_when": "The workflow scaffolds, edits, validates, or commits a new project-local skill."
+  },
+  {
     "skill": "remove-skill",
     "tier": "exact-only",
     "match_mode": "action_or_explicit",
     "aliases": ["remove-skill"],
     "reason": "Skill removal is a breaking lifecycle change and should have retained context.",
     "record_when": "The workflow removes a skill directory or purges repo references."
+  },
+  {
+    "skill": "remove-project-skill",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["remove-project-skill"],
+    "reason": "Project-local skill removal changes future agent behavior in a consuming repo.",
+    "record_when": "The workflow removes a project-local skill directory or purges project-local references."
   }
 ]

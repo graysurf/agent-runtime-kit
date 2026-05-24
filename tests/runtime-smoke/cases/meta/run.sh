@@ -168,6 +168,31 @@ run_remove_skill_probe() {
   run_lifecycle_skill_probe remove-skill remove
 }
 
+run_project_lifecycle_skill_probe() {
+  local skill="$1"
+  local fixture="$2"
+  local out="$META_ARTIFACTS_DIR/${skill}.governance.txt"
+  local body="$REPO_ROOT/core/skills/meta/$skill/SKILL.md.tera"
+
+  test -f "$body"
+  test -f "$REPO_ROOT/build/codex/plugins/meta/skills/$skill/SKILL.md"
+  test -f "$REPO_ROOT/build/claude/plugins/meta/skills/$skill/SKILL.md"
+  grep -q '.agents/skills' "$body"
+  grep -q 'git rev-parse --show-toplevel' "$body"
+  grep -q '.agents/scripts' "$body"
+
+  bash "$REPO_ROOT/scripts/ci/skill-governance-audit.sh" --fixture "$fixture" >"$out" 2>&1
+  grep -q "skill-governance-audit: ${fixture} fixture OK" "$out"
+}
+
+run_create_project_skill_probe() {
+  run_project_lifecycle_skill_probe create-project-skill create-project
+}
+
+run_remove_project_skill_probe() {
+  run_project_lifecycle_skill_probe remove-project-skill remove-project
+}
+
 run_repo_retro_probe() {
   local out="$META_ARTIFACTS_DIR/repo-retro.json"
   require_meta_bin repo-retro || return 1
@@ -230,7 +255,9 @@ record_case "meta.demo" "project-local demo shim executed fixture script" run_pr
 record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy || failures=1
 record_case "meta.heuristic-inbox" "heuristic inbox shared-root list and strict verification passed" run_heuristic_inbox_probe || failures=1
 record_case "meta.create-skill" "skill lifecycle create surface and governance fixture passed" run_create_skill_probe || failures=1
+record_case "meta.create-project-skill" "project skill lifecycle create surface and fixture passed" run_create_project_skill_probe || failures=1
 record_case "meta.remove-skill" "skill lifecycle removal surface and governance fixture passed" run_remove_skill_probe || failures=1
+record_case "meta.remove-project-skill" "project skill lifecycle removal surface and fixture passed" run_remove_project_skill_probe || failures=1
 record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" run_project_local_shim_probe pre-pr || failures=1
 record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release || failures=1
 record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1
