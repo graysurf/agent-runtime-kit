@@ -211,6 +211,10 @@ done
 # Position 8 — surface registry schema + executable acceptance
 # -----------------------------------------------------------------------------
 banner 8 "validate surfaces manifest + executable acceptance"
+if bash scripts/ci/validate-surfaces-manifest.sh tests/surfaces/invalid-acceptance.yaml; then
+  echo "ci/all.sh: invalid surface acceptance fixture unexpectedly passed" >&2
+  exit 1
+fi
 bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
 
 # -----------------------------------------------------------------------------
