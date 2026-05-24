@@ -10,15 +10,9 @@ description:
 
 Prereqs:
 
-- `agent-runtime` is installed from the released nils-cli package and available
-  on `PATH`.
-- `forge-cli` is installed from the released nils-cli package and available on
-  `PATH`.
-- `review-specialists` is installed from the released nils-cli package and
+- `agent-runtime`, `forge-cli`, `plan-issue >=0.20.0`, and
+  `review-specialists` are installed from the released nils-cli package and
   available on `PATH`.
-- `glab` is available on `PATH` (used by `forge-cli` and by the chained
-  closeout step to fetch issue comments — `forge-cli issue view --format
-  json` under forge-cli 0.17.6 returns body fields only).
 - `glab auth status` succeeds for the target GitLab host when running live mode.
 - The working tree contains only the intended delivery changes.
 - Local validation and review findings have been resolved before merge.
@@ -32,37 +26,25 @@ Inputs:
   `area::`, and one `size::`. Add `risk::` or `provider::gitlab` when the
   scope warrants it.
 - Optional `--no-merge` when the workflow should stop after checks.
-- Optional `--no-closeout` to stop the workflow after delivery readiness checks
-  and before any chained issue closeout. Use when closeout is owned by a
-  separate downstream skill invocation or by a human reviewer. Does not
-  bypass the merge step; MR delivery still completes.
+- Optional `--no-closeout` to stop after delivery readiness checks and before
+  linked issue closeout.
 - Mandatory pre-merge specialist review using the shared delivery specialist
-  review gate; this is an orchestration gate, not a `forge-cli pr deliver`
-  flag.
-- Issue-backed state links when the MR participates in a tracking issue.
-- If the MR description references a linked tracking or dispatch issue, the
-  description must use non-closing references (e.g. `Refs #<issue>`) rather
-  than GitLab close keywords such as `Closes #<issue>` or `Closes !<issue>`;
-  description-driven auto-close is refused, and the new post-merge chained
-  closeout step replaces it under the closeout-gate contract.
+  review gate.
+- If the MR description references a linked tracking or dispatch issue, use
+  non-closing references such as `Refs #<issue>`; GitLab close keywords are
+  refused.
 
 Outputs:
 
 - A draft or ready GitLab MR opened from the current branch.
 - Pipeline or check state waited through `forge-cli pr wait-checks`.
 - A `code-review-specialists` pass completed before merge with at least
-  `testing` and `maintainability` forced, even for small diffs.
+  `testing` and `maintainability`.
 - A delivery review outcome comment posted to the MR before merge.
-- A ready-for-review transition when needed.
 - A merged MR through `forge-cli pr merge`, unless `--no-merge` is supplied.
-- Delivery evidence recorded in the MR or linked tracking issue.
-- When the MR description references a linked tracking or dispatch issue via
-  `Refs #<issue>` and chained closeout runs (default, unless `--no-closeout`
-  or `--no-merge` was supplied or any closeout gate rejects): a closed
-  provider issue, a rendered closeout comment in the issue's profile family
-  (`tracking-issue-closeout:v1` for tracking,
-  `dispatch-plan-closeout:v1` for dispatch), and the issue dashboard
-  repaired to link the closeout comment URL.
+- When a linked issue closeout runs, `plan-issue record close` posts closeout
+  evidence, repairs the dashboard, verifies linked merge requests, and closes
+  the issue.
 
 Failure modes:
 
@@ -72,28 +54,20 @@ Failure modes:
   explicit no-checks decision.
 - Selected labels fail catalog validation or the provider rejects label
   application.
-- Mandatory specialist review reports concrete findings that have not been
-  repaired or explicitly accepted under the delivery policy.
+- Mandatory specialist review findings are unresolved or undispositioned.
 - Delivery review outcome comment posting fails.
-- Review findings or issue-backed completion gates are unresolved.
-- An MR description uses a GitLab auto-close keyword (`Closes #<issue>`,
-  `Closes !<issue>`, or any equivalent) against a linked plan-tracking or
-  dispatch issue; description-driven auto-close is refused. The post-merge
-  chained closeout step is the permitted issue-close mechanism, and
-  it runs only after `plan-issue record closeout-gate` clears.
-- Merge strategy, source-branch cleanup, or non-default base requirements are
-  ambiguous.
+- An MR description uses a GitLab auto-close keyword against a linked
+  plan-tracking or dispatch issue.
+- `plan-issue record close` rejects linked issue closeout.
 
 ## Body Format
 
-Use `agent-runtime pr-body render` as the canonical formatter. The renderer
-owns feature/bug section order and the `forge-cli`-compatible minimum headings
-(`## Summary` and `## Test plan`); do not duplicate that section table or
-hand-write a minimum body in this skill.
+Use `agent-runtime pr-body render` as the canonical formatter. The renderer owns
+feature/bug section order and the `forge-cli`-compatible minimum headings
+(`## Summary` and `## Test plan`).
 
 For issue-backed tracking or dispatch work, put provider references in the
-rendered narrative as non-closing refs such as `Refs #<issue>`; do not use
-provider auto-close keywords in the PR/MR body.
+rendered narrative as non-closing refs such as `Refs #<issue>`.
 
 ## Entrypoint
 
@@ -109,10 +83,6 @@ agent-runtime pr-body render \
   --risk-file "$RISK_FILE" \
   --out "$MR_BODY"
 ```
-
-For bug MRs, use `--kind bug` with `--problem-file`,
-`--reproduction-file`, `--issues-file`, and `--fix-approach-file` in place of
-`--changes-file`.
 
 Use the released provider CLI directly:
 
@@ -140,64 +110,29 @@ forge-cli --provider gitlab pr comment "$MR_NUMBER" --body-file "$DELIVERY_REVIE
 forge-cli --provider gitlab pr merge "$MR_NUMBER" --method squash
 ```
 
-Run the post-merge chained closeout when the MR description references a
-linked tracking or dispatch issue via `Refs #<issue>` (default, unless
-`--no-closeout` or `--no-merge`). Fetch the body + comments through
-`glab` because `forge-cli issue view --format json` omits comments under
-forge-cli 0.17.6. `glab issue view --comments --output json` returns
-both the issue body and the comments array; reshape it into the
-`{body, comments}` payload that `plan-issue record` expects:
+Run linked issue closeout after merge when the MR description references a
+tracking or dispatch issue via `Refs #<issue>` and `--no-closeout` was not
+supplied:
 
 ```bash
-glab issue view "$ISSUE" --repo "$OWNER_REPO" --comments --output json >"$ISSUE_RAW"
-jq '{body: .description, comments: (.notes // .comments // [])}' "$ISSUE_RAW" >"$ISSUE_COMMENTS_JSON"
-jq -r .body "$ISSUE_COMMENTS_JSON" >"$ISSUE_BODY"
-
-plan-issue record audit \
-  --profile tracking \
-  --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_COMMENTS_JSON" \
-  --format json
-
-plan-issue record closeout-gate \
-  --profile tracking \
-  --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_COMMENTS_JSON" \
-  --require-complete \
-  --require-session \
-  --require-validation \
+plan-issue --repo "$OWNER_REPO" --format json record close \
+  --issue "$ISSUE" \
+  --profile "$PROFILE" \
+  --linked-pr "$OWNER_REPO!$MR_NUMBER" \
   --approval "$APPROVAL" \
-  --linked-pr "!$MR_NUMBER" \
-  --format json
-
-plan-issue record render-comment \
-  --profile tracking \
-  --kind closeout \
-  --content-file "$CLOSEOUT_MD" \
-  --out "$CLOSEOUT_COMMENT"
-
-forge-cli --provider gitlab issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$CLOSEOUT_COMMENT" --format json
-forge-cli --provider gitlab issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$FINAL_DASHBOARD" --format json
-forge-cli --provider gitlab issue close "$ISSUE" --repo "$OWNER_REPO" --format json
+  --bundle "$PLAN_BUNDLE"
 ```
 
-For dispatch profile issues, swap `--profile tracking` for `--profile
-dispatch` and add `--require-review` to the closeout-gate invocation. The
-v2 marker family `plan-issue-record:v2` covers both tracking and dispatch
-through the `--profile` flag; the retired `--marker-family compat` /
-`shared` flags are not accepted by `plan-issue >=0.17.7`. The audit step
-in this block determines the profile.
+Use `profile=tracking` for lightweight plan-tracking issues and
+`profile=dispatch` for dispatch plan records.
 
 ## Workflow
 
 1. Confirm the branch, base, dirty-tree scope, validation evidence, and review
    outcome.
 2. Inspect linked issues and closing references. For issue-backed plan work,
-   prefer non-closing references until the appropriate closeout gate has passed.
-3. Write the narrative content into section files, then render the MR body with
-   `agent-runtime pr-body render --kind feature|bug ... --out "$MR_BODY"`.
-   Do not hand-write the section scaffolding. Keep linked issue references
-   non-closing, e.g. `Refs #<issue>`.
+   use `Refs #<issue>` until `record close` has passed.
+3. Render the MR body with `agent-runtime pr-body render`.
 4. Select labels before provider mutation. Every delivered MR needs `type::`,
    one primary `area::`, and `size::`; add `risk::` for high-risk changes and
    `provider::gitlab` for GitLab-specific work. Use `state::do-not-merge`
@@ -206,65 +141,31 @@ in this block determines the profile.
    --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
    before the first live delivery in that repo. Use `label audit` when mutation
    is not allowed.
-6. Run `forge-cli pr deliver` with the GitLab provider, selected base, selected
-   `--label` flags, `--label-catalog manifests/forge-labels.yaml` when present,
-   and
-   `--no-merge` so checks complete before the mandatory review gate. If the
-   macro stops for a concrete blocker before checks are green, fix the blocker
-   on the same branch and rerun the macro.
+6. Run `forge-cli pr deliver` with selected `--label` flags,
+   `--label-catalog manifests/forge-labels.yaml` when present, and
+   `--no-merge` so checks complete before the
+   mandatory review gate.
 7. Follow the shared delivery specialist review gate:
    `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`.
-   Resolve the MR target branch, run `review-specialists scope --base "$BASE_REF"
-   --testing --maintainability --format json`, add risk lenses when warranted,
-   and do not skip only because the diff is small.
 8. Keep `code-review-specialists` read-only. Repair concrete findings in this
-   delivery workflow, then rerun validation, required checks, and affected
-   specialist lenses.
+   delivery workflow, then rerun validation, checks, and affected lenses.
 9. Post the delivery review outcome comment before merge using:
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
-10. For lightweight tracking issues, verify the latest issue-hosted state is
-   complete and closeout-ready before allowing auto-close. For dispatch issues,
-   verify `plan-issue` sprint/plan gates or use `dispatch-plan-closeout`.
-11. Merge with `forge-cli --provider gitlab pr merge "$MR_NUMBER"` unless
+10. Merge with `forge-cli --provider gitlab pr merge "$MR_NUMBER"` unless
    `--no-merge` is the requested final stop.
-12. After merge, if the MR description referenced a linked tracking or
-   dispatch issue via `Refs #<issue>` and `--no-closeout` was not supplied,
-   run the chained closeout inline. Re-fetch the issue body and comments
-   through `glab issue view "$ISSUE" --comments --output json` (forge-cli
-   0.17.6's `issue view --format json` returns the body fields only; the
-   comments array is required for `plan-issue record audit|closeout-gate
-   --comments-json`). Reshape into `{body, comments}` via `jq` so the
-   `plan-issue` input contract is satisfied. Run `plan-issue record
-   audit` to identify the profile (`tracking` or `dispatch`), then run
-   `plan-issue record closeout-gate` with the matching profile and the
-   merged MR ref (e.g. `!$MR_NUMBER`). On gate pass, render the closeout
-   comment through `plan-issue record render-comment --kind closeout`,
-   post it through `forge-cli --provider gitlab issue comment`, repair
-   the dashboard through `forge-cli --provider gitlab issue edit`, and
-   close the issue through `forge-cli --provider gitlab issue close` (no
-   `--reason`; forge-cli 0.17.6 rejects it). On gate fail, stop the
-   chain, leave the issue open with the unblock action surfaced by the
-   failing step, and recommend rerunning `plan-tracking-issue-closeout`
-   (tracking) or `dispatch-plan-closeout` (dispatch) directly to diagnose
-   or complete. This step never runs when `--no-merge` was used.
-13. Record the MR URL, labels, pipeline or check evidence, review outcome, merge
-   commit, chained closeout result (closed/skipped/blocked), and any
-   fallback used in the linked issue or delivery notes.
+11. After merge, if the MR description referenced a linked tracking or dispatch
+   issue and `--no-closeout` was not supplied, run `plan-issue record close`
+   with the correct profile. On gate fail, leave the issue open with the
+   blocked code surfaced by `plan-issue` and route to the matching closeout
+   skill.
+12. Record the MR URL, labels, pipeline/check evidence, review outcome, merge
+    commit, chained closeout result, and any fallback used in delivery notes.
 
 ## Boundary
 
-`forge-cli` owns provider create, checks wait, ready, and merge calls. The
-workflow owner owns scope judgment, code changes, local validation, specialist
-review decisions, specialist repair loops, delivery outcome comments,
-issue-backed completion gates, and any temporary provider fallback decision.
-
-The chained closeout in Step 12 reuses the same `plan-issue record
-closeout-gate`, `plan-issue record render-comment --kind closeout`, and
-`forge-cli issue close` calls that `plan-tracking-issue-closeout` and
-`dispatch-plan-closeout` wrap; those skills remain the canonical reference
-for the sequence and the recovery surface when the chain fails or when
-`--no-closeout` is supplied. The boundary does not move: `plan-issue
-record` still owns gate evaluation and marker rendering, and `forge-cli`
-still owns the provider close call. MR-description `Closes #<issue>` (or
-`Closes !<issue>`) auto-close remains banned even when chained closeout
-is enabled.
+`forge-cli` owns provider create, checks wait, ready, and merge calls.
+`plan-issue record` owns linked issue lifecycle closeout. The workflow owner
+owns scope judgment, code changes, local validation, specialist review
+decisions, repair loops, delivery outcome comments, and any temporary provider
+fallback decision. MR-description auto-close remains banned for issue-backed
+plan records.

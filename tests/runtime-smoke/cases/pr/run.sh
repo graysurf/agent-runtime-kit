@@ -178,9 +178,8 @@ run_create_dispatch_lane_probe() {
   local body="$PR_ARTIFACTS_DIR/create-dispatch-body.md"
   local out="$PR_ARTIFACTS_DIR/create-dispatch.json"
   local session="$PR_ARTIFACTS_DIR/create-dispatch-session.md"
-  local comment="$PR_ARTIFACTS_DIR/create-dispatch-comment.md"
-  local render_out="$PR_ARTIFACTS_DIR/create-dispatch-comment-render.json"
-  local issue_comment_out="$PR_ARTIFACTS_DIR/create-dispatch-issue-comment.json"
+  local session_payload="$PR_ARTIFACTS_DIR/create-dispatch-session-payload.json"
+  local post_out="$PR_ARTIFACTS_DIR/create-dispatch-session-post.json"
   require_pr_bin forge-cli || return 1
   require_pr_bin plan-issue || return 1
   mkdir -p "$workspace"
@@ -205,23 +204,23 @@ run_create_dispatch_lane_probe() {
       --strict-labels
   ) >"$out" 2>&1
   write_dispatch_session_record "$session"
-  plan-issue record render-comment \
+  cat >"$session_payload" <<'JSON'
+{"summary":"Runtime smoke dispatch lane PR created"}
+JSON
+  plan-issue record post \
+    --dry-run \
+    --issue 50 \
     --profile dispatch \
     --kind session \
-    --content-file "$session" \
-    --out "$comment" \
-    --format json >"$render_out" 2>&1
-  forge-cli --provider github --repo graysurf/agent-runtime-kit \
-    --dry-run --format json \
-    issue comment 50 \
-    --body-file "$comment" >"$issue_comment_out" 2>&1
+    --payload-file "$session_payload" \
+    --summary-file "$session" \
+    --format json >"$post_out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$out"
   grep -q '"provider":"github"' "$out"
   grep -q '"workflow::dispatch"' "$out"
   grep -q '"size::s"' "$out"
-  grep -q '"schema_version":"plan-issue-cli.record.render.comment.v2"' "$render_out"
-  grep -q '<!-- plan-issue-record:v2 role=session profile=dispatch -->' "$comment"
-  grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$issue_comment_out"
+  grep -q '"schema_version":"plan-issue-cli.record.post.v2"' "$post_out"
+  grep -q '<!-- plan-issue-record:v2 role=session profile=dispatch -->' "$post_out"
 }
 
 run_close_github_probe() {

@@ -10,51 +10,43 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue`, and `forge-cli` are available on `PATH`.
-  The lifecycle record commands require
-  `plan-issue >=0.17.7`; before release, prepend the scoped nils-cli debug
-  binary directory to `PATH`.
-- Run from the target git repository root unless an explicit repository or plan
-  path is supplied.
-- The source markdown and plan markdown are both committed and pushed to a
-  remote (any branch is acceptable) so their commit SHAs resolve for anyone
-  reading the issue. A URL-only source or an explicit plan-only waiver can
-  substitute for the source artifact, but the plan markdown itself must always
-  be committed and pushed.
+- `plan-tooling` and `plan-issue >=0.20.0` are available on `PATH`.
+- Run from the target git repository root unless explicit repository and plan
+  paths are supplied.
+- The source, plan, and execution-state markdown files are committed and pushed
+  so the issue snapshots resolve to a traceable commit SHA.
 - Existing plan bundles have a valid `Read First` section.
-- Live provider mutation is done through `forge-cli`. `plan-issue record`
-  renders/audits markdown only; `plan-tooling` validates and models the plan.
+- `plan-issue record` owns the issue-backed lifecycle. Do not compose
+  lifecycle issues through generic `forge-cli issue` primitives.
 
 Inputs:
 
-- Plan markdown path, source markdown path when different, provider repository
-  slug, title, labels, and dry-run/live mode.
+- Plan bundle directory, provider repository slug, title, and dry-run/live mode.
 - Selected issue labels from the shared taxonomy. Plan-tracking issues use
   `type::chore`, one primary `area::`, `state::needs-triage`,
   `workflow::plan`, and `workflow::tracking`, plus the compatibility `plan`
   label during rollout.
-- Optional paths for rendered dashboard and source/plan/state comment bodies.
+- Optional explicit source, plan, and execution-state paths when bundle
+  discovery is not sufficient.
 
 Outputs:
 
-- A compact mutable issue dashboard with `Current Dashboard`, `Durable Record`,
-  `Guardrails`, and `Original Tracker` sections matching the existing
-  plan-tracking issue format.
-- Append-only source, plan, and initial state comments rendered with the
-  compatibility marker family used by issue #43.
-- A live provider issue in live mode, or deterministic artifacts in dry-run
-  mode.
+- A provider issue opened by `plan-issue record open` in live mode, or a
+  deterministic preview in dry-run mode.
+- Append-only source, plan, and initial state comments carrying
+  `plan-issue-record:v2` markers.
+- A mutable dashboard repaired by `plan-issue` after the initial comments are
+  available.
 
 Failure modes:
 
-- Plan validation fails, the source or plan markdown is uncommitted or
-  unpushed to a remote, or the source/plan comments cannot be rendered.
-- Quality review of the source or plan markdown surfaces blocking findings
-  (unclear scope, missing or shallow `Read First`, incoherent grouping,
-  obvious gaps) and the caller cannot resolve them before issue creation.
-- Provider auth, repository resolution, issue creation, comment creation, or
-  dashboard edit fails.
-- The issue body drifts from the dashboard/comment record after creation.
+- Plan validation fails, required bundle files are missing, or local files are
+  uncommitted/unpushed and no explicit waiver is acceptable.
+- Quality review of source or plan markdown surfaces blocking findings.
+- Provider auth, repository resolution, issue creation, comment posting, or
+  dashboard repair fails inside `plan-issue record open`.
+- A read-back audit cannot recognize the source, plan, and state lifecycle
+  comments.
 
 ## Entrypoint
 
@@ -64,95 +56,55 @@ Validate the bundle before provider mutation:
 plan-tooling validate --file "$PLAN" --format text --explain
 ```
 
-Render the initial dashboard and lifecycle comments:
+Preview or open the tracking issue through the v3 record owner:
 
 ```bash
-plan-issue record render-dashboard \
+plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \
   --profile tracking \
-  --status in-progress \
-  --target-scope "$TARGET_SCOPE" \
-  --current "$CURRENT_TASK" \
-  --next-action "$NEXT_ACTION" \
-  --validation pending \
-  --approval pending \
-  --title "$TITLE" \
-  --out "$ISSUE_BODY"
+  --bundle "$PLAN_BUNDLE" \
+  --title "$TITLE"
 
-plan-issue record render-comment \
+plan-issue --repo "$OWNER_REPO" --format json record open \
   --profile tracking \
-  --kind source \
-  --path "$SOURCE" \
-  --commit "$(git rev-parse HEAD)" \
-  --content-file "$SOURCE" \
-  --out "$SOURCE_COMMENT"
-
-plan-issue record render-comment \
-  --profile tracking \
-  --kind plan \
-  --path "$PLAN" \
-  --commit "$(git rev-parse HEAD)" \
-  --content-file "$PLAN" \
-  --out "$PLAN_COMMENT"
+  --bundle "$PLAN_BUNDLE" \
+  --title "$TITLE"
 ```
 
-Create and finalize the provider issue:
+After live creation, read back the issue and audit the recorded lifecycle:
 
 ```bash
-forge-cli issue create \
-  --provider github \
-  --repo "$OWNER_REPO" \
-  --title "$TITLE" \
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
+jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+
+plan-issue --format json record audit \
+  --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --label type::chore \
-  --label area::docs \
-  --label state::needs-triage \
-  --label workflow::plan \
-  --label workflow::tracking \
-  --label plan \
-  --format json
-
-forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$SOURCE_COMMENT" --format json
-forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$PLAN_COMMENT" --format json
-forge-cli issue edit "$ISSUE" --repo "$OWNER_REPO" --body-file "$UPDATED_DASHBOARD" --format json
+  --comments-json "$ISSUE_JSON"
 ```
-
-Use `forge-cli --dry-run` and `plan-issue record ... --out <path>` for local
-preview. Do not use `plan-issue start-plan` for lightweight tracking issues.
 
 ## Workflow
 
-1. Resolve the plan, source, repository, title, labels, and output directory.
-2. Confirm the source markdown (when present) and plan markdown are committed
-   and pushed to a remote; stop and request a commit/push if either SHA cannot
-   be resolved remotely.
-3. Run `plan-tooling validate`; stop on plan syntax, source, or grouping
-   errors.
+1. Resolve the bundle, repository, title, labels, and output directory.
+2. Confirm source, plan, and execution-state files are committed and pushed; if
+   not, stop and request commit/push unless the user explicitly accepts
+   `--allow-dirty` for a preview.
+3. Run `plan-tooling validate`; stop on plan syntax, source, or grouping errors.
 4. Quality-review the source and plan markdown before they are immortalized in
-   the issue. The main agent assesses scope clarity, `Read First`
-   completeness, grouping coherence, and obvious gaps. Blocking findings must
-   be fixed (with re-commit and re-push) before proceeding; ambiguous or
-   high-impact findings stop and ask the user instead of being silently
-   patched.
-5. Render the initial tracking dashboard with pending durable-record links.
-6. Render source, plan, and initial state comments through
-   `plan-issue record render-comment --profile tracking --kind <source|plan|state>`.
-   The rendered marker family is `plan-issue-record:v2`; the retired
-   `--marker-family compat` / `shared` flags are not accepted by
-   `plan-issue >=0.17.7`.
-7. Before live issue creation, run `forge-cli label ensure --catalog
+   the issue.
+5. Before live issue creation, run `forge-cli label ensure --catalog
    manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json` when the
    catalog exists and label mutation is allowed. Use `label audit` when
    mutation is not allowed; use `--update-existing` only with explicit drift
    repair approval.
-8. In live mode, create the issue through `forge-cli issue create`, post the
-   rendered comments, then re-render/edit the dashboard with exact comment URLs.
-9. Run `plan-issue record audit --profile tracking` against the issue body and
-   comments. Record the issue URL and snapshot URLs in the execution state.
+6. Run `plan-issue record open --dry-run` and inspect the JSON preview.
+7. In live mode, run `plan-issue record open`; record the issue URL and comment
+   URLs in the local execution state.
+8. Run `record audit` against the live body/comments and verify source, plan,
+   and state markers are recognized.
 
 ## Boundary
 
-`plan-tooling` owns plan validation, batching, and split modeling only.
-`plan-issue record` owns deterministic dashboard/comment rendering and marker
-audit. `forge-cli` owns provider issue create/comment/edit calls. The skill
-body owns source readiness, live-vs-dry-run judgment, and issue record
-completeness.
+`plan-tooling` owns plan validation, batching, and split modeling.
+`plan-issue record` owns issue-backed provider creation, lifecycle comments,
+dashboard repair, and marker audit. The skill body owns source readiness,
+live-vs-dry-run judgment, and issue record completeness.

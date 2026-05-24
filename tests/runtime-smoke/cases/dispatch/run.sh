@@ -17,8 +17,8 @@ set -euo pipefail
 DISPATCH_ARTIFACTS_DIR="$ARTIFACTS_DIR/dispatch"
 DISPATCH_WORKSPACE="$TMP_ROOT/workspaces/dispatch-basic-repo"
 DISPATCH_STATE_DIR="$TMP_ROOT/state/plan-issue"
-LABEL_CATALOG="$REPO_ROOT/manifests/forge-labels.yaml"
 MINI_PLAN="$DISPATCH_ARTIFACTS_DIR/runtime-smoke-mini-plan.md"
+LABEL_CATALOG="$REPO_ROOT/manifests/forge-labels.yaml"
 PLAN_BODY_PATH=""
 PLAN_TASK_SPEC_PATH=""
 COMMENTS_JSON_PATH=""
@@ -141,12 +141,12 @@ write_tracking_comments_json() {
   local path="$1"
   cat >"$path" <<'JSON'
 {"comments":[
-{"body":"<!-- plan-issue-record:v2 role=source profile=tracking -->\n\n## Source Snapshot\n\n- Status: open","url":"https://github.com/example/repo/issues/1#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
-{"body":"<!-- plan-issue-record:v2 role=plan profile=tracking -->\n\n## Plan Snapshot","url":"https://github.com/example/repo/issues/1#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
-{"body":"<!-- plan-issue-record:v2 role=state profile=tracking -->\n\n## Execution State\n\n- Status: complete\n\n| ID | Status | Task | Evidence | Notes |\n| --- | --- | --- | --- | --- |\n| S1T1 | done | Validate dispatch smoke | #123 | runtime smoke |","url":"https://github.com/example/repo/issues/1#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
-{"body":"<!-- plan-issue-record:v2 role=session profile=tracking -->\n\n## Execution Session\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
-{"body":"<!-- plan-issue-record:v2 role=validation profile=tracking -->\n\n## Validation Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
-{"body":"<!-- plan-issue-record:v2 role=review profile=tracking -->\n\n## Review Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
+{"body":"<!-- plan-issue-record:v2 role=source profile=tracking -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"source\",\"profile\":\"tracking\",\"data\":{\"path\":\"docs/source.md\",\"commit\":\"abc123\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
+{"body":"<!-- plan-issue-record:v2 role=plan profile=tracking -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"plan\",\"profile\":\"tracking\",\"data\":{\"path\":\"docs/plan.md\",\"commit\":\"abc123\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
+{"body":"<!-- plan-issue-record:v2 role=state profile=tracking -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"state\",\"profile\":\"tracking\",\"data\":{\"status\":\"complete\",\"target_scope\":\"runtime smoke tracking\",\"current\":\"complete\",\"next_action\":\"closeout\",\"tasks\":[{\"id\":\"1.1\",\"status\":\"done\",\"title\":\"Validate dispatch smoke\"}],\"prs\":[{\"ref\":\"graysurf/agent-runtime-kit#123\",\"url\":\"https://github.com/graysurf/agent-runtime-kit/pull/123\",\"status\":\"merged\"}],\"blockers\":[],\"links\":{}}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
+{"body":"<!-- plan-issue-record:v2 role=session profile=tracking -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"session\",\"profile\":\"tracking\",\"data\":{\"summary\":\"Runtime smoke session\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
+{"body":"<!-- plan-issue-record:v2 role=validation profile=tracking -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"validation\",\"profile\":\"tracking\",\"data\":{\"overall\":\"pass\",\"commands\":[{\"command\":\"true\",\"status\":\"pass\"}],\"waivers\":[]}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
+{"body":"<!-- plan-issue-record:v2 role=review profile=tracking -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"review\",\"profile\":\"tracking\",\"data\":{\"decision\":\"approve\",\"lenses\":[\"testing\",\"maintainability\"],\"findings\":[]}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
 JSON
 }
 
@@ -154,12 +154,12 @@ write_dispatch_comments_json() {
   local path="$1"
   cat >"$path" <<'JSON'
 {"comments":[
-{"body":"<!-- plan-issue-record:v2 role=source profile=dispatch -->\n\n## Source Snapshot\n\n- Status: open","url":"https://github.com/example/repo/issues/2#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
-{"body":"<!-- plan-issue-record:v2 role=plan profile=dispatch -->\n\n## Plan Snapshot","url":"https://github.com/example/repo/issues/2#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
-{"body":"<!-- plan-issue-record:v2 role=state profile=dispatch -->\n\n## Execution State\n\n- Status: complete\n- PR: #123\n\n## Dispatch Ledger\n\n| Task | Summary | Sprint | Owner/Subagent | Branch | Worktree | Execution Mode | PR Group | PR | Status | Validation | Review | Notes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| S1T1 | Validate dispatch smoke | S1 | subagent-s1-t1 | issue/s1-t1 | issue-s1-t1 | pr-shared | smoke | #123 | done | pass | pass | runtime smoke |","url":"https://github.com/example/repo/issues/2#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
-{"body":"<!-- plan-issue-record:v2 role=session profile=dispatch -->\n\n## Execution Session\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
-{"body":"<!-- plan-issue-record:v2 role=validation profile=dispatch -->\n\n## Validation Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
-{"body":"<!-- plan-issue-record:v2 role=review profile=dispatch -->\n\n## Review Evidence\n\n- Status: complete\n- PR: #123","url":"https://github.com/example/repo/issues/2#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
+{"body":"<!-- plan-issue-record:v2 role=source profile=dispatch -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"source\",\"profile\":\"dispatch\",\"data\":{\"path\":\"docs/source.md\",\"commit\":\"abc123\"}}\n```\n","url":"https://github.com/example/repo/issues/2#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
+{"body":"<!-- plan-issue-record:v2 role=plan profile=dispatch -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"plan\",\"profile\":\"dispatch\",\"data\":{\"path\":\"docs/plan.md\",\"commit\":\"abc123\"}}\n```\n","url":"https://github.com/example/repo/issues/2#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
+{"body":"<!-- plan-issue-record:v2 role=state profile=dispatch -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"state\",\"profile\":\"dispatch\",\"data\":{\"status\":\"complete\",\"target_scope\":\"runtime smoke dispatch\",\"current\":\"complete\",\"next_action\":\"closeout\",\"tasks\":[{\"id\":\"1.1\",\"status\":\"done\",\"title\":\"Validate dispatch smoke\"}],\"prs\":[{\"ref\":\"graysurf/agent-runtime-kit#123\",\"url\":\"https://github.com/graysurf/agent-runtime-kit/pull/123\",\"status\":\"merged\"}],\"blockers\":[],\"links\":{}}}\n```\n","url":"https://github.com/example/repo/issues/2#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
+{"body":"<!-- plan-issue-record:v2 role=session profile=dispatch -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"session\",\"profile\":\"dispatch\",\"data\":{\"summary\":\"Runtime smoke dispatch session\"}}\n```\n","url":"https://github.com/example/repo/issues/2#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
+{"body":"<!-- plan-issue-record:v2 role=validation profile=dispatch -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"validation\",\"profile\":\"dispatch\",\"data\":{\"overall\":\"pass\",\"commands\":[{\"command\":\"true\",\"status\":\"pass\"}],\"waivers\":[]}}\n```\n","url":"https://github.com/example/repo/issues/2#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
+{"body":"<!-- plan-issue-record:v2 role=review profile=dispatch -->\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"review\",\"profile\":\"dispatch\",\"data\":{\"decision\":\"approve\",\"lenses\":[\"testing\",\"maintainability\"],\"findings\":[]}}\n```\n","url":"https://github.com/example/repo/issues/2#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
 JSON
 }
 
@@ -174,85 +174,120 @@ write_record_content() {
 CONTENT
 }
 
+write_state_payload() {
+  local path="$1"
+  local profile="$2"
+  cat >"$path" <<JSON
+{"status":"complete","target_scope":"runtime smoke $profile","current":"complete","next_action":"closeout","tasks":[{"id":"1.1","status":"done","title":"Validate dispatch smoke"}],"prs":[{"ref":"graysurf/agent-runtime-kit#123","url":"https://github.com/graysurf/agent-runtime-kit/pull/123","status":"merged"}],"blockers":[],"links":{}}
+JSON
+}
+
+write_validation_payload() {
+  local path="$1"
+  cat >"$path" <<'JSON'
+{"overall":"pass","commands":[{"command":"true","status":"pass"}],"waivers":[]}
+JSON
+}
+
+write_review_payload() {
+  local path="$1"
+  cat >"$path" <<'JSON'
+{"decision":"approve","lenses":["testing","maintainability"],"findings":[]}
+JSON
+}
+
+write_session_payload() {
+  local path="$1"
+  cat >"$path" <<'JSON'
+{"summary":"Runtime smoke session"}
+JSON
+}
+
+write_close_fixture() {
+  local fixture="$1"
+  local comments_json="$2"
+  mkdir -p "$fixture/prs"
+  printf '## Current Dashboard\n\n- Status: in-progress\n' >"$fixture/issue-body.md"
+  cp "$comments_json" "$fixture/comments.json"
+  cat >"$fixture/prs/graysurf__agent-runtime-kit__123.json" <<'JSON'
+{"state":"MERGED","mergeCommit":{"oid":"deadbeefcafebabe"},"statusCheckRollup":{"state":"success"},"url":"https://github.com/graysurf/agent-runtime-kit/pull/123"}
+JSON
+}
+
 build_tracking_record_fixture() {
   local stem="$1"
-  local dashboard_out="$DISPATCH_ARTIFACTS_DIR/$stem-dashboard.json"
+  local dashboard_out="$DISPATCH_ARTIFACTS_DIR/$stem-repair-dashboard.json"
   local state_md="$DISPATCH_ARTIFACTS_DIR/$stem-state.md"
-  local state_out="$DISPATCH_ARTIFACTS_DIR/$stem-state-comment.json"
+  local state_payload="$DISPATCH_ARTIFACTS_DIR/$stem-state-payload.json"
+  local state_out="$DISPATCH_ARTIFACTS_DIR/$stem-state-post.json"
 
   ensure_plan_fixture
   PLAN_BODY_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-issue-body.md"
   COMMENTS_JSON_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-comments.json"
 
+  printf '## Current Dashboard\n\n- Status: pending\n' >"$PLAN_BODY_PATH"
   write_record_content "$state_md" tracking
-  plan-issue record render-dashboard \
-    --profile tracking \
-    --status complete \
-    --target-scope "runtime smoke tracking" \
-    --current "S1T1" \
-    --next-action none \
-    --validation pass \
-    --linked-pr '#123' \
-    --approval "runtime smoke approval" \
-    --title "Runtime Smoke Tracking" \
-    --issue-url "https://github.com/example/repo/issues/1" \
+  write_state_payload "$state_payload" tracking
+  write_tracking_comments_json "$COMMENTS_JSON_PATH"
+  plan-issue record repair-dashboard \
+    --body-file "$PLAN_BODY_PATH" \
+    --comments-json "$COMMENTS_JSON_PATH" \
     --state-dir "$DISPATCH_STATE_DIR" \
-    --out "$PLAN_BODY_PATH" >"$dashboard_out" 2>&1
-  plan-issue record render-comment \
+    --out "$PLAN_BODY_PATH.repaired" >"$dashboard_out" 2>&1
+  plan-issue record post \
+    --dry-run \
+    --issue 1 \
     --profile tracking \
     --kind state \
-    --content-file "$state_md" \
+    --payload-file "$state_payload" \
+    --summary-file "$state_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
-  write_tracking_comments_json "$COMMENTS_JSON_PATH"
 
-  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$state_out"
+  grep -q 'plan-issue-cli.record.repair.dashboard.v2' "$dashboard_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$state_out"
 }
 
 build_dispatch_record_fixture() {
   local stem="$1"
-  local dashboard_out="$DISPATCH_ARTIFACTS_DIR/$stem-dashboard.json"
-  local ledger_out="$DISPATCH_ARTIFACTS_DIR/$stem-ledger.json"
+  local dashboard_out="$DISPATCH_ARTIFACTS_DIR/$stem-repair-dashboard.json"
+  local split_out="$DISPATCH_ARTIFACTS_DIR/$stem-split.json"
   local state_md="$DISPATCH_ARTIFACTS_DIR/$stem-state.md"
-  local state_out="$DISPATCH_ARTIFACTS_DIR/$stem-state-comment.json"
+  local state_payload="$DISPATCH_ARTIFACTS_DIR/$stem-state-payload.json"
+  local state_out="$DISPATCH_ARTIFACTS_DIR/$stem-state-post.json"
 
   ensure_plan_fixture
   PLAN_BODY_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-issue-body.md"
-  PLAN_TASK_SPEC_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-dispatch-ledger.md"
+  PLAN_TASK_SPEC_PATH="$split_out"
   COMMENTS_JSON_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-comments.json"
 
+  printf '## Current Dashboard\n\n- Status: pending\n' >"$PLAN_BODY_PATH"
   write_record_content "$state_md" dispatch
-  plan-issue record render-dashboard \
-    --profile dispatch \
-    --status complete \
-    --target-scope "runtime smoke dispatch" \
-    --current "S1T1" \
-    --next-action none \
-    --validation pass \
-    --linked-pr '#123' \
-    --approval "runtime smoke approval" \
-    --title "Runtime Smoke Dispatch" \
-    --issue-url "https://github.com/example/repo/issues/2" \
+  write_state_payload "$state_payload" dispatch
+  write_dispatch_comments_json "$COMMENTS_JSON_PATH"
+  plan-issue record repair-dashboard \
+    --body-file "$PLAN_BODY_PATH" \
+    --comments-json "$COMMENTS_JSON_PATH" \
     --state-dir "$DISPATCH_STATE_DIR" \
-    --out "$PLAN_BODY_PATH" >"$dashboard_out" 2>&1
-  plan-issue record build-dispatch-ledger \
-    --plan "$MINI_PLAN" \
+    --out "$PLAN_BODY_PATH.repaired" >"$dashboard_out" 2>&1
+  plan-tooling split-prs \
+    --file "$MINI_PLAN" \
+    --scope plan \
     --strategy deterministic \
     --pr-grouping group \
     --pr-group 'Task 1.1=smoke' \
-    --state-dir "$DISPATCH_STATE_DIR" \
-    --out "$PLAN_TASK_SPEC_PATH" >"$ledger_out" 2>&1
-  plan-issue record render-comment \
+    --format json >"$split_out" 2>&1
+  plan-issue record post \
+    --dry-run \
+    --issue 2 \
     --profile dispatch \
     --kind state \
-    --content-file "$state_md" \
+    --payload-file "$state_payload" \
+    --summary-file "$state_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
-  write_dispatch_comments_json "$COMMENTS_JSON_PATH"
 
-  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
-  grep -q 'plan-issue-cli.record.build.dispatch.ledger.v2' "$ledger_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$state_out"
-  grep -q '^## Dispatch Ledger' "$PLAN_TASK_SPEC_PATH"
+  grep -q 'plan-issue-cli.record.repair.dashboard.v2' "$dashboard_out"
+  grep -q '"records"' "$split_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$state_out"
 }
 
 write_review_evidence() {
@@ -327,6 +362,8 @@ run_specialist_scope_probe() {
 
 run_create_plan_tracking_issue_probe() {
   local validate_out="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-validate.txt"
+  local open_fixture="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-open-fixture"
+  local open_out="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-open.json"
   local audit_out="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-audit.json"
   require_dispatch_bin plan-tooling || return 1
   require_dispatch_bin plan-issue || return 1
@@ -334,6 +371,15 @@ run_create_plan_tracking_issue_probe() {
 
   plan-tooling validate --file "$MINI_PLAN" --format text --explain >"$validate_out" 2>&1
   build_tracking_record_fixture create-plan-tracking
+  mkdir -p "$open_fixture"
+  printf '## Current Dashboard\n\n- Status: pending\n' >"$open_fixture/issue-body.md"
+  cp "$COMMENTS_JSON_PATH" "$open_fixture/comments.json"
+  plan-issue record open \
+    --profile tracking \
+    --fixture "$open_fixture" \
+    --title "Runtime Smoke Tracking" \
+    --format json \
+    --state-dir "$DISPATCH_STATE_DIR" >"$open_out" 2>&1
   plan-issue record audit \
     --profile tracking \
     --body-file "$PLAN_BODY_PATH" \
@@ -341,83 +387,30 @@ run_create_plan_tracking_issue_probe() {
     --format json \
     --state-dir "$DISPATCH_STATE_DIR" >"$audit_out" 2>&1
 
+  grep -q 'plan-issue-cli.record.open.v2' "$open_out"
   grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"profile":"tracking"' "$audit_out"
 }
 
 run_tracking_issue_closeout_probe() {
-  local closeout_md="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout.md"
-  local gate_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-gate.json"
-  local dashboard_body="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-final-dashboard.md"
-  local render_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-render.json"
-  local dashboard_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-dashboard.json"
-  local comment_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-comment.json"
-  local edit_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-edit.json"
+  local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-fixture"
   local close_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-close.json"
-  local comment_body="$DISPATCH_ARTIFACTS_DIR/plan-tracking-issue-closeout-comment.md"
   require_dispatch_bin plan-issue || return 1
-  require_dispatch_bin forge-cli || return 1
   build_tracking_record_fixture plan-tracking-issue-closeout
+  write_close_fixture "$fixture" "$COMMENTS_JSON_PATH"
 
-  cat >"$closeout_md" <<'COMMENT'
-- Status: complete
-- Approval: runtime smoke approval
-- Linked PRs: #123
-COMMENT
-  plan-issue record closeout-gate \
+  plan-issue record close \
+    --issue 1 \
     --profile tracking \
-    --body-file "$PLAN_BODY_PATH" \
-    --comments-json "$COMMENTS_JSON_PATH" \
-    --require-complete \
-    --require-session \
-    --require-validation \
     --approval "runtime smoke approval" \
-    --linked-pr '#123' \
+    --linked-pr 'graysurf/agent-runtime-kit#123' \
+    --fixture "$fixture" \
     --format json \
-    --state-dir "$DISPATCH_STATE_DIR" >"$gate_out" 2>&1
-  plan-issue record render-comment \
-    --profile tracking \
-    --kind closeout \
-    --content-file "$closeout_md" \
-    --out "$comment_body" \
-    --state-dir "$DISPATCH_STATE_DIR" >"$render_out" 2>&1
-  plan-issue record render-dashboard \
-    --profile tracking \
-    --status complete \
-    --target-scope "runtime smoke tracking" \
-    --current complete \
-    --next-action none \
-    --validation pass \
-    --linked-pr '#123' \
-    --approval "runtime smoke approval" \
-    --closeout-url "https://github.com/example/repo/issues/1#issuecomment-closeout" \
-    --out "$dashboard_body" \
-    --state-dir "$DISPATCH_STATE_DIR" >"$dashboard_out" 2>&1
+    --state-dir "$DISPATCH_STATE_DIR" >"$close_out" 2>&1
 
-  forge-cli issue comment 123 \
-    --provider github \
-    --repo graysurf/agent-runtime-kit \
-    --dry-run \
-    --format json \
-    --body-file "$comment_body" >"$comment_out" 2>&1
-  forge-cli issue edit 123 \
-    --provider github \
-    --repo graysurf/agent-runtime-kit \
-    --dry-run \
-    --format json \
-    --body-file "$dashboard_body" >"$edit_out" 2>&1
-  forge-cli issue close 123 \
-    --provider github \
-    --repo graysurf/agent-runtime-kit \
-    --dry-run \
-    --format json >"$close_out" 2>&1
-
-  grep -q '"ready":true' "$gate_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$render_out"
-  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
-  grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$comment_out"
-  grep -q '"schema_version":"cli.forge-cli.issue.edit.v1"' "$edit_out"
-  grep -q '"schema_version":"cli.forge-cli.issue.close.v1"' "$close_out"
+  grep -q 'plan-issue-cli.record.close.v2' "$close_out"
+  grep -q '"mode":"fixture"' "$close_out"
+  grep -q 'deadbeefcafebabe' "$close_out"
 }
 
 run_deliver_dispatch_plan_probe() {
@@ -442,58 +435,29 @@ run_deliver_dispatch_plan_probe() {
     --testing --maintainability
 
   grep -q '"missing_required":\[\]' "$audit_out"
-  grep -q '^## Dispatch Ledger' "$PLAN_TASK_SPEC_PATH"
+  grep -q '"records"' "$PLAN_TASK_SPEC_PATH"
   grep -q '"forced_specialists"' "$specialist_out"
 }
 
 run_dispatch_issue_closeout_probe() {
-  local gate_out="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-gate.json"
-  local closeout_md="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout.md"
-  local closeout_comment="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-comment.md"
-  local render_out="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-render.json"
-  local dashboard_out="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-dashboard.json"
+  local fixture="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-fixture"
+  local close_out="$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-close.json"
   require_dispatch_bin plan-issue || return 1
   build_dispatch_record_fixture dispatch-plan-closeout
+  write_close_fixture "$fixture" "$COMMENTS_JSON_PATH"
 
-  cat >"$closeout_md" <<'COMMENT'
-- Status: complete
-- Approval: runtime smoke approval
-- Final PR: #123
-COMMENT
-  plan-issue record closeout-gate \
+  plan-issue record close \
+    --issue 2 \
     --profile dispatch \
-    --body-file "$PLAN_BODY_PATH" \
-    --comments-json "$COMMENTS_JSON_PATH" \
-    --require-complete \
-    --require-session \
-    --require-validation \
-    --require-review \
     --approval "runtime smoke approval" \
-    --linked-pr '#123' \
+    --linked-pr 'graysurf/agent-runtime-kit#123' \
+    --fixture "$fixture" \
     --format json \
-    --state-dir "$DISPATCH_STATE_DIR" >"$gate_out" 2>&1
-  plan-issue record render-comment \
-    --profile dispatch \
-    --kind closeout \
-    --content-file "$closeout_md" \
-    --out "$closeout_comment" \
-    --state-dir "$DISPATCH_STATE_DIR" >"$render_out" 2>&1
-  plan-issue record render-dashboard \
-    --profile dispatch \
-    --status complete \
-    --target-scope "runtime smoke dispatch" \
-    --current complete \
-    --next-action none \
-    --validation pass \
-    --linked-pr '#123' \
-    --approval "runtime smoke approval" \
-    --closeout-url "https://github.com/example/repo/issues/2#issuecomment-closeout" \
-    --out "$DISPATCH_ARTIFACTS_DIR/dispatch-plan-closeout-dashboard.md" \
-    --state-dir "$DISPATCH_STATE_DIR" >"$dashboard_out" 2>&1
+    --state-dir "$DISPATCH_STATE_DIR" >"$close_out" 2>&1
 
-  grep -q '"ready":true' "$gate_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$render_out"
-  grep -q 'plan-issue-cli.record.render.dashboard.v2' "$dashboard_out"
+  grep -q 'plan-issue-cli.record.close.v2' "$close_out"
+  grep -q '"mode":"fixture"' "$close_out"
+  grep -q 'deadbeefcafebabe' "$close_out"
 }
 
 run_execute_from_tracking_issue_probe() {
@@ -524,6 +488,7 @@ run_deliver_tracking_issue_probe() {
   local verify_out="$DISPATCH_ARTIFACTS_DIR/deliver-review-verify.json"
   local checks_out="$DISPATCH_ARTIFACTS_DIR/deliver-pr-checks.json"
   local validation_md="$DISPATCH_ARTIFACTS_DIR/deliver-validation.md"
+  local validation_payload="$DISPATCH_ARTIFACTS_DIR/deliver-validation-payload.json"
   local validation_out="$DISPATCH_ARTIFACTS_DIR/deliver-validation-comment.json"
   local specialist_out="$DISPATCH_ARTIFACTS_DIR/deliver-specialist-scope.json"
   require_dispatch_bin plan-tooling || return 1
@@ -541,10 +506,14 @@ run_deliver_tracking_issue_probe() {
     --dry-run --format json \
     pr checks 123 >"$checks_out" 2>&1
   write_record_content "$validation_md" tracking
-  plan-issue record render-comment \
+  write_validation_payload "$validation_payload"
+  plan-issue record post \
+    --dry-run \
+    --issue 1 \
     --profile tracking \
     --kind validation \
-    --content-file "$validation_md" \
+    --payload-file "$validation_payload" \
+    --summary-file "$validation_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$validation_out" 2>&1
 
   grep -q '"schema_version": "cli.review-evidence.verify.v1"' "$verify_out"
@@ -553,7 +522,7 @@ run_deliver_tracking_issue_probe() {
   grep -q '"maintainability"' "$specialist_out"
   grep -q '"testing"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.checks.v1"' "$checks_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$validation_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$validation_out"
 }
 
 run_dispatch_pr_review_probe() {
@@ -561,6 +530,7 @@ run_dispatch_pr_review_probe() {
   local comment_body="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-comment.md"
   local comment_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-comment.json"
   local review_md="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr.md"
+  local review_payload="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-payload.json"
   local review_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-record-comment.json"
   local specialist_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-specialist-scope.json"
   require_dispatch_bin plan-issue || return 1
@@ -578,16 +548,20 @@ run_dispatch_pr_review_probe() {
     pr comment 123 \
     --body-file "$comment_body" >"$comment_out" 2>&1
   write_record_content "$review_md" dispatch
-  plan-issue record render-comment \
+  write_review_payload "$review_payload"
+  plan-issue record post \
+    --dry-run \
+    --issue 2 \
     --profile dispatch \
     --kind review \
-    --content-file "$review_md" \
+    --payload-file "$review_payload" \
+    --summary-file "$review_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$review_out" 2>&1
 
   grep -q '"schema_version": "cli.review-evidence.verify.v1"' "$verify_out"
   grep -q '"suggested_specialists"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.comment.v1"' "$comment_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$review_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$review_out"
 }
 
 run_dispatch_subagent_pr_probe() {
@@ -595,6 +569,7 @@ run_dispatch_subagent_pr_probe() {
   local pr_body="$DISPATCH_ARTIFACTS_DIR/execute-dispatch-lane-body.md"
   local create_out="$DISPATCH_ARTIFACTS_DIR/execute-dispatch-lane-create.json"
   local session_md="$DISPATCH_ARTIFACTS_DIR/execute-dispatch-lane-session.md"
+  local session_payload="$DISPATCH_ARTIFACTS_DIR/execute-dispatch-lane-session-payload.json"
   local session_out="$DISPATCH_ARTIFACTS_DIR/execute-dispatch-lane-session-comment.json"
   require_dispatch_bin plan-issue || return 1
   require_dispatch_bin forge-cli || return 1
@@ -622,26 +597,30 @@ run_dispatch_subagent_pr_probe() {
       --strict-labels
   ) >"$create_out" 2>&1
   write_record_content "$session_md" dispatch
-  plan-issue record render-comment \
+  write_session_payload "$session_payload"
+  plan-issue record post \
+    --dry-run \
+    --issue 2 \
     --profile dispatch \
     --kind session \
-    --content-file "$session_md" \
+    --payload-file "$session_payload" \
+    --summary-file "$session_md" \
     --state-dir "$DISPATCH_STATE_DIR" >"$session_out" 2>&1
 
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$create_out"
   grep -q '"workflow::dispatch"' "$create_out"
   grep -q '"size::s"' "$create_out"
-  grep -q 'plan-issue-cli.record.render.comment.v2' "$session_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$session_out"
 }
 
 failures=0
-record_case "dispatch.create-plan-tracking-issue" "plan-tooling plus shared tracking dashboard/comment/audit probes passed" run_create_plan_tracking_issue_probe || failures=1
-record_case "dispatch.deliver-dispatch-plan" "shared dispatch dashboard, ledger, audit, and specialist scope probes passed" run_deliver_dispatch_plan_probe || failures=1
-record_case "dispatch.dispatch-plan-closeout" "shared dispatch closeout gate and rendering probes passed" run_dispatch_issue_closeout_probe || failures=1
-record_case "dispatch.plan-tracking-issue-closeout" "tracking closeout gate, render, and forge-cli dry-run probes passed" run_tracking_issue_closeout_probe || failures=1
+record_case "dispatch.create-plan-tracking-issue" "plan-tooling plus tracking post/repair/audit probes passed" run_create_plan_tracking_issue_probe || failures=1
+record_case "dispatch.deliver-dispatch-plan" "dispatch post/repair/audit, split, and specialist scope probes passed" run_deliver_dispatch_plan_probe || failures=1
+record_case "dispatch.dispatch-plan-closeout" "dispatch record close fixture probe passed" run_dispatch_issue_closeout_probe || failures=1
+record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixture probe passed" run_tracking_issue_closeout_probe || failures=1
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe || failures=1
-record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation comment probes passed" run_deliver_tracking_issue_probe || failures=1
-record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review comment probes passed" run_dispatch_pr_review_probe || failures=1
-record_case "dispatch.execute-dispatch-lane" "execute dispatch lane PR create and dispatch session comment probes passed" run_dispatch_subagent_pr_probe || failures=1
+record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe || failures=1
+record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe || failures=1
+record_case "dispatch.execute-dispatch-lane" "execute dispatch lane PR create and dispatch session post probes passed" run_dispatch_subagent_pr_probe || failures=1
 
 exit "$failures"

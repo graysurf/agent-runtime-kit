@@ -10,8 +10,8 @@ description:
 
 Prereqs:
 
-- `forge-cli` and `plan-issue` are installed from the released nils-cli package
-  and available on `PATH`.
+- `forge-cli` and `plan-issue >=0.20.0` are installed from the released
+  nils-cli package and available on `PATH`.
 - A plan issue or dispatch record identifies the lane, source branch, base
   plan branch, task scope, and required validation.
 - Dispatch-plan lanes must target `PLAN_BRANCH`, not the repository default
@@ -78,18 +78,15 @@ forge-cli --provider github --dry-run --format json pr create \
   --strict-labels
 ```
 
-Render the issue-visible dispatch handoff comment with the shared record
-primitive:
+Post the issue-visible dispatch handoff comment with the shared record owner:
 
 ```bash
-plan-issue record render-comment \
+plan-issue --repo "$REPO" --format json record post \
+  --issue "$PLAN_ISSUE" \
   --profile dispatch \
   --kind session \
-  --content-file "$DISPATCH_SESSION_FILE" \
-  --out "$DISPATCH_SESSION_COMMENT"
-
-forge-cli --provider github --repo "$REPO" issue comment "$PLAN_ISSUE" \
-  --body-file "$DISPATCH_SESSION_COMMENT"
+  --payload-file "$DISPATCH_SESSION_PAYLOAD" \
+  --summary-file "$DISPATCH_SESSION_FILE"
 ```
 
 ## Workflow
@@ -113,14 +110,13 @@ forge-cli --provider github --repo "$REPO" issue comment "$PLAN_ISSUE" \
    evidence before mutation.
 7. Confirm the requested base equals the assigned `PLAN_BRANCH`.
 8. Run `forge-cli --provider github pr create ...` to create the draft lane PR.
-9. Write the PR URL back to the owning issue timeline by rendering a dispatch
-   `session` comment with `plan-issue record render-comment --profile dispatch
-  `, then posting it through `forge-cli issue comment`.
+9. Write the PR URL back to the owning issue timeline by posting a dispatch
+   `session` comment with `plan-issue record post --profile dispatch`.
    Use `plan-issue link-pr` only for pre-record compatibility issues that
    already use a `Task Decomposition` body.
 
 ## Boundary
 
-`forge-cli` owns the GitHub PR creation call. The dispatch workflow owns lane
-selection, issue timeline updates, validation interpretation, and reviewer or
-subagent handoff policy.
+`forge-cli` owns the GitHub PR creation call. `plan-issue record` owns the
+dispatch issue timeline update. The dispatch workflow owns lane selection,
+validation interpretation, and reviewer or subagent handoff policy.
