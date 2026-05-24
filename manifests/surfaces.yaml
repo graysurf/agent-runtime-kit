@@ -1,0 +1,646 @@
+# SUPPORT_MATRIX surface registry.
+#
+# Schema: ../core/docs/schemas/surfaces.schema.json
+# Architecture: docs/source/inventory-target-architecture.md
+# Plan: docs/plans/support-matrix-rendered/
+#
+# This manifest is the canonical row registry for the cross-product
+# SUPPORT_MATRIX view rendered by `agent-runtime render --target
+# support-matrix`.
+schema_version: 1
+
+render:
+  target: support-matrix
+  root_view: SUPPORT_MATRIX.md
+  output: build/shared/SUPPORT_MATRIX.md
+
+surfaces:
+  - id: home-prompt
+    ordinal: 1
+    name: "home prompt (`AGENTS.md` / `CLAUDE.md`)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "symlink `$CODEX_HOME/AGENTS.md -> AGENT_HOME.md`"
+        source_artifacts:
+          - AGENT_HOME.md
+        min_product: "0.130.0"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "— (home-policy cutover only)"
+            descriptive_only: true
+          - kind: live
+            command: 'test -e "${CODEX_HOME:-$HOME/.codex}/AGENTS.md"'
+            success:
+              exit_status: 0
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:540-544"
+      claude:
+        state: shipped
+        mechanism: "symlink `$HOME/.claude/CLAUDE.md -> AGENT_HOME.md`"
+        source_artifacts:
+          - AGENT_HOME.md
+        min_product: "2.1.145"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "— (home-policy cutover only)"
+            descriptive_only: true
+          - kind: live
+            note: "live Claude session"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:222-235"
+
+  - id: project-prompt
+    ordinal: 2
+    name: "project prompt (`./AGENTS.md` / `./CLAUDE.md`)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "repo working tree; `./AGENTS.md` tracked"
+        source_artifacts:
+          - AGENTS.md
+        min_product: "0.130.0"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            command: "test -f AGENTS.md"
+            success:
+              exit_status: 0
+          - kind: live
+            note: "live Codex session in repo"
+            descriptive_only: true
+        source_manifest:
+          - "AGENTS.md:1-10"
+      claude:
+        state: shipped
+        mechanism: "repo working tree; `./CLAUDE.md` symlinks to `./AGENTS.md`"
+        source_artifacts:
+          - "CLAUDE.md -> AGENTS.md"
+        min_product: "2.1.145"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "live Claude session in repo"
+            descriptive_only: true
+        source_manifest:
+          - "AGENTS.md:1-10"
+
+  - id: plugin-manifest
+    ordinal: 3
+    name: "plugin manifest (`.codex-plugin` / `.claude-plugin` `plugin.json`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "metadata copy for audit only; Codex has no plugin loader at runtime"
+        source_artifacts:
+          - "targets/codex/plugins/<plugin>/.codex-plugin/plugin.json"
+        min_product: "n/a"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (audit-drift schema check, local only)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/product-capabilities.yaml:23-30"
+          - "docs/source/inventory-target-architecture.md:562-571"
+      claude:
+        state: shipped
+        mechanism: "`plugin-manifest-copy` per plugin into `~/.claude/plugins/<p>/.claude-plugin/plugin.json`"
+        source_artifacts:
+          - "targets/claude/plugins/<plugin>/.claude-plugin/plugin.json"
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (audit-drift), gate 7 (sandbox install rehearsal)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/product-capabilities.yaml:47-54"
+          - "targets/claude/link-map.yaml:15-18"
+
+  - id: plugin-marketplace
+    ordinal: 4
+    name: "plugin marketplace (`.claude-plugin/marketplace.json`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex has no marketplace API"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/product-capabilities.yaml:43"
+          - "docs/source/inventory-target-architecture.md:566-567"
+      claude:
+        state: shipped
+        mechanism: "`plugin-manifest-copy` of root marketplace.json"
+        source_artifacts:
+          - targets/claude/.claude-plugin/marketplace.json
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (audit-drift), gate 7"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/product-capabilities.yaml:59-63"
+          - "targets/claude/link-map.yaml:130-133"
+
+  - id: plugin-scoped-skill-discovery
+    ordinal: 5
+    name: "plugin-scoped skill discovery (`plugins/<p>/skills/<s>/`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex local skills live under `$CODEX_HOME/skills`, not plugin roots; row 15 is the active root"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:545-554, 569-584"
+      claude:
+        state: shipped
+        mechanism: "rendered to `build/claude/plugins/<p>/skills/<s>/`, then `symlinked-file` `recursive: true` per plugin"
+        source_artifacts:
+          - "core/skills/<domain>/<skill>/ -> build/claude/plugins/<p>/skills/<s>/"
+        min_product: "2.1.145"
+        min_nils_cli: "v0.20.0"
+        acceptance:
+          - kind: ci
+            note: "gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox), gate 8 (runtime-smoke)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/product-capabilities.yaml:62"
+          - "targets/claude/link-map.yaml:20-24"
+
+  - id: slash-command-files
+    ordinal: 6
+    name: "slash command files (`commands/<n>.md`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex has no `commands/` loader in the runtime-kit activation surface"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:540-560"
+      claude:
+        state: shipped
+        mechanism: "`symlinked-file` of `targets/claude/commands` directory into `~/.claude/commands`"
+        source_artifacts:
+          - targets/claude/commands/new-project-skill.md
+          - targets/claude/commands/memory-clean.md
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 7 (sandbox install)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:228-230"
+          - "targets/claude/link-map.yaml:140-143"
+
+  - id: subagent-definitions
+    ordinal: 7
+    name: "subagent definitions (`agents/<n>.md`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex has no file-backed subagent loader; `AGENT_HOME.md` carries delegation modes as policy text"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "AGENT_HOME.md:37-49"
+          - "docs/source/inventory-target-architecture.md:226-228"
+      claude:
+        state: not-shipped
+        mechanism: "arkit does not ship any `agents/<n>.md` source today"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-claude.md row 7"
+
+  - id: hook-scripts
+    ordinal: 8
+    name: "hook scripts (`hooks/<n>.*`)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "`core/hooks/shared/` symlinked into `$CODEX_HOME/hooks`"
+        source_artifacts:
+          - core/hooks/shared/
+        min_product: "0.130.0"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 10 (`tests/hooks/run.sh`)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "targets/codex/link-map.yaml:391-394"
+      claude:
+        state: partial
+        mechanism: "`core/hooks/shared/` symlinked into `~/.claude/hooks`; `targets/claude/hooks/` adapter slot reserved but empty"
+        source_artifacts:
+          - core/hooks/shared/
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 10 (`tests/hooks/run.sh`)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "targets/claude/link-map.yaml:125-128"
+          - "docs/source/inventory-target-architecture.md:1978-1981"
+
+  - id: hook-settings-json
+    ordinal: 9
+    name: "hook registration via `settings.json` block"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex hook activation is TOML-only (surface 16); no `settings.json` equivalent"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:555-558"
+      claude:
+        state: planned-not-shipped
+        mechanism: "managed-block contract defined; no `settings.json.template` artifact in `targets/claude/` yet"
+        source_artifacts: []
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (would cover marker pair when shipped)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/runtime-roots.yaml:34"
+          - "docs/source/inventory-target-architecture.md:460, 1264-1278"
+
+  - id: output-styles
+    ordinal: 10
+    name: "output styles (`output-styles/<n>.md`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex has no output-styles loader"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:232"
+      claude:
+        state: not-shipped
+        mechanism: "arkit does not ship any `output-styles/<n>.md` source today"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-claude.md row 10"
+
+  - id: status-line
+    ordinal: 11
+    name: "status line (`statusLine` in `settings.json`)"
+    products:
+      codex:
+        state: not-applicable
+        mechanism: "Codex has no `settings.json` / statusLine loader"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:233"
+      claude:
+        state: not-shipped
+        mechanism: "arkit does not template `statusLine`; same gap as the `settings.json` slot itself"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-claude.md row 11"
+
+  - id: mcp-servers
+    ordinal: 12
+    name: "MCP servers (per-user MCP config)"
+    products:
+      codex:
+        state: not-shipped
+        mechanism: "runtime-kit does not template MCP servers; per-user MCP credentials are classified as sensitive"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:1456-1464"
+      claude:
+        state: not-shipped
+        mechanism: "same as codex; out-of-scope by design (secret boundary)"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:1456-1464"
+
+  - id: heuristic-system
+    ordinal: 13
+    name: "heuristic system (curated retained records)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "shared policy root; consumed by `heuristic-inbox` binary with explicit `--inbox-dir`"
+        source_artifacts:
+          - core/policies/heuristic-system/
+        min_product: "0.130.0"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 8 (runtime-smoke deterministic, meta domain)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:950-956"
+      claude:
+        state: shipped
+        mechanism: "same shared policy root"
+        source_artifacts:
+          - core/policies/heuristic-system/
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 8 (runtime-smoke deterministic, meta domain)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/inventory-target-architecture.md:950-956"
+
+  - id: runtime-state
+    ordinal: 14
+    name: "runtime state (`state_home`)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "`CODEX_AGENT_STATE_HOME` env var + `agent-out` runtime allocator"
+        source_artifacts:
+          - "manifests/runtime-roots.yaml codex block"
+        min_product: "0.130.0"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (drift), gate 7 (doctor `block=0`)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/runtime-roots.yaml:17-23"
+          - "manifests/product-capabilities.yaml:40-42"
+      claude:
+        state: shipped
+        mechanism: "`CLAUDE_KIT_STATE_HOME` env var + `agent-out` runtime allocator"
+        source_artifacts:
+          - "manifests/runtime-roots.yaml claude block"
+        min_product: "2.1.145"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (drift), gate 7 (doctor `block=0`)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/runtime-roots.yaml:29-35"
+          - "manifests/product-capabilities.yaml:64-66"
+
+  - id: codex-local-skill-root
+    ordinal: 15
+    name: "Codex local skill root (`$CODEX_HOME/skills/<d>/<s>/`)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "one directory symlink per active skill folder under `$CODEX_HOME/skills/<d>/<s>/`"
+        source_artifacts:
+          - "core/skills/<domain>/<skill>/ -> build/codex/plugins/<d>/skills/<s>/"
+        min_product: "0.130.0"
+        min_nils_cli: "v0.20.0"
+        acceptance:
+          - kind: ci
+            note: "gate 3 (render), gate 5 (golden), gate 6 (drift), gate 7 (`doctor --class skill-surface --product codex`), gate 8 (sandbox), gate 9 (runtime-smoke)"
+            descriptive_only: true
+          - kind: live
+            note: "`codex debug prompt-input` fresh session"
+            descriptive_only: true
+        source_manifest:
+          - "targets/codex/link-map.yaml:7-12, 28-44, 57-127, 343-389"
+          - manifests/skills.yaml
+      claude:
+        state: not-applicable
+        mechanism: "Claude uses plugin-scoped skill discovery (surface 5) instead"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/product-capabilities.yaml:45-62"
+
+  - id: codex-hook-registration
+    ordinal: 16
+    name: "Codex hook registration (`config.toml` managed block)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "`managed-block` sync into `$CODEX_HOME/config.toml`, surface `hooks`, hash-comment markers"
+        source_artifacts:
+          - targets/codex/hooks/config.block.toml
+        min_product: "0.130.0"
+        min_nils_cli: "v0.17.5"
+        acceptance:
+          - kind: ci
+            note: "gate 5 (drift, managed-block presence + marker pair), gate 10 (`tests/hooks/run.sh`)"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "targets/codex/link-map.yaml:396-401"
+          - "docs/source/inventory-target-architecture.md:1256-1270"
+      claude:
+        state: not-applicable
+        mechanism: "Claude uses `settings.json` block (surface 9) instead; the two are different upstream primitives"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "—"
+            descriptive_only: true
+        source_manifest:
+          - "manifests/runtime-roots.yaml:17-38"
+
+  - id: prompt-mode-delegation-policy
+    ordinal: 17
+    name: "prompt-mode delegation policy (`AGENT_HOME.md`)"
+    products:
+      codex:
+        state: shipped
+        mechanism: "policy text loaded as part of the home prompt (surface 1)"
+        source_artifacts:
+          - AGENT_HOME.md
+        min_product: "0.130.0"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "live Codex session"
+            descriptive_only: true
+        source_manifest:
+          - "AGENT_HOME.md:37-49"
+      claude:
+        state: shipped
+        mechanism: "same shared home prompt, same policy text"
+        source_artifacts:
+          - AGENT_HOME.md
+        min_product: "2.1.145"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "—"
+            descriptive_only: true
+          - kind: live
+            note: "live Claude session"
+            descriptive_only: true
+        source_manifest:
+          - "AGENT_HOME.md:37-49"

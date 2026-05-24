@@ -104,6 +104,11 @@ Status: source document for the first implementation discussion
   repo `.agents/skills` surfaces. These intentionally do not mutate
   runtime-kit manifests for the consuming project or revive `$HOME/.agents` as
   a global discovery alias.
+- 2026-05-25 (support matrix registry pass) — added
+  `manifests/surfaces.yaml` as the typed row registry for the root
+  `SUPPORT_MATRIX.md` view. Rendering remains a nils-cli-owned follow-up; the
+  registry prevents new rows and acceptance metadata from living only in a
+  hand-authored Markdown table.
 - 2026-05-20 (specialist-review batch 2) — spec-depth pass:
   rewrote Drift Detection with a composite `unsafe` score
   (path / keyword / entropy at 0.4 each; block ≥ 0.8, warn at single
@@ -645,6 +650,11 @@ contract above is the working assumption.
   plugin manifest schema, hooks model, config activation, runtime state
   boundaries, and the explicit field-level diff between
   `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`.
+- `surfaces.yaml`: the cross-product SUPPORT_MATRIX row registry, including
+  per-product state, mechanism, source artifacts, version floors, source
+  pointers, and typed CI/live acceptance entries. `agent-runtime render
+  --target support-matrix` should consume this registry rather than parsing
+  `SUPPORT_MATRIX.md`.
 - `runtime-roots.yaml`: per-product root resolution (see Runtime Root Model).
 - `cli-tools.yaml`: profile-keyed third-party CLI install list consumed by
   `scripts/setup.sh` and `agent-runtime doctor`. Mirrors the catalog in

@@ -193,13 +193,15 @@ That currently performs:
    documented floor
 3. `agent-runtime render --product codex`
 4. `agent-runtime render --product claude`
-5. render-golden refresh plus `git diff --exit-code -- tests/golden/`
-6. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
-7. `agent-runtime doctor --class skill-surface --product codex` shape preflight
-8. sandbox install rehearsal dry-run plus expected skill-list diff
-9. `bash tests/runtime-smoke/run.sh --mode deterministic`
-10. `bash tests/projects/project-local-smoke/run.sh`
-11. `bash tests/hooks/run.sh`
+5. `agent-runtime render --target support-matrix`
+6. render-golden refresh plus `git diff --exit-code -- tests/golden/`
+7. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
+8. `bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance`
+9. `agent-runtime doctor --class skill-surface --product codex` shape preflight
+10. sandbox install rehearsal dry-run plus expected skill-list diff
+11. `bash tests/runtime-smoke/run.sh --mode deterministic`
+12. `bash tests/projects/project-local-smoke/run.sh`
+13. `bash tests/hooks/run.sh`
 
 Position 2 closes the stale-host class identified by the inbox case
 `plan-issue-v2-marker-collapse-drift`: before this gate, a host below the
@@ -209,7 +211,11 @@ binaries are allowed; later gates still catch render, drift, and smoke
 incompatibilities. The gate emits a remediation banner naming both the
 documented floor and the host's `agent-runtime --version`.
 
-The skill-surface shape diagnostic at position 7 is a deterministic
+The surface manifest validation at position 8 also executes the promoted
+acceptance entries, which currently cover one `kind=ci` command and one
+`kind=live` command from the registry.
+
+The skill-surface shape diagnostic at position 9 is a deterministic
 preflight, not live Codex Desktop acceptance. It validates only the
 runtime-kit source/link-map surface that Codex would discover; live skill
 visibility still requires `codex debug prompt-input` in a fresh Codex
@@ -226,6 +232,10 @@ plan-tooling validate --format text --explain
 bash scripts/ci/skill-governance-audit.sh
 bash scripts/ci/skill-governance-audit.sh --fixture create
 bash scripts/ci/skill-governance-audit.sh --fixture remove
+bash scripts/ci/validate-surfaces-manifest.sh
+bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
+if bash scripts/ci/validate-surfaces-manifest.sh \
+  tests/surfaces/invalid-acceptance.yaml; then exit 1; else test $? -ne 0; fi
 agent-runtime audit-drift
 agent-runtime audit-drift --source-root tests/drift/source-manifest-missing/
 bash scripts/ci/sandbox-install-rehearsal.sh
