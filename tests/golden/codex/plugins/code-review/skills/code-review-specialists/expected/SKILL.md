@@ -84,6 +84,10 @@ review-specialists bundle --input findings.jsonl --out-dir "$REVIEW_OUT" --profi
 Do not use it for tiny diffs, ordinary implementation work, pure formatting or
 doc-only changes unless requested, CI repair loops, or browser-facing checks
 owned by browser-session workflows.
+Use `code-review-quick-pass` for lightweight review, `code-review-focused-lens`
+for one explicitly requested lens, `code-review-pre-merge-gate` for delivery
+gate review, and `code-review-follow-up` when re-checking previous findings
+after fixes.
 
 ## Workflow
 
@@ -133,6 +137,14 @@ owned by browser-session workflows.
 
 - Specialist review contract:
   `references/SPECIALIST_REVIEW_CONTRACT.md`
+- Quick pass workflow:
+  `skills/code-review/code-review-quick-pass/SKILL.md`
+- Focused lens workflow:
+  `skills/code-review/code-review-focused-lens/SKILL.md`
+- Pre-merge gate workflow:
+  `skills/code-review/code-review-pre-merge-gate/SKILL.md`
+- Follow-up workflow:
+  `skills/code-review/code-review-follow-up/SKILL.md`
 - Report template:
   `references/SPECIALIST_REVIEW_REPORT_TEMPLATE.md`
 - Specialist prompts:

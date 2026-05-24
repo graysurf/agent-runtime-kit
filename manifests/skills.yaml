@@ -567,6 +567,62 @@ skills:
       forge-cli: ">=0.17.5"
     state_out_mode: runtime
 
+  - id: code-review.code-review-focused-lens
+    domain: code-review
+    source: core/skills/code-review/code-review-focused-lens
+    products:
+      codex:
+        name: code-review-focused-lens
+        render_to: plugins/code-review/skills/code-review-focused-lens/SKILL.md
+      claude:
+        name: code-review-focused-lens
+        render_to: plugins/code-review/skills/code-review-focused-lens/SKILL.md
+    required_clis:
+      review-specialists: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: code-review.code-review-follow-up
+    domain: code-review
+    source: core/skills/code-review/code-review-follow-up
+    products:
+      codex:
+        name: code-review-follow-up
+        render_to: plugins/code-review/skills/code-review-follow-up/SKILL.md
+      claude:
+        name: code-review-follow-up
+        render_to: plugins/code-review/skills/code-review-follow-up/SKILL.md
+    required_clis:
+      review-specialists: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: code-review.code-review-pre-merge-gate
+    domain: code-review
+    source: core/skills/code-review/code-review-pre-merge-gate
+    products:
+      codex:
+        name: code-review-pre-merge-gate
+        render_to: plugins/code-review/skills/code-review-pre-merge-gate/SKILL.md
+      claude:
+        name: code-review-pre-merge-gate
+        render_to: plugins/code-review/skills/code-review-pre-merge-gate/SKILL.md
+    required_clis:
+      review-specialists: ">=0.17.1"
+    state_out_mode: runtime
+
+  - id: code-review.code-review-quick-pass
+    domain: code-review
+    source: core/skills/code-review/code-review-quick-pass
+    products:
+      codex:
+        name: code-review-quick-pass
+        render_to: plugins/code-review/skills/code-review-quick-pass/SKILL.md
+      claude:
+        name: code-review-quick-pass
+        render_to: plugins/code-review/skills/code-review-quick-pass/SKILL.md
+    required_clis:
+      review-specialists: ">=0.17.1"
+    state_out_mode: runtime
+
   - id: code-review.code-review-specialists
     domain: code-review
     source: core/skills/code-review/code-review-specialists

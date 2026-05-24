@@ -43,6 +43,8 @@ record_case() {
 init_diff_fixture() {
   local tree commit
 
+  rm -rf "$CODE_REVIEW_WORKSPACE"
+  mkdir -p "$CODE_REVIEW_WORKSPACE"
   cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$CODE_REVIEW_WORKSPACE"
   git -C "$CODE_REVIEW_WORKSPACE" init -q
   git -C "$CODE_REVIEW_WORKSPACE" config user.email runtime-smoke@example.invalid
@@ -64,6 +66,81 @@ write_findings() {
   cat >"$findings" <<'JSONL'
 {"severity":"HIGH","confidence":0.82,"path":"src/api.py","line":1,"category":"api-contract","summary":"Runtime smoke finding.","evidence":"Fixture evidence anchors the changed API file.","recommendation":"Keep the fixture stable.","specialist":"api-contract","test_suggestion":"Keep a focused smoke test."}
 JSONL
+}
+
+run_quick_pass_probe() {
+  local scope_out="$CODE_REVIEW_ARTIFACTS_DIR/quick-pass-scope.json"
+  require_code_review_bin review-specialists || return 1
+  init_diff_fixture
+
+  review-specialists scope \
+    --repo "$CODE_REVIEW_WORKSPACE" \
+    --base main \
+    --format json >"$scope_out" 2>&1
+
+  grep -q '"schema_version": "cli.review-specialists.scope.v1"' "$scope_out"
+  grep -q '"suggested_specialists"' "$scope_out"
+}
+
+run_focused_lens_probe() {
+  local scope_out="$CODE_REVIEW_ARTIFACTS_DIR/focused-lens-scope.json"
+  require_code_review_bin review-specialists || return 1
+  init_diff_fixture
+
+  review-specialists scope \
+    --repo "$CODE_REVIEW_WORKSPACE" \
+    --base main \
+    --testing \
+    --api-contract \
+    --format json >"$scope_out" 2>&1
+
+  grep -q '"schema_version": "cli.review-specialists.scope.v1"' "$scope_out"
+  grep -q '"forced_specialists"' "$scope_out"
+  grep -q '"testing"' "$scope_out"
+  grep -q '"api-contract"' "$scope_out"
+}
+
+run_pre_merge_gate_probe() {
+  local scope_out="$CODE_REVIEW_ARTIFACTS_DIR/pre-merge-gate-scope.json"
+  require_code_review_bin review-specialists || return 1
+  init_diff_fixture
+
+  review-specialists scope \
+    --repo "$CODE_REVIEW_WORKSPACE" \
+    --base main \
+    --testing \
+    --maintainability \
+    --format json >"$scope_out" 2>&1
+
+  grep -q '"schema_version": "cli.review-specialists.scope.v1"' "$scope_out"
+  grep -q '"forced_specialists"' "$scope_out"
+  grep -q '"testing"' "$scope_out"
+  grep -q '"maintainability"' "$scope_out"
+}
+
+run_follow_up_probe() {
+  local scope_out="$CODE_REVIEW_ARTIFACTS_DIR/follow-up-scope.json"
+  local findings="$CODE_REVIEW_ARTIFACTS_DIR/follow-up-findings.jsonl"
+  local validate_out="$CODE_REVIEW_ARTIFACTS_DIR/follow-up-validate.json"
+  require_code_review_bin review-specialists || return 1
+  init_diff_fixture
+  write_findings "$findings"
+
+  review-specialists scope \
+    --repo "$CODE_REVIEW_WORKSPACE" \
+    --base main \
+    --testing \
+    --maintainability \
+    --format json >"$scope_out" 2>&1
+  review-specialists validate \
+    --input "$findings" \
+    --repo "$CODE_REVIEW_WORKSPACE" \
+    --validate-paths \
+    --validate-lines \
+    --format json >"$validate_out" 2>&1
+
+  grep -q '"schema_version": "cli.review-specialists.scope.v1"' "$scope_out"
+  grep -q '"schema_version": "cli.review-specialists.validate.v1"' "$validate_out"
 }
 
 run_code_review_specialists_probe() {
@@ -107,6 +184,10 @@ run_code_review_specialists_probe() {
 }
 
 failures=0
+record_case "code-review.code-review-focused-lens" "focused lens scope with forced specialists passed" run_focused_lens_probe || failures=1
+record_case "code-review.code-review-follow-up" "follow-up validation and affected lens scope passed" run_follow_up_probe || failures=1
+record_case "code-review.code-review-pre-merge-gate" "pre-merge gate mandatory forced specialists passed" run_pre_merge_gate_probe || failures=1
+record_case "code-review.code-review-quick-pass" "quick-pass scope sizing probe passed" run_quick_pass_probe || failures=1
 record_case "code-review.code-review-specialists" "review-specialists scope, validate, merge, and render probes passed" run_code_review_specialists_probe || failures=1
 
 exit "$failures"
