@@ -157,6 +157,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.sync-runtime-skills.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.sync-runtime-skills
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: run from repo root with no-pull dry-run
+    invocation: sync-runtime-skills planned codex refresh without runtime mutation
+    expected_exit_code: 0
+    expected_artifacts: planned render install doctor and summary output
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.bench.shared-cli.project-local
     product: shared-cli
     domain: meta

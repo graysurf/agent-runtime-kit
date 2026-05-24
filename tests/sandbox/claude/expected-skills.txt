@@ -41,6 +41,7 @@ meta.remove-project-skill
 meta.remove-skill
 meta.repo-retro
 meta.semantic-commit
+meta.sync-runtime-skills
 pr.close-github-pr
 pr.close-gitlab-mr
 pr.create-dispatch-lane-pr
