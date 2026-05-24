@@ -3,19 +3,19 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: pending implementation
+- Status: tracking issue created; pending implementation
 - Target scope: Sprint 1 define governance contract and checks
 - Execution window: Sprint 1
 - Current task: Task 1.1 - define `skill-governance` workflow surface
 - Next task: Task 1.2 - add governance validation coverage
 - Last updated: 2026-05-24
-- Branch/commit/PR: feat/skill-lifecycle-management-plan (plan bundle); implementation branch pending
+- Branch/commit/PR: feat/skill-lifecycle-management-plan (`04e436d750dd37da441fb55ded2cfc5033f92bf4` plan bundle; implementation branch pending)
 - Source document: docs/plans/skill-lifecycle-management/skill-lifecycle-management-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/84
+- Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4527937190
+- Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4527937281
+- Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/84#issuecomment-4527937384
 - Predecessor issue: none
 
 ## Validation Plan
@@ -52,12 +52,19 @@
 - 2026-05-24: Created initial plan bundle from the skill lifecycle management
   discussion source. Scoped the tracker to governance, create, remove, and
   extraction-boundary decisions; deferred `create-project-skill`.
+- 2026-05-24: Opened tracking issue #84 with `plan-issue` v0.18.0. Dry-run
+  and live provider audit confirmed source, plan, and state comments use hidden
+  payload carriers without visible payload fences, and the state comment keeps
+  the execution-state Markdown.
 
 ## Validation
 
 | Command | Status | Summary | Artifact |
 | --- | --- | --- | --- |
-| `plan-tooling validate --file docs/plans/skill-lifecycle-management/skill-lifecycle-management-plan.md --format text --explain` | pending | Bundle structural validation. | n/a |
+| `plan-tooling validate --file docs/plans/skill-lifecycle-management/skill-lifecycle-management-plan.md --format text --explain` | passed | Bundle structural validation passed. | local output |
+| `plan-issue record open --dry-run --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/skill-lifecycle-management` | passed | Preview source/plan/state comments had `visible_fence=false` and `hidden_payload=true`. | `/Users/terry/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-171249-skill-lifecycle-management-tracker/record-open-dry-run.json` |
+| `plan-issue record open --format json --repo graysurf/agent-runtime-kit --bundle docs/plans/skill-lifecycle-management` | passed | Created tracking issue #84 with source, plan, and initial state comments. | `/Users/terry/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-171249-skill-lifecycle-management-tracker/record-open-live.json` |
+| `plan-issue record audit --profile tracking --body-file .../issue-84-body.md --comments-json .../issue-84.json --format json` | passed | GitHub read-back audit returned `missing_required:[]`, `unsupported_markers:[]`, `recognized_count:3`. | `/Users/terry/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-171249-skill-lifecycle-management-tracker/issue-84-audit.json` |
 | `agent-runtime render --product codex` | pending | Codex render remains valid after lifecycle surface changes. | n/a |
 | `agent-runtime render --product claude` | pending | Claude render remains valid after lifecycle surface changes. | n/a |
 | `agent-runtime audit-drift` | pending | Rendered outputs and manifests stay aligned. | n/a |
@@ -67,7 +74,7 @@
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta` | pending | Meta skill surfaces behave in runtime smoke. | n/a |
 | `bash tests/projects/project-local-smoke/run.sh` | pending | Project-local smoke remains compatible. | n/a |
 | `bash tests/hooks/run.sh` | pending | Hook and reminder metadata checks pass. | n/a |
-| `bash scripts/ci/all.sh` | pending | Full repo gate after implementation. | n/a |
+| `bash scripts/ci/all.sh` | passed | Pre-push hook ran positions 1-11 successfully for the plan-bundle branch. | push output |
 
 ## Notes
 
