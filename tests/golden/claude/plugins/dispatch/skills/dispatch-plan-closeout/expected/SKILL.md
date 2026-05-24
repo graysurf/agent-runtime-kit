@@ -65,7 +65,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile dispatch \
   --linked-pr "$OWNER_REPO#$FINAL_PR" \
   --approval "$APPROVAL" \
-  --bundle "$PLAN_BUNDLE"
+  --bundle "$PLAN_BUNDLE" \
+  --add-label state::closed \
+  --remove-label state::needs-triage
 ```
 
 ## Workflow
