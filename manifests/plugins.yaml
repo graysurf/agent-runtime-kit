@@ -109,6 +109,10 @@ plugins:
   - id: code-review
     domain: code-review
     contained_skills:
+      - code-review.code-review-focused-lens
+      - code-review.code-review-follow-up
+      - code-review.code-review-pre-merge-gate
+      - code-review.code-review-quick-pass
       - code-review.code-review-specialists
     product_manifests:
       codex: targets/codex/plugins/code-review/.codex-plugin/plugin.json

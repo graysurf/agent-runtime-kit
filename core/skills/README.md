@@ -9,7 +9,7 @@ human index for scanning the skill catalog by category and skill series.
 | Category | Skills | Main series |
 | --- | ---: | --- |
 | `browser` | 2 | Browser-session evidence, canary checks |
-| `code-review` | 1 | Specialist review |
+| `code-review` | 5 | Quick pass, focused lenses, pre-merge gate, follow-up, specialist review |
 | `conversation` | 7 | Advice, knowledge, handoff, work modes |
 | `dispatch` | 8 | Plan-tracking issues, dispatch plans, dispatch lanes |
 | `evidence` | 6 | Evidence records, impact scans, cross-checks |
@@ -30,6 +30,10 @@ human index for scanning the skill catalog by category and skill series.
 
 | Series | Skill | Purpose |
 | --- | --- | --- |
+| Quick pass | [code-review-quick-pass](./code-review/code-review-quick-pass/) | Runs a lightweight read-only review for small or ordinary diffs before escalating to specialist review. |
+| Focused lens | [code-review-focused-lens](./code-review/code-review-focused-lens/) | Runs one or more explicitly requested specialist review lenses without invoking the full specialist bundle. |
+| Pre-merge gate | [code-review-pre-merge-gate](./code-review/code-review-pre-merge-gate/) | Runs the shared read-only specialist review gate before PR or MR merge decisions. |
+| Follow-up | [code-review-follow-up](./code-review/code-review-follow-up/) | Re-checks previous review findings after fixes and classifies each item by disposition. |
 | Specialist review | [code-review-specialists](./code-review/code-review-specialists/) | Decomposes risky or broad diffs into read-only specialist review passes and merges normalized findings. |
 
 ## Conversation

@@ -16,6 +16,9 @@ without making low-level close skills mandatory review orchestrators.
 - `review-dispatch-lane-pr` may use `code-review-specialists` before a main-agent
   decision for broad, high-risk, security-sensitive, migration-heavy, or
   API-contract-heavy dispatch PRs.
+- `code-review-pre-merge-gate` exposes this shared gate as a direct read-only
+  code-review entrypoint when the caller needs gate evidence without provider
+  merge or comment actions.
 - `code-review-specialists` remains read-only. It supplies scope detection,
   specialist findings, and reports; it does not fix code, post PR or MR
   comments, mark draft reviewables ready, merge, close issues, or clean

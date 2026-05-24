@@ -342,6 +342,30 @@ entries:
     destination: plugins/code-review/skills
     recursive: true
 
+  - id: code-review.code-review-focused-lens.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/code-review/skills/code-review-focused-lens
+    destination: skills/code-review/code-review-focused-lens
+    recursive: false
+
+  - id: code-review.code-review-follow-up.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/code-review/skills/code-review-follow-up
+    destination: skills/code-review/code-review-follow-up
+    recursive: false
+
+  - id: code-review.code-review-pre-merge-gate.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/code-review/skills/code-review-pre-merge-gate
+    destination: skills/code-review/code-review-pre-merge-gate
+    recursive: false
+
+  - id: code-review.code-review-quick-pass.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/code-review/skills/code-review-quick-pass
+    destination: skills/code-review/code-review-quick-pass
+    recursive: false
+
   - id: code-review.code-review-specialists.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/code-review/skills/code-review-specialists

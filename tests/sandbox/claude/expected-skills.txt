@@ -1,5 +1,9 @@
 browser.browser-session
 browser.canary-check
+code-review.code-review-focused-lens
+code-review.code-review-follow-up
+code-review.code-review-pre-merge-gate
+code-review.code-review-quick-pass
 code-review.code-review-specialists
 conversation.actionable-advice
 conversation.actionable-knowledge

@@ -638,6 +638,58 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: code-review.code-review-focused-lens.shared-cli.deterministic
+    product: shared-cli
+    domain: code-review
+    skill_id: code-review.code-review-focused-lens
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git diff and force selected review lenses
+    invocation: review-specialists scope with testing and api-contract forced
+    expected_exit_code: 0
+    expected_artifacts: scope JSON with forced specialist list
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: code-review.code-review-follow-up.shared-cli.deterministic
+    product: shared-cli
+    domain: code-review
+    skill_id: code-review.code-review-follow-up
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git diff and previous finding JSONL
+    invocation: review-specialists validate and scoped rerun for affected lenses
+    expected_exit_code: 0
+    expected_artifacts: validation JSON and rerun scope JSON
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: code-review.code-review-pre-merge-gate.shared-cli.deterministic
+    product: shared-cli
+    domain: code-review
+    skill_id: code-review.code-review-pre-merge-gate
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git diff and mandatory gate lenses
+    invocation: review-specialists scope with testing and maintainability forced
+    expected_exit_code: 0
+    expected_artifacts: scope JSON with mandatory forced specialists
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: code-review.code-review-quick-pass.shared-cli.deterministic
+    product: shared-cli
+    domain: code-review
+    skill_id: code-review.code-review-quick-pass
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git diff
+    invocation: review-specialists scope for lightweight diff sizing
+    expected_exit_code: 0
+    expected_artifacts: scope JSON with suggested specialists
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: code-review.code-review-specialists.shared-cli.deterministic
     product: shared-cli
     domain: code-review

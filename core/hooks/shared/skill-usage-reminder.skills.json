@@ -16,6 +16,38 @@
     "record_when": "The workflow runs specialist review passes, writes a report, or gates a PR/release decision."
   },
   {
+    "skill": "code-review-quick-pass",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["code-review-quick-pass", "code review quick pass", "quick code review"],
+    "reason": "Quick review can create retained findings or escalation evidence for a diff.",
+    "record_when": "The workflow records findings, residual risk, or an escalation decision."
+  },
+  {
+    "skill": "code-review-focused-lens",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["code-review-focused-lens", "focused code review", "focused review lens"],
+    "reason": "Focused lens review can create specialist findings for a selected risk area.",
+    "record_when": "The workflow runs a forced specialist lens, writes findings, or gates a decision."
+  },
+  {
+    "skill": "code-review-pre-merge-gate",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["code-review-pre-merge-gate", "pre-merge review gate", "pre merge review gate"],
+    "reason": "Pre-merge review gates affect delivery readiness and should retain the review outcome.",
+    "record_when": "The workflow runs a pre-merge gate, writes a gate result, or blocks/allows delivery."
+  },
+  {
+    "skill": "code-review-follow-up",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["code-review-follow-up", "review follow-up", "review follow up"],
+    "reason": "Review follow-up records whether previous findings were resolved or accepted.",
+    "record_when": "The workflow classifies previous findings after repairs or records disposition evidence."
+  },
+  {
     "skill": "create-github-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",

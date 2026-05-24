@@ -7,6 +7,22 @@
   },
   "skills": [
     {
+      "id": "code-review-focused-lens",
+      "source": "core/skills/code-review/code-review-focused-lens"
+    },
+    {
+      "id": "code-review-follow-up",
+      "source": "core/skills/code-review/code-review-follow-up"
+    },
+    {
+      "id": "code-review-pre-merge-gate",
+      "source": "core/skills/code-review/code-review-pre-merge-gate"
+    },
+    {
+      "id": "code-review-quick-pass",
+      "source": "core/skills/code-review/code-review-quick-pass"
+    },
+    {
       "id": "code-review-specialists",
       "source": "core/skills/code-review/code-review-specialists"
     }
