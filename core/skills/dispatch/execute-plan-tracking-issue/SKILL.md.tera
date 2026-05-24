@@ -10,11 +10,9 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue`, and `forge-cli` are available on `PATH`.
-  The lifecycle record commands require
-  `plan-issue >=0.17.4`; before release, prepend the scoped nils-cli debug
-  binary directory to `PATH`.
-- The issue has source/plan snapshots and lifecycle comments, or enough
+- `plan-tooling`, `plan-issue >=0.20.0`, and `forge-cli` are available on
+  `PATH`.
+- The issue has source, plan, and state lifecycle comments, or enough
   issue-visible state to reconstruct them before edits.
 - Repository preflight and dirty-tree triage have passed.
 
@@ -24,41 +22,40 @@ Inputs:
   branch name, validation scope, and PR policy.
 - Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
   `workflow::tracking` for tracking-issue implementation work.
-- Latest state/session/validation comments, plus dashboard body and comments
-  fetched from the provider.
+- State/session/validation payload JSON plus optional visible Markdown
+  summaries.
 - Issue contract classification: lightweight tracking issue or dispatch issue.
 
 Outputs:
 
 - A scoped implementation branch and PR for the selected issue-backed task.
-- Updated append-only state/session/validation comments rendered through
-  `plan-issue record`.
-- A refreshed dashboard that links the latest durable comments, validation,
-  and PR evidence.
+- Updated append-only state, session, and validation comments posted through
+  `plan-issue record post`.
+- A refreshed dashboard from `plan-issue record repair-dashboard`.
 
 Failure modes:
 
-- The issue lacks recoverable source, plan, state, or task ledger evidence.
-- The issue is actually a dispatch runtime; route to `deliver-dispatch-plan`,
-  `execute-dispatch-lane`, or `dispatch-plan-closeout`.
+- The issue lacks recoverable source, plan, state, or task evidence.
+- The issue is actually a dispatch runtime; route to the dispatch workflow
+  family.
 - The selected task is ambiguous, validation fails, provider PR operations fail,
-  or dashboard audit cannot recognize the lifecycle markers.
+  or dashboard repair/audit cannot recognize lifecycle evidence.
 
 ## Entrypoint
 
 Fetch and audit issue state before edits:
 
 ```bash
-forge-cli issue view "$ISSUE" --repo "$OWNER_REPO" --format json >"$ISSUE_JSON"
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
+jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
 
-plan-issue record audit \
+plan-issue --format json record audit \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_COMMENTS_JSON" \
-  --format json
+  --comments-json "$ISSUE_JSON"
 ```
 
-Validate the plan and create the PR through provider tooling:
+Validate the plan and create or update the PR through provider tooling:
 
 ```bash
 plan-tooling validate --file "$PLAN" --format text --explain
@@ -78,45 +75,51 @@ forge-cli pr create \
   --format json
 ```
 
-Render the execution comments and dashboard:
+Post lifecycle comments and repair the dashboard:
 
 ```bash
-plan-issue record render-comment --profile tracking --kind state \
-  --content-file "$STATE_MD" --out "$STATE_COMMENT"
-plan-issue record render-comment --profile tracking --kind session \
-  --content-file "$SESSION_MD" --out "$SESSION_COMMENT"
-plan-issue record render-comment --profile tracking --kind validation \
-  --content-file "$VALIDATION_MD" --out "$VALIDATION_COMMENT"
-plan-issue record render-dashboard --profile tracking \
-  --state-url "$STATE_URL" \
-  --session-url "$SESSION_URL" \
-  --validation-url "$VALIDATION_URL" \
-  --linked-pr "#$PR_NUMBER" \
-  --out "$UPDATED_DASHBOARD"
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile tracking \
+  --kind state \
+  --payload-file "$STATE_PAYLOAD" \
+  --summary-file "$STATE_MD"
+
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile tracking \
+  --kind session \
+  --payload-file "$SESSION_PAYLOAD" \
+  --summary-file "$SESSION_MD"
+
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile tracking \
+  --kind validation \
+  --payload-file "$VALIDATION_PAYLOAD" \
+  --summary-file "$VALIDATION_MD"
+
+plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
+  --issue "$ISSUE"
 ```
 
 ## Issue Contract Selection
 
-- Lightweight tracking issues use the compatibility marker family:
-  - `<!-- plan-issue-record:v2 role=source profile=tracking -->`
-  - `<!-- plan-issue-record:v2 role=plan profile=tracking -->`
-  - `<!-- plan-issue-record:v2 role=state profile=tracking -->`
-  - `<!-- plan-issue-record:v2 role=session profile=tracking -->`
-  - `<!-- plan-issue-record:v2 role=validation profile=tracking -->`
+- Lightweight tracking issues use `plan-issue-record:v2` markers with
+  `profile=tracking`.
 - The mutable issue body is only a dashboard. The latest valid state comment is
-  the durable task ledger and should keep the canonical columns
-  `ID | Status | Task | Evidence | Notes`.
-- Dispatch issues use the dispatch profile and a dispatch ledger/state
-  comments. Do not rewrite a tracking issue into dispatch in place.
+  the durable task ledger and should keep the canonical state payload complete.
+- Dispatch issues use `profile=dispatch`; do not rewrite a tracking issue into
+  dispatch in place.
 
 ## Workflow
 
 1. Read issue body, comments, labels, linked PRs, and latest local plan state.
-2. Run `plan-issue record audit --profile tracking`; stop if required markers
-   are missing or the issue is classified as dispatch.
+2. Run `record audit --profile tracking`; stop if required markers are missing
+   or the issue is classified as dispatch.
 3. Validate the plan with `plan-tooling`.
-4. Update the issue-backed state markdown before code edits so the selected
-   task, current status, and next action are visible.
+4. Update the issue-backed state payload before code edits so the selected task,
+   current status, and next action are visible.
 5. Implement only the selected task scope and run validation.
 6. Select labels before PR mutation. Every tracking implementation PR needs
    `type::`, one primary `area::`, `size::`, and `workflow::tracking`; use
@@ -126,18 +129,16 @@ plan-issue record render-dashboard --profile tracking \
    before the first live PR in that repo. Use `label audit` when mutation is
    not allowed.
 8. Create or update the PR through `forge-cli`.
-9. Post state, session, and validation comments rendered by
-   `plan-issue record render-comment`.
-10. Re-render and edit the dashboard with latest comment URLs, validation
-   summary, PR references, blockers, and next action.
-11. Before merge, closeout, or final success reporting, run
-   `plan-issue record audit` again and verify the latest state is complete or
-   explicitly leaves follow-up/deferred rows.
+9. Post state, session, and validation comments through `record post`.
+10. Repair the dashboard through `record repair-dashboard`.
+11. Before merge, closeout, or final success reporting, run `record audit` again
+   and verify the latest state is complete or explicitly leaves
+   follow-up/deferred rows.
 
 ## Boundary
 
 `plan-tooling` owns plan parsing and validation. `plan-issue record` owns
-dashboard/comment rendering, marker audit, and local closeout gate evidence.
-`forge-cli` owns provider issue and PR mutation. The skill body owns scope
-selection, implementation judgment, validation interpretation, and whether a
-gate is strong enough to continue.
+lifecycle comments, dashboard repair, marker audit, and record closeout.
+`forge-cli` owns PR mutation. The skill body owns scope selection,
+implementation judgment, validation interpretation, and whether a gate is strong
+enough to continue.

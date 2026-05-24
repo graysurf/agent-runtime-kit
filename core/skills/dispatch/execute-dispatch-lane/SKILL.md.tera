@@ -10,9 +10,8 @@ description:
 
 Prereqs:
 
-- `forge-cli`, `plan-issue`, and `review-evidence` are available on `PATH`.
-  Dispatch lifecycle comment rendering requires `plan-issue >=0.17.4`; before
-  release, prepend the scoped nils-cli debug binary directory to `PATH`.
+- `forge-cli`, `plan-issue >=0.20.0`, and `review-evidence` are available on
+  `PATH`.
 - The caller has assigned task-lane facts: issue, task ID, owner, branch,
   worktree, execution mode, base branch, and PR state.
 - When dispatched by `deliver-dispatch-plan`, the lane includes
@@ -38,8 +37,8 @@ Outputs:
   or `forge-cli pr comment`.
 - Review-response evidence recorded through `review-evidence` when responding
   to main-agent comments.
-- A dispatch session or state comment body rendered through
-  `plan-issue record render-comment --profile dispatch`.
+- A dispatch session or state comment posted through
+  `plan-issue record post --profile dispatch`.
 - A blocker packet when required context is missing or conflicting, preserving
   the current task-lane facts.
 
@@ -54,7 +53,7 @@ Failure modes:
 - PR base branch differs from the assigned base branch; in dispatch-plan mode
   this must be `PLAN_BRANCH`.
 - Local validation fails, provider PR operations fail, or the lane state update
-  cannot be rendered.
+  cannot be posted.
 
 ## Entrypoint
 
@@ -80,16 +79,15 @@ forge-cli pr create \
 `forge-cli pr create` opens drafts by default; add `--no-draft` only when the
 lane is explicitly ready for immediate review.
 
-Render the issue-visible lane update:
+Post the issue-visible lane update:
 
 ```bash
-plan-issue record render-comment \
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
   --profile dispatch \
   --kind session \
-  --content-file "$LANE_SESSION_MD" \
-  --out "$LANE_SESSION_COMMENT"
-
-forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$LANE_SESSION_COMMENT" --format json
+  --payload-file "$LANE_SESSION_PAYLOAD" \
+  --summary-file "$LANE_SESSION_MD"
 ```
 
 Respond to review follow-up:
@@ -130,16 +128,15 @@ forge-cli pr comment "$PR_NUMBER" \
    is not allowed.
 9. Use `forge-cli pr create` to open the draft PR against the assigned base, or
    `forge-cli pr comment` to respond to review follow-up on the existing PR.
-10. Render a dispatch session/state comment that records PR URL, labels, validation,
-   lane facts, and any blocker. Post it to the owning issue through
-   `forge-cli issue comment`.
-11. Report validation, PR URL, issue comment URL, lane facts, labels, and any blocker
-   back to the main agent.
+10. Post a dispatch session/state comment that records PR URL, labels,
+   validation, lane facts, and any blocker through `plan-issue record post`.
+11. Report validation, PR URL, issue comment URL, lane facts, labels, and any
+   blocker back to the main agent.
 
 ## Boundary
 
 Native `git` owns local worktree mechanics. `forge-cli` owns provider PR
-creation and comments. `plan-issue record` owns dispatch comment rendering.
+creation and comments. `plan-issue record` owns dispatch lifecycle comments.
 `review-evidence` owns retained review response records. The skill body owns
 task-lane judgment, implementation scope, validation, and blocker handoff.
 

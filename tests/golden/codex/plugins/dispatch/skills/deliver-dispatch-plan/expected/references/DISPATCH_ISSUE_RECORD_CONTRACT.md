@@ -10,11 +10,9 @@ subagent task lanes, PR linkage, review evidence, and final close gates.
   row status.
 - Issue-hosted source and plan snapshots are durable restart context.
 - New dispatch issues use the shared `plan-issue-record:v2 profile=dispatch`
-  marker family (rendered by `plan-issue record render-comment --profile
-  dispatch --kind <role>` on `plan-issue >=0.17.7`). Older
-  `issue-backed-plan:*:v1 profile=dispatch` and `execute-from-tracking-issue:*`
-  comments remain readable but no longer round-trip; reopen any closed gate
-  by rendering a fresh v2 comment.
+  marker family. `plan-issue record open` seeds source, plan, and initial state;
+  `plan-issue record post --profile dispatch --kind <role>` appends later
+  lifecycle checkpoints.
 - Do not reuse `profile=tracking` markers for dispatch issues; the audit
   filter rejects them as unsupported for the dispatch profile.
 
@@ -44,9 +42,9 @@ Validation checkpoints should include pass/fail/blocked/skipped status,
 commands or gate checks, PR/check evidence, runtime artifacts, and residual or
 follow-up disposition.
 
-Closeout checkpoints should include approval basis, merged sprint PRs, merged
-integration PR, validation evidence, cleanup result, and dashboard repair
-status.
+Closeout checkpoints are produced by `plan-issue record close` and should
+include approval basis, merged lane PRs, merged integration PR, validation
+evidence, cleanup result, and dashboard repair status.
 
 ## Dashboard
 
