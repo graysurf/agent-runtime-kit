@@ -25,6 +25,8 @@ Inputs:
 
 - Issue number, task ID, base branch, assigned branch/worktree, PR title, PR
   body file, validation commands, and optional follow-up comment URL.
+- Selected lane PR labels: one `type::`, one primary `area::`, one `size::`,
+  and `workflow::dispatch`.
 - Dispatch record facts for lane continuity: owner, branch, worktree,
   execution mode, current PR, `workflow_role`, and optional runtime-role
   fallback rationale.
@@ -66,6 +68,12 @@ forge-cli pr create \
   --base "$BASE_BRANCH" \
   --title "$PR_TITLE" \
   --body-file "$PR_BODY" \
+  --label type::feature \
+  --label area::skills \
+  --label size::s \
+  --label workflow::dispatch \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels \
   --format json
 ```
 
@@ -113,12 +121,19 @@ forge-cli pr comment "$PR_NUMBER" \
 6. Validate PR body sections `## Summary`, `## Scope`, `## Testing`,
    `## Test plan`, and `## Issue`; remove placeholders such as `TBD`, `TODO`,
    `<...>`, and `#<number>`.
-7. Use `forge-cli pr create` to open the draft PR against the assigned base, or
+7. Select dispatch lane labels before provider mutation. Use `type::`,
+   one primary `area::`, `size::`, and `workflow::dispatch`; add
+   `state::do-not-merge` if the lane PR must remain blocked.
+8. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
+   before the first live lane PR in that repo. Use `label audit` when mutation
+   is not allowed.
+9. Use `forge-cli pr create` to open the draft PR against the assigned base, or
    `forge-cli pr comment` to respond to review follow-up on the existing PR.
-8. Render a dispatch session/state comment that records PR URL, validation,
+10. Render a dispatch session/state comment that records PR URL, labels, validation,
    lane facts, and any blocker. Post it to the owning issue through
    `forge-cli issue comment`.
-9. Report validation, PR URL, issue comment URL, lane facts, and any blocker
+11. Report validation, PR URL, issue comment URL, lane facts, labels, and any blocker
    back to the main agent.
 
 ## Boundary

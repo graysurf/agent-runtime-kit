@@ -16,6 +16,7 @@ set -euo pipefail
 
 PR_ARTIFACTS_DIR="$ARTIFACTS_DIR/pr"
 PR_WORKSPACE="$TMP_ROOT/workspaces/pr-basic-repo"
+LABEL_CATALOG="$REPO_ROOT/manifests/forge-labels.yaml"
 mkdir -p "$PR_ARTIFACTS_DIR" "$TMP_ROOT/workspaces"
 cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$PR_WORKSPACE"
 
@@ -124,10 +125,18 @@ run_create_github_probe() {
       --base main \
       --title "Runtime smoke GitHub PR" \
       --body-file "$body" \
+      --label type::feature \
+      --label area::runtime \
+      --label size::s \
+      --label-catalog "$LABEL_CATALOG" \
+      --strict-labels \
       --no-draft
   ) >"$out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$out"
   grep -q '"provider":"github"' "$out"
+  grep -q '"type::feature"' "$out"
+  grep -q '"area::runtime"' "$out"
+  grep -q '"size::s"' "$out"
   grep -q '"gh"' "$out"
 }
 
@@ -149,10 +158,18 @@ run_create_gitlab_probe() {
       --kind feature \
       --base main \
       --title "Runtime smoke GitLab MR" \
-      --body-file "$body"
+      --body-file "$body" \
+      --label type::feature \
+      --label area::runtime \
+      --label size::s \
+      --label-catalog "$LABEL_CATALOG" \
+      --strict-labels
   ) >"$out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$out"
   grep -q '"provider":"gitlab"' "$out"
+  grep -q '"type::feature"' "$out"
+  grep -q '"area::runtime"' "$out"
+  grep -q '"size::s"' "$out"
   grep -q '"glab"' "$out"
 }
 
@@ -180,7 +197,12 @@ run_create_dispatch_lane_probe() {
       --base plan/issue-26 \
       --title "Runtime smoke dispatch lane" \
       --body-file "$body" \
-      --label dispatch
+      --label type::feature \
+      --label area::skills \
+      --label size::s \
+      --label workflow::dispatch \
+      --label-catalog "$LABEL_CATALOG" \
+      --strict-labels
   ) >"$out" 2>&1
   write_dispatch_session_record "$session"
   plan-issue record render-comment \
@@ -195,7 +217,8 @@ run_create_dispatch_lane_probe() {
     --body-file "$comment" >"$issue_comment_out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$out"
   grep -q '"provider":"github"' "$out"
-  grep -q '"dispatch"' "$out"
+  grep -q '"workflow::dispatch"' "$out"
+  grep -q '"size::s"' "$out"
   grep -q '"schema_version":"plan-issue-cli.record.render.comment.v2"' "$render_out"
   grep -q '<!-- plan-issue-record:v2 role=session profile=dispatch -->' "$comment"
   grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$issue_comment_out"
@@ -284,11 +307,19 @@ run_deliver_github_probe() {
       --base main \
       --title "Runtime smoke GitHub delivery" \
       --body-file "$body" \
+      --label type::feature \
+      --label area::runtime \
+      --label size::m \
+      --label-catalog "$LABEL_CATALOG" \
+      --strict-labels \
       --no-merge
   ) >"$out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.deliver.v1"' "$out"
   grep -q '"provider":"github"' "$out"
   grep -q '"wait_checks"' "$out"
+  grep -q '"type::feature"' "$out"
+  grep -q '"area::runtime"' "$out"
+  grep -q '"size::m"' "$out"
   grep -q '"gh"' "$out"
   grep -q '"forced_specialists"' "$review_out"
   grep -q '"maintainability"' "$review_out"
@@ -316,11 +347,19 @@ run_deliver_gitlab_probe() {
       --base main \
       --title "Runtime smoke GitLab delivery" \
       --body-file "$body" \
+      --label type::feature \
+      --label area::runtime \
+      --label size::m \
+      --label-catalog "$LABEL_CATALOG" \
+      --strict-labels \
       --no-merge
   ) >"$out" 2>&1
   grep -q '"schema_version":"cli.forge-cli.pr.deliver.v1"' "$out"
   grep -q '"provider":"gitlab"' "$out"
   grep -q '"wait_checks"' "$out"
+  grep -q '"type::feature"' "$out"
+  grep -q '"area::runtime"' "$out"
+  grep -q '"size::m"' "$out"
   grep -q '"glab"' "$out"
   grep -q '"forced_specialists"' "$review_out"
   grep -q '"maintainability"' "$review_out"

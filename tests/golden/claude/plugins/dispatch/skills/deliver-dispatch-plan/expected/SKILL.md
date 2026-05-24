@@ -14,12 +14,12 @@ Prereqs:
   `review-specialists`, and `gh` are available on `PATH`. The lifecycle
   record commands require `plan-issue >=0.17.4`; before release, prepend
   the scoped nils-cli debug binary directory to `PATH`. `gh` is required
-  for the chained closeout in Step 12 because `forge-cli issue view
+  for the chained closeout step because `forge-cli issue view
   --format json` (forge-cli 0.17.6) does not include comments.
 - The target repository, default branch, plan file, grouping strategy, and
   provider repository slug are known before live mutation.
 - In live mode, provider auth is available and the repository can create or use
-  the `issue`, `plan`, and `dispatch` labels.
+  the shared label taxonomy plus the compatibility `plan` label.
 - The main agent owns orchestration, review, issue synchronization, and final
   integration. Subagents own implementation lanes.
 
@@ -28,6 +28,9 @@ Inputs:
 - Plan path, repository slug, default branch, grouping strategy, and optional
   deterministic `--pr-group` mappings.
 - One provider issue number after `forge-cli issue create` succeeds.
+- Selected provider issue labels: `type::chore`, one primary `area::`,
+  `state::needs-triage`, `workflow::plan`, `workflow::dispatch`, and the
+  compatibility `plan` label during rollout.
 - `PLAN_BRANCH`, created from the default branch and used as the base for every
   dispatch lane PR.
 - Mandatory dispatch bundle per assigned lane:
@@ -115,8 +118,12 @@ forge-cli issue create \
   --repo "$OWNER_REPO" \
   --title "$TITLE" \
   --body-file "$ISSUE_BODY" \
+  --label type::chore \
+  --label area::docs \
+  --label state::needs-triage \
+  --label workflow::plan \
+  --label workflow::dispatch \
   --label plan \
-  --label dispatch \
   --format json
 
 forge-cli issue comment "$ISSUE" --repo "$OWNER_REPO" --body-file "$PLAN_COMMENT" --format json
@@ -162,24 +169,29 @@ Use `plan-tooling split-prs` for PR grouping analysis only. Do not create a
 2. Validate the plan with `plan-tooling`; stop on syntax or grouping ambiguity.
 3. Render the shared dashboard, source snapshot, plan snapshot, dispatch ledger,
    and initial dispatch state through `plan-issue record`.
-4. Create one provider issue through `forge-cli`, post the comments, then
+4. Before live issue creation, run `forge-cli label ensure --catalog
+   manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json` when the
+   catalog exists and label mutation is allowed. Use `label audit` when
+   mutation is not allowed; use `--update-existing` only with explicit drift
+   repair approval.
+5. Create one provider issue through `forge-cli`, post the comments, then
    re-render/edit the dashboard with exact durable-record URLs.
-5. Create `PLAN_BRANCH` from the default branch.
-6. For each lane, write a mandatory dispatch bundle and route implementation to
+6. Create `PLAN_BRANCH` from the default branch.
+7. For each lane, write a mandatory dispatch bundle and route implementation to
    `execute-dispatch-lane`.
-7. Require lane PRs to target `PLAN_BRANCH`; record PR URLs and status in the
+8. Require lane PRs to target `PLAN_BRANCH`; record PR URLs, labels, and status in the
    next dispatch state/session comment.
-8. Review lane PRs through `review-dispatch-lane-pr`. Use
+9. Review lane PRs through `review-dispatch-lane-pr`. Use
    `code-review-specialists` as supplemental read-only evidence when risk
    warrants it, and force `testing` plus `maintainability` for delivery PRs.
-9. Append dispatch validation and review comments after each gate; dashboard
+10. Append dispatch validation and review comments after each gate; dashboard
    edits should only summarize and link durable comments.
-10. After all lanes are accepted, open the final integration PR from
+11. After all lanes are accepted, open the final integration PR from
     `PLAN_BRANCH` to the default branch and record conformance, required checks,
     and delivery review outcome evidence.
-11. Run `plan-issue record audit --profile dispatch` and
+12. Run `plan-issue record audit --profile dispatch` and
     `plan-issue record closeout-gate --profile dispatch` before closeout.
-12. After final approval, run the chained closeout inline unless
+13. After final approval, run the chained closeout inline unless
     `--no-closeout` was supplied. The sequence mirrors
     `dispatch-plan-closeout` exactly: re-fetch the latest issue body and
     comments through `gh issue view --json body,comments` (forge-cli
@@ -208,7 +220,7 @@ issue and PR lifecycle. `review-evidence` owns retained review records.
 lane assignment, review decisions, issue evidence completeness, and stop/continue
 decisions.
 
-The chained closeout in Step 12 reuses the same `plan-issue record
+The chained closeout in Step 13 reuses the same `plan-issue record
 closeout-gate`, `plan-issue record render-comment --kind closeout`, and
 `forge-cli issue close` calls that `dispatch-plan-closeout` wraps; that
 skill remains the canonical reference for the sequence and the recovery

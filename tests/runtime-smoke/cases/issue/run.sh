@@ -55,6 +55,10 @@ run_issue_follow_up_probe() {
     issue create \
     --title "Runtime smoke issue follow-up" \
     --body-file "$body" \
+    --label type::bug \
+    --label area::runtime \
+    --label state::needs-triage \
+    --label workflow::follow-up \
     --label issue >"$create_out" 2>&1
   forge-cli --provider github --repo graysurf/agent-runtime-kit \
     --dry-run --format json \
@@ -65,6 +69,10 @@ run_issue_follow_up_probe() {
     --body-file "$comment" >"$comment_out" 2>&1
 
   grep -q '"schema_version":"cli.forge-cli.issue.create.v1"' "$create_out"
+  grep -q '"type::bug"' "$create_out"
+  grep -q '"area::runtime"' "$create_out"
+  grep -q '"state::needs-triage"' "$create_out"
+  grep -q '"workflow::follow-up"' "$create_out"
   grep -q '"schema_version":"cli.forge-cli.issue.view.v1"' "$view_out"
   grep -q '"schema_version":"cli.forge-cli.issue.comment.v1"' "$comment_out"
 }

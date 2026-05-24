@@ -22,6 +22,8 @@ Inputs:
 
 - Issue number or URL, repository override, plan path, selected task/sprint,
   branch name, validation scope, and PR policy.
+- Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
+  `workflow::tracking` for tracking-issue implementation work.
 - Latest state/session/validation comments, plus dashboard body and comments
   fetched from the provider.
 - Issue contract classification: lightweight tracking issue or dispatch issue.
@@ -67,6 +69,12 @@ forge-cli pr create \
   --base "$BASE_BRANCH" \
   --title "$PR_TITLE" \
   --body-file "$PR_BODY" \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label workflow::tracking \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels \
   --format json
 ```
 
@@ -110,12 +118,19 @@ plan-issue record render-dashboard --profile tracking \
 4. Update the issue-backed state markdown before code edits so the selected
    task, current status, and next action are visible.
 5. Implement only the selected task scope and run validation.
-6. Create or update the PR through `forge-cli`.
-7. Post state, session, and validation comments rendered by
+6. Select labels before PR mutation. Every tracking implementation PR needs
+   `type::`, one primary `area::`, `size::`, and `workflow::tracking`; use
+   `state::do-not-merge` when the PR must not merge.
+7. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
+   before the first live PR in that repo. Use `label audit` when mutation is
+   not allowed.
+8. Create or update the PR through `forge-cli`.
+9. Post state, session, and validation comments rendered by
    `plan-issue record render-comment`.
-8. Re-render and edit the dashboard with latest comment URLs, validation
+10. Re-render and edit the dashboard with latest comment URLs, validation
    summary, PR references, blockers, and next action.
-9. Before merge, closeout, or final success reporting, run
+11. Before merge, closeout, or final success reporting, run
    `plan-issue record audit` again and verify the latest state is complete or
    explicitly leaves follow-up/deferred rows.
 

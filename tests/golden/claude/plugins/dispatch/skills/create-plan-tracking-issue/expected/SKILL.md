@@ -29,6 +29,10 @@ Inputs:
 
 - Plan markdown path, source markdown path when different, provider repository
   slug, title, labels, and dry-run/live mode.
+- Selected issue labels from the shared taxonomy. Plan-tracking issues use
+  `type::chore`, one primary `area::`, `state::needs-triage`,
+  `workflow::plan`, and `workflow::tracking`, plus the compatibility `plan`
+  label during rollout.
 - Optional paths for rendered dashboard and source/plan/state comment bodies.
 
 Outputs:
@@ -99,6 +103,11 @@ forge-cli issue create \
   --repo "$OWNER_REPO" \
   --title "$TITLE" \
   --body-file "$ISSUE_BODY" \
+  --label type::chore \
+  --label area::docs \
+  --label state::needs-triage \
+  --label workflow::plan \
+  --label workflow::tracking \
   --label plan \
   --format json
 
@@ -130,9 +139,14 @@ preview. Do not use `plan-issue start-plan` for lightweight tracking issues.
    The rendered marker family is `plan-issue-record:v2`; the retired
    `--marker-family compat` / `shared` flags are not accepted by
    `plan-issue >=0.17.7`.
-7. In live mode, create the issue through `forge-cli issue create`, post the
+7. Before live issue creation, run `forge-cli label ensure --catalog
+   manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json` when the
+   catalog exists and label mutation is allowed. Use `label audit` when
+   mutation is not allowed; use `--update-existing` only with explicit drift
+   repair approval.
+8. In live mode, create the issue through `forge-cli issue create`, post the
    rendered comments, then re-render/edit the dashboard with exact comment URLs.
-8. Run `plan-issue record audit --profile tracking` against the issue body and
+9. Run `plan-issue record audit --profile tracking` against the issue body and
    comments. Record the issue URL and snapshot URLs in the execution state.
 
 ## Boundary

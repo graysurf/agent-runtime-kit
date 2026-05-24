@@ -26,7 +26,8 @@ Inputs:
 - Validation evidence or an explicit not-run reason for the lane.
 - Required body sections: `## Summary`, `## Scope`, `## Testing`,
   `## Test plan`, and `## Issue`.
-- Optional labels and reviewers.
+- Required labels: one `type::`, one primary `area::`, one `size::`, and
+  `workflow::dispatch`. Optional reviewers.
 
 Outputs:
 
@@ -53,7 +54,12 @@ forge-cli --provider github pr create \
   --base "$PLAN_BRANCH" \
   --title "$PR_TITLE" \
   --body-file "$PR_BODY_FILE" \
-  --label dispatch
+  --label type::feature \
+  --label area::skills \
+  --label size::s \
+  --label workflow::dispatch \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels
 ```
 
 For an audited preview:
@@ -64,7 +70,12 @@ forge-cli --provider github --dry-run --format json pr create \
   --base "$PLAN_BRANCH" \
   --title "$PR_TITLE" \
   --body-file "$PR_BODY_FILE" \
-  --label dispatch
+  --label type::feature \
+  --label area::skills \
+  --label size::s \
+  --label workflow::dispatch \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels
 ```
 
 Render the issue-visible dispatch handoff comment with the shared record
@@ -90,11 +101,19 @@ forge-cli --provider github --repo "$REPO" issue comment "$PLAN_ISSUE" \
 3. Render a PR body with `## Summary`, `## Scope`, `## Testing`,
    `## Test plan`, and `## Issue`; include the lane id, task ids, validation,
    issue link, and handoff notes.
-4. Run the `forge-cli --dry-run` form when the lane needs command-shape
+4. Select taxonomy labels before provider mutation. Every dispatch lane PR
+   needs `type::`, one primary `area::`, `size::`, and
+   `workflow::dispatch`. Use `state::do-not-merge` when a lane PR is blocked
+   from merging.
+5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$REPO" --format json` before
+   the first live lane PR in that repo. Use `label audit` when mutation is not
+   allowed.
+6. Run the `forge-cli --dry-run` form when the lane needs command-shape
    evidence before mutation.
-5. Confirm the requested base equals the assigned `PLAN_BRANCH`.
-6. Run `forge-cli --provider github pr create ...` to create the draft lane PR.
-7. Write the PR URL back to the owning issue timeline by rendering a dispatch
+7. Confirm the requested base equals the assigned `PLAN_BRANCH`.
+8. Run `forge-cli --provider github pr create ...` to create the draft lane PR.
+9. Write the PR URL back to the owning issue timeline by rendering a dispatch
    `session` comment with `plan-issue record render-comment --profile dispatch
   `, then posting it through `forge-cli issue comment`.
    Use `plan-issue link-pr` only for pre-record compatibility issues that

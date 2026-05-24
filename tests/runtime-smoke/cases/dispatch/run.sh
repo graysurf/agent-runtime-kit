@@ -17,6 +17,7 @@ set -euo pipefail
 DISPATCH_ARTIFACTS_DIR="$ARTIFACTS_DIR/dispatch"
 DISPATCH_WORKSPACE="$TMP_ROOT/workspaces/dispatch-basic-repo"
 DISPATCH_STATE_DIR="$TMP_ROOT/state/plan-issue"
+LABEL_CATALOG="$REPO_ROOT/manifests/forge-labels.yaml"
 MINI_PLAN="$DISPATCH_ARTIFACTS_DIR/runtime-smoke-mini-plan.md"
 PLAN_BODY_PATH=""
 PLAN_TASK_SPEC_PATH=""
@@ -613,7 +614,12 @@ run_dispatch_subagent_pr_probe() {
       --base plan/issue-26 \
       --title "Runtime smoke execute dispatch lane" \
       --body-file "$pr_body" \
-      --label dispatch
+      --label type::feature \
+      --label area::skills \
+      --label size::s \
+      --label workflow::dispatch \
+      --label-catalog "$LABEL_CATALOG" \
+      --strict-labels
   ) >"$create_out" 2>&1
   write_record_content "$session_md" dispatch
   plan-issue record render-comment \
@@ -623,7 +629,8 @@ run_dispatch_subagent_pr_probe() {
     --state-dir "$DISPATCH_STATE_DIR" >"$session_out" 2>&1
 
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$create_out"
-  grep -q '"dispatch"' "$create_out"
+  grep -q '"workflow::dispatch"' "$create_out"
+  grep -q '"size::s"' "$create_out"
   grep -q 'plan-issue-cli.record.render.comment.v2' "$session_out"
 }
 

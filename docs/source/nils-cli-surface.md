@@ -4,18 +4,20 @@
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.20.0`
-- Head commit: `6453605` (`nils-cli 0.20.0` release bump after the
-  `agent-run` direnv executor landed)
-- Release: [`v0.20.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.20.0), Homebrew tap formula at [`Formula/nils-cli.rb@1757d6e`](https://github.com/sympoies/homebrew-tap/blob/1757d6e/Formula/nils-cli.rb)
+- Active `git describe --tags` output: `v0.20.1`
+- Head commit: `ad45fcd` (`nils-cli 0.20.1` release bump after the
+  `forge-cli` label taxonomy support landed)
+- Release: [`v0.20.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.20.1), Homebrew tap formula at [`Formula/nils-cli.rb@31b9741`](https://github.com/sympoies/homebrew-tap/blob/31b9741/Formula/nils-cli.rb)
 - Prior pin: `v0.19.0` at `3b74881` (`agent-runtime pr-body render`);
-  `v0.20.0` adds the `agent-run` project-environment executor.
+  `v0.20.0` adds the `agent-run` project-environment executor, and
+  `v0.20.1` adds provider-neutral `forge-cli` label audit / ensure plus
+  catalog-validated PR/MR label propagation.
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
-`required_clis`, and refresh this snapshot at every nils-cli minor
-release (the next bump after `v0.20.0`).
+`required_clis`, and refresh this snapshot at every nils-cli release that
+changes a consumed surface (the next bump after `v0.20.1`).
 
 Notes on derivation:
 
@@ -44,7 +46,7 @@ Notes on derivation:
 | `api-websocket`             | `api-websocket`                                                                                                     | WebSocket API testing CLI.                                                                                                                                                                                                                                             |
 | `cli-template`              | `cli-template`                                                                                                      | Internal template/example crate. Marked `excluded` in `docs/specs/completion-coverage-matrix-v1.md`; manifests should not pin against it.                                                                                                                              |
 | `codex-cli`                 | `codex-cli`                                                                                                         | Codex runtime helper. Alias family `cx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
-| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.17.5`, GitHub checks use the `gh 2.92.0` compatible field set required by PR close/deliver smoke. `v0.17.6` adds `forge-cli issue list` (state / label / author / assignee / limit filters; symmetric with `pr list`) and makes `forge-cli pr deliver` tolerate `gh exit 1` after a successful merge by re-fetching PR state and accepting `state=merged` as success. |
+| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.17.5`, GitHub checks use the `gh 2.92.0` compatible field set required by PR close/deliver smoke. `v0.17.6` adds `forge-cli issue list` and resilient post-merge state re-fetch. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. |
 | `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
 | `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                       |
