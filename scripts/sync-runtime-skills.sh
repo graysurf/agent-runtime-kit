@@ -416,7 +416,7 @@ main() {
   local product
 
   parse_args "$@"
-  require_commands git
+  require_commands git python3
   resolve_source_root
 
   if [ "$APPLY" = "1" ]; then

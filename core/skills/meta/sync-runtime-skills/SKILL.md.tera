@@ -16,7 +16,8 @@ Prereqs:
 - `agent-runtime-kit` is available as a local checkout with
   `scripts/sync-runtime-skills.sh`.
 - First-time host bootstrap has already been handled by `scripts/setup.sh`.
-- `git` is available. `agent-runtime` is required for `--apply` refreshes.
+- `git` and `python3` are available. `agent-runtime` is required for `--apply`
+  refreshes.
 - The source checkout passes
   `bash scripts/ci/skill-governance-audit.sh --check-counts`; sync checks
   count freshness but never runs update mode.
