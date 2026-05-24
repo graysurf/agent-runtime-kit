@@ -46,6 +46,34 @@ Failure modes:
 - The branch is not pushed, the base branch is invalid, or the provider rejects
   labels or reviewers.
 
+## Body Format
+
+Use `agent-runtime pr-body render` as the canonical formatter. Do not submit a
+hand-written minimum body that only contains `## Summary` and `## Test plan`.
+
+Feature MR bodies render these sections, in order:
+
+- `## Summary`
+- `## Changes`
+- `## Test-First Evidence`
+- `## Test plan`
+- `## Risk / Notes`
+
+Bug MR bodies render these sections, in order:
+
+- `## Summary`
+- `## Problem`
+- `## Reproduction`
+- `## Issues Found`
+- `## Fix Approach`
+- `## Test-First Evidence`
+- `## Test plan`
+- `## Risk / Notes`
+
+For issue-backed tracking or dispatch work, put provider references in the
+rendered narrative as non-closing refs such as `Refs #<issue>`; do not use
+provider auto-close keywords in the MR body.
+
 ## Entrypoint
 
 Render the body with `agent-runtime` before calling the provider layer:
