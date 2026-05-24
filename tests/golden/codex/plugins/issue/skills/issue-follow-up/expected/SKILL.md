@@ -18,6 +18,8 @@ Prereqs:
   `--repo` and `--provider` to `forge-cli`.
 - `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
+- When the repository carries `manifests/forge-labels.yaml`, use it as the
+  label catalog and run `forge-cli label audit|ensure` before live mutation.
 - Existing issue number or URL is known for follow-up mode; otherwise use open
   mode.
 - For implementation handoff, the appropriate implementation, PR/MR, or
@@ -27,6 +29,9 @@ Inputs:
 
 - New problem report, observation, screenshot/path, source evidence, or user
   instruction to open a tracking issue.
+- Selected issue labels: one `type::`, one primary `area::`, and a `state::`
+  label (`state::needs-triage` unless a more specific state is known). Bug,
+  incident, or security issues also need `severity::` when impact is known.
 - Existing issue number or URL plus a request to continue, investigate, update,
   unblock, implement, or close.
 - Optional desired state: `comment-only`, `blocked`,
@@ -85,17 +90,38 @@ Use when the user discovered a problem and wants a durable issue.
    If only a local screenshot path is available, include the path plus a short
    visual summary. Do not create unrelated repo artifacts just to host an image
    unless the user asks.
-3. Open the issue through `forge-cli`:
+3. Select labels before mutation. For ordinary follow-up issues, start with
+   `workflow::follow-up` plus the required `type::`, `area::`, and `state::`
+   labels. Keep the compatibility `issue` label during rollout.
+4. If the target repo has the shared catalog and label mutation is allowed,
+   ensure missing labels before creating the issue:
+
+   ```bash
+   forge-cli label ensure \
+     --catalog manifests/forge-labels.yaml \
+     --repo "$OWNER_REPO" \
+     --format json
+   ```
+
+   Use `label audit` instead when mutation is not allowed. Do not use
+   `--update-existing` unless drift repair was explicitly approved.
+5. Open the issue through `forge-cli`:
 
    ```bash
    forge-cli issue create \
      --title "$ISSUE_TITLE" \
      --body-file "$ISSUE_BODY" \
+     --label type::bug \
+     --label area::runtime \
+     --label state::needs-triage \
+     --label workflow::follow-up \
      --label issue \
      --format json
    ```
 
-4. Report the issue URL and whether any evidence could not be embedded.
+   Replace the sample labels with the selected labels. Add `severity::*` for a
+   bug, incident, or security issue when impact is known.
+6. Report the issue URL and whether any evidence could not be embedded.
 
 ### Follow-Up Mode
 

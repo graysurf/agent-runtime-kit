@@ -24,7 +24,10 @@ Inputs:
 - MR kind: `feature` or `bug`.
 - Source branch, base branch, title, and body section files for
   `agent-runtime pr-body render`.
-- Optional labels and reviewers supported by the target GitLab project.
+- Required labels selected from the shared taxonomy: one `type::`, one primary
+  `area::`, and one `size::`. Add `risk::` or `provider::gitlab` when the
+  scope warrants it.
+- Optional reviewers supported by the target GitLab project.
 - Draft state: draft by default; use `--no-draft` only when the caller has
   explicitly chosen ready-for-review.
 
@@ -43,8 +46,8 @@ Failure modes:
   `agent-runtime pr-body render` contract.
 - The rendered MR body is missing required `forge-cli` sections such as
   `## Summary` and `## Test plan`.
-- The branch is not pushed, the base branch is invalid, or the provider rejects
-  labels or reviewers.
+- The branch is not pushed, the base branch is invalid, selected labels fail
+  catalog validation, or the provider rejects labels or reviewers.
 
 ## Body Format
 
@@ -95,7 +98,12 @@ forge-cli --provider gitlab pr create \
   --kind feature \
   --base main \
   --title "$MR_TITLE" \
-  --body-file "$MR_BODY_FILE"
+  --body-file "$MR_BODY_FILE" \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels
 ```
 
 For an audited preview:
@@ -105,7 +113,12 @@ forge-cli --provider gitlab --dry-run --format json pr create \
   --kind feature \
   --base main \
   --title "$MR_TITLE" \
-  --body-file "$MR_BODY_FILE"
+  --body-file "$MR_BODY_FILE" \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels
 ```
 
 ## Workflow
@@ -117,10 +130,18 @@ forge-cli --provider gitlab --dry-run --format json pr create \
    `agent-runtime pr-body render --kind feature|bug ... --out "$MR_BODY_FILE"`.
    Do not hand-write the section scaffolding or derive the title/body from
    `git log -1`.
-4. Run `forge-cli --provider gitlab --dry-run --format json pr create ...` before
+4. Select labels before provider mutation. Every MR needs `type::`, one primary
+   `area::`, and `size::`; add `risk::` for high-risk changes and
+   `provider::gitlab` for GitLab-specific work. Use `state::do-not-merge`
+   instead of prose-only blockers when the MR must not merge.
+5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
+   before the first live MR in that repo. Use `label audit` when mutation is
+   not allowed.
+6. Run `forge-cli --provider gitlab --dry-run --format json pr create ...` before
    the live create to verify branch/kind/body/provider gates.
-5. Run `forge-cli --provider gitlab pr create ...` to create the draft MR.
-6. Record the MR URL, branch, validation, and any provider failure in the
+7. Run `forge-cli --provider gitlab pr create ...` to create the draft MR.
+8. Record the MR URL, branch, labels, validation, and any provider failure in the
    execution ledger or issue timeline.
 
 ## Boundary

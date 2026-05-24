@@ -48,6 +48,9 @@
 - Do not track runtime state: auth, history, sessions, logs, caches, plugin
   install artifacts, local generated state, or secrets.
 - Use dry-run-first workflows for install/link/render/drift-audit changes.
+- Provider issue / PR / MR labels are sourced from
+  `manifests/forge-labels.yaml`; human guidance lives in
+  `core/policies/forge-label-taxonomy.md`.
 - Required env to operate the runtime:
   - `AGENT_HOME` — `agent-out` artifact root, e.g.
     `${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit`. Must not be

@@ -24,7 +24,10 @@ Inputs:
 - PR kind: `feature` or `bug`.
 - Source branch, base branch, title, and body section files for
   `agent-runtime pr-body render`.
-- Optional labels and reviewers.
+- Required labels selected from the shared taxonomy: one `type::`, one primary
+  `area::`, and one `size::`. Add `risk::` or `provider::github` when the
+  scope warrants it.
+- Optional reviewers.
 - Draft state: draft by default; use `--no-draft` only when the caller has
   explicitly chosen ready-for-review.
 
@@ -43,8 +46,8 @@ Failure modes:
   `agent-runtime pr-body render` contract.
 - The rendered PR body is missing required `forge-cli` sections such as
   `## Summary` and `## Test plan`.
-- The branch is not pushed, the base branch is invalid, or the provider rejects
-  labels or reviewers.
+- The branch is not pushed, the base branch is invalid, selected labels fail
+  catalog validation, or the provider rejects labels or reviewers.
 
 ## Body Format
 
@@ -95,7 +98,12 @@ forge-cli --provider github pr create \
   --kind feature \
   --base main \
   --title "$PR_TITLE" \
-  --body-file "$PR_BODY_FILE"
+  --body-file "$PR_BODY_FILE" \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels
 ```
 
 For an audited preview:
@@ -105,7 +113,12 @@ forge-cli --provider github --dry-run --format json pr create \
   --kind feature \
   --base main \
   --title "$PR_TITLE" \
-  --body-file "$PR_BODY_FILE"
+  --body-file "$PR_BODY_FILE" \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels
 ```
 
 ## Workflow
@@ -117,10 +130,18 @@ forge-cli --provider github --dry-run --format json pr create \
    `agent-runtime pr-body render --kind feature|bug ... --out "$PR_BODY_FILE"`.
    Do not hand-write the section scaffolding or derive the title/body from
    `git log -1`.
-4. Run `forge-cli --provider github --dry-run --format json pr create ...` before
+4. Select labels before provider mutation. Every PR needs `type::`, one primary
+   `area::`, and `size::`; add `risk::` for high-risk changes and
+   `provider::github` for GitHub-specific work. Use `state::do-not-merge`
+   instead of prose-only blockers when the PR must not merge.
+5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
+   before the first live PR in that repo. Use `label audit` when mutation is
+   not allowed.
+6. Run `forge-cli --provider github --dry-run --format json pr create ...` before
    the live create to verify branch/kind/body/provider gates.
-5. Run `forge-cli --provider github pr create ...` to create the draft PR.
-6. Record the PR URL, branch, validation, and any provider failure in the
+7. Run `forge-cli --provider github pr create ...` to create the draft PR.
+8. Record the PR URL, branch, labels, validation, and any provider failure in the
    execution ledger or issue timeline.
 
 ## Boundary

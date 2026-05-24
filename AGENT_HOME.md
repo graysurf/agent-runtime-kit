@@ -143,6 +143,10 @@
   active tool's PR/MR delivery skill (e.g. `forge-cli pr deliver` or the
   matching `pr:deliver-*` skill) which runs preflight → create → wait CI →
   close.
+- For provider issues, PRs, and MRs, select labels from
+  `manifests/forge-labels.yaml` and follow
+  `core/policies/forge-label-taxonomy.md` when the active project provides
+  that catalog.
 - Branch: `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, 3–6 words;
   ticket id `ABC-123` → `feat/abc-123-<slug>`).
 - Draft an accurate 1–2 sentence summary grounded in the actual diff before

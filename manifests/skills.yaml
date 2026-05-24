@@ -549,7 +549,7 @@ skills:
         name: issue-follow-up
         render_to: plugins/issue/skills/issue-follow-up/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       web-evidence: ">=0.17.1"
     state_out_mode: runtime
 
@@ -564,7 +564,7 @@ skills:
         name: issue-triage
         render_to: plugins/issue/skills/issue-triage/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
   - id: code-review.code-review-focused-lens
@@ -649,7 +649,7 @@ skills:
         render_to: plugins/pr/skills/create-github-pr/SKILL.md
     required_clis:
       agent-runtime: ">=0.19.0"
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
   - id: pr.create-gitlab-mr
@@ -663,7 +663,7 @@ skills:
         name: create-gitlab-mr
         render_to: plugins/pr/skills/create-gitlab-mr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       agent-runtime: ">=0.19.0"
     state_out_mode: runtime
 
@@ -678,7 +678,7 @@ skills:
         name: create-dispatch-lane-pr
         render_to: plugins/pr/skills/create-dispatch-lane-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       plan-issue: ">=0.17.5"
     state_out_mode: runtime
 
@@ -693,7 +693,7 @@ skills:
         name: close-github-pr
         render_to: plugins/pr/skills/close-github-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
@@ -708,7 +708,7 @@ skills:
         name: close-gitlab-mr
         render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
@@ -723,7 +723,7 @@ skills:
         name: deliver-github-pr
         render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       agent-runtime: ">=0.19.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -739,7 +739,7 @@ skills:
         name: deliver-gitlab-mr
         render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       agent-runtime: ">=0.19.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -757,7 +757,7 @@ skills:
     required_clis:
       plan-tooling: ">=0.17.5"
       plan-issue: ">=0.17.5"
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
   - id: dispatch.plan-tracking-issue-closeout
@@ -771,7 +771,7 @@ skills:
         name: plan-tracking-issue-closeout
         render_to: plugins/dispatch/skills/plan-tracking-issue-closeout/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       plan-issue: ">=0.17.5"
     state_out_mode: runtime
 
@@ -788,7 +788,7 @@ skills:
     required_clis:
       plan-tooling: ">=0.17.5"
       plan-issue: ">=0.17.5"
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -805,7 +805,7 @@ skills:
         render_to: plugins/dispatch/skills/dispatch-plan-closeout/SKILL.md
     required_clis:
       plan-issue: ">=0.17.5"
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -823,7 +823,7 @@ skills:
     required_clis:
       plan-tooling: ">=0.17.5"
       plan-issue: ">=0.17.5"
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
   - id: dispatch.deliver-plan-tracking-issue
@@ -839,7 +839,7 @@ skills:
     required_clis:
       plan-tooling: ">=0.17.5"
       plan-issue: ">=0.17.5"
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -855,7 +855,7 @@ skills:
         name: review-dispatch-lane-pr
         render_to: plugins/dispatch/skills/review-dispatch-lane-pr/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       plan-issue: ">=0.17.5"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
@@ -872,7 +872,7 @@ skills:
         name: execute-dispatch-lane
         render_to: plugins/dispatch/skills/execute-dispatch-lane/SKILL.md
     required_clis:
-      forge-cli: ">=0.17.5"
+      forge-cli: ">=0.20.1"
       plan-issue: ">=0.17.5"
       review-evidence: ">=0.16.0"
     state_out_mode: runtime

@@ -16,8 +16,8 @@ Prereqs:
   `PATH`.
 - `review-specialists` is installed from the released nils-cli package and
   available on `PATH`.
-- `gh` is available on `PATH` (used by `forge-cli` and by the Step 10
-  chained closeout to fetch issue comments — `forge-cli issue view --format
+- `gh` is available on `PATH` (used by `forge-cli` and by the chained
+  closeout step to fetch issue comments — `forge-cli issue view --format
   json` under forge-cli 0.17.6 returns body fields only).
 - `gh auth status` succeeds for the target GitHub host when running live mode.
 - The working tree contains only the intended delivery changes.
@@ -28,6 +28,9 @@ Inputs:
 - Delivery kind: `feature` or `bug`.
 - PR title and body section files for `agent-runtime pr-body render`.
 - Optional head branch, base branch, merge method, reviewers, and timeout.
+- Required labels selected from the shared taxonomy: one `type::`, one primary
+  `area::`, and one `size::`. Add `risk::` or `provider::github` when the
+  scope warrants it.
 - Optional `--no-merge` when the workflow should stop after checks.
 - Optional `--no-closeout` to stop the workflow after delivery readiness checks
   and before any chained issue closeout. Use when closeout is owned by a
@@ -40,7 +43,7 @@ Inputs:
 - If the PR body references a linked tracking or dispatch issue, the PR body
   must use non-closing references such as `Refs #<issue>` rather than
   `Closes #<issue>`; auto-close via the PR body is refused, and the new
-  post-merge chained closeout in Step 10 replaces it under the closeout-gate
+  post-merge chained closeout step replaces it under the closeout-gate
   contract.
 
 Outputs:
@@ -67,13 +70,15 @@ Failure modes:
   not the intended target.
 - Required checks fail, time out, remain pending, or are missing without an
   explicit no-checks decision.
+- Selected labels fail catalog validation or the provider rejects label
+  application.
 - Mandatory specialist review reports concrete findings that have not been
   repaired or explicitly accepted under the delivery policy.
 - Delivery review outcome comment posting fails.
 - Review findings or issue-backed completion gates are unresolved.
 - A PR body uses `Closes #<issue>` or any equivalent provider auto-close
   keyword against a linked plan-tracking or dispatch issue; auto-close is
-  refused. The post-merge chained closeout in Step 10 is the permitted
+  refused. The post-merge chained closeout step is the permitted
   issue-close mechanism, and it runs only after
   `plan-issue record closeout-gate` clears.
 - The installed `forge-cli` is older than the manifest floor. Upgrade nils-cli
@@ -119,6 +124,11 @@ forge-cli pr deliver \
   --body-file "$PR_BODY" \
   --base main \
   --method squash \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels \
   --no-merge
 ```
 
@@ -185,26 +195,36 @@ in this block determines the profile.
    `agent-runtime pr-body render --kind feature|bug ... --out "$PR_BODY"`.
    Do not hand-write the section scaffolding. Keep linked issue references
    non-closing, e.g. `Refs #<issue>`.
-4. Run `forge-cli pr deliver` with the GitHub provider, selected base, and
+4. Select labels before provider mutation. Every delivered PR needs `type::`,
+   one primary `area::`, and `size::`; add `risk::` for high-risk changes and
+   `provider::github` for GitHub-specific work. Use `state::do-not-merge`
+   instead of prose-only blockers when a PR must not merge.
+5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
+   before the first live delivery in that repo. Use `label audit` when mutation
+   is not allowed.
+6. Run `forge-cli pr deliver` with the GitHub provider, selected base, selected
+   `--label` flags, `--label-catalog manifests/forge-labels.yaml` when present,
+   and
    `--no-merge` so checks complete before the mandatory review gate. If the
    macro stops for a concrete blocker before checks are green, fix the blocker
    on the same branch and rerun the macro.
-5. Follow the shared delivery specialist review gate:
+7. Follow the shared delivery specialist review gate:
    `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`.
    Resolve the PR base branch, run `review-specialists scope --base "$BASE_REF"
    --testing --maintainability --format json`, add risk lenses when warranted,
    and do not skip only because the diff is small.
-6. Keep `code-review-specialists` read-only. Repair concrete findings in this
+8. Keep `code-review-specialists` read-only. Repair concrete findings in this
    delivery workflow, then rerun validation, required checks, and affected
    specialist lenses.
-7. Post the delivery review outcome comment before merge using:
+9. Post the delivery review outcome comment before merge using:
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
-8. For lightweight tracking issues, verify the latest issue-hosted state is
+10. For lightweight tracking issues, verify the latest issue-hosted state is
    complete and closeout-ready before allowing auto-close. For dispatch issues,
    verify `plan-issue` sprint/plan gates or use `dispatch-plan-closeout`.
-9. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
+11. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
    `--no-merge` is the requested final stop.
-10. After merge, if the PR body referenced a linked tracking or dispatch
+12. After merge, if the PR body referenced a linked tracking or dispatch
    issue via `Refs #<issue>` and `--no-closeout` was not supplied, run the
    chained closeout inline. Re-fetch the issue body and comments through
    `gh issue view "$ISSUE" --json body,comments` (forge-cli 0.17.6's
@@ -222,7 +242,7 @@ in this block determines the profile.
    and recommend rerunning `plan-tracking-issue-closeout` (tracking) or
    `dispatch-plan-closeout` (dispatch) directly to diagnose or complete.
    This step never runs when `--no-merge` was used.
-11. Record the PR URL, check evidence, review outcome, merge commit, chained
+13. Record the PR URL, labels, check evidence, review outcome, merge commit, chained
    closeout result (closed/skipped/blocked), and any fallback used in the
    linked issue or delivery notes.
 
@@ -233,7 +253,7 @@ workflow owner owns scope judgment, code changes, local validation, specialist
 review decisions, specialist repair loops, delivery outcome comments,
 issue-backed completion gates, and any temporary provider fallback decision.
 
-The chained closeout in Step 10 reuses the same `plan-issue record
+The chained closeout in Step 12 reuses the same `plan-issue record
 closeout-gate`, `plan-issue record render-comment --kind closeout`, and
 `forge-cli issue close` calls that `plan-tracking-issue-closeout` and
 `dispatch-plan-closeout` wrap; those skills remain the canonical reference

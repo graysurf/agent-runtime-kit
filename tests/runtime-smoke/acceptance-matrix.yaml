@@ -528,9 +528,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr create dry-run validates body and branch contract
+    invocation: forge-cli github pr create dry-run validates body, branch, and taxonomy labels
     expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider command
+    expected_artifacts: forge-cli dry-run provider command with selected labels
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -541,9 +541,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli gitlab pr create dry-run validates body and branch contract
+    invocation: forge-cli gitlab pr create dry-run validates body, branch, and taxonomy labels
     expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider command
+    expected_artifacts: forge-cli dry-run provider command with selected labels
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -554,9 +554,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr create dry-run plus dispatch session comment render
+    invocation: forge-cli github pr create dry-run with taxonomy labels plus dispatch session comment render
     expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider command, dispatch session comment render, and issue comment dry-run
+    expected_artifacts: forge-cli dry-run provider command with selected labels, dispatch session comment render, and issue comment dry-run
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -593,9 +593,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr deliver dry-run plus mandatory review-specialists scope
+    invocation: forge-cli github pr deliver dry-run with taxonomy labels plus mandatory review-specialists scope
     expected_exit_code: 0
-    expected_artifacts: forge-cli deliver dry-run provider command and specialist scope JSON
+    expected_artifacts: forge-cli deliver dry-run provider command with selected labels and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -606,9 +606,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli gitlab pr deliver dry-run plus mandatory review-specialists scope
+    invocation: forge-cli gitlab pr deliver dry-run with taxonomy labels plus mandatory review-specialists scope
     expected_exit_code: 0
-    expected_artifacts: forge-cli deliver dry-run provider command and specialist scope JSON
+    expected_artifacts: forge-cli deliver dry-run provider command with selected labels and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -619,9 +619,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create issue body and follow-up comment fixtures
-    invocation: forge-cli issue create/view/comment dry-run surfaces
+    invocation: forge-cli issue create/view/comment dry-run surfaces with taxonomy labels
     expected_exit_code: 0
-    expected_artifacts: forge-cli issue dry-run provider commands
+    expected_artifacts: forge-cli issue dry-run provider commands with selected labels
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -801,9 +801,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp assigned git workspace with pushed upstream branch metadata
-    invocation: forge-cli pr create dry-run plus dispatch session comment render
+    invocation: forge-cli pr create dry-run with taxonomy labels plus dispatch session comment render
     expected_exit_code: 0
-    expected_artifacts: forge-cli PR create plan and dispatch session comment render
+    expected_artifacts: forge-cli PR create plan with selected labels and dispatch session comment render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

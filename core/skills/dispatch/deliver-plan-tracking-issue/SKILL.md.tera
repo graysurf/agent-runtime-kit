@@ -29,6 +29,8 @@ Inputs:
 
 - Issue number or URL, optional plan path, task/sprint selector, repository
   override, close policy, and validation commands.
+- Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
+  `workflow::tracking` for tracking-issue delivery.
 - Review evidence, specialist review outcome, and explicit
   fixed/residual/follow-up/deferred/no-action disposition for every meaningful
   finding.
@@ -89,6 +91,12 @@ forge-cli pr deliver \
   --body-file "$PR_BODY" \
   --base main \
   --method squash \
+  --label type::feature \
+  --label area::runtime \
+  --label size::m \
+  --label workflow::tracking \
+  --label-catalog manifests/forge-labels.yaml \
+  --strict-labels \
   --no-merge
 ```
 
@@ -142,26 +150,33 @@ forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
 2. Run `plan-issue record audit --profile tracking` and `plan-tooling
    validate`. Stop on missing lifecycle comments, stale state, or plan errors.
 3. Implement and validate the selected scope.
-4. Create or deliver the PR with `forge-cli`, using `--no-merge` until checks
+4. Select labels before provider mutation. Every tracking delivery PR needs
+   `type::`, one primary `area::`, `size::`, and `workflow::tracking`; use
+   `state::do-not-merge` when the PR must not merge.
+5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
+   before the first live PR in that repo. Use `label audit` when mutation is
+   not allowed.
+6. Create or deliver the PR with `forge-cli`, using `--no-merge` until checks
    and specialist review have both passed.
-5. Run mandatory specialist review for every PR using:
+7. Run mandatory specialist review for every PR using:
    `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`.
    Always force `testing` and `maintainability`, add risk lenses when the PR
    scope warrants them, and do not skip only because the diff is small.
-6. Classify and repair review findings. Concrete findings block merge until
+8. Classify and repair review findings. Concrete findings block merge until
    fixed in the selected issue scope or explicitly dispositioned. After repairs,
    rerun focused validation, provider checks, and affected specialist lenses.
-7. Post the delivery review outcome comment before merge using:
+9. Post the delivery review outcome comment before merge using:
    `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
-8. Merge only after checks, specialist review, review evidence, lifecycle audit,
+10. Merge only after checks, specialist review, review evidence, lifecycle audit,
    and issue-backed completion gates pass.
-9. Append state/session/validation comments with PR number, validation, review
+11. Append state/session/validation comments with PR number, labels, validation, review
    lenses, finding disposition, and task ledger status. Use `Refs #<issue>` in
    PR bodies so closeout owns issue closure.
-10. Before merge or final success, verify the latest lightweight state is
+12. Before merge or final success, verify the latest lightweight state is
     closeout-ready: status `complete`, all task rows `done` or `deferred`,
     validation/PR evidence present, and dashboard links current.
-11. After completion approval, run the chained closeout inline unless
+13. After completion approval, run the chained closeout inline unless
     `--no-closeout` was supplied. The sequence mirrors
     `plan-tracking-issue-closeout` exactly: re-fetch the latest issue body
     and comments through `gh issue view --json body,comments` (forge-cli
@@ -179,7 +194,7 @@ forge-cli issue close "$ISSUE" --repo "$OWNER_REPO" --format json
     `plan-tracking-issue-closeout` directly to diagnose or complete. If
     the issue is a dispatch runtime, route to `dispatch-plan-closeout`
     instead.
-12. Leave the issue open with an exact unblock action if any gate fails or
+14. Leave the issue open with an exact unblock action if any gate fails or
     if `--no-closeout` was supplied.
 
 ## Boundary
@@ -191,7 +206,7 @@ specialist review. This workflow owns lightweight issue execution, review
 judgment, repair decisions, issue-visible finding dispositions, delivery
 outcome comment URLs, and final status reporting.
 
-The chained closeout in Step 11 reuses the same `plan-issue record
+The chained closeout in Step 13 reuses the same `plan-issue record
 closeout-gate`, `plan-issue record render-comment --kind closeout`, and
 `forge-cli issue close` calls that `plan-tracking-issue-closeout` wraps;
 that skill remains the canonical reference for the sequence and the

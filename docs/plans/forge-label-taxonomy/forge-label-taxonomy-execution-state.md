@@ -3,17 +3,19 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: plan bundle authored; tracking issue creation in progress.
+- Status: implementation and rollout validation in progress.
 - Target scope: define one GitHub/GitLab label taxonomy, add provider label
   audit/ensure/apply support through `forge-cli`, and update agent workflows so
   issue and PR/MR creation automatically applies the selected labels.
-- Current task: create the `agent-runtime-kit` tracking issue from this bundle.
-- Next task: open the linked `sympoies/nils-cli` follow-up issue for
-  `forge-cli` label implementation.
+- Current task: deliver the `agent-runtime-kit` PR that consumes the released
+  `nils-cli` label support and closes issue #91.
+- Next task: create the labeled delivery PR, wait for checks, merge, then run
+  tracking-issue closeout.
 - Last updated: 2026-05-24
 - Branch: feat/forge-label-taxonomy-plan
-- Tracking issue: pending
-- Linked nils-cli issue: pending
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/91
+- Linked nils-cli issue: https://github.com/sympoies/nils-cli/issues/473
+- nils-cli release: v0.20.1
 - PR: pending
 - Source document: `docs/plans/forge-label-taxonomy/forge-label-taxonomy-plan.md`
 - Discussion source: docs/plans/forge-label-taxonomy/forge-label-taxonomy-discussion-source.md
@@ -24,27 +26,37 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | pending | Add the machine-readable label catalog | — | Catalog includes core and optional automation groups. |
-| 1.2 | pending | Add human policy and root pointers | — | Keep root files concise; policy owns details. |
-| 2.1 | pending | Open linked nils-cli implementation issue | — | Issue must cover `forge-cli label` and `pr deliver --label`. |
-| 2.2 | pending | Consume released forge-cli label support | — | Requires a released nils-cli version. |
-| 3.1 | pending | Update issue and PR/MR skills | — | Skills choose, ensure, and pass labels. |
-| 3.2 | pending | Update plan and dispatch label usage | — | Preserve legacy `plan` compatibility during rollout. |
-| 3.3 | pending | Refresh rendered outputs and smoke coverage | — | Golden and runtime smoke coverage prove label arguments. |
-| 4.1 | pending | Ensure labels on representative repositories | — | At least agent-runtime-kit and nils-cli. |
-| 4.2 | pending | Exercise end-to-end labeled creation | — | Provider records show taxonomy labels. |
+| 1.1 | done | Add the machine-readable label catalog | `manifests/forge-labels.yaml`; `forge-cli label audit --dry-run` parsed catalog | Catalog includes core and optional automation groups; `size::s` color corrected after GitHub rejected a 7-character hex value. |
+| 1.2 | done | Add human policy and root pointers | `core/policies/forge-label-taxonomy.md`; `AGENT_HOME.md`; `AGENTS.md` | Root files link to the canonical policy. |
+| 2.1 | done | Open linked nils-cli implementation issue | https://github.com/sympoies/nils-cli/issues/473 | Issue separated CLI provider work from runtime-kit policy work. |
+| 2.2 | done | Consume released forge-cli label support | nils-cli `v0.20.1`; PRs sympoies/nils-cli#476 and #477 | `forge-cli 0.20.1` is installed locally and exposes `label list|audit|ensure`, repeatable `--label`, `--label-catalog`, and `--strict-labels`. |
+| 3.1 | done | Update issue and PR/MR skills | `core/skills/issue/`; `core/skills/pr/`; rendered golden snapshots | Skills choose, ensure, validate, and pass selected labels. |
+| 3.2 | done | Update plan and dispatch label usage | `core/skills/dispatch/`; runtime-smoke dispatch domain | Plan, tracking, and dispatch workflows apply `workflow::*` labels while preserving `plan` compatibility. |
+| 3.3 | done | Refresh rendered outputs and smoke coverage | `agent-runtime render --product codex/claude --update-golden`; runtime-smoke issue/pr/dispatch | Golden and smoke coverage prove label arguments reach dry-run plans. |
+| 4.1 | done | Ensure labels on representative repositories | `agent-runtime-kit-label-audit.json`; `nils-cli-label-audit.json` | GitHub audits pass for `graysurf/agent-runtime-kit` and `sympoies/nils-cli`; GitLab blocked by `glab auth status` timeout against `gitlab.gamania.com`. |
+| 4.2 | in-progress | Exercise end-to-end labeled creation | Scratch issue #96 created/viewed/closed with taxonomy labels | Final delivery PR will provide the PR-side live label evidence. |
 
 ## Validation
 
 | Command | Status | Summary |
 | --- | --- | --- |
-| `AGENT_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit agent-docs resolve --context startup --strict --format checklist` | passed | Required startup docs present. |
-| `AGENT_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit agent-docs resolve --context project-dev --strict --format checklist` | passed | Required project-dev docs present. |
+| `AGENT_DOCS_HOME=/Users/terry/.codex/worktrees/574c/agent-runtime-kit agent-docs resolve --context startup --strict --format checklist` | passed | Required startup docs present. |
+| `AGENT_DOCS_HOME=/Users/terry/.codex/worktrees/574c/agent-runtime-kit agent-docs resolve --context project-dev --strict --format checklist` | passed | Required project-dev docs present. |
+| `AGENT_DOCS_HOME=/Users/terry/.codex/worktrees/574c/agent-runtime-kit agent-docs resolve --context task-tools --strict --format checklist` | passed | Required task-tools docs present before external provider verification. |
 | `gh label list --repo graysurf/agent-runtime-kit --limit 200 --json name,color,description` | passed | Current repo has legacy `plan` and `issue` labels plus GitHub defaults. |
 | `gh label list --repo sympoies/nils-cli --limit 200 --json name,color,description` | passed | nils-cli has legacy `plan`, `issue`, `needs-review`, and default labels. |
 | `plan-tooling validate --file docs/plans/forge-label-taxonomy/forge-label-taxonomy-plan.md --format json` | passed | `ok=true`; no plan errors. |
-| `plan-issue record open --profile tracking --repo graysurf/agent-runtime-kit --bundle docs/plans/forge-label-taxonomy --format json` | pending | Opens the live tracking issue after commit/push. |
-| `forge-cli issue create --provider github --repo sympoies/nils-cli ...` | pending | Opens the linked nils-cli follow-up after the tracking issue URL exists. |
+| `cargo test -p nils-forge-cli --test integration label_ -- --nocapture` | passed | nils-cli label list/audit/ensure integration coverage passed before release. |
+| `cargo test -p nils-forge-cli --test integration pr_deliver_dry_run_threads_labels_into_create_step -- --nocapture` | passed | `pr deliver` carries labels into the create step. |
+| `cargo llvm-cov nextest --profile ci --workspace --summary-only --fail-under-lines 85` | passed | nils-cli workspace coverage gate passed at 85.06% line coverage. |
+| `forge-cli label audit --catalog manifests/forge-labels.yaml --provider github --repo graysurf/agent-runtime-kit --format json` | passed | GitHub audit status is `pass`; no missing labels or drift. |
+| `forge-cli label audit --catalog manifests/forge-labels.yaml --provider github --repo sympoies/nils-cli --format json` | passed | GitHub audit status is `pass`; no missing labels or drift. |
+| `glab auth status` | blocked | `gitlab.gamania.com` API call timed out; GitLab target verification deferred. |
+| `forge-cli issue create/view/close --provider github --repo graysurf/agent-runtime-kit ...` | passed | Scratch issue #96 was created with `type::test`, `area::provider`, `state::needs-triage`, and `workflow::follow-up`, verified, then closed. |
+| `forge-cli issue edit/view 91 --provider github --repo graysurf/agent-runtime-kit ...` | passed | Tracking issue #91 now has `plan`, `type::feature`, `area::provider`, `state::ready`, `workflow::plan`, and `workflow::tracking`. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain issue` | passed | Issue create dry-run includes selected taxonomy labels. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain pr` | passed | GitHub/GitLab create and deliver dry-runs include selected taxonomy labels under strict catalog validation. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch` | passed | Dispatch lane PR dry-runs include selected taxonomy labels under strict catalog validation. |
 
 ## Closeout Gate
 
