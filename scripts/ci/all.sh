@@ -215,7 +215,12 @@ if bash scripts/ci/validate-surfaces-manifest.sh tests/surfaces/invalid-acceptan
   echo "ci/all.sh: invalid surface acceptance fixture unexpectedly passed" >&2
   exit 1
 fi
-bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
+ACCEPTANCE_OUT_DIR="${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/ci-all/surface-acceptance"
+ACCEPTANCE_CODEX_HOME="${ACCEPTANCE_OUT_DIR}/codex-home"
+rm -rf "$ACCEPTANCE_CODEX_HOME"
+mkdir -p "$ACCEPTANCE_CODEX_HOME"
+ln -s "$REPO_ROOT/AGENT_HOME.md" "$ACCEPTANCE_CODEX_HOME/AGENTS.md"
+CODEX_HOME="$ACCEPTANCE_CODEX_HOME" bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
 
 # -----------------------------------------------------------------------------
 # Position 9 — Codex skill-surface shape diagnostic (preflight, not live)
