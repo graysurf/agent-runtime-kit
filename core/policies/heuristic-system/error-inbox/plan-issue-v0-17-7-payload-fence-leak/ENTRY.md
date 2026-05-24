@@ -1,14 +1,27 @@
-# plan-issue v0.17.7 leaks plan-issue-record-payload JSON fence into every rendered comment and collapses state-comment markdown content
+# plan-issue v0.17.7 payload fence leak
 
 ## Status
 
-- Status: open
+- Status: upstream fixed; v0.18.0 live verified; local surface
+  pin/archive pending
 - First observed: 2026-05-24
-- Area: plan-issue record contract; `dispatch:create-plan-tracking-issue` and any skill that consumes `plan-issue record open` output
+- Area: plan-issue record contract; `dispatch:create-plan-tracking-issue`
+  and any skill that consumes `plan-issue record open` output
 - Severity: medium
-- Source upstream PRs: sympoies/nils-cli#453 (v2 marker collapse + audit/dashboard rewrite), #454 (live record open/post/close + strict v2 gate); upstream check pending — payload-fence rendering may have shipped in either
-- Source upstream release: sympoies/nils-cli v0.17.7
-- Source local context: `docs/source/nils-cli-surface.md` is pinned at `v0.17.7`; host `agent-runtime --version` is aligned at `0.17.7`. The previous v2 marker migration (inbox case `plan-issue-v2-marker-collapse-drift`, now archived) covered the flag/schema breaks but did not catch this rendering regression because the affected comments were no longer being produced under the v1 path that existing tests still exercised.
+- Source upstream issue: sympoies/nils-cli#463 (closed 2026-05-24)
+- Source upstream PRs: sympoies/nils-cli#453, #454; fixed by #464
+  (`fix(plan-issue): hide record payload comments`, merged as
+  `740abb918bc2a938f014c59de9af3e68104a94d9`)
+- Source upstream bad release: sympoies/nils-cli v0.17.7
+- Source upstream fixed release: sympoies/nils-cli v0.18.0, published
+  2026-05-24T08:32:50Z
+- Source local context: `docs/source/nils-cli-surface.md` is still pinned
+  at `v0.17.7`; verification below used an installed v0.18.0 host. The
+  previous v2 marker migration (inbox case
+  `plan-issue-v2-marker-collapse-drift`, now archived) covered the
+  flag/schema breaks but did not catch this rendering regression because
+  the affected comments were no longer being produced under the v1 path
+  that existing tests still exercised.
 
 ## Signal
 
@@ -19,7 +32,7 @@ runs did not carry:
 1. **Trailing `plan-issue-record-payload` JSON code-fence.** Every
    comment ends with a markdown fenced block:
 
-   ```text
+   ````text
    ```plan-issue-record-payload
    {
      "schema": "plan-issue-record.payload.v2",
@@ -27,7 +40,7 @@ runs did not carry:
      ...
    }
    ```
-   ```
+   ````
 
    The block is rendered verbatim in the GitHub issue UI as a literal
    JSON snippet sitting under the `<details>` block, polluting every
@@ -42,7 +55,7 @@ runs did not carry:
    Ledger / Session Log / Validation / Notes sections inlined). Under
    v0.17.7 the state comment body is reduced to:
 
-   ```text
+   ````text
    <!-- plan-issue-record:v2 role=state profile=tracking -->
 
    ## Execution State
@@ -54,19 +67,19 @@ runs did not carry:
    ```plan-issue-record-payload
    { ... full JSON tasks array ... }
    ```
-   ```
+   ````
 
    The execution-state markdown content is no longer inlined; readers
    of the issue only see the payload JSON unless they go read the
    bundle file separately.
 
 The audit envelope itself parses correctly from the visible JSON block
-(`plan-issue record audit --profile tracking` returns
-`missing_required:[]`, `recognized_count:3`), so the regression is
-purely cosmetic in terms of contract — but a tracking issue is a
-human-facing surface and the new rendering visibly diverges from every
-prior tracking issue in this repo (#43, #50, #53, #55, #58, #64, #67,
-#69, #73, #79; all v2 markers, none carry the visible JSON fence).
+(`plan-issue record audit --profile tracking` returns `missing_required:[]`,
+`recognized_count:3`), so the regression is purely cosmetic in terms of
+contract — but a tracking issue is a human-facing surface and the new
+rendering visibly diverges from every prior tracking issue in this repo
+(issues 43, 50, 53, 55, 58, 64, 67, 69, 73, and 79; all v2 markers, none
+carry the visible JSON fence).
 
 ## Impact
 
@@ -97,9 +110,10 @@ prior tracking issue in this repo (#43, #50, #53, #55, #58, #64, #67,
   directly during user-driven `dispatch:create-plan-tracking-issue`
   invocation against graysurf/agent-runtime-kit#82 (now closed) which
   created graysurf/agent-runtime-kit#83.
-- Cross-issue comparison: `for N in 83 79 73 69 67 64; do COUNT=$(gh
-  issue view "$N" --repo graysurf/agent-runtime-kit --json comments
-  --jq '[.comments[] | select(.body | contains("plan-issue-record-payload"))] | length'); echo "issue #$N: $COUNT"; done`
+- Cross-issue comparison: `for N in 83 79 73 69 67 64; do COUNT=$(gh issue
+  view "$N" --repo graysurf/agent-runtime-kit --json comments --jq
+  '[.comments[] | select(.body | contains("plan-issue-record-payload"))] |
+  length'); echo "issue #$N: $COUNT"; done`
   produced `83: 3`, all others `0`.
 - Manual fix audit: after `gh api -X PATCH
   repos/graysurf/agent-runtime-kit/issues/comments/<id>` against the
@@ -112,19 +126,68 @@ prior tracking issue in this repo (#43, #50, #53, #55, #58, #64, #67,
 - Host version: `nils-plan-issue-cli 0.17.7`; surface pin
   `docs/source/nils-cli-surface.md:8` is `v0.17.7`.
 - Comparison comment URLs (prior shape):
-  https://github.com/graysurf/agent-runtime-kit/issues/79#issuecomment-4526114549
+  <https://github.com/graysurf/agent-runtime-kit/issues/79#issuecomment-4526114549>
   (state comment with full inlined markdown, no JSON fence).
 - Current defect comment URLs (pre-patch):
-  https://github.com/graysurf/agent-runtime-kit/issues/83#issuecomment-4526209675,
-  https://github.com/graysurf/agent-runtime-kit/issues/83#issuecomment-4526209700,
-  https://github.com/graysurf/agent-runtime-kit/issues/83#issuecomment-4526209725.
+  <https://github.com/graysurf/agent-runtime-kit/issues/83#issuecomment-4526209675>,
+  <https://github.com/graysurf/agent-runtime-kit/issues/83#issuecomment-4526209700>,
+  <https://github.com/graysurf/agent-runtime-kit/issues/83#issuecomment-4526209725>.
 - Post-patch comment shape recorded in the same comment URLs after
   the API edit at `2026-05-23T18:37:48–49Z`.
 
+## Resolution Verification
+
+Verified on 2026-05-24 with installed nils-cli v0.18.0:
+
+- `plan-issue --version`: `nils-plan-issue-cli 0.18.0`
+- `plan-tooling --version`: `plan-tooling 0.18.0`
+- Upstream issue: sympoies/nils-cli#463 is closed with a maintainer comment
+  stating it was fixed by PR #464.
+- Upstream PR: sympoies/nils-cli#464 is merged at
+  `740abb918bc2a938f014c59de9af3e68104a94d9`.
+- Upstream release: `v0.18.0` is published and non-prerelease.
+- Real tracking issue exercise:
+  graysurf/agent-runtime-kit#84 was created from
+  `docs/plans/skill-lifecycle-management/` using
+  `plan-issue record open --format json --repo graysurf/agent-runtime-kit`
+  with bundle `docs/plans/skill-lifecycle-management`.
+- Dry-run comment-shape check before live create:
+  source, plan, and state comments all returned
+  `visible_fence=false` and `hidden_payload=true`.
+- Live provider audit after GitHub read-back:
+  `plan-issue record audit --profile tracking` returned
+  `missing_required:[]`, `unsupported_markers:[]`, and
+  `recognized_count:3`.
+- Posted a follow-up state comment with the real issue/snapshot URLs,
+  then ran `plan-issue record repair-dashboard`. Final GitHub read-back
+  audit returned `missing_required:[]`, `unsupported_markers:[]`, and
+  `recognized_count:4` because the issue now contains source, plan,
+  initial-state, and latest-state markers.
+- Live GitHub comment-shape check:
+  all comments on #84 returned
+  `contains("```plan-issue-record") == false` and
+  `contains("<!-- plan-issue-record-payload:hex:") == true`;
+  the latest state comment also contains
+  `# Skill Lifecycle Management Execution State` and does not contain
+  `Seeded from plan`.
+- Plan bundle validation and repo gate:
+  `plan-tooling validate --file
+  docs/plans/skill-lifecycle-management/skill-lifecycle-management-plan.md
+  --format text --explain` passed, and the pre-push hook ran
+  `scripts/ci/all.sh` positions 1-11 successfully before pushing
+  `feat/skill-lifecycle-management-plan`.
+- Local artifacts:
+
+  ```text
+  /Users/terry/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-171249-skill-lifecycle-management-tracker/
+  ```
+
 ## Current Workaround
 
-After every `plan-issue record open --profile tracking|dispatch`
-invocation under v0.17.7:
+No workaround is needed when running `plan-issue` v0.18.0 or newer.
+
+For any host still pinned to v0.17.7, apply the old workaround after
+every `plan-issue record open --profile tracking|dispatch` invocation:
 
 1. `gh api repos/<owner>/<repo>/issues/<n>/comments --jq '.[] | .id'`
    to list the three new comment IDs.
@@ -176,10 +239,8 @@ case landed (`plan-issue-v2-marker-collapse-drift`), expanded from
 
 ## Next Action
 
-- File an upstream issue against `sympoies/nils-cli` describing the
-  visible payload fence and the state-comment content collapse;
-  link this inbox entry, comparison URLs, and the manual patch
-  workaround. Cross-link the resulting upstream issue back here.
-- Until upstream resolution, document the workaround above in the
-  `dispatch:create-plan-tracking-issue` skill body so future agents
-  apply it without re-discovering the regression.
+- Roll `docs/source/nils-cli-surface.md` from `v0.17.7` to `v0.18.0`
+  when the repo is ready to require the fixed surface.
+- After the surface pin is rolled forward and validated, archive this
+  entry under the heuristic-system error-inbox archive instead of
+  keeping it as an open workaround.
