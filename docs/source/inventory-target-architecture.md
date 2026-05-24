@@ -106,9 +106,10 @@ Status: source document for the first implementation discussion
   a global discovery alias.
 - 2026-05-25 (support matrix registry pass) — added
   `manifests/surfaces.yaml` as the typed row registry for the root
-  `SUPPORT_MATRIX.md` view. Rendering remains a nils-cli-owned follow-up; the
-  registry prevents new rows and acceptance metadata from living only in a
-  hand-authored Markdown table.
+  `SUPPORT_MATRIX.md` view. The nils-cli-owned
+  `agent-runtime render --target support-matrix` path now renders the matrix
+  from that registry, so new rows and acceptance metadata no longer live only
+  in a hand-authored Markdown table.
 - 2026-05-20 (specialist-review batch 2) — spec-depth pass:
   rewrote Drift Detection with a composite `unsafe` score
   (path / keyword / entropy at 0.4 each; block ≥ 0.8, warn at single
