@@ -7,16 +7,15 @@
 - Target scope: define one GitHub/GitLab label taxonomy, add provider label
   audit/ensure/apply support through `forge-cli`, and update agent workflows so
   issue and PR/MR creation automatically applies the selected labels.
-- Current task: deliver the `agent-runtime-kit` PR that consumes the released
-  `nils-cli` label support and closes issue #91.
-- Next task: create the labeled delivery PR, wait for checks, merge, then run
-  tracking-issue closeout.
+- Current task: merge PR #97 and run tracking-issue closeout for issue #91.
+- Next task: close issue #91 after merged PR and closeout gate evidence are
+  recorded.
 - Last updated: 2026-05-24
 - Branch: feat/forge-label-taxonomy-plan
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/91
 - Linked nils-cli issue: https://github.com/sympoies/nils-cli/issues/473
 - nils-cli release: v0.20.1
-- PR: pending
+- PR: https://github.com/graysurf/agent-runtime-kit/pull/97
 - Source document: `docs/plans/forge-label-taxonomy/forge-label-taxonomy-plan.md`
 - Discussion source: docs/plans/forge-label-taxonomy/forge-label-taxonomy-discussion-source.md
 - Trigger: user requested a durable plan for unified GitHub/GitLab labels and
@@ -34,7 +33,7 @@
 | 3.2 | done | Update plan and dispatch label usage | `core/skills/dispatch/`; runtime-smoke dispatch domain | Plan, tracking, and dispatch workflows apply `workflow::*` labels while preserving `plan` compatibility. |
 | 3.3 | done | Refresh rendered outputs and smoke coverage | `agent-runtime render --product codex/claude --update-golden`; runtime-smoke issue/pr/dispatch | Golden and smoke coverage prove label arguments reach dry-run plans. |
 | 4.1 | done | Ensure labels on representative repositories | `agent-runtime-kit-label-audit.json`; `nils-cli-label-audit.json` | GitHub audits pass for `graysurf/agent-runtime-kit` and `sympoies/nils-cli`; GitLab blocked by `glab auth status` timeout against `gitlab.gamania.com`. |
-| 4.2 | in-progress | Exercise end-to-end labeled creation | Scratch issue #96 created/viewed/closed with taxonomy labels | Final delivery PR will provide the PR-side live label evidence. |
+| 4.2 | done | Exercise end-to-end labeled creation | Scratch issue #96 created/viewed/closed with taxonomy labels; PR #97 opened with taxonomy labels | PR #97 has `type::feature`, `area::provider`, `size::l`, `provider::both`, and `workflow::tracking`. |
 
 ## Validation
 
@@ -54,6 +53,12 @@
 | `glab auth status` | blocked | `gitlab.gamania.com` API call timed out; GitLab target verification deferred. |
 | `forge-cli issue create/view/close --provider github --repo graysurf/agent-runtime-kit ...` | passed | Scratch issue #96 was created with `type::test`, `area::provider`, `state::needs-triage`, and `workflow::follow-up`, verified, then closed. |
 | `forge-cli issue edit/view 91 --provider github --repo graysurf/agent-runtime-kit ...` | passed | Tracking issue #91 now has `plan`, `type::feature`, `area::provider`, `state::ready`, `workflow::plan`, and `workflow::tracking`. |
+| `forge-cli pr deliver --provider github --repo graysurf/agent-runtime-kit --label ... --no-merge --format json` | passed | Created draft PR #97 with selected taxonomy labels and completed the required-check wait step. |
+| `forge-cli pr view 97 --provider github --repo graysurf/agent-runtime-kit --format json` | passed | PR #97 labels are `type::feature`, `area::provider`, `size::l`, `provider::both`, and `workflow::tracking`. |
+| `gh pr checks 97 --repo graysurf/agent-runtime-kit --watch --interval 10` | passed | GitHub Actions `scripts/ci/all.sh` completed successfully for PR #97. |
+| `review-specialists scope --repo . --base origin/main --testing --maintainability --red-team --format json` | passed | Forced testing, maintainability, and red-team lenses; red-team was required because diff size exceeded 200 lines. |
+| `review-evidence verify --out .../review-evidence-pr-97 --format json` | passed | Delivery review evidence bundle is complete. |
+| `forge-cli pr comment 97 --provider github --repo graysurf/agent-runtime-kit --body-file .../delivery-review-outcome-pr-97.md --format json` | passed | Posted the delivery review outcome comment before merge. |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain issue` | passed | Issue create dry-run includes selected taxonomy labels. |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain pr` | passed | GitHub/GitLab create and deliver dry-runs include selected taxonomy labels under strict catalog validation. |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch` | passed | Dispatch lane PR dry-runs include selected taxonomy labels under strict catalog validation. |
