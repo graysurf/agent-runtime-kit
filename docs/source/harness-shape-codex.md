@@ -37,17 +37,21 @@ Scope rules:
   `min_version_effective_from`: **2026-06-03**; probe:
   `codex --version` (`manifests/runtime-roots.yaml:17-27`).
 - `agent-runtime` orchestration binary (renders / installs the Codex
-  surface) ships inside nils-cli; pinned snapshot **v0.17.5**
+  surface) ships inside nils-cli; pinned snapshot **v0.20.0**
   (`docs/source/nils-cli-surface.md:1-15`). Released subcommands
   consumed today: `render`, `install`, `uninstall`, `doctor`
   (including `--class skill-surface --product codex`), `audit-drift`,
-  `gc-backups`, `restore-backups`, and `purge-state`
+  `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render`
   (`docs/source/nils-cli-surface.md:31-33`).
+- The `agent-run` capability binary from nils-cli `v0.20.0` is consumed by
+  project-script dispatcher skills so repository-owned `.agents/scripts/*`
+  commands run through explicit `.envrc` / `.env` handling.
 - Per-skill nils-cli floors come from `manifests/skills.yaml`
   `required_clis` and gate skill bodies, not Codex's core load path
-  (`manifests/skills.yaml:7-9`). Dispatch / PR skills that depend on
-  the v0.17.5 release boundary pin `forge-cli`, `plan-issue`, or
-  `plan-tooling` at `>=0.17.5`
+  (`manifests/skills.yaml:7-9`). Project-script dispatcher skills that
+  depend on explicit project environment execution pin `agent-run` at
+  `>=0.20.0`; dispatch / PR skills that depend on the v0.17.5 release
+  boundary pin `forge-cli`, `plan-issue`, or `plan-tooling` at `>=0.17.5`
   (`manifests/skills.yaml:481-715`).
 - Live Codex Desktop acceptance is separate from the deterministic
   version floor: `codex debug prompt-input` must show required skills
@@ -352,7 +356,7 @@ can pivot to a uniform table:
 | 12 | MCP servers | no | — | n/a | n/a |
 | 13 | Heuristic system | yes | shared policy root | 0.130.0 | v0.17.5 (heuristic-inbox) |
 | 14 | `state_home` | yes | env var + `agent-out` allocation | 0.130.0 | v0.17.5 (`agent-out >=0.13.0` floor in skills.yaml) |
-| 15 | `$CODEX_HOME/skills/<d>/<s>/` | yes | rendered + directory symlink per skill | 0.130.0 | v0.17.5 |
+| 15 | `$CODEX_HOME/skills/<d>/<s>/` | yes | rendered + directory symlink per skill | 0.130.0 | v0.20.0 |
 | 16 | `config.toml` hook managed block | yes | managed-block sync | 0.130.0 | v0.17.5 |
 | 17 | prompt-mode delegation policy | yes | loaded via home prompt | 0.130.0 | n/a |
 

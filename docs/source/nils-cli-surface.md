@@ -4,18 +4,18 @@
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.19.0`
-- Head commit: `3b74881` (`agent-runtime pr-body render`, v0.19.0 version
-  bump, and strict docs-hygiene fixture cleanup)
-- Release: [`v0.19.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.19.0), Homebrew tap formula at [`Formula/nils-cli.rb@2b14172`](https://github.com/sympoies/homebrew-tap/blob/2b14172/Formula/nils-cli.rb)
-- Prior pin: `v0.18.0` at `f4b21ee` (plan-issue hidden payload carriers and
-  agent-docs global scope inheritance); `v0.19.0` adds the PR body renderer.
+- Active `git describe --tags` output: `v0.20.0`
+- Head commit: `6453605` (`nils-cli 0.20.0` release bump after the
+  `agent-run` direnv executor landed)
+- Release: [`v0.20.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.20.0), Homebrew tap formula at [`Formula/nils-cli.rb@1757d6e`](https://github.com/sympoies/homebrew-tap/blob/1757d6e/Formula/nils-cli.rb)
+- Prior pin: `v0.19.0` at `3b74881` (`agent-runtime pr-body render`);
+  `v0.20.0` adds the `agent-run` project-environment executor.
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli minor
-release (the next bump after `v0.19.0`).
+release (the next bump after `v0.20.0`).
 
 Notes on derivation:
 
@@ -35,7 +35,7 @@ Notes on derivation:
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.19.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
-| `agent-workflow-primitives` | `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate.                                                                                                                                                      |
+| `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
 | `api-grpc`                  | `api-grpc`                                                                                                          | gRPC API testing CLI.                                                                                                                                                                                                                                                  |
 | `api-rest`                  | `api-rest`                                                                                                          | REST API testing CLI.                                                                                                                                                                                                                                                  |

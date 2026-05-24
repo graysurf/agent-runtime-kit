@@ -13,6 +13,8 @@ Prereqs:
 
 - Run from the target repository root unless the user explicitly names another
   repository path.
+- `agent-run` is installed from nils-cli 0.20.0 or newer and available on
+  `PATH`.
 - The target repository owns an executable `.agents/scripts/deploy.sh`.
 - Deployment targets, credentials, approvals, and rollback rules are owned by
   the consuming repository.
@@ -30,15 +32,18 @@ Outputs:
 Failure modes:
 
 - `.agents/scripts/deploy.sh` is missing or is not executable.
+- `agent-run` is unavailable or reports a blocked required project
+  environment.
 - The project-local script exits non-zero.
 - The requested repository path is not a directory.
 
 ## Entrypoint
 
-Resolve the repository root, then invoke the project-local script directly:
+Resolve the repository root, then invoke the project-local script through
+`agent-run` so repository `.envrc` / `.env` decisions are explicit:
 
 ```bash
-.agents/scripts/deploy.sh "$@"
+agent-run exec --cwd "$repo_root" -- ./.agents/scripts/deploy.sh "$@"
 ```
 
 When the script is missing or not executable, report:
@@ -51,7 +56,8 @@ no project-local implementation: .agents/scripts/deploy.sh
 
 1. Resolve the target repository root.
 2. Verify `.agents/scripts/deploy.sh` exists and is executable.
-3. Run the script from the repository root, passing through user arguments.
+3. Run the script through `agent-run exec --cwd "$repo_root" --`, passing
+   through user arguments.
 4. Report the script's deployment evidence and exit code.
 5. Do not infer deployment commands when the project-local script is absent.
 

@@ -32,15 +32,18 @@ Scope rules:
   `min_version_effective_from`: **2026-06-03**; probe: `claude --version`
   (`manifests/runtime-roots.yaml:29-38`).
 - `agent-runtime` orchestration binary (renders / installs the Claude
-  surface) ships inside nils-cli; pinned snapshot **v0.17.5**
+  surface) ships inside nils-cli; pinned snapshot **v0.20.0**
   (`docs/source/nils-cli-surface.md:1-15`). Released subcommands consumed
   today: `render`, `install`, `uninstall`, `doctor`, `audit-drift`,
-  `gc-backups`, `restore-backups`, `purge-state`
+  `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render`
   (`docs/source/nils-cli-surface.md:33`).
+- The `agent-run` capability binary from nils-cli `v0.20.0` is consumed by
+  project-script dispatcher skills so repository-owned `.agents/scripts/*`
+  commands run through explicit `.envrc` / `.env` handling.
 - Per-skill nils-cli floors come from `manifests/skills.yaml`
   `required_clis` (e.g. `agent-out: ">=0.13.0"`,
-  `agent-docs: ">=0.16.0"`). These gate skill bodies, not the harness
-  load path.
+  `agent-docs: ">=0.16.0"`, `agent-run: ">=0.20.0"`). These gate skill
+  bodies, not the harness load path.
 
 ## Surface-By-Surface Shape
 
@@ -272,7 +275,7 @@ can pivot to a uniform table:
 | 2 | `./CLAUDE.md` (repo-local) | yes | symlink to `./AGENTS.md` | 2.1.145 | n/a |
 | 3 | `.claude-plugin/plugin.json` | yes | rendered + copy-install | 2.1.145 | v0.17.5 |
 | 4 | `.claude-plugin/marketplace.json` | yes | rendered + copy-install | 2.1.145 | v0.17.5 |
-| 5 | `plugins/<p>/skills/<s>/` | yes | rendered + recursive symlink | 2.1.145 | v0.17.5 |
+| 5 | `plugins/<p>/skills/<s>/` | yes | rendered + recursive symlink | 2.1.145 | v0.20.0 |
 | 6 | `commands/<n>.md` | no | — | n/a | n/a |
 | 7 | `agents/<n>.md` | no | — | n/a | n/a |
 | 8 | `hooks/<n>.*` scripts | partial | shared scripts linked; claude adapter slot empty | 2.1.145 | v0.17.5 |

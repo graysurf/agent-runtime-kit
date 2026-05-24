@@ -13,6 +13,8 @@ Prereqs:
 
 - Run from the target repository root unless the user explicitly names another
   repository path.
+- `agent-run` is installed from nils-cli 0.20.0 or newer and available on
+  `PATH`.
 - The target repository owns an executable `.agents/scripts/release.sh`.
 - Versioning, changelog, tags, publishing, and post-release checks are owned by
   the consuming repository.
@@ -31,15 +33,18 @@ Outputs:
 Failure modes:
 
 - `.agents/scripts/release.sh` is missing or is not executable.
+- `agent-run` is unavailable or reports a blocked required project
+  environment.
 - The project-local script exits non-zero.
 - The requested repository path is not a directory.
 
 ## Entrypoint
 
-Resolve the repository root, then invoke the project-local script directly:
+Resolve the repository root, then invoke the project-local script through
+`agent-run` so repository `.envrc` / `.env` decisions are explicit:
 
 ```bash
-.agents/scripts/release.sh "$@"
+agent-run exec --cwd "$repo_root" -- ./.agents/scripts/release.sh "$@"
 ```
 
 When the script is missing or not executable, report:
@@ -52,7 +57,8 @@ no project-local implementation: .agents/scripts/release.sh
 
 1. Resolve the target repository root.
 2. Verify `.agents/scripts/release.sh` exists and is executable.
-3. Run the script from the repository root, passing through user arguments.
+3. Run the script through `agent-run exec --cwd "$repo_root" --`, passing
+   through user arguments.
 4. Report the release evidence and exit code printed by the script.
 5. Do not run generic release commands when the project-local script is absent.
 
