@@ -6,10 +6,10 @@
 - Status: in-progress
 - Target scope: runtime-kit skill surface alignment and nils-cli retired helper removal
 - Execution window: Sprint 1-3
-- Current task: PR review and live-home drift follow-up
-- Next task: review draft PRs and decide whether to clean up `heuristic-session-closeout` live drift before merge
+- Current task: Draft PR review and live-home drift follow-up
+- Next task: decide whether to clean up `heuristic-session-closeout` live drift before merging runtime-kit PR #94
 - Last updated: 2026-05-24
-- Branch/commit/PR: feat/plan-issue-v3-surface / 3d1c478 / https://github.com/graysurf/agent-runtime-kit/pull/94
+- Branch/commit/PR: feat/plan-issue-v3-surface / 8d1b721 / https://github.com/graysurf/agent-runtime-kit/pull/94
 - Source document: docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md
 - Direct source-doc execution waiver: not applicable
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/93
@@ -17,7 +17,7 @@
 - Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889245
 - Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528889341
 - Delivery PR: https://github.com/graysurf/agent-runtime-kit/pull/94
-- Cross-repo nils-cli PR: https://github.com/sympoies/nils-cli/pull/475
+- Cross-repo nils-cli PR: https://github.com/sympoies/nils-cli/pull/475 (`a774607`)
 - Session snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993496
 - Validation snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528993905
 - Latest state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/93#issuecomment-4528999060
@@ -91,6 +91,10 @@
   and [nils-cli #475](https://github.com/sympoies/nils-cli/pull/475), then
   posted session, validation, and state lifecycle comments to issue #93 and
   repaired the dashboard.
+- 2026-05-24: Added nils-cli v3 record-path coverage for `record post
+  --summary-file`, `record repair-dashboard --out`, and body-file `record
+  close` gating; pushed `a774607` and confirmed PR #475 `test`, `test_macos`,
+  `coverage`, and CodeQL checks are green.
 
 ## Validation
 
@@ -112,7 +116,10 @@
 | `cargo run -q -p nils-plan-issue-cli --bin plan-issue -- record --help` | passed | Help lists only `open`, `post`, `repair-dashboard`, `close`, and `audit`. | `/Users/terry/.codex/worktrees/nils-cli-plan-issue-v3` |
 | `rg -n "render-dashboard\|render-comment\|closeout-gate\|build-dispatch-ledger\|issue-backed-plan-record-contract-v1" ...` | passed | Runtime-kit active skills/goldens/build/docs/smoke have no retired helper references. | local output |
 | `rg -n "render-dashboard\|render-comment\|closeout-gate\|build-dispatch-ledger\|issue-backed-plan-record-contract-v1" ...` | passed | nils-cli active docs/code have no retired helper references; only parser rejection test keeps the retired names. | `/Users/terry/.codex/worktrees/nils-cli-plan-issue-v3` |
-| `bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast` | passed | Docs-only, fmt check, clippy, nextest 191/191, and doc tests passed. | `/Users/terry/.codex/worktrees/nils-cli-plan-issue-v3` |
+| `cargo test -p nils-plan-issue-cli --test integration live_record_ops` | passed | Added v3 live-record operation coverage passed 16/16. | `/Users/terry/.codex/worktrees/nils-cli-plan-issue-v3` |
+| `bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast` | passed | Docs-only, fmt check, clippy, nextest 194/194, and doc tests passed after adding v3 record-path tests. | `/Users/terry/.codex/worktrees/nils-cli-plan-issue-v3` |
+| `cargo llvm-cov nextest --profile ci --workspace --lcov --output-path ... --fail-under-lines 85` | blocked locally | Local coverage run hit unrelated local-sensitive forge-cli `pr_wait_checks_succeeds_when_terminal_on_third_poll`; GitHub coverage check is authoritative for PR #475 and passed after `a774607`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260524-222941-nils-cli-pr-475-coverage/local-coverage/` |
+| GitHub PR checks for `sympoies/nils-cli#475` at `a774607` | passed | `test`, `test_macos`, `coverage`, CodeQL, and JUnit reports completed successfully; `coverage_badge` skipped as expected. | https://github.com/sympoies/nils-cli/pull/475 |
 | `agent-runtime doctor --class skill-surface --product codex --format json --source-root ...` | passed | Codex skill-surface shape diagnostic passed 75/75 with no warnings or blockers. | local output |
 | `bash scripts/ci/sandbox-install-rehearsal.sh` | passed | Codex and Claude sandbox install rehearsals passed. | local output |
 | `bash tests/runtime-smoke/run.sh --mode deterministic` | passed | Full deterministic runtime smoke passed 54/54. | local output |
