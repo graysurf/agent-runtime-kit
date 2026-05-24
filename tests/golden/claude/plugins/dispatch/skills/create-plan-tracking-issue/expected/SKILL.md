@@ -62,15 +62,29 @@ Preview or open the tracking issue through the v3 record owner:
 plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \
   --profile tracking \
   --bundle "$PLAN_BUNDLE" \
-  --title "$TITLE"
+  --title "$TITLE" \
+  --label type::chore \
+  --label area::docs \
+  --label state::needs-triage \
+  --label workflow::plan \
+  --label workflow::tracking \
+  --label plan
 
 plan-issue --repo "$OWNER_REPO" --format json record open \
   --profile tracking \
   --bundle "$PLAN_BUNDLE" \
-  --title "$TITLE"
+  --title "$TITLE" \
+  --label type::chore \
+  --label area::docs \
+  --label state::needs-triage \
+  --label workflow::plan \
+  --label workflow::tracking \
+  --label plan
 ```
 
-After live creation, read back the issue and audit the recorded lifecycle:
+Replace `area::docs` with the primary `area::` value that matches the plan's
+scope. After live creation, read back the issue and audit the recorded
+lifecycle:
 
 ```bash
 gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
@@ -79,7 +93,13 @@ jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
 plan-issue --format json record audit \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON"
+  --comments-json "$ISSUE_JSON" \
+  --label type::chore \
+  --label area::docs \
+  --label state::needs-triage \
+  --label workflow::plan \
+  --label workflow::tracking \
+  --label plan
 ```
 
 ## Workflow

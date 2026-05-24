@@ -70,10 +70,17 @@ plan-tooling split-prs --file "$PLAN" --scope plan --strategy auto --default-pr-
 plan-issue --repo "$OWNER_REPO" --format json record open \
   --profile dispatch \
   --bundle "$PLAN_BUNDLE" \
-  --title "$TITLE"
+  --title "$TITLE" \
+  --label type::chore \
+  --label area::cli \
+  --label state::needs-triage \
+  --label workflow::plan \
+  --label workflow::dispatch \
+  --label plan
 ```
 
-Post dispatch lifecycle updates:
+Replace `area::cli` with the primary `area::` value that matches the plan's
+scope. Post dispatch lifecycle updates:
 
 ```bash
 plan-issue --repo "$OWNER_REPO" --format json record post \
@@ -102,7 +109,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile dispatch \
   --linked-pr "$OWNER_REPO#$FINAL_PR" \
   --approval "$APPROVAL" \
-  --bundle "$PLAN_BUNDLE"
+  --bundle "$PLAN_BUNDLE" \
+  --add-label state::closed \
+  --remove-label state::needs-triage
 ```
 
 Use `plan-tooling split-prs` for PR grouping analysis only. Do not create a

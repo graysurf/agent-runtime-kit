@@ -1,24 +1,24 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-24
+- Snapshot date: 2026-05-25
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.20.1`
-- Head commit: `ad45fcd` (`nils-cli 0.20.1` release bump after the
-  `forge-cli` label taxonomy support landed)
-- Release: [`v0.20.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.20.1), Homebrew tap formula at [`Formula/nils-cli.rb@31b9741`](https://github.com/sympoies/homebrew-tap/blob/31b9741/Formula/nils-cli.rb)
-- Prior pin: `v0.19.0` at `3b74881` (`agent-runtime pr-body render`);
-  `v0.20.0` adds the `agent-run` project-environment executor and
-  provider-backed issue-record lifecycle surface, and `v0.20.1` adds
-  provider-neutral `forge-cli` label audit / ensure plus catalog-validated
-  PR/MR label propagation.
+- Active `git describe --tags` output: `v0.21.0`
+- Head commit: `593d3db` (`feat(plan-issue): pipe labels through record
+  open/post/close` squash) plus the workspace bump to `0.21.0`
+- Release: [`v0.21.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.21.0), Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap` `main`
+- Prior pin: `v0.20.1` at `ad45fcd` (`forge-cli` label taxonomy support);
+  `v0.21.0` adds `plan-issue record open --label`,
+  `record post --add-label / --remove-label`, and
+  `record close --add-label / --remove-label` so the v3 record surface can
+  apply taxonomy labels at creation, lifecycle transitions, and closeout.
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli release that
-changes a consumed surface (the next bump after `v0.20.1`).
+changes a consumed surface (the next bump after `v0.21.0`).
 
 Notes on derivation:
 
@@ -47,7 +47,7 @@ Notes on derivation:
 | `api-websocket`             | `api-websocket`                                                                                                     | WebSocket API testing CLI.                                                                                                                                                                                                                                             |
 | `cli-template`              | `cli-template`                                                                                                      | Internal template/example crate. Marked `excluded` in `docs/specs/completion-coverage-matrix-v1.md`; manifests should not pin against it.                                                                                                                              |
 | `codex-cli`                 | `codex-cli`                                                                                                         | Codex runtime helper. Alias family `cx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
-| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. |
+| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. `v0.21.0` extends the `plan-issue record` surface with `--label` on `record open`, and `--add-label` / `--remove-label` on `record post` and `record close` so v3 lifecycle commands can apply taxonomy labels alongside issue creation, state transitions, and closeout. |
 | `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
 | `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                       |
