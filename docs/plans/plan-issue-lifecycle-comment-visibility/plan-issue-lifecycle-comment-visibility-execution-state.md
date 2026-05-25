@@ -3,13 +3,15 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: tracking issue opened
+- Status: in progress
 - Target scope: make `plan-issue` lifecycle comments visibly include detailed
   state, validation, review, session, and closeout evidence; collapse non-final
   Task Ledgers by default; and expand final Task Ledgers by default.
-- Current task: implement Sprint 1 in `sympoies/nils-cli`.
-- Next task: add lifecycle visible rendering support to `plan-issue record post`
-  and `record close`.
+- Current task: nils-cli PR #526 includes the renderer normalization fix and
+  has been pushed at commit `b1de607`; issue #115 lifecycle comments have
+  been refreshed with the approved visible format.
+- Next task: release nils-cli z+1, then validate runtime-kit against the
+  released floor.
 - Last updated: 2026-05-25
 - Branch: feat/plan-issue-state-visibility
 - Source document:
@@ -31,11 +33,11 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | pending | Add state execution-state file CLI input and visible gates | n/a | Add `record post --kind state --execution-state-file` and forbid Profile-only lifecycle comments. |
-| 1.2 | pending | Add Task Ledger display modes and evidence renderers | n/a | Add `auto`, `collapsed`, `expanded`, and role-specific visible evidence renderers. |
-| 1.3 | pending | Validate local nils-cli binary for runtime-kit consumption | n/a | Use local debug binary with scoped PATH before release. |
-| 2.1 | pending | Update tracking issue skill contracts | n/a | Lifecycle posts must include detailed visible evidence, not only hidden payload. |
-| 2.2 | pending | Update dispatch runtime-smoke lifecycle coverage | n/a | Assert visible evidence for state, validation, review, session, and closeout comments. |
+| 1.1 | done | Add state execution-state file CLI input and visible gates | `sympoies/nils-cli` branch `feat/plan-issue-lifecycle-comments`; `cargo test -p nils-plan-issue-cli` pass | Added `record post --kind state --execution-state-file` and usage errors for non-state or missing Task Ledger. |
+| 1.2 | done | Add Task Ledger display modes and evidence renderers | `sympoies/nils-cli` commit `b1de607`; local-fast pass | Added `auto`, `collapsed`, `expanded`, role-specific visible evidence renderers, and execution-state normalization so v2 comments keep the legacy visible fields without duplicate headings/profile lines. |
+| 1.3 | done | Validate local nils-cli binary for runtime-kit consumption | local `plan-issue` help/version probe; local install helper pass | Installed local `plan-issue` / `plan-issue-local`; runtime-kit smoke used the local install ahead of Homebrew 0.22.2. |
+| 2.1 | done | Update tracking issue skill contracts | `core/skills/dispatch/{create,execute,deliver,plan-tracking-issue-closeout}/SKILL.md.tera` | Lifecycle posts now require detailed visible evidence, not only hidden payload. |
+| 2.2 | done | Update dispatch runtime-smoke lifecycle coverage | `tests/runtime-smoke/cases/dispatch/run.sh`; dispatch smoke pass | Asserts visible state Task Ledger, validation, review, and closeout evidence. |
 | 2.3 | pending | Render and update nils-cli surface floor | n/a | Update floor only after released nils-cli is available. |
 | 3.1 | pending | Release nils-cli z+1 | n/a | Verify Homebrew/released binary exposes new flags. |
 | 3.2 | pending | Run full runtime-kit delivery validation | n/a | Use released nils-cli floor for final validation. |
@@ -53,6 +55,14 @@
 | `plan-tooling validate --file docs/plans/plan-issue-lifecycle-comment-visibility/plan-issue-lifecycle-comment-visibility-plan.md --format json` | pass | Plan bundle validates. |
 | `bash scripts/ci/all.sh` | pass | Pre-push gate positions 1-13 passed for initial plan bundle commit. |
 | `plan-issue record open --repo graysurf/agent-runtime-kit --profile tracking --bundle docs/plans/plan-issue-lifecycle-comment-visibility` | pass | Opened issue #115 with source, plan, and initial state comments. |
+| `cargo test -p nils-plan-issue-cli` | pass | nils-cli package tests passed, including lifecycle visible render coverage. |
+| `bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast` | pass | nils-cli local-fast package gate passed for `nils-plan-issue-cli`. |
+| `./scripts/install-local-release-binaries.sh --bin plan-issue --bin plan-issue-local` | pass | Installed local release binaries into `/Users/terry/.local/nils-cli`. |
+| `plan-issue record post --help` with local install first on `PATH` | pass | Local binary exposes `--execution-state-file` and `--task-ledger-display`. |
+| `cargo test -p nils-plan-issue-cli --test integration record_post_state_execution_state_file -- --nocapture` | pass | Focused regression coverage confirms one visible `## Execution State`, one visible `Profile`, preserved legacy fields, and correct Task Ledger display. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch` with local install first on `PATH` | pass | 8/8 dispatch runtime-smoke probes passed with visible lifecycle evidence assertions, including duplicate heading/profile guards. |
+| `bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast` | pass | Package local-fast passed after the renderer normalization fix. |
+| `git push origin feat/plan-issue-lifecycle-comments` | pass | Pushed nils-cli commit `b1de607` to PR #526. |
 
 ## Closeout Gate
 

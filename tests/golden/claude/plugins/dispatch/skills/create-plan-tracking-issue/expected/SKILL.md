@@ -10,7 +10,9 @@ description:
 
 Prereqs:
 
-- `plan-tooling` and `plan-issue >=0.20.0` are available on `PATH`.
+- `plan-tooling` and `plan-issue >=0.22.3` are available on `PATH`.
+  `plan-issue >=0.22.3` is required because it renders lifecycle comments with
+  visible evidence instead of Profile-only bodies.
 - Run from the target git repository root unless explicit repository and plan
   paths are supplied.
 - The source, plan, and execution-state markdown files exist on disk at the
@@ -40,7 +42,9 @@ Outputs:
 - A provider issue opened by `plan-issue record open` in live mode, or a
   deterministic preview in dry-run mode.
 - Append-only source, plan, and initial state comments carrying
-  `plan-issue-record:v2` markers.
+  `plan-issue-record:v2` markers. The initial state comment must visibly
+  include `## Execution State` and `## Task Ledger`; because it is non-final,
+  the Task Ledger rows should be folded under `<details>` by default.
 - A mutable dashboard repaired by `plan-issue` after the initial comments are
   available.
 
@@ -52,7 +56,8 @@ Failure modes:
 - Provider auth, repository resolution, issue creation, comment posting, or
   dashboard repair fails inside `plan-issue record open`.
 - A read-back audit cannot recognize the source, plan, and state lifecycle
-  comments.
+  comments, or the state comment is only a profile/header plus hidden payload
+  instead of visible execution-state evidence.
 
 ## Entrypoint
 
@@ -129,10 +134,8 @@ plan-issue --format json record audit \
    (source, plan, execution-state) and then confirm they are committed and
    pushed. If any file is missing, stop and request creation before
    `record open` runs; a missing execution-state file causes the initial
-   state comment to render with no visible task table (the structured
-   payload still ships in the hex marker, so `record audit` / `record close`
-   gates still pass, but human readers see an empty Execution State
-   section). If commit/push is the only blocker, the user may accept
+   state comment to render without the issue-visible Task Ledger that humans
+   need for review. If commit/push is the only blocker, the user may accept
    `--allow-dirty` for a preview.
 3. Run `plan-tooling validate`; stop on plan syntax, source, or grouping errors.
 4. Quality-review the source and plan markdown before they are immortalized in
@@ -147,6 +150,11 @@ plan-issue --format json record audit \
    URLs in the local execution state.
 8. Run `record audit` against the live body/comments and verify source, plan,
    and state markers are recognized.
+9. Read back the state comment body and reject Profile-only output: it must
+   visibly contain `## Execution State`, `## Task Ledger`, and a hidden
+   `plan-issue-record-payload` carrier. Non-final tracking comments should
+   fold the Task Ledger rows with `<details>` so the issue timeline stays
+   readable.
 
 ## Boundary
 

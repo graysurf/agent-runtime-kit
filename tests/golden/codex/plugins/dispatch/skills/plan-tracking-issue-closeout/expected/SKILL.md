@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `plan-issue >=0.20.0` is available on `PATH`; `gh` is useful for explicit
+- `plan-issue >=0.22.3` is available on `PATH`; `gh` is useful for explicit
   preflight audit read-back.
 - The issue was created by `create-plan-tracking-issue` or carries equivalent
   lightweight source/plan/state/session/validation comments.
@@ -28,7 +28,9 @@ Inputs:
 Outputs:
 
 - A closeout comment, final dashboard repair, and provider issue close performed
-  by `plan-issue record close`.
+  by `plan-issue record close`. The closeout comment must visibly include final
+  status, approval, linked PRs, merge SHA/check status, non-required-check
+  override evidence when used, and notes when present.
 - In repair mode, dashboard repair through `record repair-dashboard` only.
 
 Failure modes:
@@ -39,6 +41,8 @@ Failure modes:
 - The issue is a dispatch runtime; route to `dispatch-plan-closeout`.
 - Provider audit, PR verification, dashboard repair, closeout comment, or close
   mutation fails inside `plan-issue record close`.
+- Read-back shows a Profile-only closeout comment with no visible closeout
+  evidence, even if the hidden payload audits successfully.
 
 ## Entrypoint
 
@@ -90,9 +94,12 @@ show completion with all task rows `done` or explicitly `deferred` before close.
    `dispatch-plan-closeout`.
 3. Confirm approval evidence and linked PR refs are exact and issue-visible.
 4. Run `record close --profile tracking` with approval, linked PRs, and bundle.
-5. If close fails, leave the issue open and report the exact blocked code from
+5. Read back the closeout comment after a live close. Reject Profile-only
+   output; the comment must visibly list final status, approval, linked PRs,
+   merge SHA/check status, and any override/notes.
+6. If close fails, leave the issue open and report the exact blocked code from
    the JSON result.
-6. In repair-only mode, require the issue to already be closed or explicitly
+7. In repair-only mode, require the issue to already be closed or explicitly
    approved for repair, then run `record repair-dashboard` only.
 
 ## Boundary
