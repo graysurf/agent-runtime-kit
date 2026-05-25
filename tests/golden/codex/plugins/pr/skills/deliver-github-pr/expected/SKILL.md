@@ -33,6 +33,9 @@ Inputs:
 - If the PR body references a linked tracking or dispatch issue, use
   non-closing references such as `Refs #<issue>`; provider auto-close keywords
   are refused.
+- If the PR body references a linked tracking or dispatch issue, lifecycle
+  readiness is also a pre-merge gate: source, plan, complete state, latest
+  `role=session`, validation, and review evidence must be present before merge.
 
 Outputs:
 
@@ -57,6 +60,9 @@ Failure modes:
 - Delivery review outcome comment posting fails.
 - A PR body uses a provider auto-close keyword against a linked plan-tracking or
   dispatch issue.
+- A linked tracking or dispatch issue is missing lifecycle readiness before
+  merge. Route to `deliver-plan-tracking-issue` or `deliver-dispatch-plan`
+  instead of merging and backfilling after the fact.
 - `plan-issue record close` rejects linked issue closeout.
 
 ## Body Format
@@ -104,10 +110,32 @@ forge-cli pr deliver \
 Run `code-review-pre-merge-gate` before merge. Its minimum underlying scope is:
 
 ```bash
-review-specialists scope --base "$BASE_REF" --testing --maintainability --format json
-forge-cli --provider github pr comment "$PR_NUMBER" --body-file "$DELIVERY_REVIEW_OUTCOME"
+review-specialists scope \
+  --base "$BASE_REF" \
+  --testing \
+  --maintainability \
+  --format json
+forge-cli --provider github pr comment "$PR_NUMBER" \
+  --body-file "$DELIVERY_REVIEW_OUTCOME"
 forge-cli --provider github pr merge "$PR_NUMBER" --method squash
 ```
+
+For linked tracking or dispatch issues, run a pre-merge lifecycle audit before
+the merge. This is not closeout yet, because `record close` verifies the merged
+PR after merge:
+
+```bash
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
+jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+
+plan-issue --format json record audit \
+  --profile "$PROFILE" \
+  --body-file "$ISSUE_BODY" \
+  --comments-json "$ISSUE_JSON"
+```
+
+Stop if the audit lacks `session` evidence, if the latest state is not
+`complete`, or if the dashboard still shows `Latest session: pending`.
 
 Run linked issue closeout after merge when the PR body references a tracking or
 dispatch issue via `Refs #<issue>` and `--no-closeout` was not supplied:
@@ -152,13 +180,17 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    lenses.
 9. Post the delivery review outcome body produced by
    `code-review-pre-merge-gate` before merge.
-10. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
-   `--no-merge` is the requested final stop.
-11. After merge, if the PR body referenced a linked tracking or dispatch issue
-   and `--no-closeout` was not supplied, run `plan-issue record close` with the
-   correct profile. On gate fail, leave the issue open with the blocked code
-   surfaced by `plan-issue` and route to the matching closeout skill.
-12. Record the PR URL, labels, check evidence, review outcome, merge commit,
+10. Before merge, if the PR references a linked tracking or dispatch issue,
+    audit it and confirm lifecycle readiness: source/plan snapshots, complete
+    state, latest `role=session`, validation, review, and dashboard links are
+    present. If not, stop and route to the matching plan delivery workflow.
+11. Merge with `forge-cli --provider github pr merge "$PR_NUMBER"` unless
+    `--no-merge` is the requested final stop.
+12. After merge, if the PR body referenced a linked tracking or dispatch issue
+    and `--no-closeout` was not supplied, run `plan-issue record close` with
+    the correct profile. On gate fail, leave the issue open with the blocked
+    code surfaced by `plan-issue` and route to the matching closeout skill.
+13. Record the PR URL, labels, check evidence, review outcome, merge commit,
     chained closeout result, and any fallback used in delivery notes.
 
 ## Boundary

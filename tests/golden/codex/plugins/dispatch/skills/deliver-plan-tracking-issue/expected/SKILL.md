@@ -55,6 +55,9 @@ Outputs:
   `plan-issue record post`. Non-final state comments keep the Task Ledger
   folded; the final state comment shows the full Task Ledger expanded before
   closeout.
+- A real `role=session` lifecycle comment is required before merge and final
+  success. A `## Session Log` section embedded in a state comment is useful
+  context, but it is not session evidence for closeout readiness.
 - When closeout runs, `plan-issue record close` posts closeout evidence,
   repairs the dashboard, verifies linked PRs, and closes the provider issue.
 
@@ -65,6 +68,8 @@ Failure modes:
 - Local or remote validation fails.
 - Pre-merge review gate or review-evidence findings remain unresolved or lack
   an issue-visible disposition.
+- Latest session evidence is missing, or the dashboard still reports
+  `Latest session: pending` when closeout readiness is being claimed.
 - Any lifecycle comment read-back shows only the marker/header/Profile line
   plus hidden payload, without visible state, validation, review, or closeout
   evidence.
@@ -82,10 +87,17 @@ mandatory; at least one source file
 test -f "$PLAN_BUNDLE/$SLUG-plan.md" \
   || { echo "missing $PLAN_BUNDLE/$SLUG-plan.md" >&2; exit 1; }
 test -f "$PLAN_BUNDLE/$SLUG-execution-state.md" \
-  || { echo "missing $PLAN_BUNDLE/$SLUG-execution-state.md (backfill before record close to keep the bundle's task ledger consistent with the issue)" >&2; exit 1; }
+  || {
+    echo "missing $PLAN_BUNDLE/$SLUG-execution-state.md" >&2
+    echo "backfill it before record close" >&2
+    exit 1
+  }
 test -f "$PLAN_BUNDLE/$SLUG-discussion-source.md" \
   || test -f "$PLAN_BUNDLE/$SLUG-review-source.md" \
-  || { echo "missing $PLAN_BUNDLE/$SLUG-{discussion,review}-source.md" >&2; exit 1; }
+  || {
+    echo "missing discussion-source or review-source file" >&2
+    exit 1
+  }
 ```
 
 Start with issue audit and plan gates:
@@ -125,9 +137,16 @@ Run `code-review-pre-merge-gate` and record review evidence before merge. Its
 minimum underlying scope is:
 
 ```bash
-review-specialists scope --base "$BASE_REF" --testing --maintainability --format json
+review-specialists scope \
+  --base "$BASE_REF" \
+  --testing \
+  --maintainability \
+  --format json
 review-evidence init --out "$REVIEW_OUT" --subject "PR #$PR_NUMBER"
-review-evidence record-validation --out "$REVIEW_OUT" --command "$COMMAND" --status pass
+review-evidence record-validation \
+  --out "$REVIEW_OUT" \
+  --command "$COMMAND" \
+  --status pass
 review-evidence verify --out "$REVIEW_OUT" --format json
 ```
 
@@ -141,6 +160,13 @@ plan-issue --repo "$OWNER_REPO" --format json record post \
   --payload-file "$STATE_PAYLOAD" \
   --execution-state-file "$EXECUTION_STATE" \
   --task-ledger-display collapsed
+
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile tracking \
+  --kind session \
+  --payload-file "$SESSION_PAYLOAD" \
+  --summary-file "$SESSION_MD"
 
 plan-issue --repo "$OWNER_REPO" --format json record post \
   --issue "$ISSUE" \
@@ -203,7 +229,8 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 10. Post the delivery review outcome body produced by
     `code-review-pre-merge-gate` before merge.
 11. Merge only after checks, the pre-merge review gate, review evidence,
-    lifecycle audit, and issue-backed completion gates pass.
+    lifecycle audit, a latest `role=session` comment, and issue-backed
+    completion gates pass.
 12. Append state, session, validation, and review comments through
     `record post`; include PR labels in the visible evidence and repair the
     dashboard after each meaningful lifecycle event. State comments must use
@@ -213,9 +240,10 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
     state.
 13. Before merge or final success, verify the latest tracking state is
     closeout-ready: status `complete`, all task rows `done` or `deferred`,
-    validation/review/PR evidence present, dashboard links current, and the
-    final state comment visibly contains an expanded `## Task Ledger` with no
-    `<details>` wrapper hiding the rows.
+    validation/review/PR evidence present, a latest `role=session` lifecycle
+    comment present, dashboard links current with no `Latest session: pending`,
+    and the final state comment visibly contains an expanded `## Task Ledger`
+    with no `<details>` wrapper hiding the rows.
 14. After completion approval, run `record close` unless `--no-closeout` was
     supplied. Stop on any blocked code and leave the issue open with the exact
     unblock action surfaced by `plan-issue`.

@@ -250,6 +250,27 @@ write_close_fixture() {
 JSON
 }
 
+write_missing_session_close_fixture() {
+  local fixture="$1"
+  local comments_json="$2"
+  mkdir -p "$fixture/prs"
+  cat >"$fixture/issue-body.md" <<'BODY'
+## Current Dashboard
+
+- Status: complete
+- Latest session: pending
+
+## Session Log
+
+- Notes embedded in state only; this is not a role=session lifecycle record.
+BODY
+  jq '.comments |= map(select((.body | contains("role=session")) | not))' \
+    "$comments_json" >"$fixture/comments.json"
+  cat >"$fixture/prs/graysurf__agent-runtime-kit__123.json" <<'JSON'
+{"state":"MERGED","mergeCommit":{"oid":"deadbeefcafebabe"},"statusCheckRollup":{"state":"success"},"url":"https://github.com/graysurf/agent-runtime-kit/pull/123"}
+JSON
+}
+
 build_tracking_record_fixture() {
   local stem="$1"
   local dashboard_out="$DISPATCH_ARTIFACTS_DIR/$stem-repair-dashboard.json"
@@ -463,10 +484,64 @@ run_tracking_issue_closeout_probe() {
   grep -q 'deadbeefcafebabe' "$close_out"
 }
 
+run_missing_session_closeout_gate_probe() {
+  local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-missing-session-closeout-fixture"
+  local close_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-missing-session-closeout.json"
+  local rc
+  require_dispatch_bin plan-issue || return 1
+  build_tracking_record_fixture plan-tracking-missing-session-closeout
+  write_missing_session_close_fixture "$fixture" "$COMMENTS_JSON_PATH"
+
+  set +e
+  plan-issue record close \
+    --issue 1 \
+    --profile tracking \
+    --approval "runtime smoke approval" \
+    --linked-pr 'graysurf/agent-runtime-kit#123' \
+    --fixture "$fixture" \
+    --format json \
+    --state-dir "$DISPATCH_STATE_DIR" >"$close_out" 2>&1
+  rc="$?"
+  set -e
+
+  if [ "$rc" -ne 0 ] && grep -q 'session-missing' "$close_out"; then
+    return 0
+  fi
+  if [ "$rc" -eq 0 ]; then
+    return 2
+  fi
+  return 1
+}
+
+record_missing_session_closeout_gate_case() {
+  local id="dispatch.plan-issue-session-closeout-gate"
+  set +e
+  run_missing_session_closeout_gate_probe
+  local rc="$?"
+  set -e
+  case "$rc" in
+    0)
+      results_add "$id" "shared-cli" "pass" "1" "missing-session closeout fixture blocked with session-missing"
+      return 0
+      ;;
+    2)
+      results_add "$id" "shared-cli" "skip-host-capability" "0" "installed plan-issue does not yet enforce session-missing; use local nils-cli binary for this gate"
+      return 0
+      ;;
+    *)
+      results_add "$id" "shared-cli" "fail" "0" "missing-session closeout fixture did not produce session-missing"
+      return 1
+      ;;
+  esac
+}
+
 run_deliver_dispatch_plan_probe() {
   local validate_out="$DISPATCH_ARTIFACTS_DIR/deliver-dispatch-plan-validate.txt"
   local audit_out="$DISPATCH_ARTIFACTS_DIR/deliver-dispatch-plan-audit.json"
   local specialist_out="$DISPATCH_ARTIFACTS_DIR/deliver-dispatch-plan-specialist-scope.json"
+  local session_md="$DISPATCH_ARTIFACTS_DIR/deliver-dispatch-plan-session.md"
+  local session_payload="$DISPATCH_ARTIFACTS_DIR/deliver-dispatch-plan-session-payload.json"
+  local session_out="$DISPATCH_ARTIFACTS_DIR/deliver-dispatch-plan-session-comment.json"
   require_dispatch_bin plan-tooling || return 1
   require_dispatch_bin plan-issue || return 1
   require_dispatch_bin review-specialists || return 1
@@ -483,10 +558,22 @@ run_deliver_dispatch_plan_probe() {
     "feat/deliver-dispatch-plan-specialist" \
     "$specialist_out" \
     --testing --maintainability
+  write_record_content "$session_md" dispatch
+  write_session_payload "$session_payload"
+  plan-issue record post \
+    --dry-run \
+    --issue 2 \
+    --profile dispatch \
+    --kind session \
+    --payload-file "$session_payload" \
+    --summary-file "$session_md" \
+    --state-dir "$DISPATCH_STATE_DIR" >"$session_out" 2>&1
 
   grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"records"' "$PLAN_TASK_SPEC_PATH"
   grep -q '"forced_specialists"' "$specialist_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$session_out"
+  grep -q 'Execution Session' "$session_out"
 }
 
 run_dispatch_issue_closeout_probe() {
@@ -539,6 +626,9 @@ run_execute_from_tracking_issue_probe() {
 run_deliver_tracking_issue_probe() {
   local verify_out="$DISPATCH_ARTIFACTS_DIR/deliver-review-verify.json"
   local checks_out="$DISPATCH_ARTIFACTS_DIR/deliver-pr-checks.json"
+  local session_md="$DISPATCH_ARTIFACTS_DIR/deliver-session.md"
+  local session_payload="$DISPATCH_ARTIFACTS_DIR/deliver-session-payload.json"
+  local session_out="$DISPATCH_ARTIFACTS_DIR/deliver-session-comment.json"
   local validation_md="$DISPATCH_ARTIFACTS_DIR/deliver-validation.md"
   local validation_payload="$DISPATCH_ARTIFACTS_DIR/deliver-validation-payload.json"
   local validation_out="$DISPATCH_ARTIFACTS_DIR/deliver-validation-comment.json"
@@ -557,6 +647,16 @@ run_deliver_tracking_issue_probe() {
   forge-cli --provider github --repo graysurf/agent-runtime-kit \
     --dry-run --format json \
     pr checks 123 >"$checks_out" 2>&1
+  write_record_content "$session_md" tracking
+  write_session_payload "$session_payload"
+  plan-issue record post \
+    --dry-run \
+    --issue 1 \
+    --profile tracking \
+    --kind session \
+    --payload-file "$session_payload" \
+    --summary-file "$session_md" \
+    --state-dir "$DISPATCH_STATE_DIR" >"$session_out" 2>&1
   write_record_content "$validation_md" tracking
   write_validation_payload "$validation_payload"
   plan-issue record post \
@@ -574,6 +674,8 @@ run_deliver_tracking_issue_probe() {
   grep -q '"maintainability"' "$specialist_out"
   grep -q '"testing"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.checks.v1"' "$checks_out"
+  grep -q 'plan-issue-cli.record.post.v2' "$session_out"
+  grep -q 'Execution Session' "$session_out"
   grep -q 'plan-issue-cli.record.post.v2' "$validation_out"
   grep -q 'Overall: pass' "$validation_out"
   grep -q 'true' "$validation_out"
@@ -674,6 +776,7 @@ record_case "dispatch.create-plan-tracking-issue" "plan-tooling plus tracking po
 record_case "dispatch.deliver-dispatch-plan" "dispatch post/repair/audit, split, and specialist scope probes passed" run_deliver_dispatch_plan_probe || failures=1
 record_case "dispatch.dispatch-plan-closeout" "dispatch record close fixture probe passed" run_dispatch_issue_closeout_probe || failures=1
 record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixture probe passed" run_tracking_issue_closeout_probe || failures=1
+record_missing_session_closeout_gate_case || failures=1
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe || failures=1
 record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe || failures=1
 record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe || failures=1

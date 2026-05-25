@@ -43,7 +43,8 @@ Outputs:
 - Draft lane PRs targeting `PLAN_BRANCH`, with lane status reflected in the
   latest dispatch state/session payload.
 - Final close only after lane PRs, final integration PR, approval, issue
-  mention, validation, review, and cleanup gates pass.
+  mention, latest `role=session` evidence, validation, review, and cleanup
+  gates pass.
 - When closeout runs, `plan-issue record close --profile dispatch` posts
   closeout evidence, repairs the dashboard, verifies linked PRs, and closes the
   issue.
@@ -65,7 +66,12 @@ Validate the plan and open the shared dispatch record:
 
 ```bash
 plan-tooling validate --file "$PLAN" --format text --explain
-plan-tooling split-prs --file "$PLAN" --scope plan --strategy auto --default-pr-grouping group --format json
+plan-tooling split-prs \
+  --file "$PLAN" \
+  --scope plan \
+  --strategy auto \
+  --default-pr-grouping group \
+  --format json
 
 plan-issue --repo "$OWNER_REPO" --format json record open \
   --profile dispatch \
@@ -89,6 +95,13 @@ plan-issue --repo "$OWNER_REPO" --format json record post \
   --kind state \
   --payload-file "$DISPATCH_STATE_PAYLOAD" \
   --summary-file "$DISPATCH_STATE_MD"
+
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile dispatch \
+  --kind session \
+  --payload-file "$SESSION_PAYLOAD" \
+  --summary-file "$SESSION_MD"
 
 plan-issue --repo "$OWNER_REPO" --format json record post \
   --issue "$ISSUE" \
@@ -136,15 +149,16 @@ Use `plan-tooling split-prs` for PR grouping analysis only. Do not create a
 8. Review lane PRs through `review-dispatch-lane-pr`. Use
    `code-review-specialists` as supplemental read-only evidence when risk
    warrants it, and force `testing` plus `maintainability` for delivery PRs.
-9. Append dispatch validation and review comments after each gate; dashboards
-   are repaired through `record repair-dashboard`.
+9. Append dispatch session, validation, and review comments after each gate;
+   dashboards are repaired through `record repair-dashboard`.
 10. After all lanes are accepted, open the final integration PR from
-   `PLAN_BRANCH` to the default branch and record conformance, required checks,
-   and delivery review outcome evidence.
+    `PLAN_BRANCH` to the default branch and record conformance, required
+    checks, and delivery review outcome evidence.
 11. Run `record audit --profile dispatch` before final closeout.
 12. After final approval, run `record close --profile dispatch` unless
-    `--no-closeout` was supplied. Stop on any blocked code and leave the issue
-    open with the exact unblock action surfaced by `plan-issue`.
+    `--no-closeout` was supplied. Stop on any blocked code, including
+    missing session evidence, and leave the issue open with the exact unblock
+    action surfaced by `plan-issue`.
 13. If the issue is a lightweight tracking runtime, route to
     `plan-tracking-issue-closeout` instead.
 

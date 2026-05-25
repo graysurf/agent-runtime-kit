@@ -35,8 +35,8 @@ Outputs:
 
 Failure modes:
 
-- The issue is not a dispatch-profile record, or dispatch state comments are
-  missing.
+- The issue is not a dispatch-profile record, or dispatch state/session
+  comments are missing.
 - PR references are missing, unmerged, wrong-base, or not reflected in current
   dispatch state.
 - Follow-up is routed to a replacement lane without explicit reassignment.
@@ -88,7 +88,8 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
    `record post` after review decisions; dashboards are repaired through
    `record repair-dashboard`.
 8. Run `record close --profile dispatch` only when all implementation and review
-   gates are ready for final approval.
+   gates are ready for final approval and the latest dashboard no longer shows
+   `Latest session: pending`.
 9. If `record close` fails, leave the issue open and surface the exact blocked
    code and required next action.
 
