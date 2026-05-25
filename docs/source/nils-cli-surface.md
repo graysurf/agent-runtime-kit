@@ -4,21 +4,23 @@
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.21.0`
-- Head commit: `593d3db` (`feat(plan-issue): pipe labels through record
-  open/post/close` squash) plus the workspace bump to `0.21.0`
-- Release: [`v0.21.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.21.0), Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap` `main`
-- Prior pin: `v0.20.1` at `ad45fcd` (`forge-cli` label taxonomy support);
-  `v0.21.0` adds `plan-issue record open --label`,
-  `record post --add-label / --remove-label`, and
-  `record close --add-label / --remove-label` so the v3 record surface can
-  apply taxonomy labels at creation, lifecycle transitions, and closeout.
+- Active `git describe --tags` output: `v0.22.3`
+- Head commit: `85a166f` (`chore(release): bump cli versions to 0.22.3`)
+- Release:
+  [`v0.22.3`](https://github.com/sympoies/nils-cli/releases/tag/v0.22.3),
+  Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
+  `main`
+- Prior pin: `v0.21.0` at `593d3db` (`feat(plan-issue): pipe labels
+  through record open/post/close`); `v0.22.3` adds the consumed visible
+  lifecycle evidence surface for `plan-issue record post --kind state
+  --execution-state-file`, `--task-ledger-display auto|collapsed|expanded`,
+  and visible validation/review/session/closeout renderers.
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli release that
-changes a consumed surface (the next bump after `v0.21.0`).
+changes a consumed surface (the next bump after `v0.22.3`).
 
 Notes on derivation:
 
@@ -60,7 +62,7 @@ Notes on derivation:
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
 | `nils-test-support`         | (library only)                                                                                                      | Integration-test harness; test-only, never appears in `required_clis`.                                                                                                                                                                                                 |
-| `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names. As of `v0.20.0`, issue-backed records use the provider-backed `record open`, `record post`, `record audit`, `record repair-dashboard`, and `record close` surface. The current marker is `plan-issue-record:v2 role=<source|plan|state|session|validation|review|closeout> profile=<tracking|dispatch>`, and payload carriers are hidden from visible issue comments. |
+| `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names. As of `v0.20.0`, issue-backed records use the provider-backed `record open`, `record post`, `record audit`, `record repair-dashboard`, and `record close` surface. The current marker is `plan-issue-record:v2 role=<source|plan|state|session|validation|review|closeout> profile=<tracking|dispatch>`. As of `v0.22.3`, state lifecycle comments can render canonical execution-state markdown through `record post --kind state --execution-state-file <path>`, support `--task-ledger-display auto|collapsed|expanded`, and render validation, review, session, and closeout evidence visibly alongside hidden payload carriers. |
 | `plan-tooling`              | `plan-tooling`                                                                                                      | Plan bundle linter / validator.                                                                                                                                                                                                                                        |
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |
@@ -72,8 +74,10 @@ When `sympoies/nils-cli` cuts a new release that consumers should pin against:
 
 1. Pull the latest `main` of `sympoies/nils-cli`.
 2. Re-run `ls ~/Project/sympoies/nils-cli/crates/` to verify the crate list.
-3. Re-run `bash scripts/workspace-bins.sh` (in the nils-cli checkout) to verify the binary list.
+3. Re-run `bash scripts/workspace-bins.sh` (in the nils-cli checkout) to
+   verify the binary list.
 4. Re-run `git describe --tags` and update the header.
 5. Replace any row whose binary set changed; add new rows alphabetically.
 6. Bump the snapshot date and head commit pointer.
-7. Manifest authors then refresh `required_clis` pins in `manifests/skills.yaml` / `manifests/plugins.yaml` against the new surface.
+7. Manifest authors then refresh `required_clis` pins in
+   `manifests/skills.yaml` / `manifests/plugins.yaml` against the new surface.
