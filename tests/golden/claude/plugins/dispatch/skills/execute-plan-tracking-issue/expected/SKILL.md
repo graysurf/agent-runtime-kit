@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue >=0.20.0`, and `forge-cli` are available on
+- `plan-tooling`, `plan-issue >=0.22.3`, and `forge-cli` are available on
   `PATH`.
 - The issue has source, plan, and state lifecycle comments, or enough
   issue-visible state to reconstruct them before edits.
@@ -22,8 +22,10 @@ Inputs:
   branch name, validation scope, and PR policy.
 - Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
   `workflow::tracking` for tracking-issue implementation work.
-- State/session/validation payload JSON plus optional visible Markdown
-  summaries.
+- State/session/validation payload JSON plus visible lifecycle evidence. State
+  posts use the canonical execution-state markdown through
+  `--execution-state-file`; session and validation comments must render
+  readable evidence and must not be left as Profile-only payload carriers.
 - Issue contract classification: lightweight tracking issue or dispatch issue.
 
 Outputs:
@@ -83,7 +85,8 @@ plan-issue --repo "$OWNER_REPO" --format json record post \
   --profile tracking \
   --kind state \
   --payload-file "$STATE_PAYLOAD" \
-  --summary-file "$STATE_MD"
+  --execution-state-file "$EXECUTION_STATE" \
+  --task-ledger-display collapsed
 
 plan-issue --repo "$OWNER_REPO" --format json record post \
   --issue "$ISSUE" \
@@ -130,10 +133,17 @@ plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
    not allowed.
 8. Create or update the PR through `forge-cli`.
 9. Post state, session, and validation comments through `record post`.
+   State updates must use `--execution-state-file "$EXECUTION_STATE"`; use
+   collapsed Task Ledger display for progress updates and expanded display for
+   final state before closeout.
 10. Repair the dashboard through `record repair-dashboard`.
 11. Before merge, closeout, or final success reporting, run `record audit` again
    and verify the latest state is complete or explicitly leaves
    follow-up/deferred rows.
+12. Read back the latest lifecycle comments and treat Profile-only output as a
+   failure even when the hidden payload audits successfully. Tracking state
+   must visibly include `## Task Ledger`; validation must visibly include the
+   command/status evidence.
 
 ## Boundary
 

@@ -723,9 +723,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp plan bundle and tracking lifecycle record output
-    invocation: plan-tooling validate plus plan-issue record open/post/repair-dashboard/audit
+    invocation: plan-tooling validate plus plan-issue record open/post/repair-dashboard/audit with visible Task Ledger assertion
     expected_exit_code: 0
-    expected_artifacts: tracking open JSON, dashboard repair JSON, post JSON, and audit JSON
+    expected_artifacts: tracking open JSON, dashboard repair JSON, post JSON with visible Task Ledger, and audit JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -749,9 +749,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: build shared dispatch close fixture
-    invocation: plan-issue record close with deterministic fixture
+    invocation: plan-issue record close with deterministic fixture and visible closeout evidence assertion
     expected_exit_code: 0
-    expected_artifacts: dispatch close JSON with closeout preview and final dashboard
+    expected_artifacts: dispatch close JSON with visible closeout preview and final dashboard
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -762,9 +762,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: build lightweight closeout fixture
-    invocation: plan-issue record close with deterministic fixture
+    invocation: plan-issue record close with deterministic fixture and visible closeout evidence assertion
     expected_exit_code: 0
-    expected_artifacts: tracking close JSON with closeout preview and final dashboard
+    expected_artifacts: tracking close JSON with visible closeout preview and final dashboard
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -775,9 +775,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: validate temp plan and render tracking issue lifecycle state
-    invocation: plan-tooling validate plus plan-issue record audit plus forge-cli pr view dry-run
+    invocation: plan-tooling validate plus plan-issue record audit plus visible lifecycle evidence and forge-cli pr view dry-run
     expected_exit_code: 0
-    expected_artifacts: plan validation, tracking audit JSON, and forge-cli PR view plan
+    expected_artifacts: plan validation, tracking audit JSON, visible state comment, and forge-cli PR view plan
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
@@ -788,9 +788,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: render tracking record and review evidence record
-    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr checks dry-run plus tracking validation comment render
+    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr checks dry-run plus tracking validation comment visible render
     expected_exit_code: 0
-    expected_artifacts: specialist scope JSON, review evidence JSON, provider checks, and validation comment render
+    expected_artifacts: specialist scope JSON, review evidence JSON, provider checks, and validation comment visible render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

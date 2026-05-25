@@ -10,9 +10,12 @@ description:
 
 Prereqs:
 
-- `plan-tooling`, `plan-issue >=0.20.0`, `forge-cli`,
+- `plan-tooling`, `plan-issue >=0.22.3`, `forge-cli`,
   `review-evidence`, and `review-specialists` are available on `PATH`. The
   `code-review-pre-merge-gate` workflow uses `review-specialists`.
+  `plan-issue >=0.22.3` is required for state `--execution-state-file`,
+  Task Ledger display modes, and visible validation/review/closeout evidence
+  rendering.
 - The target issue has recoverable plan/task state and linked source context.
 - The target issue is a lightweight plan-tracking issue. If it contains
   dispatch-profile comments or dispatch lane records, route to the dispatch
@@ -34,7 +37,11 @@ Inputs:
   override, close policy, validation commands, and linked PR refs.
 - Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
   `workflow::tracking` for tracking-issue delivery.
-- State/session/validation/review payload JSON and visible summaries.
+- State/session/validation/review payload JSON and visible evidence. State
+  posts use the canonical execution-state markdown through
+  `--execution-state-file`; validation, review, session, and closeout comments
+  must render role-specific visible evidence and must not be left as
+  Profile-only comments with only hidden payload.
 - Review evidence, pre-merge review gate outcome, and explicit disposition for
   every meaningful finding.
 
@@ -45,7 +52,9 @@ Outputs:
 - A `code-review-pre-merge-gate` result with at least `testing` and
   `maintainability` for every PR.
 - Issue-visible state, session, validation, and review comments posted through
-  `plan-issue record post`.
+  `plan-issue record post`. Non-final state comments keep the Task Ledger
+  folded; the final state comment shows the full Task Ledger expanded before
+  closeout.
 - When closeout runs, `plan-issue record close` posts closeout evidence,
   repairs the dashboard, verifies linked PRs, and closes the provider issue.
 
@@ -56,6 +65,9 @@ Failure modes:
 - Local or remote validation fails.
 - Pre-merge review gate or review-evidence findings remain unresolved or lack
   an issue-visible disposition.
+- Any lifecycle comment read-back shows only the marker/header/Profile line
+  plus hidden payload, without visible state, validation, review, or closeout
+  evidence.
 - `forge-cli` PR checks, ready, merge, or comment operations fail.
 - `plan-issue record close` rejects the current lifecycle evidence.
 
@@ -125,9 +137,24 @@ Post issue-visible lifecycle updates:
 plan-issue --repo "$OWNER_REPO" --format json record post \
   --issue "$ISSUE" \
   --profile tracking \
+  --kind state \
+  --payload-file "$STATE_PAYLOAD" \
+  --execution-state-file "$EXECUTION_STATE" \
+  --task-ledger-display collapsed
+
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile tracking \
   --kind validation \
   --payload-file "$VALIDATION_PAYLOAD" \
   --summary-file "$VALIDATION_MD"
+
+plan-issue --repo "$OWNER_REPO" --format json record post \
+  --issue "$ISSUE" \
+  --profile tracking \
+  --kind review \
+  --payload-file "$REVIEW_PAYLOAD" \
+  --summary-file "$REVIEW_MD"
 
 plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
   --issue "$ISSUE"
@@ -178,15 +205,26 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 11. Merge only after checks, the pre-merge review gate, review evidence,
     lifecycle audit, and issue-backed completion gates pass.
 12. Append state, session, validation, and review comments through
-    `record post`; include PR labels in the visible summary and repair the
-    dashboard after each meaningful lifecycle event.
+    `record post`; include PR labels in the visible evidence and repair the
+    dashboard after each meaningful lifecycle event. State comments must use
+    `--execution-state-file "$EXECUTION_STATE"` instead of a short
+    `--summary-file`; use `--task-ledger-display collapsed` for progress
+    updates and `--task-ledger-display expanded` for the final pre-closeout
+    state.
 13. Before merge or final success, verify the latest tracking state is
     closeout-ready: status `complete`, all task rows `done` or `deferred`,
-    validation/review/PR evidence present, and dashboard links current.
+    validation/review/PR evidence present, dashboard links current, and the
+    final state comment visibly contains an expanded `## Task Ledger` with no
+    `<details>` wrapper hiding the rows.
 14. After completion approval, run `record close` unless `--no-closeout` was
     supplied. Stop on any blocked code and leave the issue open with the exact
     unblock action surfaced by `plan-issue`.
-15. Leave the issue open with an exact unblock action if any gate fails or if
+15. Read back the validation, review, and closeout lifecycle comments. Treat
+    any Profile-only comment as a failed delivery even if `record audit`
+    recognizes the hidden payload. The closeout comment must visibly include
+    final status, approval, linked PRs, merge SHA/check status, any
+    non-required-check override, and notes when present.
+16. Leave the issue open with an exact unblock action if any gate fails or if
     `--no-closeout` was supplied.
 
 ## Boundary

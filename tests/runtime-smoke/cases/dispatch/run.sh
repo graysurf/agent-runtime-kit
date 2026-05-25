@@ -174,12 +174,48 @@ write_record_content() {
 CONTENT
 }
 
+write_execution_state_content() {
+  local path="$1"
+  local profile="$2"
+  cat >"$path" <<CONTENT
+# Runtime Smoke $profile Execution State
+
+## Execution State
+
+- Status: complete
+- Profile: $profile
+- Current: runtime smoke complete
+- Next action: closeout
+
+## Task Ledger
+
+| ID | Status | Task |
+| --- | --- | --- |
+| 1.1 | done | Validate dispatch smoke |
+
+## Validation
+
+| Command | Status |
+| --- | --- |
+| true | pass |
+CONTENT
+}
+
 write_state_payload() {
   local path="$1"
   local profile="$2"
   cat >"$path" <<JSON
 {"status":"complete","target_scope":"runtime smoke $profile","current":"complete","next_action":"closeout","tasks":[{"id":"1.1","status":"done","title":"Validate dispatch smoke"}],"prs":[{"ref":"graysurf/agent-runtime-kit#123","url":"https://github.com/graysurf/agent-runtime-kit/pull/123","status":"merged"}],"blockers":[],"links":{}}
 JSON
+}
+
+assert_state_comment_shape() {
+  local path="$1"
+
+  grep -q '## Execution State' "$path"
+  [ "$(grep -o '## Execution State' "$path" | wc -l | tr -d ' ')" = "1" ]
+  [ "$(grep -o -- '- Profile:' "$path" | wc -l | tr -d ' ')" = "1" ]
+  ! grep -q '# Runtime Smoke' "$path"
 }
 
 write_validation_payload() {
@@ -226,7 +262,7 @@ build_tracking_record_fixture() {
   COMMENTS_JSON_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-comments.json"
 
   printf '## Current Dashboard\n\n- Status: pending\n' >"$PLAN_BODY_PATH"
-  write_record_content "$state_md" tracking
+  write_execution_state_content "$state_md" tracking
   write_state_payload "$state_payload" tracking
   write_tracking_comments_json "$COMMENTS_JSON_PATH"
   plan-issue record repair-dashboard \
@@ -240,11 +276,17 @@ build_tracking_record_fixture() {
     --profile tracking \
     --kind state \
     --payload-file "$state_payload" \
-    --summary-file "$state_md" \
+    --execution-state-file "$state_md" \
+    --task-ledger-display expanded \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
 
   grep -q 'plan-issue-cli.record.repair.dashboard.v2' "$dashboard_out"
   grep -q 'plan-issue-cli.record.post.v2' "$state_out"
+  assert_state_comment_shape "$state_out"
+  grep -q '## Task Ledger' "$state_out"
+  grep -q 'Validate dispatch smoke' "$state_out"
+  grep -q 'plan-issue-record-payload' "$state_out"
+  ! grep -q '<details>' "$state_out"
 }
 
 build_dispatch_record_fixture() {
@@ -261,7 +303,7 @@ build_dispatch_record_fixture() {
   COMMENTS_JSON_PATH="$DISPATCH_ARTIFACTS_DIR/$stem-comments.json"
 
   printf '## Current Dashboard\n\n- Status: pending\n' >"$PLAN_BODY_PATH"
-  write_record_content "$state_md" dispatch
+  write_execution_state_content "$state_md" dispatch
   write_state_payload "$state_payload" dispatch
   write_dispatch_comments_json "$COMMENTS_JSON_PATH"
   plan-issue record repair-dashboard \
@@ -282,12 +324,18 @@ build_dispatch_record_fixture() {
     --profile dispatch \
     --kind state \
     --payload-file "$state_payload" \
-    --summary-file "$state_md" \
+    --execution-state-file "$state_md" \
+    --task-ledger-display expanded \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
 
   grep -q 'plan-issue-cli.record.repair.dashboard.v2' "$dashboard_out"
   grep -q '"records"' "$split_out"
   grep -q 'plan-issue-cli.record.post.v2' "$state_out"
+  assert_state_comment_shape "$state_out"
+  grep -q '## Task Ledger' "$state_out"
+  grep -q 'Validate dispatch smoke' "$state_out"
+  grep -q 'plan-issue-record-payload' "$state_out"
+  ! grep -q '<details>' "$state_out"
 }
 
 write_review_evidence() {
@@ -410,6 +458,8 @@ run_tracking_issue_closeout_probe() {
 
   grep -q 'plan-issue-cli.record.close.v2' "$close_out"
   grep -q '"mode":"fixture"' "$close_out"
+  grep -q 'Final status' "$close_out"
+  grep -q 'Merge SHA' "$close_out"
   grep -q 'deadbeefcafebabe' "$close_out"
 }
 
@@ -457,6 +507,8 @@ run_dispatch_issue_closeout_probe() {
 
   grep -q 'plan-issue-cli.record.close.v2' "$close_out"
   grep -q '"mode":"fixture"' "$close_out"
+  grep -q 'Final status' "$close_out"
+  grep -q 'Merge SHA' "$close_out"
   grep -q 'deadbeefcafebabe' "$close_out"
 }
 
@@ -523,6 +575,8 @@ run_deliver_tracking_issue_probe() {
   grep -q '"testing"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.checks.v1"' "$checks_out"
   grep -q 'plan-issue-cli.record.post.v2' "$validation_out"
+  grep -q 'Overall: pass' "$validation_out"
+  grep -q 'true' "$validation_out"
 }
 
 run_dispatch_pr_review_probe() {
@@ -562,6 +616,8 @@ run_dispatch_pr_review_probe() {
   grep -q '"suggested_specialists"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.comment.v1"' "$comment_out"
   grep -q 'plan-issue-cli.record.post.v2' "$review_out"
+  grep -q 'Decision: approve' "$review_out"
+  grep -q 'testing, maintainability' "$review_out"
 }
 
 run_dispatch_subagent_pr_probe() {

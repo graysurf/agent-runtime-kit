@@ -112,7 +112,9 @@ Failure modes:
      recommendations, open questions, constraints, and accepted risks.
    - Route unresolved open questions out of the document. Keep them for the
      final response as decision prompts unless the user explicitly resolves them
-     before writing.
+     before writing. When the user resolves prior open questions, write those
+     outcomes as decisions or decision-log entries, not as an `Open Questions`
+     section.
    - Treat assumptions as document-safe only when they are explicit adopted
      working assumptions. Do not use an `Assumptions` section as a place to store
      unresolved options.
@@ -148,7 +150,10 @@ Failure modes:
      - retention intent, such as cleanup after execution or promotion candidate
      - read-first references
      - recommended next artifact
-   - Do not add an `Open Questions` section by default. If an unresolved
+   - Do not add an `Open Questions` section by default. If prior open
+     questions have been decided, convert them into `Decisions` or
+     `Decision log` bullets with the chosen outcome and any non-blocking
+     consequence. If an unresolved
      question would materially change the document's facts, scope, acceptance
      criteria, or next artifact, pause and ask before writing instead of
      publishing a misleading source document.
