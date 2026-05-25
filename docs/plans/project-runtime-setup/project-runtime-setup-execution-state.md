@@ -3,25 +3,27 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: ready for issue-backed planning
+- Status: in-progress
 - Target scope: managed dispatcher surface cleanup plus `setup-project`
   workflow and adopted-repo `pre-pr` diagnostics.
 - Execution window: Sprint 1-3
-- Current task: create issue-backed tracking record.
-- Next task: Task 1.1 - remove managed `bench` and `demo` skill sources after
-  tracking issue creation.
+- Current task: Task 1.1 - remove managed `bench` and `demo` skill sources.
+- Next task: execute Sprint 1 managed dispatcher surface cleanup.
 - Last updated: 2026-05-26
-- Branch/commit/PR: pending commit
+- Branch/commit/PR: `f2f4040` pushed to `origin/main`; PR pending
 - Source document: docs/plans/project-runtime-setup/project-runtime-setup-plan.md
 - Discussion source:
   docs/plans/project-runtime-setup/project-runtime-setup-discussion-source.md
 - Plan document: docs/plans/project-runtime-setup/project-runtime-setup-plan.md
 - Execution state: docs/plans/project-runtime-setup/project-runtime-setup-execution-state.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/117>
+- Source snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/117#issuecomment-4536042374>
+- Plan snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/117#issuecomment-4536042480>
+- Initial state snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/117#issuecomment-4536042572>
 
 ## Task Ledger
 
@@ -59,6 +61,9 @@
   setup-oriented project adoption workflow.
 - 2026-05-26: Created initial plan and execution-state bundle for issue-backed
   tracking.
+- 2026-05-26: Pushed commit `f2f4040`, opened tracking issue #117 with
+  `plan-issue record open`, and read-back audited source, plan, and initial
+  state comments.
 
 ## Validation
 
@@ -69,6 +74,12 @@
 | `plan-tooling validate --file docs/plans/project-runtime-setup/project-runtime-setup-plan.md --format json` | passed | Plan bundle validates with no errors. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/plan-tooling-validate.json` |
 | `rumdl check docs/plans/project-runtime-setup/*.md` | passed | Plan bundle markdown passes. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/rumdl-check.txt` |
 | `awk '/[[:blank:]]$/ ...' docs/plans/project-runtime-setup/*.md` | passed | No trailing whitespace found in the plan bundle. | n/a |
+| `bash scripts/ci/all.sh` | passed | Pre-push hook ran positions 1-13 successfully while pushing `f2f4040`. | local pre-push output |
+| `forge-cli label ensure --catalog manifests/forge-labels.yaml --repo graysurf/agent-runtime-kit --format json` | passed | Shared taxonomy labels were already present; no actions needed. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/label-ensure.json` |
+| `plan-issue record open --dry-run --profile tracking --bundle docs/plans/project-runtime-setup --format json` | passed | Preview generated source, plan, and state snapshots with selected labels. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/record-open-dry-run.json` |
+| `plan-issue record open --profile tracking --bundle docs/plans/project-runtime-setup --format json` | passed | Opened tracking issue #117 with source, plan, and initial state comments. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/record-open-live.json` |
+| `plan-issue record audit --profile tracking --body-file "$ISSUE_BODY" --comments-json "$ISSUE_JSON" --format json` | passed | Read-back audit recognized source, plan, and state comments with no missing required markers. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/issue-117-audit.json` |
+| `rg -n "## Execution State\|## Task Ledger\|<details>\|plan-issue-record-payload" issue-117-state-comment.md` | passed | Initial state comment contains visible execution state, visible task ledger, folded details, and hidden payload carrier. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-012651-project-runtime-setup/issue-117-state-comment.md` |
 
 ## Residual Risk
 
