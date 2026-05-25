@@ -6,109 +6,106 @@ description:
 
 # Dispatch Plan Closeout
 
-## Contract
+## Purpose
 
-Prereqs:
+Close one shared dispatch plan issue after every lane PR, review,
+validation, integration evidence, and approval gate passes. The skill
+runs `tracking close-ready --profile dispatch` for the audit, then
+`record close --profile dispatch` to post the canonical dispatch
+`closeout` comment and close the issue.
 
-- `plan-issue >=0.20.0`, `review-evidence`, and `review-specialists` are
-  available on `PATH`.
-- The target issue was created or maintained by `deliver-dispatch-plan` and has
-  dispatch-profile lifecycle comments plus dispatch state payloads.
-- The main agent is acting as orchestrator/reviewer only; implementation remains
-  on subagent-owned task lanes.
-- Final approval evidence is known before live close.
+## When to use
 
-Inputs:
+- `deliver-dispatch-plan` has handed off with all lane PRs merged and
+  review evidence recorded.
+- The shared dispatch issue needs the final dispatch-profile closeout
+  comment plus the final dashboard.
 
-- Dispatch issue number, repository slug, approval evidence, linked lane PRs,
-  final integration PR, and optional review summary.
-- Provider issue body and comments JSON for optional pre-close audit.
-- Dispatch validation, review, and cleanup evidence.
+## Inputs
 
-Outputs:
+- `OWNER_REPO`, `ISSUE`, `RUN_STATE`.
+- Linked PR references for every dispatch lane.
+- Approval evidence (comment URL or non-empty approval text).
 
-- Current dispatch audit result.
-- Review decisions executed through `review-dispatch-lane-pr` with retained
-  evidence.
-- Closeout comment, final dashboard repair, linked PR verification, and issue
-  close performed by `plan-issue record close`.
+## Preflight
 
-Failure modes:
+- `plan-issue >=0.22.3` is on `PATH`.
+- `tracking close-ready --profile dispatch` returns `ready: true` and
+  `blockers: []`.
+- Every lane PR is merged with required-check pass, and `tracking
+  status` reflects that fact.
 
-- The issue is not a dispatch-profile record, or dispatch state/session
-  comments are missing.
-- PR references are missing, unmerged, wrong-base, or not reflected in current
-  dispatch state.
-- Follow-up is routed to a replacement lane without explicit reassignment.
-- Review evidence, approval, final integration, issue mention, or closeout gate
-  evidence fails.
+## Allowed lifecycle roles
 
-## Entrypoint
+- Dispatch dashboard repair through `record repair-dashboard` when the
+  pre-closeout dashboard is stale.
+- `record close --profile dispatch` to post the final dispatch
+  `closeout` comment and close the issue.
 
-Optional read-back audit:
+## Forbidden actions
+
+- No lane implementation.
+- No PR creation, update, or merge.
+- No `record post` for `state`, `session`, `validation`, or `review`
+  during the closeout window.
+- No `tracking checkpoint` for the closeout role (forbidden by the
+  controller itself).
+- No lightweight tracking closeout rules — dispatch closeout requires
+  lane, review, validation, and integration evidence in addition to the
+  lightweight gates.
+- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
+  comment` for the closeout body.
+
+## CLI flow
 
 ```bash
-gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
-jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
-
-plan-issue --format json record audit \
+plan-issue --format json tracking close-ready \
   --profile dispatch \
-  --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON"
-```
-
-Live closeout:
-
-```bash
-plan-issue --repo "$OWNER_REPO" --format json record close \
+  --provider-repo "$OWNER_REPO" \
   --issue "$ISSUE" \
+  --run-state "$RUN_STATE" \
+  --linked-pr "$LANE_PR_1" --linked-pr "$LANE_PR_2" \
+  --approval "$APPROVAL" --expect-visible
+
+# Optional repair when the dashboard is stale:
+plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
+  --issue "$ISSUE"
+
+plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile dispatch \
-  --linked-pr "$OWNER_REPO#$FINAL_PR" \
-  --approval "$APPROVAL" \
-  --bundle "$PLAN_BUNDLE" \
-  --add-label state::closed \
-  --remove-label state::needs-triage
+  --issue "$ISSUE" \
+  --linked-pr "$LANE_PR_1" --linked-pr "$LANE_PR_2" \
+  --approval "$APPROVAL"
 ```
 
-## Workflow
+## Evidence requirements
 
-1. Confirm repository, issue number, runtime mode, provider auth, and approval
-   basis.
-2. Run `record audit --profile dispatch`; reject lightweight tracking issues
-   and route them to `plan-tracking-issue-closeout`.
-3. Confirm task owners remain subagent identities; main-agent implementation
-   ownership is invalid for dispatch issues.
-4. For each lane, verify branch, worktree, execution mode, PR reference,
-   dispatch bundle, validation evidence, and review evidence.
-5. Keep task-lane continuity: clarification, CI repair, and review follow-up go
-   back to the current lane unless main-agent explicitly reassigns it.
-6. Use `review-dispatch-lane-pr` for request-followup, merge, or close-pr
-   decisions. Record specialist review as used or skipped with rationale.
-7. Append dispatch state/session/validation/review comments through
-   `record post` after review decisions; dashboards are repaired through
-   `record repair-dashboard`.
-8. Run `record close --profile dispatch` only when all implementation and review
-   gates are ready for final approval and the latest dashboard no longer shows
-   `Latest session: pending`.
-9. If `record close` fails, leave the issue open and surface the exact blocked
-   code and required next action.
+- `tracking close-ready --profile dispatch` returns `ready: true` with
+  `visible_completeness.pass: true`.
+- `record close --profile dispatch` returns the dispatch closeout URL
+  and a refreshed final dashboard.
+- A final audit recognizes the dispatch `closeout` marker and reports
+  no visible-completeness findings.
+
+## Stop conditions
+
+- Any lane PR is unmerged or has required-check failures.
+- Any lane review reports unresolved blocker findings.
+- `tracking close-ready` reports any blocker.
+- `record close` strict gate fails on missing required checks, missing
+  merge SHA, or unrecognized PR refs.
+
+## Validation
+
+- `tracking close-ready --profile dispatch --expect-visible` returns
+  `ready: true`.
+- `record close --profile dispatch` exits 0 with `closeout_url` and
+  final dashboard.
+- Final audit recognizes the `closeout` role with empty `visible.codes`.
 
 ## Boundary
 
-`plan-issue record` owns dispatch audit, strict closeout, linked PR provider
-verification, closeout commenting, dashboard repair, and issue close.
-`review-dispatch-lane-pr` owns review-decision execution. This skill owns
-closeout orchestration, lane continuity enforcement, approval interpretation,
-and final issue evidence quality.
-
-## References
-
-- Local rehearsal: `references/LOCAL_REHEARSAL.md`
-- Task lane continuity:
-  `skills/dispatch/deliver-dispatch-plan/references/TASK_LANE_CONTINUITY.md`
-- Main-agent review rubric:
-  `skills/dispatch/deliver-dispatch-plan/references/MAIN_AGENT_REVIEW_RUBRIC.md`
-- Post-review outcomes:
-  `skills/dispatch/deliver-dispatch-plan/references/POST_REVIEW_OUTCOMES.md`
-- Dispatch issue record contract:
-  `skills/dispatch/deliver-dispatch-plan/references/DISPATCH_ISSUE_RECORD_CONTRACT.md`
+`plan-issue tracking close-ready` owns the non-mutating dispatch gate.
+`record close --profile dispatch` owns the closeout post and provider
+issue closing. The skill body owns approval interpretation, lane
+integration verification, and the final read-back integrity check.

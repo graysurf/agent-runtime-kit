@@ -6,149 +6,138 @@ description:
 
 # Execute Plan Tracking Issue
 
-## Contract
+## Purpose
 
-Prereqs:
+Resume one lightweight plan-tracking issue for the selected task or sprint
+scope. Reconcile provider issue lifecycle evidence with the local
+run-state before implementation, update the run-state while work
+progresses, and post a checkpoint when issue-visible truth changes.
+`plan-issue tracking` owns reconciliation, rendering, and dashboard
+repair; the skill body owns judgment about what changed and whether to
+post.
 
-- `plan-tooling`, `plan-issue >=0.22.3`, and `forge-cli` are available on
-  `PATH`.
-- The issue has source, plan, and state lifecycle comments, or enough
-  issue-visible state to reconstruct them before edits.
-- Repository preflight and dirty-tree triage have passed.
+## When to use
 
-Inputs:
+- A tracking issue already exists with `source`, `plan`, and an initial
+  `state` lifecycle comment, and the user wants to advance the selected
+  task without re-opening the issue.
+- The provider issue may have newer evidence than the local run-state and
+  the next step needs reconciliation.
 
-- Issue number or URL, repository override, plan path, selected task/sprint,
-  branch name, validation scope, and PR policy.
-- Selected PR labels: one `type::`, one primary `area::`, one `size::`, and
-  `workflow::tracking` for tracking-issue implementation work.
-- State/session/validation payload JSON plus visible lifecycle evidence. State
-  posts use the canonical execution-state markdown through
-  `--execution-state-file`; session and validation comments must render
-  readable evidence and must not be left as Profile-only payload carriers.
-- Issue contract classification: lightweight tracking issue or dispatch issue.
+## Inputs
 
-Outputs:
+- `OWNER_REPO`, `ISSUE`, `PLAN_BUNDLE`, `BRANCH`.
+- `RUN_STATE` — path to the existing `run-state.json` (created by
+  `create-plan-tracking-issue` or a previous run of this skill).
+- Optional `--task <id>` or `--sprint <number>` selection when the run
+  state does not already name it.
 
-- A scoped implementation branch and PR for the selected issue-backed task.
-- Updated append-only state, session, and validation comments posted through
-  `plan-issue record post`.
-- A refreshed dashboard from `plan-issue record repair-dashboard`.
+## Preflight
 
-Failure modes:
+- `plan-issue >=0.22.3` and `plan-tooling` are on `PATH`.
+- The bundle files exist at canonical paths and the local execution-state
+  Markdown is up to date for the rendered state checkpoint.
+- A `run-state.json` exists or is initialized with `tracking run init`
+  before this skill posts any progress comment.
 
-- The issue lacks recoverable source, plan, state, or task evidence.
-- The issue is actually a dispatch runtime; route to the dispatch workflow
-  family.
-- The selected task is ambiguous, validation fails, provider PR operations fail,
-  or dashboard repair/audit cannot recognize lifecycle evidence.
+## Allowed lifecycle roles
 
-## Entrypoint
+- `state` checkpoint through `plan-issue tracking checkpoint --post state`
+  (use `--task-ledger-display collapsed` for intermediate updates).
+- `session` checkpoint when a meaningful work session ended or a handoff
+  needs durable context.
+- `validation` checkpoint when validation actually ran and changed
+  issue-visible status.
+- Dashboard repair only through `plan-issue tracking checkpoint
+  --repair-dashboard` or, if a lower-level surface is needed, through
+  `plan-issue record repair-dashboard`.
 
-Fetch and audit issue state before edits:
+## Forbidden actions
 
-```bash
-gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
-jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+- No `record open` or `record attach` — the issue already exists.
+- No `record close` and no closeout comment.
+- No `review` lifecycle comments — those belong to
+  `deliver-plan-tracking-issue` (which has the review surface in scope).
+- No rewriting `source` or `plan` snapshots.
+- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
+  comment` for lifecycle evidence.
+- No posting when `tracking status` reports `run-state-stale`,
+  `issue-evidence-missing`, or any other blocked code without
+  reconciliation.
+- No comments for purely local edits, speculative notes, or unchanged
+  validation reruns.
 
-plan-issue --format json record audit \
-  --profile tracking \
-  --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON"
-```
-
-Validate the plan and create or update the PR through provider tooling:
-
-```bash
-plan-tooling validate --file "$PLAN" --format text --explain
-forge-cli pr create \
-  --provider github \
-  --repo "$OWNER_REPO" \
-  --kind feature \
-  --base "$BASE_BRANCH" \
-  --title "$PR_TITLE" \
-  --body-file "$PR_BODY" \
-  --label type::feature \
-  --label area::runtime \
-  --label size::m \
-  --label workflow::tracking \
-  --label-catalog manifests/forge-labels.yaml \
-  --strict-labels \
-  --format json
-```
-
-Post lifecycle comments and repair the dashboard:
+## CLI flow
 
 ```bash
-plan-issue --repo "$OWNER_REPO" --format json record post \
+plan-issue --format json tracking status \
+  --provider-repo "$OWNER_REPO" \
   --issue "$ISSUE" \
   --profile tracking \
-  --kind state \
-  --payload-file "$STATE_PAYLOAD" \
-  --execution-state-file "$EXECUTION_STATE" \
-  --task-ledger-display collapsed
+  --run-state "$RUN_STATE" \
+  --expect-visible
 
-plan-issue --repo "$OWNER_REPO" --format json record post \
-  --issue "$ISSUE" \
-  --profile tracking \
-  --kind session \
-  --payload-file "$SESSION_PAYLOAD" \
-  --summary-file "$SESSION_MD"
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" \
+  --selected-task "$TASK_ID" \
+  --branch "$BRANCH" \
+  --note "starting $TASK_ID"
 
-plan-issue --repo "$OWNER_REPO" --format json record post \
-  --issue "$ISSUE" \
-  --profile tracking \
-  --kind validation \
-  --payload-file "$VALIDATION_PAYLOAD" \
-  --summary-file "$VALIDATION_MD"
-
-plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
-  --issue "$ISSUE"
+plan-issue --format json tracking checkpoint \
+  --run-state "$RUN_STATE" \
+  --post state
 ```
 
-## Issue Contract Selection
+After validation results land, update run-state and re-checkpoint:
 
-- Lightweight tracking issues use `plan-issue-record:v2` markers with
-  `profile=tracking`.
-- The mutable issue body is only a dashboard. The latest valid state comment is
-  the durable task ledger and should keep the canonical state payload complete.
-- Dispatch issues use `profile=dispatch`; do not rewrite a tracking issue into
-  dispatch in place.
+```bash
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" \
+  --phase validating \
+  --validation-overall pass \
+  --validation-command "cargo test -p ..." \
+  --validation-status pass \
+  --validation-evidence "$VALIDATION_LOG"
 
-## Workflow
+plan-issue --format json tracking checkpoint \
+  --run-state "$RUN_STATE" \
+  --post state,session,validation \
+  --repair-dashboard
+```
 
-1. Read issue body, comments, labels, linked PRs, and latest local plan state.
-2. Run `record audit --profile tracking`; stop if required markers are missing
-   or the issue is classified as dispatch.
-3. Validate the plan with `plan-tooling`.
-4. Update the issue-backed state payload before code edits so the selected task,
-   current status, and next action are visible.
-5. Implement only the selected task scope and run validation.
-6. Select labels before PR mutation. Every tracking implementation PR needs
-   `type::`, one primary `area::`, `size::`, and `workflow::tracking`; use
-   `state::do-not-merge` when the PR must not merge.
-7. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
-   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
-   before the first live PR in that repo. Use `label audit` when mutation is
-   not allowed.
-8. Create or update the PR through `forge-cli`.
-9. Post state, session, and validation comments through `record post`.
-   State updates must use `--execution-state-file "$EXECUTION_STATE"`; use
-   collapsed Task Ledger display for progress updates and expanded display for
-   final state before closeout.
-10. Repair the dashboard through `record repair-dashboard`.
-11. Before merge, closeout, or final success reporting, run `record audit` again
-   and verify the latest state is complete or explicitly leaves
-   follow-up/deferred rows.
-12. Read back the latest lifecycle comments and treat Profile-only output as a
-   failure even when the hidden payload audits successfully. Tracking state
-   must visibly include `## Task Ledger`; validation must visibly include the
-   command/status evidence.
+## Evidence requirements
+
+- The `tracking status` envelope reports `fsm_state` and an empty
+  `warnings.run-state-stale` set before any checkpoint posts go live.
+- The `tracking checkpoint` envelope lists every planned `roles_planned`
+  with `lint_pass: true` and an empty `blocked` array.
+- Every progress update appends events to `events.jsonl` under the issue
+  run root.
+
+## Stop conditions
+
+- `tracking status` reports `run-state-stale` — refuse to post until run
+  state is synchronized or explicitly repaired.
+- `tracking status` reports missing required source/plan/state evidence —
+  return to `create-plan-tracking-issue` rather than papering over the
+  gap.
+- `tracking checkpoint` returns a `visible-completeness-failed` blocker —
+  fix the run state / execution-state Markdown before retrying.
+- The FSM reports `RECORD_BLOCKED` — record the blocker through
+  `tracking run update --note` and stop.
+
+## Validation
+
+- `plan-issue tracking status --expect-visible` shows a `fsm_state` that
+  is consistent with the run state phase.
+- `plan-issue tracking checkpoint` (dry-run) writes rendered bodies under
+  `runs/<run-id>/rendered/` and passes the visible lint.
+- For live mode, the audit step from `create-plan-tracking-issue`
+  confirms the new comment appeared with the expected role.
 
 ## Boundary
 
-`plan-tooling` owns plan parsing and validation. `plan-issue record` owns
-lifecycle comments, dashboard repair, marker audit, and record closeout.
-`forge-cli` owns PR mutation. The skill body owns scope selection,
-implementation judgment, validation interpretation, and whether a gate is strong
-enough to continue.
+`plan-issue tracking` owns reconciliation, checkpoint rendering, and
+dashboard repair. `plan-issue record` is the primitive layer this
+controller adapts. The skill body owns scope selection, validation
+interpretation, and the decision to post a checkpoint at all.

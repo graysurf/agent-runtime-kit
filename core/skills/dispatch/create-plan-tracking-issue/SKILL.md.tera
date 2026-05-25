@@ -6,84 +6,82 @@ description:
 
 # Create Plan Tracking Issue
 
-## Contract
+## Purpose
 
-Prereqs:
+Open one lightweight plan-tracking issue from a validated local plan bundle.
+The skill freezes the source and plan documents as immutable snapshots and
+posts an initial `state` comment so the issue timeline is useful from the
+first commit. Lifecycle mechanics belong to `plan-issue record` and
+`plan-issue tracking`; this skill owns scope readiness and live-vs-dry-run
+judgment.
+
+## When to use
+
+- A new plan bundle (`<slug>-discussion-source.md` or
+  `<slug>-review-source.md`, `<slug>-plan.md`,
+  `<slug>-execution-state.md`) is ready and the user wants the issue
+  opened, or wants a deterministic preview before going live.
+- An existing issue must be re-attached with v2 lifecycle evidence after a
+  bundle revision (use `record attach` rather than re-opening).
+
+## Inputs
+
+- `PLAN_BUNDLE` — absolute path to the bundle directory.
+- `PLAN` — path to the plan markdown (usually `$PLAN_BUNDLE/<slug>-plan.md`).
+- `OWNER_REPO` — provider repository slug.
+- `TITLE` — issue title.
+- Selected labels from the shared taxonomy:
+  `type::chore`, one primary `area::`, `state::needs-triage`,
+  `workflow::plan`, `workflow::tracking`, plus the rollout `plan` label.
+- Optional explicit source / plan / execution-state paths when bundle
+  discovery is not enough.
+
+## Preflight
 
 - `plan-tooling` and `plan-issue >=0.22.3` are available on `PATH`.
-  `plan-issue >=0.22.3` is required because it renders lifecycle comments with
-  visible evidence instead of Profile-only bodies.
-- Run from the target git repository root unless explicit repository and plan
-  paths are supplied.
-- The source, plan, and execution-state markdown files exist on disk at the
-  canonical bundle paths (`<slug>-discussion-source.md` or
-  `<slug>-review-source.md`, `<slug>-plan.md`, `<slug>-execution-state.md`),
-  are committed, and are pushed so the issue snapshots resolve to a traceable
-  commit SHA. `plan-tooling validate` confirms the bundle pointers but does
-  not require the referenced execution-state file to be physically present,
-  so the skill body verifies file existence before `record open` to keep the
-  initial state comment from rendering with an empty task ledger.
-- Existing plan bundles have a valid `Read First` section.
-- `plan-issue record` owns the issue-backed lifecycle. Do not compose
-  lifecycle issues through generic `forge-cli issue` primitives.
-
-Inputs:
-
-- Plan bundle directory, provider repository slug, title, and dry-run/live mode.
-- Selected issue labels from the shared taxonomy. Plan-tracking issues use
-  `type::chore`, one primary `area::`, `state::needs-triage`,
-  `workflow::plan`, and `workflow::tracking`, plus the compatibility `plan`
-  label during rollout.
-- Optional explicit source, plan, and execution-state paths when bundle
-  discovery is not sufficient.
-
-Outputs:
-
-- A provider issue opened by `plan-issue record open` in live mode, or a
-  deterministic preview in dry-run mode.
-- Append-only source, plan, and initial state comments carrying
-  `plan-issue-record:v2` markers. The initial state comment must visibly
-  include `## Execution State` and `## Task Ledger`; because it is non-final,
-  the Task Ledger rows should be folded under `<details>` by default.
-- A mutable dashboard repaired by `plan-issue` after the initial comments are
-  available.
-
-Failure modes:
-
-- Plan validation fails, required bundle files are missing, or local files are
-  uncommitted/unpushed and no explicit waiver is acceptable.
-- Quality review of source or plan markdown surfaces blocking findings.
-- Provider auth, repository resolution, issue creation, comment posting, or
-  dashboard repair fails inside `plan-issue record open`.
-- A read-back audit cannot recognize the source, plan, and state lifecycle
-  comments, or the state comment is only a profile/header plus hidden payload
-  instead of visible execution-state evidence.
-
-## Entrypoint
-
-Verify all three bundle files exist before provider mutation. The plan and
-execution-state files are mandatory; at least one source file
-(`<slug>-discussion-source.md` or `<slug>-review-source.md`) must be present.
+- Run from the target git repository root unless an explicit repo and plan
+  path are supplied.
+- All three bundle files exist on disk at the canonical paths and are
+  committed and pushed so the snapshot resolves to a traceable commit SHA.
+  A missing execution-state file is a hard stop — `record open` would
+  otherwise emit an empty task ledger.
 
 ```bash
 test -f "$PLAN_BUNDLE/$SLUG-plan.md" \
   || { echo "missing $PLAN_BUNDLE/$SLUG-plan.md" >&2; exit 1; }
 test -f "$PLAN_BUNDLE/$SLUG-execution-state.md" \
-  || { echo "missing $PLAN_BUNDLE/$SLUG-execution-state.md (record open will surface an empty task ledger if this file is absent — create it before continuing)" >&2; exit 1; }
+  || { echo "missing $PLAN_BUNDLE/$SLUG-execution-state.md" >&2; exit 1; }
 test -f "$PLAN_BUNDLE/$SLUG-discussion-source.md" \
   || test -f "$PLAN_BUNDLE/$SLUG-review-source.md" \
   || { echo "missing $PLAN_BUNDLE/$SLUG-{discussion,review}-source.md" >&2; exit 1; }
-```
-
-Validate the bundle before provider mutation:
-
-```bash
 plan-tooling validate --file "$PLAN" --format text --explain
 ```
 
-Preview or open the tracking issue through the v3 record owner:
+## Allowed lifecycle roles
+
+- `source` and `plan` snapshots through `record open --profile tracking`
+  (or `record attach` against an existing issue).
+- Initial `state` comment through the same `record open` flow.
+- Optional `plan-issue tracking run init` after live creation to persist a
+  typed local run state for the next skill in the family.
+
+## Forbidden actions
+
+- No `record post --kind state|session|validation|review`. Progress
+  belongs to `execute-plan-tracking-issue`.
+- No `record close` and no closeout comment.
+- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
+  comment` for lifecycle evidence.
+- No PR creation or update.
+- No skipping the `plan-tooling validate` gate.
+- No live `record open` against a dirty bundle without an explicit
+  `--allow-dirty` waiver in the user instruction.
+
+## CLI flow
 
 ```bash
+plan-tooling validate --file "$PLAN" --format text --explain
+
 plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \
   --profile tracking \
   --bundle "$PLAN_BUNDLE" \
@@ -105,11 +103,27 @@ plan-issue --repo "$OWNER_REPO" --format json record open \
   --label workflow::plan \
   --label workflow::tracking \
   --label plan
+
+plan-issue --format json tracking run init \
+  --provider-repo "$OWNER_REPO" \
+  --issue "$ISSUE" \
+  --bundle "$PLAN_BUNDLE" \
+  --execution-state-file "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  --branch "$BRANCH"
 ```
 
-Replace `area::docs` with the primary `area::` value that matches the plan's
-scope. After live creation, read back the issue and audit the recorded
-lifecycle:
+Replace `area::docs` with the primary `area::` value that matches the
+plan's scope.
+
+## Evidence requirements
+
+- The `record open` result envelope names the issue URL and the source,
+  plan, and state comment URLs.
+- A `record audit --expect-visible` against the live body and comments
+  recognizes `source`, `plan`, and `state` markers, and reports no
+  visible-completeness findings.
+- `tracking run init` writes `run-state.json` and `events.jsonl` under the
+  issue runtime root, recording `run_started`.
 
 ```bash
 gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
@@ -119,46 +133,33 @@ plan-issue --format json record audit \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
   --comments-json "$ISSUE_JSON" \
-  --label type::chore \
-  --label area::docs \
-  --label state::needs-triage \
-  --label workflow::plan \
-  --label workflow::tracking \
-  --label plan
+  --expect-visible
 ```
 
-## Workflow
+## Stop conditions
 
-1. Resolve the bundle, repository, title, labels, and output directory.
-2. Confirm all three bundle files exist on disk at the canonical paths
-   (source, plan, execution-state) and then confirm they are committed and
-   pushed. If any file is missing, stop and request creation before
-   `record open` runs; a missing execution-state file causes the initial
-   state comment to render without the issue-visible Task Ledger that humans
-   need for review. If commit/push is the only blocker, the user may accept
-   `--allow-dirty` for a preview.
-3. Run `plan-tooling validate`; stop on plan syntax, source, or grouping errors.
-4. Quality-review the source and plan markdown before they are immortalized in
-   the issue.
-5. Before live issue creation, run `forge-cli label ensure --catalog
-   manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json` when the
-   catalog exists and label mutation is allowed. Use `label audit` when
-   mutation is not allowed; use `--update-existing` only with explicit drift
-   repair approval.
-6. Run `plan-issue record open --dry-run` and inspect the JSON preview.
-7. In live mode, run `plan-issue record open`; record the issue URL and comment
-   URLs in the local execution state.
-8. Run `record audit` against the live body/comments and verify source, plan,
-   and state markers are recognized.
-9. Read back the state comment body and reject Profile-only output: it must
-   visibly contain `## Execution State`, `## Task Ledger`, and a hidden
-   `plan-issue-record-payload` carrier. Non-final tracking comments should
-   fold the Task Ledger rows with `<details>` so the issue timeline stays
-   readable.
+- Bundle file missing, dirty without waiver, or `plan-tooling validate`
+  reports errors — fix the bundle before any provider mutation.
+- Quality review of source or plan markdown surfaces blocking findings —
+  stop and request edits.
+- `record audit --expect-visible` reports a missing role or any
+  visible-completeness code — investigate before declaring success.
+- The state comment is Profile-only (only the role heading and
+  `- Profile: tracking` line) — treat as failure and rerun
+  `record open` after fixing the execution-state Markdown.
+
+## Validation
+
+- `plan-tooling validate --file "$PLAN" --format text --explain` is green.
+- `plan-issue record open --dry-run` returns a deterministic preview.
+- Live `record open` returns issue + comment URLs.
+- `plan-issue record audit --profile tracking --body-file "$ISSUE_BODY"
+  --comments-json "$ISSUE_JSON" --expect-visible` shows recognized
+  source/plan/state markers and an empty `visible.codes` list.
 
 ## Boundary
 
-`plan-tooling` owns plan validation, batching, and split modeling.
-`plan-issue record` owns issue-backed provider creation, lifecycle comments,
-dashboard repair, and marker audit. The skill body owns source readiness,
-live-vs-dry-run judgment, and issue record completeness.
+`plan-tooling` owns plan validation. `plan-issue record` owns lifecycle
+comment rendering and dashboard repair. `plan-issue tracking` owns local
+run state and FSM reconciliation. This skill owns scope readiness,
+labels, dry-run / live decisions, and the read-back integrity check.

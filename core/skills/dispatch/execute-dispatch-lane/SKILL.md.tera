@@ -6,141 +6,110 @@ description:
 
 # Execute Dispatch Lane
 
-## Contract
+## Purpose
 
-Prereqs:
+Execute one assigned dispatch lane end to end: keep lane facts scoped to
+the assigned task or sprint, drive the PR through `forge-cli`, and post
+lane progress back to the shared dispatch issue record. Lane work never
+mutates other lanes or closes the shared issue.
 
-- `forge-cli`, `plan-issue >=0.20.0`, and `review-evidence` are available on
-  `PATH`.
-- The caller has assigned task-lane facts: issue, task ID, owner, branch,
-  worktree, execution mode, base branch, and PR state.
-- When dispatched by `deliver-dispatch-plan`, the lane includes
-  `TASK_PROMPT_PATH`, `PLAN_SNAPSHOT_PATH`, `DISPATCH_RECORD_PATH`,
-  `workflow_role=implementation`, exact plan task context, and `PLAN_BRANCH`.
-- In live mode, provider auth is available and the local worktree is the
-  assigned lane.
+## When to use
 
-Inputs:
+- `deliver-dispatch-plan` has assigned the lane and the lane has a
+  branch, worktree, base PLAN_BRANCH, and task scope.
+- An existing lane needs a resume after a session break.
 
-- Issue number, task ID, base branch, assigned branch/worktree, PR title, PR
-  body file, validation commands, and optional follow-up comment URL.
-- Selected lane PR labels: one `type::`, one primary `area::`, one `size::`,
-  and `workflow::dispatch`.
-- Dispatch record facts for lane continuity: owner, branch, worktree,
-  execution mode, current PR, `workflow_role`, and optional runtime-role
-  fallback rationale.
-- Path to a dispatch state/session markdown update prepared for the main issue.
+## Inputs
 
-Outputs:
+- `OWNER_REPO`, `ISSUE` (shared dispatch issue), lane `TASK_ID` / sprint
+  / PR group, `BRANCH`, `WORKTREE`, `RUN_STATE`.
+- Optional existing lane PR reference (`OWNER_REPO#NUMBER`).
 
-- A draft or updated PR for the assigned task lane through `forge-cli pr create`
-  or `forge-cli pr comment`.
-- Review-response evidence recorded through `review-evidence` when responding
-  to main-agent comments.
-- A dispatch session or state comment posted through
-  `plan-issue record post --profile dispatch`.
-- A blocker packet when required context is missing or conflicting, preserving
-  the current task-lane facts.
+## Preflight
 
-Failure modes:
+- `plan-issue >=0.22.3` and `forge-cli` are on `PATH`.
+- `tracking status --profile dispatch --expect-visible` reports the
+  shared issue as `RECORD_OPEN_ACTIVE` or later with no
+  `run-state-stale` warning.
+- The assigned `PLAN_BRANCH` is the base; never target the repository
+  default branch.
 
-- Assigned lane facts are missing, conflicting, or point outside the approved
-  worktree root.
-- Dispatch record is missing required artifact paths, or declares a non-
-  implementation `workflow_role`.
-- PR body lacks required sections `## Summary`, `## Scope`, `## Testing`,
-  `## Test plan`, and `## Issue`, or still contains placeholders.
-- PR base branch differs from the assigned base branch; in dispatch-plan mode
-  this must be `PLAN_BRANCH`.
-- Local validation fails, provider PR operations fail, or the lane state update
-  cannot be posted.
+## Allowed lifecycle roles
 
-## Entrypoint
+- Lane-scoped `state`, `session`, and `validation` checkpoints through
+  `plan-issue tracking checkpoint --profile dispatch` constrained to the
+  assigned lane scope.
+- `tracking run update` to record branch, PR, validation, and notes for
+  the assigned lane.
+- PR creation and update through `forge-cli pr create` /
+  `forge-cli pr update` (typically via `create-dispatch-lane-pr`).
 
-Open a task-lane PR:
+## Forbidden actions
 
-```bash
-forge-cli pr create \
-  --provider github \
-  --repo "$OWNER_REPO" \
-  --kind feature \
-  --base "$BASE_BRANCH" \
-  --title "$PR_TITLE" \
-  --body-file "$PR_BODY" \
-  --label type::feature \
-  --label area::skills \
-  --label size::s \
-  --label workflow::dispatch \
-  --label-catalog manifests/forge-labels.yaml \
-  --strict-labels \
-  --format json
-```
+- No reassigning lane scope. The orchestrator decides scope.
+- No mutating unrelated lanes' fields in run state.
+- No `record close` and no closeout comment.
+- No `review` lifecycle comments. `review-dispatch-lane-pr` owns review
+  evidence.
+- No targeting the repository default branch when a `PLAN_BRANCH` is
+  assigned.
+- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
+  comment` for lifecycle evidence.
 
-`forge-cli pr create` opens drafts by default; add `--no-draft` only when the
-lane is explicitly ready for immediate review.
-
-Post the issue-visible lane update:
+## CLI flow
 
 ```bash
-plan-issue --repo "$OWNER_REPO" --format json record post \
-  --issue "$ISSUE" \
+plan-issue --format json tracking status \
+  --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
+  --profile dispatch --run-state "$RUN_STATE" --expect-visible
+
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" \
+  --selected-task "$TASK_ID" --branch "$BRANCH"
+
+# After local work completes:
+forge-cli pr create --repo "$OWNER_REPO" --base "$PLAN_BRANCH" \
+  --head "$BRANCH" --format json
+
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER" \
+  --validation-overall pass --validation-command "cargo test" \
+  --validation-status pass --validation-evidence "$VALIDATION_LOG"
+
+plan-issue --format json tracking checkpoint \
   --profile dispatch \
-  --kind session \
-  --payload-file "$LANE_SESSION_PAYLOAD" \
-  --summary-file "$LANE_SESSION_MD"
+  --run-state "$RUN_STATE" \
+  --post state,session,validation
 ```
 
-Respond to review follow-up:
+## Evidence requirements
 
-```bash
-review-evidence init --out "$REVIEW_OUT" --subject "PR #$PR_NUMBER follow-up"
-forge-cli pr comment "$PR_NUMBER" \
-  --provider github \
-  --repo "$OWNER_REPO" \
-  --body-file "$RESPONSE_BODY" \
-  --format json
-```
+- `forge-cli pr create` returns the PR URL and base branch matches
+  `PLAN_BRANCH`.
+- `tracking checkpoint` envelope shows the lane's `state` / `session` /
+  `validation` roles posted with `lint_pass: true`.
+- `events.jsonl` records `task_selected`, `validation_recorded`, and
+  `checkpoint_posted` events.
 
-## Workflow
+## Stop conditions
 
-1. Confirm assigned task-lane facts from the dispatch ledger and main-agent
-   handoff.
-2. Verify the mandatory bundle: `TASK_PROMPT_PATH`, `PLAN_SNAPSHOT_PATH`,
-   `DISPATCH_RECORD_PATH`, `workflow_role=implementation`, `PLAN_BRANCH`, and
-   exact task context.
-3. Re-enter the assigned worktree/branch and existing PR when present. Create
-   lane artifacts only when they do not exist yet or main-agent explicitly
-   reassigned the lane.
-4. If required context is missing or conflicting, stop with a blocker packet
-   instead of inventing replacement lane facts.
-5. Implement only the assigned task scope and run task validation. For
-   production behavior changes, capture failing-test evidence or an explicit
-   waiver before editing production behavior.
-6. Validate PR body sections `## Summary`, `## Scope`, `## Testing`,
-   `## Test plan`, and `## Issue`; remove placeholders such as `TBD`, `TODO`,
-   `<...>`, and `#<number>`.
-7. Select dispatch lane labels before provider mutation. Use `type::`,
-   one primary `area::`, `size::`, and `workflow::dispatch`; add
-   `state::do-not-merge` if the lane PR must remain blocked.
-8. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
-   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
-   before the first live lane PR in that repo. Use `label audit` when mutation
-   is not allowed.
-9. Use `forge-cli pr create` to open the draft PR against the assigned base, or
-   `forge-cli pr comment` to respond to review follow-up on the existing PR.
-10. Post a dispatch session/state comment that records PR URL, labels,
-   validation, lane facts, and any blocker through `plan-issue record post`.
-11. Report validation, PR URL, issue comment URL, lane facts, labels, and any
-   blocker back to the main agent.
+- `tracking status` reports `run-state-stale` or any blocked code that
+  requires reconciliation.
+- `forge-cli pr create` fails because the base branch or worktree is
+  wrong — surface and stop.
+- Validation fails in a way that blocks lane progress.
+- The orchestrator redirected the lane scope; finish the current update
+  and stop instead of expanding.
+
+## Validation
+
+- `forge-cli pr <create|update>` returns success with the assigned base.
+- `tracking checkpoint --profile dispatch` returns `lint_pass: true`.
+- `tracking status` confirms the lane PR ref now appears in the
+  reconciled view.
 
 ## Boundary
 
-Native `git` owns local worktree mechanics. `forge-cli` owns provider PR
-creation and comments. `plan-issue record` owns dispatch lifecycle comments.
-`review-evidence` owns retained review response records. The skill body owns
-task-lane judgment, implementation scope, validation, and blocker handoff.
-
-## References
-
-- Task lane continuity:
-  `skills/dispatch/deliver-dispatch-plan/references/TASK_LANE_CONTINUITY.md`
+`forge-cli` owns PR mechanics. `plan-issue tracking` owns lifecycle
+checkpoints and dashboard repair. The lane skill owns implementation,
+validation execution, and the decision to post a lane checkpoint.

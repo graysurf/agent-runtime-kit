@@ -6,110 +6,115 @@ description:
 
 # Plan Tracking Issue Closeout
 
-## Contract
+## Purpose
 
-Prereqs:
+Close one lightweight plan-tracking issue after the strict closeout gates
+pass. The skill calls `plan-issue tracking close-ready` for the audit,
+then `plan-issue record close` to post the canonical `closeout` comment
+and close the provider issue. It never implements tasks or posts progress
+checkpoints.
 
-- `plan-issue >=0.22.3` is available on `PATH`; `gh` is useful for explicit
-  preflight audit read-back.
-- The issue was created by `create-plan-tracking-issue` or carries equivalent
-  lightweight source/plan/state/session/validation comments.
-- User approval, project-policy approval, or issue-visible approval evidence is
-  available before live close.
-- Linked PRs are merged unless the close policy records a documented exception.
+## When to use
 
-Inputs:
+- `deliver-plan-tracking-issue` reported `tracking close-ready ready:
+  true` and handed off to closeout.
+- A previously-stuck issue needs explicit closeout after the run-state
+  and provider evidence have been reconciled.
 
-- Issue number or URL, repository override, approval basis, linked PR refs,
-  optional review evidence URL, and optional repair-only mode.
-- Provider issue body and comments JSON when running a manual audit before
-  close.
+## Inputs
 
-Outputs:
+- `OWNER_REPO`, `ISSUE`, `RUN_STATE`.
+- Linked PR references (`OWNER_REPO#NUMBER`) — at least one required
+  unless the user explicitly provides a no-PR waiver.
+- Approval evidence (comment URL or non-empty approval text).
+- Optional dashboard repair flag if the latest dashboard is out of sync
+  before closeout.
 
-- A closeout comment, final dashboard repair, and provider issue close performed
-  by `plan-issue record close`. The closeout comment must visibly include final
-  status, approval, linked PRs, merge SHA/check status, non-required-check
-  override evidence when used, and notes when present.
-- In repair mode, dashboard repair through `record repair-dashboard` only.
+## Preflight
 
-Failure modes:
+- `plan-issue >=0.22.3` is on `PATH`.
+- `tracking close-ready` returns `ready: true` with no `blockers`.
+- The dashboard is current — if not, run `record repair-dashboard` first
+  and confirm the rendered dashboard matches the latest evidence.
 
-- Source snapshot, plan snapshot, complete state, validation, approval, linked
-  PR evidence, latest `role=session`, or required review evidence is missing.
-- The latest state payload has unresolved rows other than explicit `deferred`.
-- The issue body still reports `Latest session: pending`, or session notes are
-  present only inside a state comment instead of a real session lifecycle
-  comment.
-- The issue is a dispatch runtime; route to `dispatch-plan-closeout`.
-- Provider audit, PR verification, dashboard repair, closeout comment, or close
-  mutation fails inside `plan-issue record close`.
-- Read-back shows a Profile-only closeout comment with no visible closeout
-  evidence, even if the hidden payload audits successfully.
+## Allowed lifecycle roles
 
-## Entrypoint
+- `record repair-dashboard` for an explicit pre-closeout dashboard fix.
+- `record close --profile tracking` to post the final `closeout` comment
+  and close the provider issue.
 
-Optional read-back audit:
+## Forbidden actions
+
+- No task implementation.
+- No `record post` for `state`, `session`, `validation`, or `review`
+  during the closeout window.
+- No `tracking checkpoint` (the controller's checkpoint surface refuses
+  closeout posts; this is a belt-and-suspenders rule).
+- No `record close` when `tracking close-ready` reports any blocker.
+- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
+  comment` for the closeout body.
+- No bypass of approval, linked-PR, or visible-completeness evidence
+  required by the strict gate.
+
+## CLI flow
 
 ```bash
-gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments >"$ISSUE_JSON"
+plan-issue --format json tracking close-ready \
+  --provider-repo "$OWNER_REPO" \
+  --issue "$ISSUE" \
+  --run-state "$RUN_STATE" \
+  --linked-pr "$LINKED_PR" \
+  --approval "$APPROVAL" \
+  --expect-visible
+
+# Optional repair when the dashboard is stale:
+plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
+  --issue "$ISSUE"
+
+plan-issue --repo "$OWNER_REPO" --format json record close \
+  --profile tracking \
+  --issue "$ISSUE" \
+  --linked-pr "$LINKED_PR" \
+  --approval "$APPROVAL"
+```
+
+## Evidence requirements
+
+- `tracking close-ready` returns `ready: true`, `blockers: []`, and
+  `visible_completeness.pass: true`.
+- `record close` returns the `closeout_url`, `final_dashboard`, and the
+  closed issue state.
+- A final read-back audit recognizes the `closeout` marker:
+
+```bash
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,state,comments \
+  >"$ISSUE_JSON"
 jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
 
 plan-issue --format json record audit \
   --profile tracking \
   --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON"
+  --comments-json "$ISSUE_JSON" \
+  --expect-visible
 ```
 
-Live closeout:
+## Stop conditions
 
-```bash
-plan-issue --repo "$OWNER_REPO" --format json record close \
-  --issue "$ISSUE" \
-  --profile tracking \
-  --linked-pr "$OWNER_REPO#$PR_NUMBER" \
-  --approval "$APPROVAL" \
-  --bundle "$PLAN_BUNDLE" \
-  --add-label state::closed \
-  --remove-label state::needs-triage
-```
+- `tracking close-ready` reports any blocker — do not call `record close`.
+- `record close` fails the strict gate (missing required checks, no merge
+  SHA, blocked findings) — surface the blocker and stop.
+- The final audit shows `visible-completeness-failed` for the closeout
+  body — open an investigation; do not retry blindly.
 
-Repair-only dashboard refresh:
+## Validation
 
-```bash
-plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
-  --issue "$ISSUE"
-```
-
-## Marker Contract
-
-Required lightweight comments use `plan-issue-record:v2` with
-`profile=tracking` for source, plan, state, session, validation, and any
-required review evidence. `record close` owns the closeout comment and final
-dashboard repair.
-
-The issue body is a mutable dashboard only. The latest valid state payload must
-show completion with all task rows `done` or explicitly `deferred` before close.
-
-## Workflow
-
-1. Read issue body, labels, state, linked PRs, and comments.
-2. Run `record audit --profile tracking`; reject dispatch issues and route to
-   `dispatch-plan-closeout`.
-3. Confirm approval evidence, latest `role=session` evidence, and linked PR refs
-   are exact and issue-visible.
-4. Run `record close --profile tracking` with approval, linked PRs, and bundle.
-5. Read back the closeout comment after a live close. Reject Profile-only
-   output; the comment must visibly list final status, approval, linked PRs,
-   merge SHA/check status, and any override/notes.
-6. If close fails, leave the issue open and report the exact blocked code from
-   the JSON result.
-7. In repair-only mode, require the issue to already be closed or explicitly
-   approved for repair, then run `record repair-dashboard` only.
+- `tracking close-ready --expect-visible` returns `ready: true`.
+- `record close --profile tracking` exits 0 and returns a `closeout_url`.
+- Final audit recognizes the `closeout` role with `visible.codes` empty.
 
 ## Boundary
 
-`plan-issue record` owns marker audit, strict closeout evaluation, closeout
-commenting, dashboard repair, linked PR provider verification, and provider
-issue close. The skill body owns approval interpretation, repair-vs-live
-judgment, dispatch-vs-tracking routing, and final evidence quality.
+`plan-issue tracking close-ready` owns the non-mutating gate. `plan-issue
+record close` owns the closeout post and provider issue closing. The
+skill body owns approval interpretation, dashboard-repair decisions, and
+the final read-back integrity check.
