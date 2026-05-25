@@ -3,14 +3,13 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: plan bundle drafted locally
+- Status: tracking issue opened
 - Target scope: make `plan-issue` lifecycle comments visibly include detailed
   state, validation, review, session, and closeout evidence; collapse non-final
   Task Ledgers by default; and expand final Task Ledgers by default.
-- Current task: validate and commit the plan bundle, then open the tracking
-  issue.
-- Next task: create the issue-backed tracking record, then implement Sprint 1 in
-  `sympoies/nils-cli`.
+- Current task: implement Sprint 1 in `sympoies/nils-cli`.
+- Next task: add lifecycle visible rendering support to `plan-issue record post`
+  and `record close`.
 - Last updated: 2026-05-25
 - Branch: feat/plan-issue-state-visibility
 - Source document:
@@ -19,7 +18,14 @@
   docs/plans/plan-issue-lifecycle-comment-visibility/plan-issue-lifecycle-comment-visibility-plan.md
 - Review source:
   docs/plans/plan-issue-lifecycle-comment-visibility/plan-issue-lifecycle-comment-visibility-review-source.md
-- Live tracking issue: not opened
+- Live tracking issue:
+  <https://github.com/graysurf/agent-runtime-kit/issues/115>
+  - Source comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/115#issuecomment-4535055484>
+  - Plan comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/115#issuecomment-4535055642>
+  - Initial state comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/115#issuecomment-4535055774>
 
 ## Task Ledger
 
@@ -43,6 +49,10 @@
 | `agent-docs resolve --context project-dev --strict --format checklist` | pass | Project development docs and docs placement policy present. |
 | `agent-docs resolve --context task-tools --strict --format checklist` | pass | CLI tooling docs present for provider and release work. |
 | `agent-docs resolve --context skill-dev --strict --format checklist` | pass | Skill development docs present. |
+| `rumdl check docs/plans/plan-issue-lifecycle-comment-visibility/*.md` | pass | Plan bundle markdown passes. |
+| `plan-tooling validate --file docs/plans/plan-issue-lifecycle-comment-visibility/plan-issue-lifecycle-comment-visibility-plan.md --format json` | pass | Plan bundle validates. |
+| `bash scripts/ci/all.sh` | pass | Pre-push gate positions 1-13 passed for initial plan bundle commit. |
+| `plan-issue record open --repo graysurf/agent-runtime-kit --profile tracking --bundle docs/plans/plan-issue-lifecycle-comment-visibility` | pass | Opened issue #115 with source, plan, and initial state comments. |
 
 ## Closeout Gate
 
