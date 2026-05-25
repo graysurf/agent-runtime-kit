@@ -84,20 +84,6 @@ skills:
       agent-out: ">=0.16.0"
     state_out_mode: runtime
 
-  - id: meta.bench
-    domain: meta
-    source: core/skills/meta/bench
-    products:
-      codex:
-        name: bench
-        render_to: plugins/meta/skills/bench/SKILL.md
-      claude:
-        name: bench
-        render_to: plugins/meta/skills/bench/SKILL.md
-    required_clis:
-      agent-run: ">=0.20.0"
-    state_out_mode: runtime
-
   - id: meta.bootstrap
     domain: meta
     source: core/skills/meta/bootstrap
@@ -124,20 +110,6 @@ skills:
         render_to: plugins/meta/skills/sync-runtime-skills/SKILL.md
     required_clis:
       agent-runtime: ">=0.19.0"
-    state_out_mode: runtime
-
-  - id: meta.demo
-    domain: meta
-    source: core/skills/meta/demo
-    products:
-      codex:
-        name: demo
-        render_to: plugins/meta/skills/demo/SKILL.md
-      claude:
-        name: demo
-        render_to: plugins/meta/skills/demo/SKILL.md
-    required_clis:
-      agent-run: ">=0.20.0"
     state_out_mode: runtime
 
   - id: meta.deploy
@@ -305,6 +277,19 @@ skills:
         render_to: plugins/meta/skills/semantic-commit/SKILL.md
     required_clis:
       semantic-commit: ">=0.16.0"
+    state_out_mode: runtime
+
+  - id: meta.setup-project
+    domain: meta
+    source: core/skills/meta/setup-project
+    products:
+      codex:
+        name: setup-project
+        render_to: plugins/meta/skills/setup-project/SKILL.md
+      claude:
+        name: setup-project
+        render_to: plugins/meta/skills/setup-project/SKILL.md
+    required_clis: {}
     state_out_mode: runtime
 
   - id: media.image-processing

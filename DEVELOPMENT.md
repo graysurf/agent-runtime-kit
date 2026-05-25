@@ -281,10 +281,11 @@ when `screen-record --preflight` succeeds and records `skip-host-capability`
 when the host capture prerequisites are unavailable.
 
 `tests/projects/project-local-smoke/run.sh` validates project-local shim
-coverage for `bench`, `bootstrap`, `demo`, `deploy`, `pre-pr`, and `release`.
-It executes fixture `.agents/scripts/*.sh` files, installs Codex into a temp
-runtime home, runs `agent-runtime doctor --check-project`, and verifies both
-wired and missing-script overlay reports.
+coverage for `bootstrap`, `deploy`, `pre-pr`, and `release`. It executes
+fixture `.agents/scripts/*.sh` files, installs Codex into a temp runtime home,
+runs `agent-runtime doctor --check-project`, verifies both wired and
+missing-script overlay reports, and exercises `setup-project` adoption
+diagnostics against temporary repositories.
 
 `tests/smoke/deliver-lifecycle.sh` is a controlled Sprint 6 PR delivery smoke.
 It refuses to run without a scratch fork and branch, and its default mode is a

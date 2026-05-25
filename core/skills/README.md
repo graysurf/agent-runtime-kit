@@ -15,7 +15,7 @@ human index for scanning the skill catalog by category and skill series.
 | `evidence` | 6 | Evidence records, impact scans, cross-checks |
 | `issue` | 2 | Issue triage and durable follow-up |
 | `media` | 2 | Image conversion, screen capture |
-| `meta` | 18 | Runtime primitives, script dispatchers, skill lifecycle, heuristics |
+| `meta` | 17 | Runtime primitives, script dispatchers, skill lifecycle, heuristics |
 | `pr` | 7 | GitHub PRs, GitLab MRs, dispatch-lane PRs |
 | `reporting` | 3 | Topic radar, daily brief, project retrospective |
 
@@ -97,12 +97,11 @@ Routing guidance for the skill family lives in
 | Runtime primitives | [agent-out](./meta/agent-out/) | Allocates canonical project-scoped output directories and audits workflow artifacts. |
 | Runtime primitives | [agent-scope-lock](./meta/agent-scope-lock/) | Creates, reads, validates, and clears edit-scope locks through `agent-scope-lock`. |
 | Runtime primitives | [sync-runtime-skills](./meta/sync-runtime-skills/) | Refreshes active runtime-kit skill surfaces into local Codex and Claude runtime homes. |
-| Repo script dispatchers | [bench](./meta/bench/) | Dispatches benchmark requests to a repository-owned `.agents/scripts/bench.sh` implementation. |
 | Repo script dispatchers | [bootstrap](./meta/bootstrap/) | Dispatches project bootstrap requests to a repository-owned `.agents/scripts/bootstrap.sh` implementation. |
-| Repo script dispatchers | [demo](./meta/demo/) | Dispatches demo requests to a repository-owned `.agents/scripts/demo.sh` implementation. |
 | Repo script dispatchers | [deploy](./meta/deploy/) | Dispatches deploy requests to a repository-owned `.agents/scripts/deploy.sh` implementation. |
 | Repo script dispatchers | [pre-pr](./meta/pre-pr/) | Dispatches pre-PR validation requests to a repository-owned `.agents/scripts/pre-pr.sh` implementation. |
 | Repo script dispatchers | [release](./meta/release/) | Dispatches release requests to a repository-owned `.agents/scripts/release.sh` implementation. |
+| Project setup | [setup-project](./meta/setup-project/) | Guides a repository into the `.agents/` conventions used by retained dispatcher skills. |
 | Skill lifecycle | [create-skill](./meta/create-skill/) | Adds a repo-owned runtime-kit skill with source, manifests, product render surfaces, acceptance coverage, and governance validation. |
 | Skill lifecycle | [remove-skill](./meta/remove-skill/) | Removes a repo-owned runtime-kit skill with dry-run-first reference audit and retained historical records. |
 | Project skill lifecycle | [create-project-skill](./meta/create-project-skill/) | Scaffolds a consuming-repo project-local skill under `.agents/skills` without mutating runtime-kit manifests. |

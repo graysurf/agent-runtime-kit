@@ -66,22 +66,10 @@ entries:
     destination: skills/meta/agent-out
     recursive: false
 
-  - id: meta.bench.codex-skill-dir
-    kind: symlinked-file
-    source: build/codex/plugins/meta/skills/bench
-    destination: skills/meta/bench
-    recursive: false
-
   - id: meta.bootstrap.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/bootstrap
     destination: skills/meta/bootstrap
-    recursive: false
-
-  - id: meta.demo.codex-skill-dir
-    kind: symlinked-file
-    source: build/codex/plugins/meta/skills/demo
-    destination: skills/meta/demo
     recursive: false
 
   - id: meta.deploy.codex-skill-dir
@@ -160,6 +148,12 @@ entries:
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/sync-runtime-skills
     destination: skills/meta/sync-runtime-skills
+    recursive: false
+
+  - id: meta.setup-project.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/setup-project
+    destination: skills/meta/setup-project
     recursive: false
 
   - id: media.plugin-manifest

@@ -26,9 +26,7 @@ plugins:
     contained_skills:
       - meta.agent-docs
       - meta.agent-out
-      - meta.bench
       - meta.bootstrap
-      - meta.demo
       - meta.deploy
       - meta.agent-scope-lock
       - meta.heuristic-inbox
@@ -42,6 +40,7 @@ plugins:
       - meta.release
       - meta.repo-retro
       - meta.semantic-commit
+      - meta.setup-project
     product_manifests:
       codex: targets/codex/plugins/meta/.codex-plugin/plugin.json
       claude: targets/claude/plugins/meta/.claude-plugin/plugin.json

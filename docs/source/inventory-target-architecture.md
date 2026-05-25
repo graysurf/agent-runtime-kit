@@ -263,10 +263,10 @@ Observed role:
   plus `heuristic-system/operation-records/` and
   `heuristic-system/error-inbox/`. The shared retained-record owner is now
   `core/policies/heuristic-system/` in agent-runtime-kit.
-- Project-local overlay contract: many skills (`bench`, `demo`, `deploy`,
+- Project-local overlay contract: retained dispatcher skills (`deploy`,
   `pre-pr`, `release`, `bootstrap`) dispatch to
   `<target-repo>/.agents/scripts/<name>.sh`. Each consuming repo owns the real
-  implementation; claude-kit only ships the entry-point shim.
+  implementation; runtime-kit only ships the entry-point shim.
 
 Legacy inventory snapshot:
 
@@ -873,11 +873,15 @@ blocking error.
 
 ### Project-Local Extensibility
 
-Several skills (`bench`, `demo`, `deploy`, `pre-pr`, `release`, `bootstrap`)
-ship only a thin shim that dispatches to `<target-repo>/.agents/scripts/<name>.sh`
-inside the user's working repository. The runtime kit must keep this contract
-because each consuming repo owns the real implementation (cargo vs npm vs uv,
-deploy targets, version schemes, etc.).
+Retained dispatcher skills (`deploy`, `pre-pr`, `release`, `bootstrap`) ship
+only a thin shim that dispatches to
+`<target-repo>/.agents/scripts/<name>.sh` inside the user's working repository.
+The runtime kit must keep this contract because each consuming repo owns the
+real implementation (cargo vs npm vs uv, deploy targets, version schemes,
+etc.). Repositories may still keep local helper scripts such as
+`.agents/scripts/bench.sh` or `.agents/scripts/demo.sh`, but runtime-kit no
+longer installs global managed dispatcher skills for those low-frequency
+helpers.
 
 Rules:
 
@@ -890,6 +894,13 @@ Rules:
   "no project-local implementation" and exits non-zero rather than guessing.
 - Doctor includes an opt-in `--check-project <path>` mode that scans a target
   repo for declared overlays and reports which are wired.
+- `setup-project` is the managed adoption workflow for repositories that have
+  not installed project-local conventions yet. It is dry-run-first, repo-local,
+  and separate from host/global runtime installation.
+- Repositories with `.agents/` are treated as adopted or partially adopted.
+  Adopted repositories must provide an executable `.agents/scripts/pre-pr.sh`;
+  missing `pre-pr.sh` is a blocking setup diagnostic rather than permission to
+  invent a generic validation stack.
 
 ### Overlay Merge Semantics
 

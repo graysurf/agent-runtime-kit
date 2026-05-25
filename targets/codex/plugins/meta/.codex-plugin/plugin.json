@@ -15,16 +15,8 @@
       "source": "core/skills/meta/agent-out"
     },
     {
-      "id": "bench",
-      "source": "core/skills/meta/bench"
-    },
-    {
       "id": "bootstrap",
       "source": "core/skills/meta/bootstrap"
-    },
-    {
-      "id": "demo",
-      "source": "core/skills/meta/demo"
     },
     {
       "id": "deploy",
@@ -69,6 +61,10 @@
     {
       "id": "semantic-commit",
       "source": "core/skills/meta/semantic-commit"
+    },
+    {
+      "id": "setup-project",
+      "source": "core/skills/meta/setup-project"
     }
   ]
 }

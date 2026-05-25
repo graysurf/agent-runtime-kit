@@ -27,7 +27,8 @@ Inputs:
 Outputs:
 
 - The project-local script's stdout, stderr, exit code, and validation summary.
-- A clear stop message when no project-local implementation exists.
+- A clear stop message naming the target repository and pointing to
+  `setup-project` when no project-local implementation exists.
 
 Failure modes:
 
@@ -50,12 +51,15 @@ When the script is missing or not executable, report:
 
 ```text
 no project-local implementation: .agents/scripts/pre-pr.sh
+run setup-project to adopt this repository's project-local validation gate
 ```
 
 ## Workflow
 
 1. Resolve the target repository root.
-2. Verify `.agents/scripts/pre-pr.sh` exists and is executable.
+2. Verify `.agents/scripts/pre-pr.sh` exists and is executable. If it is
+   missing, name the target repository and point to `setup-project`; do not
+   guess a validation command.
 3. Run the script through `agent-run exec --cwd "$repo_root" --`, passing
    through user arguments.
 4. Report the script's validation result and any failing command it prints.
