@@ -329,6 +329,9 @@ if [ "$bridge_only" = true ]; then
     usage_error "--bridge-only cannot create skill support folders"
   fi
 fi
+if [ "$bridge_only" = true ] && [ -n "$wrapper_name" ] && [ -z "$name" ]; then
+  usage_error "--with-wrapper in bridge-only mode requires a skill name"
+fi
 if [ "$bridge_only" = false ] && [ -z "$name" ]; then
   usage >&2
   exit 2
