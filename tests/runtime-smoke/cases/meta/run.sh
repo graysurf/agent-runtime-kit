@@ -266,6 +266,30 @@ run_sync_runtime_skills_probe() {
   grep -q "summary: synced skills for codex; mode=dry-run; doctor=planned" "$out"
 }
 
+run_sync_runtime_skills_worktree_guard_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.worktree-guard.txt"
+  local worktree_root="$TMP_ROOT/workspaces/sync-runtime-skills-linked-worktree"
+  local status
+
+  rm -rf "$worktree_root"
+  git -C "$REPO_ROOT" worktree add --detach "$worktree_root" HEAD >"$out" 2>&1
+  set +e
+  bash "$REPO_ROOT/scripts/sync-runtime-skills.sh" \
+    --source-root "$worktree_root" \
+    --apply \
+    --product codex \
+    --no-pull \
+    --no-verify >>"$out" 2>&1
+  status=$?
+  set -e
+  git -C "$REPO_ROOT" worktree remove --force "$worktree_root" >>"$out" 2>&1 || true
+  git -C "$REPO_ROOT" worktree prune >>"$out" 2>&1 || true
+
+  [ "$status" -ne 0 ]
+  grep -q "refusing live sync from a git worktree" "$out"
+  grep -q "durable primary checkout" "$out"
+}
+
 run_project_local_shim_probe() {
   local name="$1"
   local script="$REPO_ROOT/tests/projects/project-local-smoke/.agents/scripts/${name}.sh"
@@ -305,5 +329,6 @@ record_case "meta.release" "project-local release shim executed fixture script" 
 record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1
 record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
+record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1
 
 exit "$failures"
