@@ -14,10 +14,13 @@
   implementation branches pending
 - Source document: docs/plans/sync-runtime-skill-prune/sync-runtime-skill-prune-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/119>
+- Source snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/119#issuecomment-4536315998>
+- Plan snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/119#issuecomment-4536316092>
+- Initial state snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/119#issuecomment-4536316162>
 
 ## Validation Plan
 
@@ -58,6 +61,9 @@
   included before opening a plan tracker.
 - 2026-05-26: Created plan and initial execution-state files in a fresh
   sibling worktree `feat/sync-runtime-skill-prune` for issue-backed tracking.
+- 2026-05-26: Opened tracking issue #119 through `plan-issue record open` and
+  verified the source, plan, and state lifecycle comments through live readback
+  audit.
 
 ## Validation
 
@@ -68,6 +74,11 @@
 | `plan-tooling validate --file docs/plans/sync-runtime-skill-prune/sync-runtime-skill-prune-plan.md --format text --explain` | passed | Plan bundle validation passed; `--explain` printed canonical examples. | n/a |
 | `rumdl check docs/plans/sync-runtime-skill-prune/*.md` | passed | Markdown lint passed for source, plan, and execution state. | n/a |
 | `git diff --check -- docs/plans/sync-runtime-skill-prune/` | passed | No whitespace errors. | n/a |
+| `forge-cli label ensure --catalog manifests/forge-labels.yaml --repo graysurf/agent-runtime-kit --format json` | passed | Label catalog was already reconciled; no actions required. | n/a |
+| `plan-issue --repo graysurf/agent-runtime-kit --format json --dry-run record open ...` | passed | Dry-run rendered source, plan, and visible state comments from commit `944d9e0`. | n/a |
+| `plan-issue --repo graysurf/agent-runtime-kit --format json record open ...` | passed | Created issue #119 with source, plan, and initial state lifecycle comments. | `20260526-021908-sync-runtime-skill-prune/plan-issue-record-open-live.json` |
+| `plan-issue --format json record audit --profile tracking --body-file <issue-body> --comments-json <issue-json>` | passed | Live audit recognized source, plan, and state markers. | `20260526-021908-sync-runtime-skill-prune/issue-119-record-audit.json` |
+| `rg -n "## Execution State\|## Task Ledger\|plan-issue-record-payload" <state-comment>` | passed | State comment visibly contains execution state, folded task ledger, and payload carrier. | `20260526-021908-sync-runtime-skill-prune/issue-119-state-comment.md` |
 
 ## Notes
 
