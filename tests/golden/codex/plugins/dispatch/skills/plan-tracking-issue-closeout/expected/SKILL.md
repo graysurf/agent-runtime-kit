@@ -36,8 +36,11 @@ Outputs:
 Failure modes:
 
 - Source snapshot, plan snapshot, complete state, validation, approval, linked
-  PR evidence, or required review evidence is missing.
+  PR evidence, latest `role=session`, or required review evidence is missing.
 - The latest state payload has unresolved rows other than explicit `deferred`.
+- The issue body still reports `Latest session: pending`, or session notes are
+  present only inside a state comment instead of a real session lifecycle
+  comment.
 - The issue is a dispatch runtime; route to `dispatch-plan-closeout`.
 - Provider audit, PR verification, dashboard repair, closeout comment, or close
   mutation fails inside `plan-issue record close`.
@@ -81,8 +84,9 @@ plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
 ## Marker Contract
 
 Required lightweight comments use `plan-issue-record:v2` with
-`profile=tracking` for source, plan, state, validation, and any required review
-evidence. `record close` owns the closeout comment and final dashboard repair.
+`profile=tracking` for source, plan, state, session, validation, and any
+required review evidence. `record close` owns the closeout comment and final
+dashboard repair.
 
 The issue body is a mutable dashboard only. The latest valid state payload must
 show completion with all task rows `done` or explicitly `deferred` before close.
@@ -92,7 +96,8 @@ show completion with all task rows `done` or explicitly `deferred` before close.
 1. Read issue body, labels, state, linked PRs, and comments.
 2. Run `record audit --profile tracking`; reject dispatch issues and route to
    `dispatch-plan-closeout`.
-3. Confirm approval evidence and linked PR refs are exact and issue-visible.
+3. Confirm approval evidence, latest `role=session` evidence, and linked PR refs
+   are exact and issue-visible.
 4. Run `record close --profile tracking` with approval, linked PRs, and bundle.
 5. Read back the closeout comment after a live close. Reject Profile-only
    output; the comment must visibly list final status, approval, linked PRs,

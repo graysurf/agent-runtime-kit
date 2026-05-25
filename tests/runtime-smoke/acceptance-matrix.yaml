@@ -755,6 +755,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: dispatch.plan-issue-session-closeout-gate.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.plan-tracking-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: build lightweight closeout fixture with source, plan, complete state, validation, review, merged PR, and no role=session comment
+    invocation: plan-issue record close must block with session-missing when the installed nils-cli supports the session gate
+    expected_exit_code: nonzero when supported
+    expected_artifacts: close JSON or stderr showing session-missing; host-capability skip on older released binaries
+    cleanup: temp-output-only
+    expected_disposition: skip-host-capability
+    skip_policy: older plan-issue releases do not yet enforce session-missing
   - id: dispatch.execute-plan-tracking-issue.shared-cli.deterministic
     product: shared-cli
     domain: dispatch

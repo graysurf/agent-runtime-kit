@@ -323,6 +323,12 @@ run_deliver_github_probe() {
   grep -q '"forced_specialists"' "$review_out"
   grep -q '"maintainability"' "$review_out"
   grep -q '"testing"' "$review_out"
+  grep -q 'lifecycle readiness is also a pre-merge gate' \
+    "$REPO_ROOT/core/skills/pr/deliver-github-pr/SKILL.md.tera"
+  grep -q 'plan-issue --format json record audit' \
+    "$REPO_ROOT/core/skills/pr/deliver-github-pr/SKILL.md.tera"
+  grep -q 'role=session' \
+    "$REPO_ROOT/core/skills/pr/deliver-github-pr/SKILL.md.tera"
 }
 
 run_deliver_gitlab_probe() {
@@ -363,6 +369,12 @@ run_deliver_gitlab_probe() {
   grep -q '"forced_specialists"' "$review_out"
   grep -q '"maintainability"' "$review_out"
   grep -q '"testing"' "$review_out"
+  grep -q 'lifecycle readiness is also a pre-merge gate' \
+    "$REPO_ROOT/core/skills/pr/deliver-gitlab-mr/SKILL.md.tera"
+  grep -q 'plan-issue --format json record audit' \
+    "$REPO_ROOT/core/skills/pr/deliver-gitlab-mr/SKILL.md.tera"
+  grep -q 'role=session' \
+    "$REPO_ROOT/core/skills/pr/deliver-gitlab-mr/SKILL.md.tera"
 }
 
 failures=0
