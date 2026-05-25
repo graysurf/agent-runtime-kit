@@ -66,9 +66,10 @@ surfaces.
   work through `.agents/skills/`, while Claude Code can reach the same logic
   through thin command wrappers.
 - [F10] This repo already ships a Claude target helper,
-  `targets/claude/scripts/new-claude-project-skill.sh`, that scaffolds
+  `targets/claude/scripts/create-claude-project-skill.sh`, that scaffolds
   `.agents/skills/<name>/` and bridges Claude discovery through
-  `.claude/skills -> ../.agents/skills`.
+  `.claude/skills -> ../.agents/skills`. A `--link-only` mode wires up only
+  the bridge for repos whose `.agents/skills/` already exists.
 
 ## Decisions
 

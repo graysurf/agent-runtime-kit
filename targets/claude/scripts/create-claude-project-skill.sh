@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 #
-# new-claude-project-skill.sh — scaffold a project-local skill so Claude
-# Code picks it up in the current git repo.
+# create-claude-project-skill.sh — scaffold a project-local skill so Claude
+# Code picks it up in the current git repo, or just wire up the
+# `.agents/skills` → `.claude/skills` bridge in a repo that already has
+# skills.
 #
-# Layout written:
+# Default mode (with <skill-name>) writes:
 #
 #   <repo>/.agents/skills/<name>/SKILL.md           (tracked, canonical source)
 #   <repo>/.agents/skills/<name>/scripts/<name>.sh  (tracked, stub)
 #   <repo>/.claude/skills -> ../.agents/skills      (gitignored, Claude entry)
+#
+# `--link-only` mode skips the skill scaffold and only sets up the bridge —
+# the `.claude/skills` symlink, the `.gitignore` entry, and the
+# `.agents/scripts/pre-pr.sh` stub. Use this when a repo already has
+# `.agents/skills/` populated and just needs Claude to see it.
 #
 # The `.agents/skills/` tree follows the Codex/nils-cli skill convention so
 # the source can be promoted later, but Claude Code does not read it
@@ -28,7 +35,8 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  new-claude-project-skill.sh <skill-name> [--description "..."]
+  create-claude-project-skill.sh <skill-name> [--description "..."]
+  create-claude-project-skill.sh --link-only
 
 Arguments:
   <skill-name>         kebab-case, must contain at least one hyphen. Convention:
@@ -39,16 +47,21 @@ Arguments:
 Options:
   --description TEXT   Seed the SKILL.md `description:` field. Defaults to a
                        `TODO:` placeholder you fill in before committing.
+  --link-only          Skip skill scaffolding. Only build the `.claude/skills`
+                       symlink, `.gitignore` entry, and `.agents/scripts/pre-pr.sh`
+                       stub. Use when `.agents/skills/` already exists in this
+                       repo and you just want Claude to see it. Not combinable
+                       with <skill-name> or --description.
   -h, --help           Show this help.
 
 What it creates (all paths relative to the current repo root):
 
-  .agents/skills/<skill-name>/SKILL.md
-  .agents/skills/<skill-name>/scripts/<skill-name>.sh    (chmod +x)
+  .agents/skills/<skill-name>/SKILL.md                   (skill mode only)
+  .agents/skills/<skill-name>/scripts/<skill-name>.sh    (skill mode only, chmod +x)
   .claude/skills -> ../.agents/skills                    (symlink)
   .gitignore entry for .claude/                          (when missing)
 
-Next steps printed on success:
+Next steps printed on success (skill mode):
 
   1. Edit SKILL.md (frontmatter + Contract sections).
   2. Implement scripts/<skill-name>.sh.
@@ -58,12 +71,17 @@ USAGE
 
 name=""
 description=""
+link_only=false
 
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
     --description)
       description="${2:-}"
       shift 2
+      ;;
+    --link-only)
+      link_only=true
+      shift
       ;;
     -h | --help)
       usage
@@ -86,15 +104,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -z "$name" ]] && {
-  usage >&2
-  exit 2
-}
-
-if ! [[ "$name" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)+$ ]]; then
-  echo "error: skill name must be kebab-case with at least one hyphen" >&2
-  echo "       (got: '$name' — e.g. 'my-cli-release')" >&2
-  exit 2
+if [[ "$link_only" == true ]]; then
+  if [[ -n "$name" || -n "$description" ]]; then
+    echo "error: --link-only does not take a skill name or --description" >&2
+    usage >&2
+    exit 2
+  fi
+else
+  if [[ -z "$name" ]]; then
+    usage >&2
+    exit 2
+  fi
+  if ! [[ "$name" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)+$ ]]; then
+    echo "error: skill name must be kebab-case with at least one hyphen" >&2
+    echo "       (got: '$name' — e.g. 'my-cli-release')" >&2
+    exit 2
+  fi
 fi
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -104,19 +129,23 @@ if [[ -z "$repo_root" ]]; then
 fi
 cd "$repo_root"
 
-skill_dir=".agents/skills/$name"
-skill_md="$skill_dir/SKILL.md"
-script_file="$skill_dir/scripts/$name.sh"
+if [[ "$link_only" == false ]]; then
+  skill_dir=".agents/skills/$name"
+  skill_md="$skill_dir/SKILL.md"
+  script_file="$skill_dir/scripts/$name.sh"
 
-if [[ -e "$skill_dir" ]]; then
-  echo "error: $skill_dir already exists — pick a different name or remove it first" >&2
-  exit 1
+  if [[ -e "$skill_dir" ]]; then
+    echo "error: $skill_dir already exists — pick a different name or remove it first" >&2
+    exit 1
+  fi
 fi
 
-# Derive a Title Case heading from the skill name.
-heading="$(
-  printf '%s' "$name" |
-    awk -F- '{
+if [[ "$link_only" == false ]]; then
+
+  # Derive a Title Case heading from the skill name.
+  heading="$(
+    printf '%s' "$name" |
+      awk -F- '{
         for (i = 1; i <= NF; i++) {
           $i = toupper(substr($i, 1, 1)) substr($i, 2)
         }
@@ -124,15 +153,15 @@ heading="$(
         for (i = 2; i <= NF; i++) out = out " " $i
         print out
       }'
-)"
+  )"
 
-desc_line="${description:-TODO: one-line description of what this skill does, including the trigger phrases a user would say to invoke it.}"
+  desc_line="${description:-TODO: one-line description of what this skill does, including the trigger phrases a user would say to invoke it.}"
 
-mkdir -p "$skill_dir/scripts"
+  mkdir -p "$skill_dir/scripts"
 
-# --- SKILL.md template ------------------------------------------------------
+  # --- SKILL.md template ------------------------------------------------------
 
-cat >"$skill_md" <<SKILL_EOF
+  cat >"$skill_md" <<SKILL_EOF
 ---
 name: $name
 description: >
@@ -183,13 +212,13 @@ Failure modes:
 2. TODO: step.
 SKILL_EOF
 
-# --- script template --------------------------------------------------------
+  # --- script template --------------------------------------------------------
 
-cat >"$script_file" <<'SCRIPT_HEADER'
+  cat >"$script_file" <<'SCRIPT_HEADER'
 #!/usr/bin/env bash
 SCRIPT_HEADER
 
-cat >>"$script_file" <<SCRIPT_BODY
+  cat >>"$script_file" <<SCRIPT_BODY
 #
 # $name.sh — TODO: one-line description.
 #
@@ -220,7 +249,9 @@ echo "\$SCRIPT_NAME — not yet implemented" >&2
 exit 1
 SCRIPT_BODY
 
-chmod +x "$script_file"
+  chmod +x "$script_file"
+
+fi # link_only == false
 
 # --- .claude/skills symlink -------------------------------------------------
 
@@ -299,7 +330,22 @@ fi
 
 # --- summary ---------------------------------------------------------------
 
-cat <<SUMMARY
+if [[ "$link_only" == true ]]; then
+  cat <<SUMMARY
+Bridged .agents/skills/ into Claude (no skill scaffolded):
+
+Symlink:    $symlink_note
+.gitignore: $gitignore_note
+/pre-pr:    $pre_pr_note
+
+Next steps:
+
+  1. Confirm .agents/skills/ exists in this repo — without it, the symlink target is empty.
+  2. Fill in $pre_pr_path with the repo's real gate stack (or delete if /pre-pr isn't wanted here).
+  3. To add a new skill later:  create-claude-project-skill.sh <skill-name>
+SUMMARY
+else
+  cat <<SUMMARY
 Scaffolded project-local skill:
 
   $skill_md
@@ -317,3 +363,4 @@ Next steps:
   4. Try it:  bash $script_file --help
   5. Commit once the skill does something real.
 SUMMARY
+fi
