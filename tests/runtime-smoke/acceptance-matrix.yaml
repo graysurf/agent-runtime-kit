@@ -112,9 +112,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/fixtures/skill-lifecycle/create-project-skill
     setup: use project-local skill lifecycle fixture
-    invocation: verify create-project-skill source, project-local fixture shape, and governance fixture audit
+    invocation: verify create-project-skill source, helper modes, removed Claude-only flags, project-local fixture shape, and governance fixture audit
     expected_exit_code: 0
-    expected_artifacts: project-local skill files and governance fixture report
+    expected_artifacts: project-local skill files, helper mode outputs, and governance fixture report
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
