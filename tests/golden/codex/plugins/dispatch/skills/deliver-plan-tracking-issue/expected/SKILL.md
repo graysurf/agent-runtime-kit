@@ -18,6 +18,12 @@ Prereqs:
   dispatch-profile comments or dispatch lane records, route to the dispatch
   workflow family.
 - The delivery branch contains only the intended issue scope.
+- When a plan bundle path is supplied, all three bundle files
+  (`<slug>-discussion-source.md` or `<slug>-review-source.md`,
+  `<slug>-plan.md`, `<slug>-execution-state.md`) exist on disk at the
+  canonical paths. `plan-tooling validate` does not require the referenced
+  execution-state file to be physically present, so the skill body verifies
+  file existence before lifecycle posts or `record close` runs.
 - Invoking this workflow authorizes carrying the selected issue scope through
   PR review, merge, issue synchronization, and close readiness unless the user
   supplies a narrower stop condition.
@@ -54,6 +60,21 @@ Failure modes:
 - `plan-issue record close` rejects the current lifecycle evidence.
 
 ## Entrypoint
+
+When a plan bundle path is supplied, verify the three bundle files exist on
+disk before running any provider call. The plan and execution-state files are
+mandatory; at least one source file
+(`<slug>-discussion-source.md` or `<slug>-review-source.md`) must be present.
+
+```bash
+test -f "$PLAN_BUNDLE/$SLUG-plan.md" \
+  || { echo "missing $PLAN_BUNDLE/$SLUG-plan.md" >&2; exit 1; }
+test -f "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  || { echo "missing $PLAN_BUNDLE/$SLUG-execution-state.md (backfill before record close to keep the bundle's task ledger consistent with the issue)" >&2; exit 1; }
+test -f "$PLAN_BUNDLE/$SLUG-discussion-source.md" \
+  || test -f "$PLAN_BUNDLE/$SLUG-review-source.md" \
+  || { echo "missing $PLAN_BUNDLE/$SLUG-{discussion,review}-source.md" >&2; exit 1; }
+```
 
 Start with issue audit and plan gates:
 
@@ -128,36 +149,44 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 ## Workflow
 
 1. Resolve issue state, plan bundle/path, selected task, and close policy.
-2. Run `record audit --profile tracking` and `plan-tooling validate`; stop on
+2. If a bundle path is supplied, confirm all three bundle files exist on
+   disk at the canonical paths (`<slug>-discussion-source.md` or
+   `<slug>-review-source.md`, `<slug>-plan.md`,
+   `<slug>-execution-state.md`); stop and request backfill if any file is
+   missing. The execution-state file is the one `plan-tooling validate`
+   does not enforce existence of, and missing it produces no immediate
+   error but leaves later closeout / audit reads inconsistent with the
+   bundle on disk.
+3. Run `record audit --profile tracking` and `plan-tooling validate`; stop on
    missing lifecycle comments, stale state, or plan errors.
-3. Implement and validate the selected scope.
-4. Select labels before provider mutation. Every tracking delivery PR needs
+4. Implement and validate the selected scope.
+5. Select labels before provider mutation. Every tracking delivery PR needs
    `type::`, one primary `area::`, `size::`, and `workflow::tracking`; use
    `state::do-not-merge` when the PR must not merge.
-5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
+6. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
    --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
    before the first live PR in that repo. Use `label audit` when mutation is
    not allowed.
-6. Create or deliver the PR with `forge-cli`, using `--no-merge` until checks
+7. Create or deliver the PR with `forge-cli`, using `--no-merge` until checks
    and the pre-merge review gate have passed.
-7. Run `code-review-pre-merge-gate` for every PR using:
+8. Run `code-review-pre-merge-gate` for every PR using:
    `skills/code-review/code-review-pre-merge-gate/SKILL.md`.
-8. Classify and repair review findings. Concrete findings block merge until
+9. Classify and repair review findings. Concrete findings block merge until
    fixed or explicitly dispositioned in issue-visible evidence.
-9. Post the delivery review outcome body produced by
-   `code-review-pre-merge-gate` before merge.
-10. Merge only after checks, the pre-merge review gate, review evidence,
-   lifecycle audit, and issue-backed completion gates pass.
-11. Append state, session, validation, and review comments through
-   `record post`; include PR labels in the visible summary and repair the
-   dashboard after each meaningful lifecycle event.
-12. Before merge or final success, verify the latest tracking state is
+10. Post the delivery review outcome body produced by
+    `code-review-pre-merge-gate` before merge.
+11. Merge only after checks, the pre-merge review gate, review evidence,
+    lifecycle audit, and issue-backed completion gates pass.
+12. Append state, session, validation, and review comments through
+    `record post`; include PR labels in the visible summary and repair the
+    dashboard after each meaningful lifecycle event.
+13. Before merge or final success, verify the latest tracking state is
     closeout-ready: status `complete`, all task rows `done` or `deferred`,
     validation/review/PR evidence present, and dashboard links current.
-13. After completion approval, run `record close` unless `--no-closeout` was
+14. After completion approval, run `record close` unless `--no-closeout` was
     supplied. Stop on any blocked code and leave the issue open with the exact
     unblock action surfaced by `plan-issue`.
-14. Leave the issue open with an exact unblock action if any gate fails or if
+15. Leave the issue open with an exact unblock action if any gate fails or if
     `--no-closeout` was supplied.
 
 ## Boundary
