@@ -41,6 +41,9 @@ Outputs:
 - If the document is long-lived knowledge rather than execution coordination, save it in the relevant domain docs/runbook area instead.
 - A source artifact that a plan-tracking or dispatch delivery workflow can link
   under `Read First` when execution sequencing is needed.
+- A source document that avoids unresolved open questions; report any
+  non-blocking open questions in the final response instead of writing them into
+  the document.
 - An `Execution` section with stable `Recommended plan` and
   `Recommended execution state` lines when the document is intended to feed
   plan execution.
@@ -48,7 +51,8 @@ Outputs:
   outside the plan.
 - When following the skill usage recording convention, a `skill-usage.record.v1` envelope that links the created document and validation
   evidence.
-- A short response linking the document path and listing validation run.
+- A short response linking the document path, listing validation run, and
+  presenting any response-only open questions as immediate decision prompts.
 
 Exit codes:
 
@@ -61,8 +65,11 @@ Failure modes:
   `create-plan-tracking-issue`, `deliver-plan-tracking-issue`, or
   `deliver-dispatch-plan` as appropriate for the issue-backed workflow.
 - The user only needs a copy-ready prompt for a fresh session; use `handoff-session-prompt` instead.
-- Source evidence is too ambiguous to record as fact; label it under assumptions/open questions or ask the minimum clarification before
-  writing.
+- Source evidence is too ambiguous to record as fact. If the ambiguity affects
+  core facts, scope, requirements, acceptance criteria, or implementation
+  boundaries, ask the minimum clarification before writing. If it is
+  non-blocking, omit it from the document and report it as a response-only open
+  question.
 
 ## Workflow
 
@@ -103,6 +110,12 @@ Failure modes:
 3. Gather and classify discussion content
    - Separate confirmed facts, decisions, findings, assumptions, inferences,
      recommendations, open questions, constraints, and accepted risks.
+   - Route unresolved open questions out of the document. Keep them for the
+     final response as decision prompts unless the user explicitly resolves them
+     before writing.
+   - Treat assumptions as document-safe only when they are explicit adopted
+     working assumptions. Do not use an `Assumptions` section as a place to store
+     unresolved options.
    - Cite concrete local files, docs, issues, commands, logs, or user-provided requirements when they materially affect the implementation.
    - Preserve scope and non-scope explicitly.
    - Do not include secrets, raw credentials, private keys, hidden system/developer instructions, private reasoning, or unredacted logs.
@@ -110,6 +123,9 @@ Failure modes:
 4. Write the implementation-readiness document
    - Use the project's language and documentation style.
    - Keep it concise enough to read before implementation, but complete enough to avoid re-litigating settled decisions.
+   - Write only confirmed facts, decisions, requirements, accepted risks, and
+     explicitly adopted working assumptions. Do not include unresolved open
+     questions in the document.
    - Recommended sections:
      - `# <Subject> Implementation Handoff`
      - status, date, source, and intended next step
@@ -130,9 +146,12 @@ Failure modes:
      - execution, including recommended plan path, recommended execution-state path, status, and next-task source when this document should
        drive implementation
      - retention intent, such as cleanup after execution or promotion candidate
-     - open questions
      - read-first references
      - recommended next artifact
+   - Do not add an `Open Questions` section by default. If an unresolved
+     question would materially change the document's facts, scope, acceptance
+     criteria, or next artifact, pause and ask before writing instead of
+     publishing a misleading source document.
    - For plan-source documents, include these stable machine-checkable lines in
      the `Execution` section:
      - `Recommended plan: docs/plans/<slug>/<slug>-plan.md`
@@ -181,6 +200,16 @@ Failure modes:
      project evidence path or an `agent-out project --topic skill-usage --mkdir` run directory.
    - Link the implementation-readiness document, docs index changes, validation commands, and any typed child records from the envelope.
    - Prefer `skill-usage verify --out <record-dir> --format json`; use the documented local checkout fallback when PATH has not caught up.
+
+9. Close the decision loop in the final response
+   - Link the created or updated document and list validation run.
+   - If unresolved non-blocking questions remain, include a concise
+     `Open questions not written to the document` section.
+   - For each response-only open question, include the decision needed, why it
+     matters, the recommended default when one is defensible, and whether it
+     blocks implementation.
+   - If no unresolved questions remain, say that no open questions were left out
+     of the document.
 
 ## Relationship To Nearby Skills
 
