@@ -3,14 +3,13 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: implementation complete; final full-repo validation pending clean
-  commit rerun
+- Status: implementation complete; full repository validation passed
 - Target scope: unify project-local skill creation under
   `meta:create-project-skill`, remove the Claude-only create surface, and prove
   default-both / Codex-only / bridge-only behavior with fixtures.
-- Current task: implementation commit preparation.
-- Next task: commit implementation, rerun full CI, open delivery PR, and close
-  tracking issue when gates pass.
+- Current task: delivery PR and issue closeout.
+- Next task: open delivery PR, run review gate, and close tracking issue when
+  gates pass.
 - Last updated: 2026-05-25
 - Branch: feat/project-skill-create-unification
 - Source document:
@@ -39,7 +38,7 @@
 | 2.2 | done | Update docs, manifests, and support matrix references | `manifests/surfaces.yaml`; `SUPPORT_MATRIX.md`; plan bundle | Active surfaces stop advertising the removed Claude-only command/script. |
 | 3.1 | done | Extend create-project fixture matrix | `scripts/ci/skill-governance-audit.sh`; `tests/runtime-smoke/fixtures/skill-lifecycle/create-project-skill/` | Fixture now includes `.claude/skills`, `.gitignore`, and default no `pre-pr.sh`. |
 | 3.2 | done | Extend runtime-smoke coverage | `tests/runtime-smoke/cases/meta/run.sh`; `tests/runtime-smoke/acceptance-matrix.yaml` | Runtime-smoke covers default both, Codex-only, bridge-only, and removed flag rejection. |
-| 3.3 | pending | Run full validation and record follow-up | focused validation passed; full CI pending clean commit rerun | Doctor bridge validation remains non-blocking; no separate follow-up evidence so far. |
+| 3.3 | done | Run full validation and record follow-up | `bash scripts/ci/all.sh` | Doctor bridge validation remains non-blocking; no separate follow-up evidence warranted. |
 
 ## Validation
 
@@ -56,7 +55,7 @@
 | `rumdl check docs/plans/project-skill-create-unification/project-skill-create-unification-discussion-source.md docs/plans/project-skill-create-unification/project-skill-create-unification-plan.md docs/plans/project-skill-create-unification/project-skill-create-unification-execution-state.md` | pass | Plan bundle markdown passes. |
 | `plan-tooling validate --file docs/plans/project-skill-create-unification/project-skill-create-unification-plan.md --format json` | pass | Plan bundle validates. |
 | `rg -n "create-claude-project-skill|--link-only" manifests targets SUPPORT_MATRIX.md docs/source` | pass | No active manifest/target/support/source-doc references remain. |
-| `bash scripts/ci/all.sh` | blocked | Pre-commit run stopped at golden diff because the expected golden updates were still uncommitted; rerun after implementation commit. |
+| `bash scripts/ci/all.sh` | pass | Positions 1-13 passed after implementation commit with clean golden baseline. |
 
 ## Closeout Gate
 
