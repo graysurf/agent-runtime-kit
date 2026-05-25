@@ -51,8 +51,7 @@ that still want those entrypoints locally.
 ### Task 1.1: Remove managed bench and demo skill sources
 
 - **Location**:
-  - `core/skills/meta/bench/`
-  - `core/skills/meta/demo/`
+  - `core/skills/meta/`
   - `manifests/skills.yaml`
   - `manifests/plugins.yaml`
 - **Description**: Delete the repo-owned managed skill sources for `bench` and
@@ -75,8 +74,10 @@ that still want those entrypoints locally.
 ### Task 1.2: Refresh render output, goldens, and expected skill lists
 
 - **Location**:
-  - `build/codex/`
-  - `build/claude/`
+  - `targets/codex/link-map.yaml`
+  - `targets/claude/link-map.yaml`
+  - `targets/codex/plugins/meta/.codex-plugin/plugin.json`
+  - `targets/claude/plugins/meta/.claude-plugin/plugin.json`
   - `tests/golden/`
   - `tests/sandbox/codex/expected-skills.txt`
   - `tests/sandbox/claude/expected-skills.txt`
@@ -191,12 +192,12 @@ retained dispatcher skills.
 ### Task 2.3: Render setup-project across products
 
 - **Location**:
-  - `build/codex/plugins/meta/skills/setup-project/SKILL.md`
-  - `build/claude/plugins/meta/skills/setup-project/SKILL.md`
   - `tests/golden/codex/plugins/meta/skills/setup-project/expected/SKILL.md`
   - `tests/golden/claude/plugins/meta/skills/setup-project/expected/SKILL.md`
   - `tests/sandbox/codex/expected-skills.txt`
   - `tests/sandbox/claude/expected-skills.txt`
+  - `targets/codex/link-map.yaml`
+  - `targets/claude/.claude-plugin/marketplace.json`
 - **Description**: Render the new managed skill for Codex and Claude, update
   golden snapshots, and add it to expected skill lists and support surfaces.
 - **Dependencies**:
