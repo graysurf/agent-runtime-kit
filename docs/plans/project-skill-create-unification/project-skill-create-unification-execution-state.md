@@ -3,12 +3,14 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: tracking issue opened; implementation pending
+- Status: implementation complete; final full-repo validation pending clean
+  commit rerun
 - Target scope: unify project-local skill creation under
   `meta:create-project-skill`, remove the Claude-only create surface, and prove
   default-both / Codex-only / bridge-only behavior with fixtures.
-- Current task: issue-backed tracking record created.
-- Next task: implement Sprint 1.
+- Current task: implementation commit preparation.
+- Next task: commit implementation, rerun full CI, open delivery PR, and close
+  tracking issue when gates pass.
 - Last updated: 2026-05-25
 - Branch: feat/project-skill-create-unification
 - Source document:
@@ -30,14 +32,14 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | pending | Update create-project-skill contract | n/a | Shared skill body should document default both, Codex-only, bridge-only, and removed Claude-only modes. |
-| 1.2 | pending | Add shared helper entrypoint | n/a | Helper should own deterministic file operations for supported modes. |
-| 1.3 | pending | Render shared products | n/a | Codex/Claude rendered outputs and goldens need update after source changes. |
-| 2.1 | pending | Delete Claude-only command and script | n/a | Remove old command/script without alias. |
-| 2.2 | pending | Update docs, manifests, and support matrix references | n/a | Active docs should stop advertising the old Claude-only surface. |
-| 3.1 | pending | Extend create-project fixture matrix | n/a | Fixture should cover default both, Codex-only, bridge-only, rejected removed flags, and opt-in pre-pr. |
-| 3.2 | pending | Extend runtime-smoke coverage | n/a | Runtime-smoke should prove unified behavior and old helper absence. |
-| 3.3 | pending | Run full validation and record follow-up | n/a | Doctor bridge validation remains non-blocking unless evidence warrants a follow-up. |
+| 1.1 | done | Update create-project-skill contract | `core/skills/meta/create-project-skill/SKILL.md.tera` | Documents default both, Codex-only, bridge-only, removed Claude-only flags, and explicit pre-pr opt-in. |
+| 1.2 | done | Add shared helper entrypoint | `core/skills/meta/create-project-skill/scripts/create-project-skill.sh` | Helper owns deterministic creation, bridge, wrapper, dry-run, and removed-flag rejection behavior. |
+| 1.3 | done | Render shared products | `agent-runtime render --product codex --update-golden`; `agent-runtime render --product claude --update-golden`; `agent-runtime render --target support-matrix --update-golden` | Codex/Claude goldens and shared support matrix refreshed. |
+| 2.1 | done | Delete Claude-only command and script | `targets/claude/commands/create-claude-project-skill.md`; `targets/claude/scripts/create-claude-project-skill.sh` | Removed without alias or compatibility window. |
+| 2.2 | done | Update docs, manifests, and support matrix references | `manifests/surfaces.yaml`; `SUPPORT_MATRIX.md`; plan bundle | Active surfaces stop advertising the removed Claude-only command/script. |
+| 3.1 | done | Extend create-project fixture matrix | `scripts/ci/skill-governance-audit.sh`; `tests/runtime-smoke/fixtures/skill-lifecycle/create-project-skill/` | Fixture now includes `.claude/skills`, `.gitignore`, and default no `pre-pr.sh`. |
+| 3.2 | done | Extend runtime-smoke coverage | `tests/runtime-smoke/cases/meta/run.sh`; `tests/runtime-smoke/acceptance-matrix.yaml` | Runtime-smoke covers default both, Codex-only, bridge-only, and removed flag rejection. |
+| 3.3 | pending | Run full validation and record follow-up | focused validation passed; full CI pending clean commit rerun | Doctor bridge validation remains non-blocking; no separate follow-up evidence so far. |
 
 ## Validation
 
@@ -45,6 +47,16 @@
 | --- | --- | --- |
 | `agent-docs resolve --context startup --strict --format checklist` | pass | Required startup docs present. |
 | `agent-docs resolve --context project-dev --strict --format checklist` | pass | Project development docs and docs placement policy present. |
+| `bash -n core/skills/meta/create-project-skill/scripts/create-project-skill.sh` | pass | Helper shell syntax valid. |
+| `bash -n tests/runtime-smoke/cases/meta/run.sh` | pass | Runtime-smoke meta case shell syntax valid. |
+| `bash -n scripts/ci/skill-governance-audit.sh` | pass | Governance audit shell syntax valid. |
+| `bash scripts/ci/skill-governance-audit.sh --fixture create-project` | pass | Project-skill fixture shape and helper executable checks passed. |
+| `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta` | pass | Meta deterministic runtime-smoke passed with unified helper probes. |
+| `agent-runtime audit-drift` | pass | Drift audit clean; only intentional-difference info findings. |
+| `rumdl check docs/plans/project-skill-create-unification/project-skill-create-unification-discussion-source.md docs/plans/project-skill-create-unification/project-skill-create-unification-plan.md docs/plans/project-skill-create-unification/project-skill-create-unification-execution-state.md` | pass | Plan bundle markdown passes. |
+| `plan-tooling validate --file docs/plans/project-skill-create-unification/project-skill-create-unification-plan.md --format json` | pass | Plan bundle validates. |
+| `rg -n "create-claude-project-skill|--link-only" manifests targets SUPPORT_MATRIX.md docs/source` | pass | No active manifest/target/support/source-doc references remain. |
+| `bash scripts/ci/all.sh` | blocked | Pre-commit run stopped at golden diff because the expected golden updates were still uncommitted; rerun after implementation commit. |
 
 ## Closeout Gate
 

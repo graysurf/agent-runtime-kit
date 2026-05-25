@@ -69,6 +69,7 @@ python3 - "$MODE" "$REPO_ROOT" <<'PY'
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import sys
@@ -516,14 +517,23 @@ def validate_remove_fixture() -> None:
 
 def validate_create_project_fixture() -> None:
     fixture = ROOT / "tests" / "runtime-smoke" / "fixtures" / "skill-lifecycle" / "create-project-skill"
+    helper = ROOT / "core" / "skills" / "meta" / "create-project-skill" / "scripts" / "create-project-skill.sh"
+    if not helper.is_file() or not os.access(helper, os.X_OK):
+        fail("create-project helper missing or not executable")
     expected = [
         ".agents/skills/sample-project-skill/SKILL.md",
         ".agents/skills/sample-project-skill/scripts/sample-project-skill.sh",
         ".agents/scripts/sample-project-skill.sh",
+        ".claude/skills",
+        ".gitignore",
         "expected-created-paths.txt",
     ]
     for rel in expected:
-        if not (fixture / rel).is_file():
+        path = fixture / rel
+        if rel == ".claude/skills":
+            if not path.is_symlink() or os.readlink(path) != "../.agents/skills":
+                fail("create-project fixture missing .claude/skills bridge")
+        elif not path.is_file():
             fail(f"create-project fixture missing {rel}")
     body = read(fixture / ".agents" / "skills" / "sample-project-skill" / "SKILL.md")
     for needle in ("name: sample-project-skill", "## Contract", "## Workflow"):
@@ -537,6 +547,8 @@ def validate_create_project_fixture() -> None:
     for rel in expected[:-1]:
         if rel not in created:
             fail(f"create-project fixture expected-created-paths missing {rel}")
+    if ".agents/scripts/pre-pr.sh" in created or (fixture / ".agents" / "scripts" / "pre-pr.sh").exists():
+        fail("create-project fixture must not create pre-pr by default")
     print("skill-governance-audit: create-project fixture OK skill=sample-project-skill")
 
 

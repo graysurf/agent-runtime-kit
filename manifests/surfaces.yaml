@@ -228,7 +228,6 @@ surfaces:
         state: shipped
         mechanism: "`symlinked-file` of `targets/claude/commands` directory into `~/.claude/commands`"
         source_artifacts:
-          - targets/claude/commands/new-project-skill.md
           - targets/claude/commands/memory-clean.md
         min_product: "2.1.145"
         min_nils_cli: "v0.17.5"

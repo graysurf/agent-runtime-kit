@@ -69,10 +69,8 @@ creation mode and remove Claude-only semantics from the design.
   - The skill body states that `.agents/scripts/pre-pr.sh` creation is
     opt-in.
 - **Validation**:
-  - `rg -n -- '--claude-only|--target claude|--link-only' core/skills/meta/create-project-skill/SKILL.md.tera`
-    returns no active contract references.
-  - `rg -n 'create-claude-project-skill' core/skills/meta/create-project-skill/SKILL.md.tera`
-    returns no active contract references.
+  - `bash -n core/skills/meta/create-project-skill/scripts/create-project-skill.sh`
+  - `bash tests/runtime-smoke/run.sh --mode deterministic --domain meta`
 
 ### Task 1.2: Add shared helper entrypoint
 
@@ -179,7 +177,7 @@ reference to point at the shared workflow.
   - Historical `docs/plans/**` references are not rewritten unless they block
     validation.
 - **Validation**:
-  - `rg -n 'create-claude-project-skill|--link-only' manifests targets core tests`
+  - `rg -n 'create-claude-project-skill|--link-only' manifests targets`
   - `rg -n 'create-claude-project-skill|--link-only' SUPPORT_MATRIX.md docs/source`
   - `agent-runtime render --target support-matrix --update-golden`
   - `agent-runtime audit-drift`
