@@ -195,7 +195,8 @@ prove visible lifecycle comment completeness in runtime-smoke.
   - `docs/source/nils-cli-surface.md`
   - `manifests/skills.yaml`
   - `manifests/plugins.yaml`
-  - `build/`
+  - `targets/codex/`
+  - `targets/claude/`
   - `tests/golden/`
 - **Description**: After the nils-cli release is available, update the consumed
   surface snapshot and any required CLI floors, then render Codex and Claude
