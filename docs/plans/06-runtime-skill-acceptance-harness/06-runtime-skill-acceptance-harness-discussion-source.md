@@ -40,8 +40,9 @@ and outputs match an explicit checklist.
   product CLIs do not expose a stable `--home <dir> --list-skills` contract.
 - [F3] `docs/source/inventory-target-architecture.md` records that full
   execute-and-assert testing was not previously on the roadmap.
-- [F4] `tests/projects/` and `tests/install/` are currently placeholders, so no
-  committed fixture workspace exists for runtime skill acceptance.
+- [F4] The project-local and sandbox install fixture surfaces were still
+  placeholders at this point, so no committed fixture workspace existed for
+  runtime skill acceptance.
 - [A1] A manual smoke probe on 2026-05-22 showed that
   `agent-runtime install --apply` can populate temporary Claude and Codex homes
   with the 19 currently migrated skills, and `agent-runtime doctor` reports no

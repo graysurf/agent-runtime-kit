@@ -1638,10 +1638,10 @@ correctness is a separate stack and lives in `tests/`.
 3. **Hook adapter contract tests** — for each `targets/<product>/hooks/<name>`
    adapter, fixed payload fixtures in `tests/hooks/<product>/<name>/` exercise
    parse → invoke → response. Independent of any running product.
-4. **Install dry-run snapshots** — `agent-runtime install --dry-run --product <p>`
-   produces deterministic plan output; `tests/install/<product>/expected.txt`
-   pins it. Catches accidental scope expansion (extra symlinks, extra managed
-   blocks) in review.
+4. **Install skill-list pins** — `scripts/ci/sandbox-install-rehearsal.sh`
+   runs `agent-runtime install --dry-run --product <p>` and derives the
+   product skill list. `tests/sandbox/<product>/expected-skills.txt` pins the
+   result; no separate install fixture tree is retained.
 5. **Drift audit fixtures** — synthetic `live_home` trees under
    `tests/drift/<scenario>/` exercise each finding class (`missing`, `stale`,
    `extra`, `intentional-difference`, `unsafe`). Each fixture pins both the
