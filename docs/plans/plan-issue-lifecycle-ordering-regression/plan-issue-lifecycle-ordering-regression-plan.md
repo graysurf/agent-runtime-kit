@@ -236,7 +236,6 @@ issue-visible regression.
   - `tests/runtime-smoke/`
   - `tests/golden/`
   - `tests/sandbox/`
-  - `build/`
 - **Description**: Refresh all generated surfaces and run the focused and full
   validation stack after the lifecycle contract changes.
 - **Dependencies**:
