@@ -4,8 +4,7 @@
 - Date: 2026-05-26
 - Source: user review of `sync-runtime-skills` add-only behavior, follow-up
   request to include the `nils-cli` implementation boundary, local inspection
-  of `agent-runtime-kit`, and local inspection of
-  `/Users/terry/Project/sympoies/nils-cli`.
+  of `agent-runtime-kit`, and local inspection of `sympoies/nils-cli`.
 - Intended next step: feed this document into a focused implementation plan
   that first adds a stale-surface prune primitive in `nils-cli`, releases it,
   then teaches `agent-runtime-kit`'s sync workflow to consume it.
@@ -63,26 +62,26 @@ future tests.
   reconciles only the plan's actions. It creates, replaces, backs up, or no-ops
   current destinations; there is no pass that scans plan-owned roots for
   destinations no longer in the plan. See
-  `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/install/executor.rs:96-248`.
+  `sympoies/nils-cli:crates/agent-runtime-cli/src/install/executor.rs:96-248`.
 - [F7] The installed `agent-runtime 0.22.3` `install --help` output exposes
   `--dry-run` and `--apply`, but no prune/delete flag.
 - [F8] `agent-runtime uninstall` exists and removes current link-map-owned
   symlinks and managed blocks. Because its uninstall plan is derived from the
   current install plan, it cannot remove a skill destination that has already
   been deleted from the current link map. See
-  `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/uninstall/plan.rs:1-6`.
+  `sympoies/nils-cli:crates/agent-runtime-cli/src/uninstall/plan.rs:1-6`.
 - [F9] `audit-drift` already has an `extra` class that compares live runtime
   homes against install-map expected paths under install-map-owned scan roots.
   It reports extra live files but does not repair them. See
-  `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/audit_drift/classes/extra.rs:1-62`.
+  `sympoies/nils-cli:crates/agent-runtime-cli/src/audit_drift/classes/extra.rs:1-62`.
 - [F10] `doctor --class skill-surface` is shape-only and deliberately does not
   stat the live runtime home or reproduce Codex Desktop discovery. See
-  `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/doctor/skill_surface.rs:1-5`.
+  `sympoies/nils-cli:crates/agent-runtime-cli/src/doctor/skill_surface.rs:1-5`.
 - [A1] On 2026-05-26, the installed runtime was `agent-runtime 0.22.3`.
 - [A2] On 2026-05-26, `agent-runtime list-skills --product codex` and
   `--product claude` each reported `59` skills for this checkout.
-- [A3] On 2026-05-26, `agent-runtime audit-drift --source-root
-  /Users/terry/Project/graysurf/agent-runtime-kit` exited 0 and reported
+- [A3] On 2026-05-26, `agent-runtime audit-drift --source-root "$PWD"`
+  against the runtime-kit checkout exited 0 and reported
   `audit-drift: clean (20 findings)`, where all findings were documented
   intentional plugin manifest differences.
 
@@ -135,7 +134,7 @@ future tests.
 ### nils-cli
 
 - Add `agent-runtime prune-stale` under
-  `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli`.
+  `sympoies/nils-cli:crates/agent-runtime-cli`.
 - Build expected live paths from the current product link map after overlay
   merge, including recursive entries.
 - Scan only install-map-owned live roots.
@@ -243,7 +242,7 @@ future tests.
 - Live post-release smoke from the durable primary checkout:
   `bash scripts/sync-runtime-skills.sh --apply --no-pull`
 - Final live verification:
-  `agent-runtime audit-drift --source-root /Users/terry/Project/graysurf/agent-runtime-kit`
+  `agent-runtime audit-drift --source-root "$PWD"`
 
 ## Risks And Guardrails
 
@@ -273,9 +272,9 @@ the relevant runtime architecture docs.
 - `targets/codex/link-map.yaml`
 - `targets/claude/link-map.yaml`
 - `core/skills/meta/remove-skill/SKILL.md.tera`
-- `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/install/executor.rs`
-- `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/uninstall/plan.rs`
-- `/Users/terry/Project/sympoies/nils-cli/crates/agent-runtime-cli/src/audit_drift/classes/extra.rs`
+- `sympoies/nils-cli:crates/agent-runtime-cli/src/install/executor.rs`
+- `sympoies/nils-cli:crates/agent-runtime-cli/src/uninstall/plan.rs`
+- `sympoies/nils-cli:crates/agent-runtime-cli/src/audit_drift/classes/extra.rs`
 
 ## Recommended Next Artifact
 

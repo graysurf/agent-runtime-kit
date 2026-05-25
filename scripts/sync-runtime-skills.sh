@@ -16,6 +16,7 @@ APPLY=0
 PRODUCT="both"
 NO_PULL=0
 NO_VERIFY=0
+NO_PRUNE=0
 SOURCE_ROOT=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_PROMPT_STATUS="not-run"
@@ -26,15 +27,15 @@ CODEX_PROMPT_STATUS="not-run"
 
 print_help() {
   cat <<EOF
-Usage: $PROG_NAME [--apply] [--product codex|claude|both] [--source-root PATH] [--no-pull] [--no-verify]
+Usage: $PROG_NAME [--apply] [--product codex|claude|both] [--source-root PATH] [--no-pull] [--no-prune] [--no-verify]
 
 Refresh graysurf/agent-runtime-kit skills into local Codex and Claude runtime
 homes. This is the daily skill refresh entrypoint after source changes land.
 For first-time host setup, run scripts/setup.sh first.
 
 By default, this command is a dry-run: it prints the pull, render, install,
-doctor, and optional Codex prompt-input commands without mutating runtime homes.
-Pass --apply to run the commands.
+prune, doctor, and optional Codex prompt-input commands without mutating runtime
+homes. Pass --apply to run the commands.
 
 Options:
   --apply
@@ -47,6 +48,9 @@ Options:
       linked git worktrees and Codex transient worktrees are refused.
   --no-pull
       Skip git pull --ff-only and refresh the current checkout state.
+  --no-prune
+      Skip stale managed-skill pruning. With --apply, stale runtime surfaces
+      may remain until a later refresh runs without this flag.
   --no-verify
       Skip post-install skill-surface doctor and Codex prompt-input probes.
   -h, --help
@@ -135,6 +139,10 @@ parse_args() {
         ;;
       --no-pull)
         NO_PULL=1
+        shift
+        ;;
+      --no-prune)
+        NO_PRUNE=1
         shift
         ;;
       --no-verify)
@@ -368,6 +376,34 @@ install_product() {
     "$mode_flag"
 }
 
+prune_product() {
+  local product="$1"
+  local live_home
+  local mode_flag="--dry-run"
+
+  live_home="$(product_live_home "$product")"
+
+  if [ "$NO_PRUNE" = "1" ]; then
+    if [ "$APPLY" = "1" ]; then
+      log "warning: prune skipped (--no-prune) for product=$product; stale managed runtime surfaces may remain"
+    else
+      log "prune skipped (--no-prune) for product=$product"
+    fi
+    return 0
+  fi
+
+  if [ "$APPLY" = "1" ]; then
+    mode_flag="--apply"
+  fi
+
+  log "pruning stale managed surfaces product=$product live_home=$live_home"
+  run_cmd agent-runtime prune-stale \
+    --source-root "$SOURCE_ROOT" \
+    --product "$product" \
+    --live-home "$live_home" \
+    "$mode_flag"
+}
+
 json_number() {
   local key="$1"
   sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\\([0-9][0-9]*\\).*/\\1/p" | head -n 1
@@ -471,16 +507,21 @@ run_verification() {
 print_summary() {
   local mode="dry-run"
   local doctor_status="planned"
+  local prune_status="planned"
 
   if [ "$APPLY" = "1" ]; then
     mode="apply"
     doctor_status="ok"
+    prune_status="ok"
+  fi
+  if [ "$NO_PRUNE" = "1" ]; then
+    prune_status="skipped"
   fi
   if [ "$NO_VERIFY" = "1" ]; then
     doctor_status="skipped"
   fi
 
-  log "summary: synced skills for $(product_label); mode=$mode; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS"
+  log "summary: synced skills for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS"
 }
 
 # -----------------------------------------------------------------------------
@@ -499,13 +540,14 @@ main() {
     require_commands agent-runtime
   fi
 
-  log "$PROG_NAME starting (source_root=$SOURCE_ROOT product=$PRODUCT apply=$APPLY no_pull=$NO_PULL no_verify=$NO_VERIFY)"
+  log "$PROG_NAME starting (source_root=$SOURCE_ROOT product=$PRODUCT apply=$APPLY no_pull=$NO_PULL no_prune=$NO_PRUNE no_verify=$NO_VERIFY)"
 
   pull_source
   check_source_counts
   for product in $(selected_products); do
     render_product "$product"
     install_product "$product"
+    prune_product "$product"
   done
   run_verification
   print_summary

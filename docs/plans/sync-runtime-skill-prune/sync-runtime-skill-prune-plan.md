@@ -234,7 +234,7 @@ managed skills by default after nils-cli ships the primitive.
 - **Validation**:
   - `bash scripts/ci/all.sh`
   - `bash scripts/sync-runtime-skills.sh --apply --no-pull`
-  - `agent-runtime audit-drift --source-root /Users/terry/Project/graysurf/agent-runtime-kit`
+  - `agent-runtime audit-drift --source-root "$PWD"`
 
 ## Issue Closeout Gate
 
