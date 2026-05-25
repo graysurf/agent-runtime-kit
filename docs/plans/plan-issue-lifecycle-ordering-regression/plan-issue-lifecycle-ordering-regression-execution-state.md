@@ -3,17 +3,18 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: local implementation validated; live lifecycle rehearsal in progress
+- Status: pre-merge lifecycle evidence ready; runtime-kit PR checks and review
+  passed
 - Target scope: restore issue-visible plan lifecycle ordering and required
   session evidence for v2 plan issue records.
 - Execution window: Sprint 1-3
 - Current task: Task 3.3 - perform live GitHub lifecycle rehearsal and closeout.
-- Next task: open the runtime-kit delivery PR, run pre-merge review, merge, post
-  final lifecycle evidence, and close issue #120.
+- Next task: merge runtime-kit PR #121, post final lifecycle evidence, close
+  issue #120, and sync runtime skills.
 - Last updated: 2026-05-26
-- Branch/commit/PR: runtime-kit branch `fix/plan-issue-session-lifecycle`;
-  nils-cli branch `fix/plan-issue-session-closeout`, commit `94e7af9`, PR
-  <https://github.com/sympoies/nils-cli/pull/537>
+- Branch/commit/PR: runtime-kit branch `fix/plan-issue-session-lifecycle`, PR
+  <https://github.com/graysurf/agent-runtime-kit/pull/121>; nils-cli PR
+  <https://github.com/sympoies/nils-cli/pull/537> merged as `2f5d0073`.
 - Source document:
   docs/plans/plan-issue-lifecycle-ordering-regression/plan-issue-lifecycle-ordering-regression-plan.md
 - Discussion source:
@@ -42,9 +43,9 @@
 | 2.1 | done | Make session posting explicit in plan delivery skills | rendered Codex/Claude skills and goldens | `deliver-plan-tracking-issue` now includes canonical `record post --kind session`. |
 | 2.2 | done | Add pre-merge lifecycle readiness to PR and MR delivery | rendered PR/MR skills and PR runtime-smoke source assertions | GitHub and GitLab delivery skills require linked issue lifecycle readiness before merge. |
 | 2.3 | done | Align closeout skills with required session evidence | closeout skill source and rendered goldens | Tracking and dispatch closeout guidance rejects missing session evidence or `Latest session: pending`. |
-| 3.1 | deferred | Consume released nils-cli readiness support when required | nils-cli PR #537 opened; no manifest floor bump | Release consumption stays deferred until the nils-cli session gate ships; local debug binary validates the intended behavior. |
+| 3.1 | deferred | Consume released nils-cli readiness support when required | nils-cli PR #537 merged; no manifest floor bump | Release consumption stays deferred until the nils-cli session gate ships in a versioned release; local debug binary validates the intended behavior. |
 | 3.2 | done | Run full render, smoke, and governance gates | focused local-binary dispatch/pr smoke and full CI passed | Full runtime-kit validation passed with local nils-cli debug binary on PATH. |
-| 3.3 | in-progress | Perform live GitHub lifecycle rehearsal and closeout | issue #120 has a real `role=session` start comment; PR delivery pending | Use this tracker to prove session is present before closeout. |
+| 3.3 | in-progress | Perform live GitHub lifecycle rehearsal and closeout | issue #120 has a real `role=session` start comment; runtime-kit PR #121 checks and review passed | Use this tracker to prove session is present before closeout. |
 
 ## Validation Plan
 
@@ -77,6 +78,12 @@
 - 2026-05-26: Ran full runtime-kit CI with the local nils-cli debug binary on
   `PATH`; the missing-session closeout smoke passed by blocking with
   `session-missing`.
+- 2026-05-26: Opened runtime-kit PR #121, posted the pre-merge review outcome,
+  fixed a clean-checkout plan location issue, and confirmed the remote
+  `scripts/ci/all.sh` job passed.
+- 2026-05-26: Merged nils-cli PR #537 after required `coverage`, `test`, and
+  `test_macos` checks passed; the hard session gate is now on nils-cli `main`
+  but not yet consumed through a released runtime-kit floor.
 
 ## Validation
 
@@ -101,11 +108,16 @@
 | `PATH=$NILS_CLI/target/debug:$PATH bash tests/runtime-smoke/run.sh --mode deterministic --domain pr --format json` | passed | GitHub and GitLab PR/MR delivery smoke passed and asserted pre-merge lifecycle readiness guidance. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/runtime-smoke-pr-local.json` |
 | `bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch --format json` | passed | Released `plan-issue` path remains CI-safe by marking the unreleased session gate as `skip-host-capability`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/runtime-smoke-dispatch-release.json` |
 | `PATH=$NILS_CLI/target/debug:$PATH agent-run exec --cwd $PWD -- bash scripts/ci/all.sh` | passed | Full runtime-kit CI positions 1-13 passed with the local nils-cli debug binary; deterministic smoke reported `dispatch.plan-issue-session-closeout-gate` as pass. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/ci-all-local-debug-2.log` |
+| `review-specialists scope --repo $PWD --base main --testing --maintainability --red-team --format json` | passed | Runtime-kit PR #121 review gate selected testing, maintainability, and red-team; no blocking findings. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/review-specialists-pr121-red-team.json` |
+| `review-evidence verify --out <review-evidence-pr121> --format json` | passed | Review evidence for PR #121 is complete with the unreleased nils-cli floor as an accepted residual risk. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/review-evidence-verify.json` |
+| `forge-cli pr checks 121 --repo graysurf/agent-runtime-kit --format json` | passed | Remote GitHub Actions `scripts/ci/all.sh` passed after removing the untracked `build/` plan location. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/pr121-checks-latest.json` |
+| `forge-cli pr checks 537 --repo sympoies/nils-cli --format json` | passed | nils-cli PR #537 required `coverage`, `test`, and `test_macos` checks passed after syncing with `main`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/nils-cli-pr/checks-537-poll-6.json` |
+| `forge-cli pr merge 537 --repo sympoies/nils-cli --method squash --format json` | passed | nils-cli session closeout gate merged to `main` as `2f5d0073`. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-024144-plan-issue-lifecycle-ordering-delivery/nils-cli-pr/pr537-merge-final.json` |
 
 ## Residual Risk
 
 - Runtime-kit does not yet raise the consumed `plan-issue` floor because the
-  hard `session-missing` gate is still in nils-cli PR #537, not a released
-  nils-cli version.
+  hard `session-missing` gate is merged to nils-cli `main` but not yet available
+  in a released nils-cli version.
 - Existing open v2 plan records without session comments will need a session
   backfill before strict closeout once the nils-cli gate is released.
