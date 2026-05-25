@@ -28,21 +28,53 @@ and call the CLI surfaces.
 
 ## Rewrite Rule
 
-The implementation phase should not incrementally patch the current plan issue
-skill bodies.
+The implementation phase uses two different rewrite boundaries:
+
+- `nils-cli`: complete rewrite of the plan issue workflow core inside the
+  existing `crates/plan-issue-cli` crate.
+- runtime-kit: delete or replace the current plan issue skill bodies and
+  rewrite them from these redesign documents.
+
+For `nils-cli`, "complete rewrite" does not mean deleting the crate or changing
+the public binary contract. It means preserving the compatibility shell while
+building a clean vNext core for templates, visible lint, run state, FSM
+reconciliation, checkpoints, and close readiness.
+
+Preserve on the `nils-cli` side:
+
+- `plan-issue` and `plan-issue-local` binary names.
+- Global flags, output envelope, and exit-code model.
+- Provider abstraction and GitHub/GitLab routing.
+- Runtime layout and state-dir resolution.
+- Existing fixture tests as compatibility regression coverage.
+- Released `record` command compatibility until runtime-kit migrates.
+
+Rewrite on the `nils-cli` side:
+
+- Lifecycle template registry.
+- Visible completeness lint.
+- `record template` preview.
+- Tracking run-state controller.
+- Checkpoint and close-ready behavior.
+- `record` rendering internals after the vNext core is covered.
+
+The runtime-kit skill implementation phase should not incrementally patch the
+current plan issue skill bodies.
 
 Required approach:
 
-1. Implement and test the `nils-cli` controller and template surfaces first.
-2. Build a local `nils-cli` binary from that branch.
-3. Validate the local binary against the comment taxonomy, workflow, and
+1. Implement and test the `nils-cli` vNext core first.
+2. Keep the old CLI shell and released command compatibility while the new
+   core is built.
+3. Build a local `nils-cli` binary from that branch.
+4. Validate the local binary against the comment taxonomy, workflow, and
    run-state controller documents.
-4. In runtime-kit, remove the current plan issue skill source bodies and
+5. In runtime-kit, remove the current plan issue skill source bodies and
    rewrite them from these redesign documents.
-5. Render Codex and Claude targets from the rewritten sources.
-6. Refresh goldens from the rendered targets.
-7. Run focused runtime-kit smoke against the local binary.
-8. After `nils-cli` is released, update runtime-kit CLI floors and rerun final
+6. Render Codex and Claude targets from the rewritten sources.
+7. Refresh goldens from the rendered targets.
+8. Run focused runtime-kit smoke against the local binary.
+9. After `nils-cli` is released, update runtime-kit CLI floors and rerun final
    validation against the released binary.
 
 Do not globally replace the user's installed CLI while developing skills. Use a
@@ -432,24 +464,29 @@ Every skill must explicitly name:
 
 The implementation order is intentionally CLI-first:
 
-1. Implement `nils-cli` template registry and visible completeness lint.
-2. Implement `record template` preview.
-3. Implement run-state schema, runtime layout, and event journal.
-4. Implement `tracking run init`, `tracking run update`, and
+1. Create the vNext core boundary inside `crates/plan-issue-cli` without
+   deleting the crate, binaries, provider abstraction, runtime layout, or
+   released command compatibility.
+2. Implement `nils-cli` template registry and visible completeness lint in the
+   vNext core.
+3. Implement `record template` preview.
+4. Implement run-state schema, runtime layout, and event journal.
+5. Implement `tracking run init`, `tracking run update`, and
    `tracking status`.
-5. Implement `tracking checkpoint --dry-run`.
-6. Validate rendered checkpoint bodies against this document and the taxonomy.
-7. Implement live `tracking checkpoint`.
-8. Implement `tracking close-ready`.
-9. Run `nils-cli` fixture tests and local provider-safe smoke.
-10. Build a local `nils-cli` binary.
-11. Rewrite runtime-kit skill sources from these documents.
-12. Render Codex and Claude targets.
-13. Refresh golden outputs.
-14. Run runtime-kit smoke with the local binary.
-15. Release `nils-cli`.
-16. Update runtime-kit required CLI floors and docs.
-17. Run final runtime-kit validation against the released binary.
+6. Implement `tracking checkpoint --dry-run`.
+7. Validate rendered checkpoint bodies against this document and the taxonomy.
+8. Implement live `tracking checkpoint`.
+9. Implement `tracking close-ready`.
+10. Migrate `record` rendering internals to the vNext registry/controller.
+11. Run `nils-cli` fixture tests and local provider-safe smoke.
+12. Build a local `nils-cli` binary.
+13. Rewrite runtime-kit skill sources from these documents.
+14. Render Codex and Claude targets.
+15. Refresh golden outputs.
+16. Run runtime-kit smoke with the local binary.
+17. Release `nils-cli`.
+18. Update runtime-kit required CLI floors and docs.
+19. Run final runtime-kit validation against the released binary.
 
 ## Deletion And Rewrite Scope
 

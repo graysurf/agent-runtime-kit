@@ -77,6 +77,8 @@ The current problem is UX and consistency:
 - Do not embed a LangGraph-style dynamic orchestration runtime in `nils-cli`
   core. External agent runners may use graph orchestration, but `nils-cli`
   should expose deterministic primitives.
+- Do not delete the whole `crates/plan-issue-cli` crate, rename the binaries,
+  or break released command compatibility before runtime-kit has migrated.
 
 ## Chosen Architecture
 
@@ -98,7 +100,95 @@ The durable truth remains the provider issue lifecycle comments. Local run
 state is a resumable execution cache and checkpoint input. It must never
 silently override newer issue evidence.
 
+## Complete Rewrite Boundary
+
+The `nils-cli` implementation should be a complete rewrite of the plan issue
+workflow core inside the existing `plan-issue-cli` crate. It should not be a
+total crate deletion.
+
+Definition:
+
+- Keep the public shell: `plan-issue`, `plan-issue-local`, global flags,
+  output envelope, exit-code conventions, provider routing, state-dir
+  resolution, and existing fixture assets.
+- Build a clean vNext core for lifecycle templates, visible completeness,
+  run-state reconciliation, FSM decisions, checkpoint rendering, and close
+  readiness.
+- Add new agent-facing surfaces on the vNext core first.
+- Migrate old `record` internals to the vNext registry/controller only after
+  the new surfaces have deterministic fixture coverage.
+
+Preserve:
+
+| Existing surface | Reason |
+| --- | --- |
+| `plan-issue` and `plan-issue-local` binaries | Runtime-kit, Homebrew release, and shell completions already depend on the binary names. |
+| Global output envelope and exit-code model | Downstream automation parses command results and errors. |
+| Provider abstraction | GitHub/GitLab parity has already been paid for and must remain a regression harness. |
+| Runtime layout resolution | The controller should extend the existing state-dir contract instead of inventing a second root. |
+| Existing fixtures and integration tests | They become regression tests around the compatibility shell. |
+| Released `record` commands during migration | Runtime-kit can migrate only after a released CLI floor exists. |
+
+Rewrite:
+
+| Core area | Target shape |
+| --- | --- |
+| Lifecycle role templates | Registry-driven templates with visible completeness metadata. |
+| Lifecycle rendering | Generated from typed role data and registry rules, not ad hoc Markdown assembly. |
+| Audit completeness | Machine payload audit plus human-visible section lint. |
+| Tracking controller | FSM plus typed `run-state.json` and append-only `events.jsonl`. |
+| Checkpoint posting | Macro over lifecycle primitives with dry-run render output. |
+| Close readiness | Non-mutating probe using the same gates as `record close`. |
+
+Recommended module boundary in `nils-cli`:
+
+```text
+crates/plan-issue-cli/src/
+  lifecycle_vnext/
+    mod.rs
+    registry.rs
+    templates.rs
+    visible_lint.rs
+    payloads.rs
+    render.rs
+  tracking/
+    mod.rs
+    run_state.rs
+    events.rs
+    fsm.rs
+    reconcile.rs
+    checkpoint.rs
+    close_ready.rs
+```
+
+The exact filenames may change during implementation, but the boundary should
+remain: new core modules first, compatibility commands as adapters second. Do
+not keep expanding a large catch-all executor with new lifecycle behavior.
+
 ## nils-cli Workstreams
+
+### Workstream 0: vNext Core Boundary
+
+Create the clean vNext implementation boundary before adding public behavior.
+
+Expected behavior:
+
+- Introduce modules for lifecycle registry/rendering and tracking controller
+  behavior.
+- Keep old commands compiling while new modules are built and tested.
+- Add fixture tests against the new modules before wiring live provider
+  mutation.
+- Keep provider adapters and runtime layout as shared infrastructure.
+- Do not make new `tracking` commands depend on old ad hoc renderer behavior.
+
+Acceptance:
+
+- `cargo test -p nils-plan-issue-cli` can run with both old command paths and
+  new vNext module tests present.
+- New module tests assert visible template shape without invoking live provider
+  commands.
+- No runtime-kit skill needs an unreleased local binary until the focused
+  skill rewrite phase.
 
 ### Workstream 1: Template Registry
 
@@ -421,24 +511,32 @@ Acceptance:
 ## Implementation Sequence
 
 1. Land these design documents in runtime-kit.
-2. Implement `nils-cli` template registry and visible completeness lint.
-3. Add `record template` preview.
-4. Add run-state schema, parser, and runtime-layout helpers.
-5. Add `tracking run init`, `tracking run update`, and `tracking status`.
-6. Add `tracking checkpoint --dry-run`, then live checkpoint posting.
-7. Add `tracking close-ready`.
-8. Build a local `nils-cli` binary from the implementation branch.
-9. Validate the local binary output against these design documents.
-10. Rewrite runtime-kit plan issue skill sources from
+2. In `nils-cli`, create the vNext module boundary inside
+   `crates/plan-issue-cli` while preserving binaries, global envelope,
+   provider abstraction, runtime layout, and old command compatibility.
+3. Implement the lifecycle template registry and visible completeness lint in
+   the vNext core.
+4. Add `record template` preview backed by the vNext registry.
+5. Add run-state schema, parser, event journal, and runtime-layout helpers.
+6. Add `tracking run init`, `tracking run update`, and `tracking status` on
+   the vNext controller.
+7. Add `tracking checkpoint --dry-run`, then live checkpoint posting.
+8. Add `tracking close-ready`.
+9. Migrate `record open/post/audit/close` internals toward the vNext
+   registry/controller without changing their public command contract unless
+   the release notes and runtime-kit floor update say so.
+10. Build a local `nils-cli` binary from the implementation branch.
+11. Validate the local binary output against these design documents.
+12. Rewrite runtime-kit plan issue skill sources from
     `docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`.
-11. Add runtime smoke assertions for visible comments and stale run-state
+13. Add runtime smoke assertions for visible comments and stale run-state
     reconciliation.
-12. Render products and refresh goldens using the local binary for focused
+14. Render products and refresh goldens using the local binary for focused
     smoke.
-13. Release `nils-cli`.
-14. Update runtime-kit required CLI floors and docs to consume the released
+15. Release `nils-cli`.
+16. Update runtime-kit required CLI floors and docs to consume the released
     binary.
-15. Run the final repo gate against the released CLI floor.
+17. Run the final repo gate against the released CLI floor.
 
 ## Open Design Questions
 
@@ -494,6 +592,8 @@ The redesign is ready for implementation when:
   reconciliation rules, and checkpoint commands.
 - The CLI redesign document identifies the nils-cli workstreams needed to make
   the templates enforceable.
+- The CLI redesign document defines "complete rewrite" as a vNext core rewrite
+  inside the existing crate, not deletion of the whole CLI surface.
 - The skill family redesign document assigns every plan issue skill a function,
   boundary, rewrite rule, and CLI-first implementation order.
 - No runtime-kit skill needs to invent a new lifecycle comment shape not listed

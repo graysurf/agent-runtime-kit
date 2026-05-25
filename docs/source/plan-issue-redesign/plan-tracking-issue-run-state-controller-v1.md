@@ -478,19 +478,24 @@ Runtime-kit tests:
 ## Migration Plan
 
 1. Land docs in runtime-kit.
-2. Add run-state schema and parser to `plan-issue-cli`.
-3. Add `tracking status` with fixture tests.
-4. Add `tracking run init` and `tracking run update`.
-5. Add `tracking checkpoint --dry-run`.
-6. Add live `tracking checkpoint`.
-7. Add `tracking close-ready`.
-8. Build a local `nils-cli` binary and validate controller output against the
+2. Create the vNext controller modules inside `plan-issue-cli` while keeping
+   the existing crate, binaries, provider abstraction, runtime layout, and
+   released command compatibility.
+3. Add run-state schema and parser to the vNext controller.
+4. Add `tracking status` with fixture tests.
+5. Add `tracking run init` and `tracking run update`.
+6. Add `tracking checkpoint --dry-run`.
+7. Add live `tracking checkpoint`.
+8. Add `tracking close-ready`.
+9. Migrate existing `record` rendering internals toward the vNext lifecycle
+   registry only after the controller has fixture coverage.
+10. Build a local `nils-cli` binary and validate controller output against the
    design documents.
-9. Rewrite runtime-kit plan issue skills from the skill family redesign using
+11. Rewrite runtime-kit plan issue skills from the skill family redesign using
    the local binary for focused smoke.
-10. Release `nils-cli`.
-11. Update runtime-kit skills to consume the released controller surface.
-12. Keep lower-level `record post`, `record repair-dashboard`, and
+12. Release `nils-cli`.
+13. Update runtime-kit skills to consume the released controller surface.
+14. Keep lower-level `record post`, `record repair-dashboard`, and
     `record close` documented as escape hatches and implementation primitives.
 
 ## Open Questions
