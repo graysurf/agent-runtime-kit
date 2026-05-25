@@ -340,9 +340,28 @@ run_sync_runtime_skills_probe() {
   grep -q "skill-governance-audit: counts OK" "$out"
   grep -q "agent-runtime render" "$out"
   grep -q "agent-runtime install" "$out"
+  grep -q "agent-runtime prune-stale" "$out"
+  grep -q -- "--dry-run" "$out"
   grep -q "agent-runtime doctor" "$out"
   grep -q "codex debug prompt-input" "$out"
-  grep -q "summary: synced skills for codex; mode=dry-run; doctor=planned" "$out"
+  grep -q "summary: synced skills for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
+}
+
+run_sync_runtime_skills_no_prune_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.no-prune.txt"
+
+  (
+    cd "$REPO_ROOT"
+    bash scripts/sync-runtime-skills.sh \
+      --source-root "$REPO_ROOT" \
+      --product codex \
+      --no-pull \
+      --no-prune
+  ) >"$out" 2>&1
+
+  grep -q "prune skipped (--no-prune) for product=codex" "$out"
+  grep -q "summary: synced skills for codex; mode=dry-run; prune=skipped; doctor=planned" "$out"
+  ! grep -q "agent-runtime prune-stale" "$out"
 }
 
 run_sync_runtime_skills_worktree_guard_probe() {
@@ -367,6 +386,56 @@ run_sync_runtime_skills_worktree_guard_probe() {
   [ "$status" -ne 0 ]
   grep -q "refusing live sync from a git worktree" "$out"
   grep -q "durable primary checkout" "$out"
+}
+
+run_sync_runtime_skills_prune_fixture_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.prune-fixture.txt"
+  local codex_home="$TMP_ROOT/sync-prune/codex-home"
+  local claude_home="$TMP_ROOT/sync-prune/claude-home"
+  local codex_stale="$codex_home/skills/meta/removed-skill"
+  local codex_foreign="$codex_home/skills/meta/foreign-skill"
+  local codex_regular="$codex_home/skills/meta/user-note"
+  local claude_stale_dir="$claude_home/plugins/meta/skills/removed-skill"
+  local claude_foreign="$claude_home/plugins/meta/skills/foreign-skill/SKILL.md"
+  local claude_regular="$claude_home/plugins/meta/skills/user-note/SKILL.md"
+
+  require_meta_bin agent-runtime || return 1
+  mkdir -p "$codex_home/skills/meta" "$claude_stale_dir/scripts" \
+    "$claude_home/plugins/meta/skills/foreign-skill" \
+    "$claude_home/plugins/meta/skills/user-note"
+
+  ln -s "$REPO_ROOT/build/codex/plugins/meta/skills/removed-skill" "$codex_stale"
+  ln -s /var/empty/foreign-skill "$codex_foreign"
+  printf 'user note\n' >"$codex_regular"
+  ln -s "$REPO_ROOT/build/claude/plugins/meta/skills/removed-skill/SKILL.md" "$claude_stale_dir/SKILL.md"
+  ln -s "$REPO_ROOT/build/claude/plugins/meta/skills/removed-skill/scripts/tool.sh" "$claude_stale_dir/scripts/tool.sh"
+  ln -s /var/empty/foreign-skill "$claude_foreign"
+  printf 'user note\n' >"$claude_regular"
+
+  {
+    agent-runtime prune-stale \
+      --source-root "$REPO_ROOT" \
+      --product codex \
+      --live-home "$codex_home" \
+      --apply
+    agent-runtime prune-stale \
+      --source-root "$REPO_ROOT" \
+      --product claude \
+      --live-home "$claude_home" \
+      --apply
+  } >"$out" 2>&1
+
+  grep -q "removed symlink skills/meta/removed-skill" "$out"
+  grep -q "removed symlink plugins/meta/skills/removed-skill/SKILL.md" "$out"
+  grep -q "removed empty directory plugins/meta/skills/removed-skill" "$out"
+  grep -q "skip foreign symlink" "$out"
+  grep -q "skip regular file" "$out"
+  test ! -L "$codex_stale"
+  test -L "$codex_foreign"
+  test -f "$codex_regular"
+  test ! -d "$claude_stale_dir"
+  test -L "$claude_foreign"
+  test -f "$claude_regular"
 }
 
 run_project_local_shim_probe() {
@@ -457,6 +526,8 @@ record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp 
 record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe || failures=1
 record_case "meta.setup-project" "setup-project dry-run/apply adoption probes passed" run_setup_project_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
+record_case "meta.sync-runtime-skills" "sync-runtime-skills no-prune flag reports skipped prune" run_sync_runtime_skills_no_prune_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1
+record_case "meta.sync-runtime-skills" "sync-runtime-skills prune fixture removes stale owned surfaces only" run_sync_runtime_skills_prune_fixture_probe || failures=1
 
 exit "$failures"

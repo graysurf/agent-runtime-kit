@@ -196,6 +196,32 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.sync-runtime-skills.shared-cli.no-prune
+    product: shared-cli
+    domain: meta
+    skill_id: meta.sync-runtime-skills
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: run from repo root with no-pull dry-run and no-prune
+    invocation: sync-runtime-skills planned codex refresh with prune skipped
+    expected_exit_code: 0
+    expected_artifacts: skipped prune warning and summary output
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.sync-runtime-skills.shared-cli.prune-fixture
+    product: shared-cli
+    domain: meta
+    skill_id: meta.sync-runtime-skills
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp Codex and Claude live homes with stale owned and user-owned surfaces
+    invocation: agent-runtime prune-stale applies to temp live homes
+    expected_exit_code: 0
+    expected_artifacts: stale owned symlinks removed while foreign symlinks and regular files remain
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.bootstrap.shared-cli.project-local
     product: shared-cli
     domain: meta

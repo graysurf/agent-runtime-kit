@@ -1,26 +1,24 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-25
+- Snapshot date: 2026-05-26
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.22.3`
-- Head commit: `85a166f` (`chore(release): bump cli versions to 0.22.3`)
+- Active `git describe --tags` output: `v0.22.4`
+- Head commit: `f82c131` (`chore(release): bump cli versions to 0.22.4`)
 - Release:
-  [`v0.22.3`](https://github.com/sympoies/nils-cli/releases/tag/v0.22.3),
+  [`v0.22.4`](https://github.com/sympoies/nils-cli/releases/tag/v0.22.4),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.21.0` at `593d3db` (`feat(plan-issue): pipe labels
-  through record open/post/close`); `v0.22.3` adds the consumed visible
-  lifecycle evidence surface for `plan-issue record post --kind state
-  --execution-state-file`, `--task-ledger-display auto|collapsed|expanded`,
-  and visible validation/review/session/closeout renderers.
+- Prior pin: `v0.22.3` at `85a166f` (`chore(release): bump cli versions to
+  0.22.3`); `v0.22.4` adds the consumed `agent-runtime prune-stale` primitive
+  for stale managed runtime-surface cleanup.
 
 This file is the pin source for `required_clis` placeholders in
 `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli release that
-changes a consumed surface (the next bump after `v0.22.3`).
+changes a consumed surface (the next bump after `v0.22.4`).
 
 Notes on derivation:
 
@@ -38,7 +36,7 @@ Notes on derivation:
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight. As of `v0.18.0`, global scope inheritance is available from the released binary.                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
-| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. |
+| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
 | `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |

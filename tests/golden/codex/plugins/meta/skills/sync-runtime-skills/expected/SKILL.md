@@ -18,8 +18,8 @@ Prereqs:
 - Live `--apply` refreshes run from a durable primary checkout, not a linked
   git worktree or a Codex transient worktree under `$CODEX_HOME/worktrees`.
 - First-time host bootstrap has already been handled by `scripts/setup.sh`.
-- `git` and `python3` are available. `agent-runtime` is required for `--apply`
-  refreshes.
+- `git` and `python3` are available. `agent-runtime >=0.22.4` is required for
+  `--apply` refreshes because live sync uses `agent-runtime prune-stale`.
 - The source checkout passes
   `bash scripts/ci/skill-governance-audit.sh --check-counts`; sync checks
   count freshness but never runs update mode.
@@ -27,7 +27,7 @@ Prereqs:
 Inputs:
 
 - User intent: preview-only, apply refresh, product-limited refresh, no-pull
-  refresh, or verification-skipped refresh.
+  refresh, no-prune refresh, or verification-skipped refresh.
 - Optional product: `codex`, `claude`, or `both`.
 - Optional source checkout path when the active directory is not the desired
   `agent-runtime-kit` checkout.
@@ -35,7 +35,7 @@ Inputs:
 Outputs:
 
 - The script's stdout/stderr and exit code.
-- A concise summary of whether pull, render, install, doctor, and Codex
+- A concise summary of whether pull, render, install, prune, doctor, and Codex
   prompt-input verification were planned, skipped, or completed.
 - A read-only source count check before any render/install step.
 
@@ -47,7 +47,8 @@ Failure modes:
   one.
 - `git pull --ff-only` fails before render/install.
 - Active skill-count references drift from `manifests/skills.yaml`.
-- `agent-runtime render`, `install`, or `doctor --class skill-surface` fails.
+- `agent-runtime render`, `install`, `prune-stale`, or
+  `doctor --class skill-surface` fails.
 - Codex prompt-input verification fails when Codex is selected and available.
 
 ## Entrypoint
@@ -73,6 +74,9 @@ bash scripts/sync-runtime-skills.sh --apply --product claude
 
 # Refresh the current checkout state without pulling.
 bash scripts/sync-runtime-skills.sh --apply --no-pull
+
+# Skip stale managed-skill pruning for a one-off refresh.
+bash scripts/sync-runtime-skills.sh --apply --no-prune
 ```
 
 ## Workflow
@@ -95,6 +99,7 @@ bash scripts/sync-runtime-skills.sh --apply --no-pull
 3. Pass through product and safety flags exactly:
    - `--product codex|claude|both`
    - `--no-pull`
+   - `--no-prune`
    - `--no-verify`
    - `--source-root <path>`
 4. Let the script run its read-only
@@ -103,15 +108,17 @@ bash scripts/sync-runtime-skills.sh --apply --no-pull
    does not skip this gate because it only controls post-install verification.
 5. Before an `--apply` run, state that the command may mutate the selected
    local runtime homes (`$CODEX_HOME`/`$HOME/.codex`, `$HOME/.claude`, and
-   runtime-kit state homes).
+   runtime-kit state homes). By default, `--apply` also prunes stale managed
+   skill surfaces with `agent-runtime prune-stale`; when `--no-prune` is
+   passed, warn that stale managed runtime surfaces may remain.
 6. Run the script from the checkout root and let it own pull, render, install,
-   doctor, and Codex prompt-input sequencing.
+   prune, doctor, and Codex prompt-input sequencing.
 7. Report the final summary line and the first failing command if the script
    exits non-zero.
 
 ## Boundary
 
 This skill is a thin agent-facing wrapper for
-`scripts/sync-runtime-skills.sh`. It must not reimplement render/install/doctor
-logic, mutate runtime homes outside the script, or replace `scripts/setup.sh`
-for first-time host setup.
+`scripts/sync-runtime-skills.sh`. It must not reimplement
+render/install/prune/doctor logic, mutate runtime homes outside the script, or
+replace `scripts/setup.sh` for first-time host setup.
