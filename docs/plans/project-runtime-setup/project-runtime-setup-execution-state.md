@@ -3,15 +3,16 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: implementation complete; PR delivery pending
+- Status: implementation complete; PR delivery in progress
 - Target scope: managed dispatcher surface cleanup plus `setup-project`
   workflow and adopted-repo `pre-pr` diagnostics.
 - Execution window: Sprint 1-3
 - Current task: Task 3.3 - final validation and delivery.
-- Next task: commit, push, open PR, run delivery review, merge, close tracker,
-  then sync runtime skills.
+- Next task: push, open PR, run delivery review, merge, close tracker, then
+  rerun runtime skill sync from merged `main`.
 - Last updated: 2026-05-26
-- Branch/commit/PR: branch `feat/project-runtime-setup`; commit and PR pending
+- Branch/commit/PR: branch `feat/project-runtime-setup`; implementation
+  commit `c5c324e`; PR pending
 - Source document: docs/plans/project-runtime-setup/project-runtime-setup-plan.md
 - Discussion source:
   docs/plans/project-runtime-setup/project-runtime-setup-discussion-source.md
@@ -38,7 +39,7 @@
 | 2.3 | done | Render setup-project across products | `tests/golden/{codex,claude}/plugins/meta/skills/setup-project/expected/` | Codex and Claude rendered surfaces include the new skill. |
 | 3.1 | deferred | Add or consume adopted-repo doctor diagnostics | n/a | No nils-cli release is bundled in this PR; adopted-repo fail-closed diagnostics are covered by `setup-project` helper probes. |
 | 3.2 | done | Update pre-pr missing-script guidance | `core/skills/meta/pre-pr/SKILL.md.tera` | Missing `pre-pr.sh` guidance points to `setup-project` and still forbids fallback validation. |
-| 3.3 | in-progress | Final validation and tracker closeout prep | focused validation passed; full CI pending post-commit clean tree | Record final validation, PR, review, merge, closeout, and post-merge sync evidence. |
+| 3.3 | in-progress | Final validation and tracker closeout prep | `bash scripts/ci/all.sh`; `bash scripts/sync-runtime-skills.sh --apply --no-pull`; `agent-runtime audit-drift` | Full local gate passed; live runtime stale `bench`/`demo` surfaces removed; PR, review, merge, tracker closeout, and post-merge sync still pending. |
 
 ## Validation Plan
 
@@ -69,6 +70,10 @@
   refreshed rendered/golden/sandbox count surfaces, updated `pre-pr` guidance,
   and added setup-project adoption probes. `agent-runtime doctor
   --check-project` nils-cli blocking behavior was not changed in this PR.
+- 2026-05-26: Committed implementation as `c5c324e`, cleared retired
+  `bench`/`demo` live surfaces with audited `agent-runtime uninstall` cleanup
+  followed by `bash scripts/sync-runtime-skills.sh --apply --no-pull`, then
+  verified clean drift and full CI.
 
 ## Validation
 
@@ -101,7 +106,9 @@
 | `bash scripts/ci/sandbox-install-rehearsal.sh` | passed | Sandbox install rehearsal passed for Claude and Codex. | local output |
 | `plan-tooling validate --file docs/plans/project-runtime-setup/project-runtime-setup-plan.md --format json` | passed | Plan validates with no errors. | local output |
 | `rumdl check core/skills/meta/setup-project/SKILL.md.tera ... docs/source/harness-shape-codex.md` | passed | Focused changed-doc markdown check passed. | local output |
-| `agent-runtime audit-drift` | expected fail before sync | Live runtime still contains retired `bench` and `demo` surfaces; post-merge `sync-runtime-skills --apply` is expected to remove them. | local output |
+| `bash scripts/sync-runtime-skills.sh --apply --no-pull` | passed | Reinstalled 59-skill Codex and Claude surfaces; doctor passed for both products; `codex debug prompt-input` verified `setup-project`. | local output |
+| `agent-runtime audit-drift` | passed | Clean with 20 documented intentional-difference findings and no stale `bench`/`demo` extras. | local output |
+| `bash scripts/ci/all.sh` | passed | Positions 1-13 passed after live runtime cleanup and sync. | local output |
 
 ## Residual Risk
 
@@ -111,5 +118,9 @@
 - `agent-runtime doctor --check-project` still comes from the released nils-cli
   surface and was not changed in this PR. The fail-closed adopted-repo behavior
   here is implemented by the `setup-project` helper and smoke probes.
-- Until post-merge runtime sync runs, live Codex/Claude homes can still contain
-  stale `bench` and `demo` surfaces as audit-drift extras.
+- `scripts/sync-runtime-skills.sh` does not remove retired link-map surfaces on
+  its own; this delivery used dry-run-first `agent-runtime uninstall` cleanup
+  for the retired paths before rerunning sync. A future nils-cli/runtime
+  cleanup primitive would make retired-skill cutovers less manual.
+- A final `sync-runtime-skills --apply` rerun is still required from merged
+  `main` after PR merge.
