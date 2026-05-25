@@ -3,16 +3,15 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: implementation complete; PR delivery in progress
+- Status: complete
 - Target scope: managed dispatcher surface cleanup plus `setup-project`
   workflow and adopted-repo `pre-pr` diagnostics.
 - Execution window: Sprint 1-3
-- Current task: Task 3.3 - final validation and delivery.
-- Next task: push, open PR, run delivery review, merge, close tracker, then
-  rerun runtime skill sync from merged `main`.
+- Current task: none
+- Next task: none
 - Last updated: 2026-05-26
 - Branch/commit/PR: branch `feat/project-runtime-setup`; implementation
-  commit `c5c324e`; PR pending
+  commit `c5c324e`; PR #118 merged as `b9032e5`
 - Source document: docs/plans/project-runtime-setup/project-runtime-setup-plan.md
 - Discussion source:
   docs/plans/project-runtime-setup/project-runtime-setup-discussion-source.md
@@ -39,7 +38,7 @@
 | 2.3 | done | Render setup-project across products | `tests/golden/{codex,claude}/plugins/meta/skills/setup-project/expected/` | Codex and Claude rendered surfaces include the new skill. |
 | 3.1 | deferred | Add or consume adopted-repo doctor diagnostics | n/a | No nils-cli release is bundled in this PR; adopted-repo fail-closed diagnostics are covered by `setup-project` helper probes. |
 | 3.2 | done | Update pre-pr missing-script guidance | `core/skills/meta/pre-pr/SKILL.md.tera` | Missing `pre-pr.sh` guidance points to `setup-project` and still forbids fallback validation. |
-| 3.3 | in-progress | Final validation and tracker closeout prep | `bash scripts/ci/all.sh`; `bash scripts/sync-runtime-skills.sh --apply --no-pull`; `agent-runtime audit-drift` | Full local gate passed; live runtime stale `bench`/`demo` surfaces removed; PR, review, merge, tracker closeout, and post-merge sync still pending. |
+| 3.3 | done | Final validation and tracker closeout prep | `bash scripts/ci/all.sh`; PR #118 checks; delivery review outcome comment; `bash scripts/sync-runtime-skills.sh --apply`; `agent-runtime audit-drift` | PR #118 passed remote checks, review gate, merge, and post-merge runtime sync. |
 
 ## Validation Plan
 
@@ -74,6 +73,12 @@
   `bench`/`demo` live surfaces with audited `agent-runtime uninstall` cleanup
   followed by `bash scripts/sync-runtime-skills.sh --apply --no-pull`, then
   verified clean drift and full CI.
+- 2026-05-26: Opened PR #118, fixed the fresh-checkout plan-location failure
+  in `2e6af2d`, posted the delivery review outcome, promoted the PR to ready,
+  and merged it as `b9032e5`.
+- 2026-05-26: Fast-forwarded local `main` to the merge commit and reran
+  `bash scripts/sync-runtime-skills.sh --apply`; Codex and Claude runtime
+  surfaces synced from merged `main`, and drift audit remained clean.
 
 ## Validation
 
@@ -109,6 +114,11 @@
 | `bash scripts/sync-runtime-skills.sh --apply --no-pull` | passed | Reinstalled 59-skill Codex and Claude surfaces; doctor passed for both products; `codex debug prompt-input` verified `setup-project`. | local output |
 | `agent-runtime audit-drift` | passed | Clean with 20 documented intentional-difference findings and no stale `bench`/`demo` extras. | local output |
 | `bash scripts/ci/all.sh` | passed | Positions 1-13 passed after live runtime cleanup and sync. | local output |
+| `forge-cli pr wait-checks 118 --provider github --repo graysurf/agent-runtime-kit --required-only false --timeout 30m --interval 20s --format json` | passed | Remote GitHub Actions run `26413811001` passed `scripts/ci/all.sh` after the plan-location fix. | provider output |
+| delivery review gate for PR #118 | passed | Forced maintainability, red-team, security, and testing lenses found no unresolved concrete findings; outcome comment posted. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-020241-project-runtime-setup-pr/delivery-review-outcome.md` |
+| `forge-cli pr merge 118 --provider github --repo graysurf/agent-runtime-kit --method squash --format json` | passed | PR #118 merged to `main` as `b9032e5`; head branch deleted. | provider output |
+| `bash scripts/sync-runtime-skills.sh --apply` | passed | Post-merge sync from `main` rendered and installed 59 skills for Codex and Claude; doctor and Codex prompt-input verification passed. | local output |
+| `agent-runtime audit-drift --source-root /Users/terry/Project/graysurf/agent-runtime-kit` | passed | Post-merge drift audit is clean with 20 documented intentional-difference findings. | local output |
 
 ## Residual Risk
 
@@ -122,5 +132,3 @@
   its own; this delivery used dry-run-first `agent-runtime uninstall` cleanup
   for the retired paths before rerunning sync. A future nils-cli/runtime
   cleanup primitive would make retired-skill cutovers less manual.
-- A final `sync-runtime-skills --apply` rerun is still required from merged
-  `main` after PR merge.
