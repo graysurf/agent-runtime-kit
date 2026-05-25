@@ -824,7 +824,7 @@ after all migrated domains render.
   - `manifests/runtime-roots.yaml`
   - `targets/claude/link-map.yaml`
   - `targets/codex/link-map.yaml`
-  - `tests/install/`
+  - `tests/sandbox/`
   - `drift-audit.allow.yaml`
 - **Description**: Verify `.private/runtime-roots.yaml`,
   `.private/link-map.overrides.yaml`, and `profile.recommended.yaml` merge

@@ -139,10 +139,10 @@ Three rules constrain the work:
   `manifests/runtime-roots.yaml` — Phase 1 seeded the files; Phase 2
   fills in the reporting entries.
 - Tests: `tests/golden/` and `tests/drift/` are pinned in-tree by
-  this plan (Sprint 2). `tests/install/` and
-  `tests/sandbox/<product>/expected-skills.txt` are deferred to
-  Plan 04 because v0.13.0 has no `agent-runtime install --dry-run`
-  surface. CI gates added in Plan 02 enforce the in-tree artifacts.
+  this plan (Sprint 2). Sandbox install skill-list pins under
+  `tests/sandbox/<product>/expected-skills.txt` are deferred to Plan 04
+  because v0.13.0 has no `agent-runtime install --dry-run` surface. CI gates
+  added in Plan 02 enforce the in-tree artifacts.
 
 ## Backlog / Next Fixes
 

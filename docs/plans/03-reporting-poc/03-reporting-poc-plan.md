@@ -108,12 +108,12 @@ example (lines 1610–1628) which moves to Plan 04.
     extraction backlog.
   - Sandbox install rehearsal (test layer 6). Lands with the installer
     body in Plan 04 per the source doc.
-  - Deterministic dry-run install snapshots under
-    `tests/install/<product>/expected.txt`. Deferred to Plan 04
+  - Deterministic sandbox install skill-list pins under
+    `tests/sandbox/<product>/expected-skills.txt`. Deferred to Plan 04
     Sprint 5 because `agent-runtime install --dry-run` does not exist
     in v0.13.0 (Plan 02 listed install body as out-of-scope, "later
     phases"). Plan 04 Sprint 1 lands the install body; Plan 04
-    Sprint 5 pins `tests/sandbox/<product>/expected-skills.txt`
+    Sprint 5 pins the expected skill lists.
     through the same surface.
 
 ## Assumptions
@@ -634,8 +634,8 @@ fixtures, and confirm `audit-drift` exits 0 on the clean POC.
   `agent-runtime render --product claude`.
 - Install dry-run (Test Layer 4): **moved to Plan 04 Sprint 5**.
   `agent-runtime install --dry-run` does not exist in v0.13.0; the
-  shape pinned by `tests/install/<product>/expected.txt` is owned by
-  Plan 04 alongside the install body that produces it.
+  shape pinned by `tests/sandbox/<product>/expected-skills.txt` is owned
+  by Plan 04 alongside the install body that produces it.
 - Drift fixtures (Test Layer 5): Sprint 2 Task 2.2 commits four
   fixtures (one per POC drift class). CI gate fails when an expected
   report or exit code drifts. Fixtures are mini source roots invoked

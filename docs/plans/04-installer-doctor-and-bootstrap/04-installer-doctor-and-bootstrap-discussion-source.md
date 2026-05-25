@@ -97,8 +97,7 @@ body, sandbox expected-skills pins, and the new CI gate land in
 - agent-runtime-kit (this repo): `scripts/setup.sh` body,
   `tests/sandbox/<product>/expected-skills.txt`, CI gate position 6 in
   `scripts/ci/`, `required_clis` floor bumps in `manifests/skills.yaml`,
-  `tests/install/<product>/expected.txt` re-pin against the real install
-  output.
+  and sandbox install skill-list pins against the real install output.
 - nils-cli (`sympoies/nils-cli`): `crates/agent-runtime-cli/` install /
   uninstall / restore-backups / purge-state / gc-backups / doctor
   bodies, `audit-drift` extension for `unsafe` / `intentional-difference`
