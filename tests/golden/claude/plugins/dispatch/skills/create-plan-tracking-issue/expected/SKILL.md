@@ -13,8 +13,14 @@ Prereqs:
 - `plan-tooling` and `plan-issue >=0.20.0` are available on `PATH`.
 - Run from the target git repository root unless explicit repository and plan
   paths are supplied.
-- The source, plan, and execution-state markdown files are committed and pushed
-  so the issue snapshots resolve to a traceable commit SHA.
+- The source, plan, and execution-state markdown files exist on disk at the
+  canonical bundle paths (`<slug>-discussion-source.md` or
+  `<slug>-review-source.md`, `<slug>-plan.md`, `<slug>-execution-state.md`),
+  are committed, and are pushed so the issue snapshots resolve to a traceable
+  commit SHA. `plan-tooling validate` confirms the bundle pointers but does
+  not require the referenced execution-state file to be physically present,
+  so the skill body verifies file existence before `record open` to keep the
+  initial state comment from rendering with an empty task ledger.
 - Existing plan bundles have a valid `Read First` section.
 - `plan-issue record` owns the issue-backed lifecycle. Do not compose
   lifecycle issues through generic `forge-cli issue` primitives.
@@ -49,6 +55,20 @@ Failure modes:
   comments.
 
 ## Entrypoint
+
+Verify all three bundle files exist before provider mutation. The plan and
+execution-state files are mandatory; at least one source file
+(`<slug>-discussion-source.md` or `<slug>-review-source.md`) must be present.
+
+```bash
+test -f "$PLAN_BUNDLE/$SLUG-plan.md" \
+  || { echo "missing $PLAN_BUNDLE/$SLUG-plan.md" >&2; exit 1; }
+test -f "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  || { echo "missing $PLAN_BUNDLE/$SLUG-execution-state.md (record open will surface an empty task ledger if this file is absent — create it before continuing)" >&2; exit 1; }
+test -f "$PLAN_BUNDLE/$SLUG-discussion-source.md" \
+  || test -f "$PLAN_BUNDLE/$SLUG-review-source.md" \
+  || { echo "missing $PLAN_BUNDLE/$SLUG-{discussion,review}-source.md" >&2; exit 1; }
+```
 
 Validate the bundle before provider mutation:
 
@@ -105,8 +125,14 @@ plan-issue --format json record audit \
 ## Workflow
 
 1. Resolve the bundle, repository, title, labels, and output directory.
-2. Confirm source, plan, and execution-state files are committed and pushed; if
-   not, stop and request commit/push unless the user explicitly accepts
+2. Confirm all three bundle files exist on disk at the canonical paths
+   (source, plan, execution-state) and then confirm they are committed and
+   pushed. If any file is missing, stop and request creation before
+   `record open` runs; a missing execution-state file causes the initial
+   state comment to render with no visible task table (the structured
+   payload still ships in the hex marker, so `record audit` / `record close`
+   gates still pass, but human readers see an empty Execution State
+   section). If commit/push is the only blocker, the user may accept
    `--allow-dirty` for a preview.
 3. Run `plan-tooling validate`; stop on plan syntax, source, or grouping errors.
 4. Quality-review the source and plan markdown before they are immortalized in
