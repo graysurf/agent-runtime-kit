@@ -3,14 +3,14 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: ready for issue-backed planning
+- Status: tracking issue open; ready for execution
 - Target scope: restore issue-visible plan lifecycle ordering and required
   session evidence for v2 plan issue records.
 - Execution window: Sprint 1-3
-- Current task: create issue-backed tracking record.
-- Next task: Task 1.1 - add missing-session closeout regression fixture.
+- Current task: Task 1.1 - add missing-session closeout regression fixture.
+- Next task: execute Sprint 1 regression fixture and nils-cli boundary tasks.
 - Last updated: 2026-05-26
-- Branch/commit/PR: pending commit
+- Branch/commit/PR: tracking bundle commit `bedfffc`
 - Source document:
   docs/plans/plan-issue-lifecycle-ordering-regression/plan-issue-lifecycle-ordering-regression-plan.md
 - Discussion source:
@@ -20,10 +20,14 @@
 - Execution state:
   docs/plans/plan-issue-lifecycle-ordering-regression/plan-issue-lifecycle-ordering-regression-execution-state.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue:
+  <https://github.com/graysurf/agent-runtime-kit/issues/120>
+- Source snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/120#issuecomment-4536392644>
+- Plan snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/120#issuecomment-4536392741>
+- Initial state snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/120#issuecomment-4536392828>
 
 ## Task Ledger
 
@@ -58,6 +62,9 @@
   issue #117 plus local skill and `plan-issue` CLI inspection.
 - 2026-05-26: Created initial plan and execution-state bundle for issue-backed
   tracking.
+- 2026-05-26: Committed and pushed tracking bundle as `bedfffc`, opened
+  tracking issue #120 with `plan-issue record open`, and read-back audited the
+  source, plan, and initial state lifecycle comments.
 
 ## Validation
 
@@ -66,6 +73,14 @@
 | `agent-docs resolve --context startup --strict --format checklist` | passed | Required startup docs present. | n/a |
 | `agent-docs resolve --context project-dev --strict --format checklist` | passed | Project development docs present. | n/a |
 | `agent-docs resolve --context task-tools --strict --format checklist` | passed | Task tooling docs present for provider and external checks. | n/a |
+| `plan-tooling validate --file docs/plans/plan-issue-lifecycle-ordering-regression/plan-issue-lifecycle-ordering-regression-plan.md --format json` | passed | Plan bundle validates with no errors. | local output |
+| `rumdl check docs/plans/plan-issue-lifecycle-ordering-regression/*.md` | passed | Markdown passed for source, plan, and execution-state files. | local output |
+| `forge-cli label ensure --catalog manifests/forge-labels.yaml --repo graysurf/agent-runtime-kit --format json` | passed | Label catalog already matched provider state. | local output |
+| `plan-issue record open --dry-run --profile tracking --bundle docs/plans/plan-issue-lifecycle-ordering-regression --format json` | passed | Preview generated dashboard plus source, plan, and state lifecycle comments. | local output |
+| `plan-issue record open --profile tracking --bundle docs/plans/plan-issue-lifecycle-ordering-regression --format json` | passed | Opened issue #120 and posted source, plan, and initial state comments. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-023453-plan-issue-lifecycle-ordering-regression/record-open-live.json` |
+| `plan-issue record audit --profile tracking --body-file issue-120-body.md --comments-json issue-120.json --format json` | passed | Read-back audit recognized source, plan, and state lifecycle comments with no missing required markers. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-023453-plan-issue-lifecycle-ordering-regression/issue-120-audit.json` |
+| `rg` state-comment shape check | passed | Initial state comment contains visible execution state, folded task ledger, and hidden payload carrier. | `$HOME/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260526-023453-plan-issue-lifecycle-ordering-regression/issue-120-state-comment.md` |
+| `bash scripts/ci/all.sh` | passed | Pre-push hook ran positions 1-13 successfully before pushing `bedfffc`. | local pre-push output |
 
 ## Residual Risk
 
