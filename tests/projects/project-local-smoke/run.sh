@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project-local overlay smoke gate for Plan 05 Sprint 8.
+# Project-local overlay smoke gate for retained dispatcher conventions.
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ trap cleanup EXIT
 
 mkdir -p "$OUT_DIR" "$RUNTIME_ROOT/live/codex" "$RUNTIME_ROOT/state/codex"
 
-scripts="bench bootstrap demo deploy pre-pr release"
+scripts="bootstrap deploy pre-pr release"
 project_skill="project-local-skill"
 
 doctor_block_count() {
@@ -131,6 +131,56 @@ assert_doctor_missing() {
   grep -q 'project-local script is missing' "$log"
 }
 
+assert_setup_project_adoption_gate() {
+  local helper="$REPO_ROOT/core/skills/meta/setup-project/scripts/setup-project.sh"
+  local unadopted="$TMP_ROOT/setup-unadopted"
+  local partial="$TMP_ROOT/setup-partial"
+  local apply_root="$TMP_ROOT/setup-apply"
+  local out="$OUT_DIR/setup-project.out"
+  local code
+
+  test -x "$helper"
+
+  mkdir -p "$unadopted"
+  git -C "$unadopted" init -q
+  "$helper" --repo "$unadopted" --dry-run >"$out.unadopted" 2>&1
+  grep -q "setup-project: adoption=unadopted" "$out.unadopted"
+  test ! -e "$unadopted/.agents"
+
+  mkdir -p "$partial/.agents/scripts"
+  git -C "$partial" init -q
+  set +e
+  "$helper" --repo "$partial" --dry-run >"$out.partial" 2>&1
+  code=$?
+  set -e
+  [ "$code" -ne 0 ]
+  grep -q "setup-project: adoption=partial" "$out.partial"
+  grep -q "setup-project: block adopted repo missing executable .agents/scripts/pre-pr.sh" "$out.partial"
+
+  mkdir -p "$apply_root/scripts/ci"
+  git -C "$apply_root" init -q
+  cat >"$apply_root/scripts/ci/all.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'setup-project fixture validation:%s\n' "$*"
+: > setup-project-validation.invoked
+SH
+  chmod +x "$apply_root/scripts/ci/all.sh"
+
+  "$helper" \
+    --repo "$apply_root" \
+    --apply \
+    --pre-pr-command "bash scripts/ci/all.sh" >"$out.apply" 2>&1
+  grep -q "setup-project: wrote .agents/scripts/pre-pr.sh" "$out.apply"
+  test -x "$apply_root/.agents/scripts/pre-pr.sh"
+  (
+    cd "$apply_root"
+    ./.agents/scripts/pre-pr.sh --fixture
+  ) >"$out.apply-pre-pr" 2>&1
+  grep -q "setup-project fixture validation:--fixture" "$out.apply-pre-pr"
+  test -f "$apply_root/setup-project-validation.invoked"
+}
+
 for script in $scripts; do
   run_fixture_script "$script"
 done
@@ -139,5 +189,6 @@ run_fixture_skill "$project_skill"
 install_temp_runtime
 assert_doctor_wired
 assert_doctor_missing
+assert_setup_project_adoption_gate
 
 printf 'project-local-smoke: OK scripts=%s skill=%s\n' "$scripts" "$project_skill"

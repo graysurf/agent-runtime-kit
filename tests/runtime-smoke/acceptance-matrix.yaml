@@ -196,19 +196,6 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: meta.bench.shared-cli.project-local
-    product: shared-cli
-    domain: meta
-    skill_id: meta.bench
-    mode: deterministic
-    fixture_workspace: tests/projects/project-local-smoke
-    setup: use executable project-local shim script
-    invocation: run .agents/scripts/bench.sh from fixture workspace
-    expected_exit_code: 0
-    expected_artifacts: invocation marker
-    cleanup: temp-output-only
-    expected_disposition: pass
-    skip_policy: none
   - id: meta.bootstrap.shared-cli.project-local
     product: shared-cli
     domain: meta
@@ -217,19 +204,6 @@ cases:
     fixture_workspace: tests/projects/project-local-smoke
     setup: use executable project-local shim script
     invocation: run .agents/scripts/bootstrap.sh from fixture workspace
-    expected_exit_code: 0
-    expected_artifacts: invocation marker
-    cleanup: temp-output-only
-    expected_disposition: pass
-    skip_policy: none
-  - id: meta.demo.shared-cli.project-local
-    product: shared-cli
-    domain: meta
-    skill_id: meta.demo
-    mode: deterministic
-    fixture_workspace: tests/projects/project-local-smoke
-    setup: use executable project-local shim script
-    invocation: run .agents/scripts/demo.sh from fixture workspace
     expected_exit_code: 0
     expected_artifacts: invocation marker
     cleanup: temp-output-only
@@ -271,6 +245,19 @@ cases:
     invocation: run .agents/scripts/release.sh from fixture workspace
     expected_exit_code: 0
     expected_artifacts: invocation marker
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.setup-project.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.setup-project
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/fixtures/skill-lifecycle
+    setup: create temporary unadopted, partial, and apply-mode git repos
+    invocation: setup-project dry-run and apply probes
+    expected_exit_code: 0
+    expected_artifacts: adoption diagnostics and generated pre-pr script
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

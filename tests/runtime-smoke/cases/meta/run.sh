@@ -389,13 +389,61 @@ run_project_local_shim_probe() {
   test -f "$out_dir/${name}.invoked"
 }
 
+run_setup_project_probe() {
+  local helper="$REPO_ROOT/core/skills/meta/setup-project/scripts/setup-project.sh"
+  local out_dir="$META_ARTIFACTS_DIR/setup-project"
+  local unadopted="$TMP_ROOT/workspaces/setup-project-unadopted"
+  local partial="$TMP_ROOT/workspaces/setup-project-partial"
+  local apply_root="$TMP_ROOT/workspaces/setup-project-apply"
+  local status
+
+  test -x "$helper"
+  mkdir -p "$out_dir"
+
+  mkdir -p "$unadopted"
+  git -C "$unadopted" init -q
+  "$helper" --repo "$unadopted" --dry-run >"$out_dir/unadopted.txt" 2>&1
+  grep -q "setup-project: adoption=unadopted" "$out_dir/unadopted.txt"
+  test ! -e "$unadopted/.agents"
+
+  mkdir -p "$partial/.agents/scripts"
+  git -C "$partial" init -q
+  set +e
+  "$helper" --repo "$partial" --dry-run >"$out_dir/partial.txt" 2>&1
+  status=$?
+  set -e
+  [ "$status" -ne 0 ]
+  grep -q "setup-project: adoption=partial" "$out_dir/partial.txt"
+  grep -q "setup-project: block adopted repo missing executable .agents/scripts/pre-pr.sh" "$out_dir/partial.txt"
+
+  mkdir -p "$apply_root/scripts/ci"
+  git -C "$apply_root" init -q
+  cat >"$apply_root/scripts/ci/all.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'setup-project fixture validation:%s\n' "$*"
+: > setup-project-validation.invoked
+SH
+  chmod +x "$apply_root/scripts/ci/all.sh"
+  "$helper" \
+    --repo "$apply_root" \
+    --apply \
+    --pre-pr-command "bash scripts/ci/all.sh" >"$out_dir/apply.txt" 2>&1
+  grep -q "setup-project: wrote .agents/scripts/pre-pr.sh" "$out_dir/apply.txt"
+  test -x "$apply_root/.agents/scripts/pre-pr.sh"
+  (
+    cd "$apply_root"
+    ./.agents/scripts/pre-pr.sh --fixture
+  ) >"$out_dir/apply-pre-pr.txt" 2>&1
+  grep -q "setup-project fixture validation:--fixture" "$out_dir/apply-pre-pr.txt"
+  test -f "$apply_root/setup-project-validation.invoked"
+}
+
 failures=0
 record_case "meta.agent-docs" "project-dev docs resolve passed from fixture workspace" run_agent_docs_probe || failures=1
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
 record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe || failures=1
-record_case "meta.bench" "project-local bench shim executed fixture script" run_project_local_shim_probe bench || failures=1
 record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap || failures=1
-record_case "meta.demo" "project-local demo shim executed fixture script" run_project_local_shim_probe demo || failures=1
 record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy || failures=1
 record_case "meta.heuristic-inbox" "heuristic inbox shared-root list and strict verification passed" run_heuristic_inbox_probe || failures=1
 record_case "meta.heuristic-session-closeout" "session closeout contract preserves retained heuristic records on main" run_heuristic_session_closeout_probe || failures=1
@@ -407,6 +455,7 @@ record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" ru
 record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release || failures=1
 record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1
 record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe || failures=1
+record_case "meta.setup-project" "setup-project dry-run/apply adoption probes passed" run_setup_project_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1
 

@@ -53,7 +53,7 @@
       "name": "meta",
       "version": "0.1.0",
       "source": "./plugins/meta",
-      "description": "Workflow primitives — agent-docs, agent-out, agent-scope-lock, bench, bootstrap, demo, deploy, heuristic-inbox, pre-pr, release, repo-retro, semantic-commit."
+      "description": "Workflow primitives — agent-docs, agent-out, agent-scope-lock, bootstrap, deploy, heuristic-inbox, pre-pr, release, repo-retro, semantic-commit, setup-project."
     },
     {
       "name": "pr",

@@ -285,7 +285,7 @@ can pivot to a uniform table:
   (`docs/source/inventory-target-architecture.md:545-554`,
   `manifests/product-capabilities.yaml:15-22`).
 - arkit source: `core/skills/<domain>/<skill>/`, rendered to
-  `build/codex/plugins/<domain>/skills/<skill>/`; 60 Codex skill
+  `build/codex/plugins/<domain>/skills/<skill>/`; 59 Codex skill
   entries are declared in `manifests/skills.yaml`
   (`manifests/skills.yaml:12-878`).
 - arkit install mechanism: one non-recursive directory symlink per
@@ -301,7 +301,7 @@ can pivot to a uniform table:
   deterministic mode exercises representative skills; live Codex
   Desktop acceptance requires `codex debug prompt-input`
   (`DEVELOPMENT.md:157-178`,
-  `tests/sandbox/codex/expected-skills.txt:1-60`,
+  `tests/sandbox/codex/expected-skills.txt:1-59`,
   `docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
 - arkit support today: **shipped (rendered + directory symlink)**.
 
@@ -396,7 +396,8 @@ From `DEVELOPMENT.md:157-178`:
 8. **runtime-smoke deterministic mode** — exercises representative
    installed skills across current domains (`DEVELOPMENT.md:216-219`).
 9. **project-local overlay smoke** — Codex-side project-local shims for
-   `bench`, `bootstrap`, `demo`, `deploy`, `pre-pr`, and `release`
+   `bootstrap`, `deploy`, `pre-pr`, and `release`, plus `setup-project`
+   adoption diagnostics
    (`DEVELOPMENT.md:224-228`).
 10. **`bash tests/hooks/run.sh`** — shared hook contract tests.
 
