@@ -15,6 +15,8 @@ Prereqs:
 
 - `agent-runtime-kit` is available as a local checkout with
   `scripts/sync-runtime-skills.sh`.
+- Live `--apply` refreshes run from a durable primary checkout, not a linked
+  git worktree or a Codex transient worktree under `$CODEX_HOME/worktrees`.
 - First-time host bootstrap has already been handled by `scripts/setup.sh`.
 - `git` and `python3` are available. `agent-runtime` is required for `--apply`
   refreshes.
@@ -40,6 +42,9 @@ Outputs:
 Failure modes:
 
 - The source checkout cannot be resolved or lacks the refresh script.
+- `--apply` is requested from a linked git worktree or Codex transient
+  worktree; rerun from the durable primary checkout or pass `--source-root` to
+  one.
 - `git pull --ff-only` fails before render/install.
 - Active skill-count references drift from `manifests/skills.yaml`.
 - `agent-runtime render`, `install`, or `doctor --class skill-surface` fails.
@@ -73,10 +78,14 @@ bash scripts/sync-runtime-skills.sh --apply --no-pull
 ## Workflow
 
 1. Resolve the intended `agent-runtime-kit` checkout:
-   - If the current repository root contains `scripts/sync-runtime-skills.sh`,
-     use it.
+   - For live `--apply`, use a durable primary checkout. Do not use linked git
+     worktrees, Codex transient worktrees, or paths under
+     `$CODEX_HOME/worktrees`.
+   - If the current repository root contains `scripts/sync-runtime-skills.sh`
+     and is not a worktree, use it.
    - Otherwise, use an explicit user-provided path, `AGENT_DOCS_HOME`, or the
-     known active checkout path only when it contains the script.
+     known active checkout path only when it contains the script and is not a
+     worktree.
    - Stop and ask for the checkout path if no candidate contains the script.
 2. Interpret user intent:
    - If the user asks to "sync", "update", "refresh", "install", or "make the

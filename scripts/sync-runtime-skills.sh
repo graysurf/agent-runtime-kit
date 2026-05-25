@@ -43,7 +43,8 @@ Options:
       Limit the refresh to one product. Default: both.
   --source-root PATH
       Use a specific agent-runtime-kit checkout. Defaults to this script's
-      repository root.
+      repository root. For --apply, this must be a durable primary checkout;
+      linked git worktrees and Codex transient worktrees are refused.
   --no-pull
       Skip git pull --ff-only and refresh the current checkout state.
   --no-verify
@@ -187,6 +188,80 @@ resolve_source_root() {
   fi
 
   SOURCE_ROOT="$(cd "$top_level" && pwd)"
+}
+
+absolute_git_dir() {
+  local path="$1"
+  local candidate
+
+  case "$path" in
+    /*) candidate="$path" ;;
+    *) candidate="$SOURCE_ROOT/$path" ;;
+  esac
+
+  if [ ! -d "$candidate" ]; then
+    err "git directory does not exist: $candidate"
+    exit 2
+  fi
+
+  (cd "$candidate" && pwd -P)
+}
+
+source_root_is_linked_worktree() {
+  local git_dir
+  local common_dir
+  local git_dir_abs
+  local common_dir_abs
+
+  git_dir="$(git -C "$SOURCE_ROOT" rev-parse --git-dir)"
+  common_dir="$(git -C "$SOURCE_ROOT" rev-parse --git-common-dir)"
+  git_dir_abs="$(absolute_git_dir "$git_dir")"
+  common_dir_abs="$(absolute_git_dir "$common_dir")"
+
+  [ "$git_dir_abs" != "$common_dir_abs" ]
+}
+
+source_root_is_codex_transient_worktree() {
+  local source_physical
+  local codex_home
+  local codex_worktrees
+
+  source_physical="$(cd "$SOURCE_ROOT" && pwd -P)"
+  case "$source_physical" in
+    */.codex/worktrees | */.codex/worktrees/*)
+      return 0
+      ;;
+  esac
+
+  codex_home="${CODEX_HOME:-$HOME/.codex}"
+  if [ -d "$codex_home" ]; then
+    codex_worktrees="$(cd "$codex_home" && pwd -P)/worktrees"
+    case "$source_physical" in
+      "$codex_worktrees" | "$codex_worktrees"/*)
+        return 0
+        ;;
+    esac
+  fi
+
+  return 1
+}
+
+validate_live_sync_source_root() {
+  if [ "$APPLY" = "0" ]; then
+    return 0
+  fi
+
+  if source_root_is_linked_worktree; then
+    err "refusing live sync from a git worktree: $SOURCE_ROOT"
+    err "sync-runtime-skills --apply installs runtime-home symlinks; run it from a durable primary checkout or pass --source-root to one."
+    exit 2
+  fi
+
+  if source_root_is_codex_transient_worktree; then
+    err "refusing live sync from a Codex transient worktree: $SOURCE_ROOT"
+    err "sync-runtime-skills --apply installs runtime-home symlinks; use a durable primary checkout outside runtime scratch worktrees."
+    exit 2
+  fi
 }
 
 selected_products() {
@@ -418,6 +493,7 @@ main() {
   parse_args "$@"
   require_commands git python3
   resolve_source_root
+  validate_live_sync_source_root
 
   if [ "$APPLY" = "1" ]; then
     require_commands agent-runtime

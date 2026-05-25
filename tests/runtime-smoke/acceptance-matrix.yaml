@@ -183,6 +183,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.sync-runtime-skills.shared-cli.worktree-guard
+    product: shared-cli
+    domain: meta
+    skill_id: meta.sync-runtime-skills
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create linked git worktree from repo root
+    invocation: sync-runtime-skills apply with linked worktree source root
+    expected_exit_code: nonzero
+    expected_artifacts: refusal output naming durable primary checkout
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.bench.shared-cli.project-local
     product: shared-cli
     domain: meta
