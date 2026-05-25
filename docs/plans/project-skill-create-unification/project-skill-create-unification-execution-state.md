@@ -3,13 +3,12 @@
 <!-- execute-from-tracking-issue:state:v1 -->
 ## Execution State
 
-- Status: plan bundle drafted locally
+- Status: tracking issue opened; implementation pending
 - Target scope: unify project-local skill creation under
   `meta:create-project-skill`, remove the Claude-only create surface, and prove
   default-both / Codex-only / bridge-only behavior with fixtures.
-- Current task: validate the plan bundle and open a tracking issue when the
-  bundle is committed and pushed.
-- Next task: create the issue-backed tracking record, then implement Sprint 1.
+- Current task: issue-backed tracking record created.
+- Next task: implement Sprint 1.
 - Last updated: 2026-05-25
 - Branch: feat/project-skill-create-unification
 - Source document:
@@ -18,7 +17,14 @@
   docs/plans/project-skill-create-unification/project-skill-create-unification-plan.md
 - Discussion source:
   docs/plans/project-skill-create-unification/project-skill-create-unification-discussion-source.md
-- Live tracking issue: not opened
+- Live tracking issue:
+  <https://github.com/graysurf/agent-runtime-kit/issues/112>
+  - Source comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/112#issuecomment-4534683810>
+  - Plan comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/112#issuecomment-4534683944>
+  - Initial state comment:
+    <https://github.com/graysurf/agent-runtime-kit/issues/112#issuecomment-4534684065>
 
 ## Task Ledger
 
