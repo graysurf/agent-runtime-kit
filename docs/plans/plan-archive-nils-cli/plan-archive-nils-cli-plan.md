@@ -22,8 +22,9 @@ sub-plan tree co-located, following the precedent set by
 
 ## Read First
 
-- Primary source: docs/plans/plan-archive-system/plan-archive-system-discussion-source.md
+- Primary source: docs/plans/plan-archive-nils-cli/plan-archive-nils-cli-discussion-source.md
 - Source type: discussion-to-implementation-doc
+- Master design: docs/plans/plan-archive-system/plan-archive-system-discussion-source.md
 - Sibling plan: docs/plans/plan-archive-runtime-kit/plan-archive-runtime-kit-plan.md
 - Open questions carried into execution:
   - [Q1] CLI binary name. Default in this plan: `plan-archive`. Confirm
@@ -103,7 +104,8 @@ can rely on validated inputs.
   - JSON output schema is documented and stable.
   - Fixture set covers personal-only, employer-only, and mixed cases.
 - **Validation**:
-  - `plan-archive validate-hosts --input fixtures/hosts/<case>.yaml`
+  - `plan-archive validate-hosts --input fixtures/hosts/personal-only.yaml`
+  - `plan-archive validate-hosts --input fixtures/hosts/employer-mixed.yaml`
 
 ### Task 1.2: local config schema and validator
 
@@ -120,7 +122,8 @@ can rely on validated inputs.
   - Malformed file produces a parse-error exit and a structured error.
   - Path fields are expanded for `~` and environment variables.
 - **Validation**:
-  - `plan-archive validate-local --input fixtures/local/<case>.yaml`
+  - `plan-archive validate-local --input fixtures/local/defaults.yaml`
+  - `plan-archive validate-local --input fixtures/local/overrides.yaml`
   - `plan-archive validate-local --input /nonexistent/path`
 
 ### Task 1.3: metadata.yaml schema and validator
@@ -139,7 +142,9 @@ can rely on validated inputs.
     (legacy case) but flags it via a warning JSON field.
   - Fixture set covers GitHub PR, GitLab MR, and orphan-plan cases.
 - **Validation**:
-  - `plan-archive validate-metadata --input fixtures/metadata/<case>.yaml`
+  - `plan-archive validate-metadata --input fixtures/metadata/github-pr.yaml`
+  - `plan-archive validate-metadata --input fixtures/metadata/gitlab-mr.yaml`
+  - `plan-archive validate-metadata --input fixtures/metadata/orphan-plan.yaml`
 
 ## Sprint 2: Secret Scrub Library
 
@@ -206,7 +211,9 @@ archive repo, transactionally and dry-run-first.
   files to copy, `metadata.yaml` payload, the source repo files to
   delete on apply, and the resolved host classification from
   `config/hosts.yaml`.
-- **Dependencies**: Tasks 1.1, 1.3
+- **Dependencies**:
+  - Task 1.1
+  - Task 1.3
 - **Complexity**: 4
 - **Acceptance criteria**:
   - Dry-run emits structured JSON that the runtime-kit migration skill
@@ -273,7 +280,10 @@ archive repo, transactionally and dry-run-first.
   scrub the payload, write `<ISO8601>.json` (UTC, no colons) plus
   optional `<ISO8601>.scrub.log`, never overwrite, never delete. Emit
   the resulting paths plus the scrub summary to stdout as JSON.
-- **Dependencies**: Tasks 4.1, 2.1, 2.2
+- **Dependencies**:
+  - Task 4.1
+  - Task 2.1
+  - Task 2.2
 - **Complexity**: 4
 - **Acceptance criteria**:
   - Two consecutive refreshes produce two distinct snapshot files.

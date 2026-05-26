@@ -18,8 +18,9 @@ The tracker issue for this plan is opened in `agent-runtime-kit`.
 
 ## Read First
 
-- Primary source: docs/plans/plan-archive-system/plan-archive-system-discussion-source.md
+- Primary source: docs/plans/plan-archive-runtime-kit/plan-archive-runtime-kit-discussion-source.md
 - Source type: discussion-to-implementation-doc
+- Master design: docs/plans/plan-archive-system/plan-archive-system-discussion-source.md
 - Sibling plan: docs/plans/plan-archive-nils-cli/plan-archive-nils-cli-plan.md
 - One-shot prereq: archive repository bootstrap (see master discussion
   source, "Archive repository" decision section).
@@ -141,13 +142,14 @@ user-invoked skill body that calls `plan-archive migrate`.
 
 - **Location**:
   - `core/skills/meta/plan-archive-migrate/SKILL.md.tera`
-  - `core/skills/meta/plan-archive-migrate/references/`
 - **Description**: Author the skill body following the
   `create-skill` standard. The skill always runs `plan-archive migrate
   --dry-run` first, presents the JSON output to the user, requires
   explicit user confirmation before invoking `--apply`, and surfaces
-  failure modes clearly.
-- **Dependencies**: Plan 1 released
+  failure modes clearly. Plan 1 must already be released; this is
+  recorded under Assumptions, not as an in-plan task dependency.
+- **Dependencies**:
+  - none
 - **Complexity**: 4
 - **Acceptance criteria**:
   - Skill body passes the skill-governance H2 body-shape audit.
@@ -180,14 +182,17 @@ user-invoked skill body that calls `plan-archive migrate`.
 ### Task 2.3: Render goldens and fixtures for migration skill
 
 - **Location**:
-  - `targets/<product>/...`
+  - `targets/codex/`
+  - `targets/claude/`
   - `tests/golden/`
   - `tests/runtime-smoke/fixtures/`
 - **Description**: Refresh the render-goldens for the new skill body
   across supported products, and add runtime-smoke fixtures for both
   the dry-run and apply paths against a synthetic working / archive
   pair.
-- **Dependencies**: Tasks 2.1, 2.2
+- **Dependencies**:
+  - Task 2.1
+  - Task 2.2
 - **Complexity**: 3
 - **Acceptance criteria**:
   - Render-goldens reflect the new skill bodies under each product.
@@ -210,13 +215,14 @@ read / refresh surface that wraps `plan-archive query` and
 
 - **Location**:
   - `core/skills/meta/plan-archive-query/SKILL.md.tera`
-  - `core/skills/meta/plan-archive-query/references/`
 - **Description**: Author the skill body. The skill reads cache by
   default, surfaces `fetched_at` on every record, and provides
   explicit refresh by ref, by repo, or by date window. The skill
   enforces the user-review step before any refresh commit that
-  triggered a `.scrub.log`.
-- **Dependencies**: Plan 1 released
+  triggered a `.scrub.log`. Plan 1 must already be released; this is
+  recorded under Assumptions, not as an in-plan task dependency.
+- **Dependencies**:
+  - none
 - **Complexity**: 4
 - **Acceptance criteria**:
   - Skill body passes the skill-governance H2 body-shape audit.
@@ -246,14 +252,17 @@ read / refresh surface that wraps `plan-archive query` and
 ### Task 3.3: Render goldens and fixtures for query skill
 
 - **Location**:
-  - `targets/<product>/...`
+  - `targets/codex/`
+  - `targets/claude/`
   - `tests/golden/`
   - `tests/runtime-smoke/fixtures/`
 - **Description**: Refresh render-goldens and add runtime-smoke
   fixtures covering single-ref read, cross-repo aggregate, refresh
   with redaction triggering scrub-log review, and archive plan link
   traversal.
-- **Dependencies**: Tasks 3.1, 3.2
+- **Dependencies**:
+  - Task 3.1
+  - Task 3.2
 - **Complexity**: 3
 - **Acceptance criteria**:
   - Render-goldens reflect the new skill bodies under each product.
@@ -279,7 +288,9 @@ governance and acceptance stack.
 - **Description**: Confirm both new skills appear in the governance
   audit's expected list and that their fixtures pass the create-skill
   completeness checks.
-- **Dependencies**: Tasks 2.x and 3.x
+- **Dependencies**:
+  - Task 2.3
+  - Task 3.3
 - **Complexity**: 2
 - **Acceptance criteria**:
   - Both new skills are present in the audit's expected list.
