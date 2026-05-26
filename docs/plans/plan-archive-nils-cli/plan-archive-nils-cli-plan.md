@@ -82,8 +82,7 @@ sub-plan tree co-located, following the precedent set by
 **Goal**: Land the three schema validators first so later subcommands
 can rely on validated inputs.
 
-**PR grouping intent**: one PR per validator family if cohesive, or one
-PR for all three if the parser substrate is shared.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -147,7 +146,7 @@ PR for all three if the parser substrate is shared.
 **Goal**: Make snapshot writes safe to extend the exposure window for
 secrets that get accidentally pasted into provider comments.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -194,7 +193,7 @@ secrets that get accidentally pasted into provider comments.
 **Goal**: Move a closed plan folder from a working repo into the
 archive repo, transactionally and dry-run-first.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -244,7 +243,7 @@ archive repo, transactionally and dry-run-first.
 **Goal**: Capture forge-cli payloads as append-only snapshots in
 `_index/`, with secret scrubbing.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -305,7 +304,7 @@ archive repo, transactionally and dry-run-first.
 **Goal**: Provide the cache-read surface that the runtime-kit query
 skill wraps.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 

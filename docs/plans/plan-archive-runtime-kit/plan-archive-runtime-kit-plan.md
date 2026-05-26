@@ -86,7 +86,7 @@ The tracker issue for this plan is opened in `agent-runtime-kit`.
 the placement / retention policy and the project preflight, before any
 skill body lands.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -133,7 +133,7 @@ skill body lands.
 **Goal**: Add `meta:plan-archive-migrate` (default name; [Q2]) as a
 user-invoked skill body that calls `plan-archive migrate`.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -202,7 +202,7 @@ user-invoked skill body that calls `plan-archive migrate`.
 read / refresh surface that wraps `plan-archive query` and
 `plan-archive refresh`.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
@@ -267,7 +267,7 @@ read / refresh surface that wraps `plan-archive query` and
 **Goal**: Make the new surfaces first-class citizens of the
 governance and acceptance stack.
 
-**PR grouping intent**: one PR.
+**PR grouping intent**: group
 
 **Execution Profile**: serial
 
