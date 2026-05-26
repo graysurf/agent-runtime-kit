@@ -1,66 +1,74 @@
 ---
 name: deliver-dispatch-plan
 description:
-  Deliver a dispatch-ready plan by creating one shared issue-backed plan record, dispatching task lanes, reviewing PRs, and closing through lifecycle gates.
+  Open or resume one shared dispatch plan issue, dispatch task lanes, coordinate lane PRs and reviews, and hand off to dispatch closeout.
 ---
 
 # Deliver Dispatch Plan
 
-## Purpose
+## Contract
 
-Create or resume one shared dispatch plan issue, dispatch task lanes,
-coordinate lane PRs and reviews, and hand off to dispatch closeout. The
-skill keeps main-agent orchestration separate from lane implementation
-and never closes the dispatch issue itself.
+Prereqs:
 
-## When to use
+- Profile: `dispatch`.
+- CLI floors: `plan-issue >=0.22.3`, `plan-tooling`, `forge-cli`.
+- Issue precondition: the dispatch issue does not exist yet, or exists
+  and is being resumed by the same orchestrator.
+- Run state precondition: `run-state.json` for the dispatch issue is
+  either uninitialized (skill bootstraps it) or reconciled.
+- Shared family rules from the Plan Issue Skill Family Redesign V1
+  spec apply (see the Shared Family Rules section in
+  docs/source/plan-issue-redesign/).
 
-- A validated plan bundle is ready for parallel lane execution and the
-  user wants one shared dispatch tracker plus per-lane PRs.
-- An existing dispatch issue needs to be resumed after a session break.
-
-## Inputs
+Inputs:
 
 - `OWNER_REPO`, `PLAN_BUNDLE`, `PLAN`, optional `ISSUE` when resuming.
-- Lane assignments (task / sprint / PR-group) — derived from the plan or
-  passed explicitly.
+- `RUN_STATE` path for the dispatch run state.
+- Lane assignments (task / sprint / PR-group) — derived from the plan
+  or passed explicitly. Each lane carries a mandatory dispatch bundle
+  (`TASK_PROMPT_PATH`, `PLAN_SNAPSHOT_PATH`, `DISPATCH_RECORD_PATH`,
+  selected `workflow_role`, `PLAN_BRANCH`, exact plan task context).
 - Dispatch labels from the shared taxonomy:
   `type::chore`, primary `area::*`, `state::needs-triage`,
-  `workflow::plan`, `workflow::dispatch`.
+  `workflow::plan`, `workflow::dispatch`, plus the rollout `plan`
+  label.
+- Sprint / lane approval comment URLs, review evidence paths, and
+  final integration PR ref.
 
-## Preflight
+Outputs:
 
-- `plan-issue >=0.22.3`, `plan-tooling`, and `forge-cli` are on `PATH`.
-- `plan-tooling validate --file "$PLAN"` is green.
-- Bundle files exist at canonical paths and are committed.
-- Lane assignments do not violate runtime layout invariants (one lane per
-  PR group; per-sprint lanes share a sprint root).
+- `record open --profile dispatch` (or `record attach --profile
+  dispatch`) posts `source`, `plan`, and initial `state` snapshots and
+  opens the shared dispatch issue.
+- `tracking run init --profile dispatch` writes the dispatch run
+  state.
+- Dispatch-level `tracking checkpoint --profile dispatch --post
+  state[,session[,validation[,review]]]` for orchestrator-grade
+  evidence.
+- `tracking checkpoint --repair-dashboard` (or
+  `record repair-dashboard`) to keep the dispatch dashboard fresh.
+- Non-mutating `tracking close-ready --profile dispatch --expect-visible`
+  probe before handing off to `dispatch-plan-closeout`.
 
-## Allowed lifecycle roles
+Failure modes:
 
-- `source`, `plan`, and initial `state` snapshots through `record open
-  --profile dispatch` or `record attach --profile dispatch`.
-- Dispatch-profile `state`, `session`, `validation`, and `review`
-  checkpoints through `tracking checkpoint --profile dispatch`.
-- Dashboard repair through `tracking checkpoint --repair-dashboard` or
-  the lower-level `record repair-dashboard`.
+- Forbidden lifecycle roles for this skill: `record close` (owned by
+  `dispatch-plan-closeout`); lane-scope state / session / validation
+  posts (owned by `execute-dispatch-lane`); lane `review` posts
+  (owned by `review-dispatch-lane-pr`). Direct posts abort with
+  `forbidden-role-for-skill`.
+- Controller refusal codes propagated: `run-state-stale`,
+  `RECORD_BLOCKED`, any `close-ready` blocker,
+  `tracking-checkpoint-live-not-implemented`,
+  `visible-completeness-failed`.
+- Visible-completeness lint codes relevant here:
+  `state-missing-task-ledger`, `validation-missing-overall`,
+  `review-missing-decision`, `session-missing-summary`.
+- Scope-leak: opening multiple shared issues for one dispatch plan;
+  lightweight-tracking closeout rules applied to a dispatch issue;
+  main agent implementing lane code instead of routing.
 
-## Forbidden actions
-
-- No closeout. `dispatch-plan-closeout` owns `record close --profile
-  dispatch`.
-- No implementing lane tasks. Each lane belongs to
-  `execute-dispatch-lane`.
-- No reviewing lane PRs. `review-dispatch-lane-pr` owns review evidence.
-- No PR merge. `forge-cli pr deliver` (called by the lane skills) owns
-  PR lifecycle.
-- No lightweight tracking closeout rules.
-- No multiple shared plan issues for the same dispatch plan unless the
-  user explicitly splits scope.
-- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
-  comment` for lifecycle evidence.
-
-## CLI flow
+## Entrypoint
 
 ```bash
 plan-tooling validate --file "$PLAN" --format text --explain
@@ -70,15 +78,16 @@ plan-issue --repo "$OWNER_REPO" --format json record open \
   --bundle "$PLAN_BUNDLE" \
   --title "$TITLE" \
   --label type::chore --label area::docs \
-  --label state::needs-triage --label workflow::plan --label workflow::dispatch
+  --label state::needs-triage --label workflow::plan \
+  --label workflow::dispatch --label plan
 
 plan-issue --format json tracking run init \
   --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
   --profile dispatch --bundle "$PLAN_BUNDLE"
 
 # For each lane: dispatch `execute-dispatch-lane` with the lane scope.
-# After lane PR delivery and review evidence land, post the dispatch-level
-# state/session checkpoint:
+# After lane PRs and reviews land, post dispatch-level state / session
+# evidence:
 plan-issue --format json tracking checkpoint \
   --profile dispatch \
   --run-state "$RUN_STATE" \
@@ -91,35 +100,53 @@ plan-issue --format json tracking close-ready \
   --approval "$APPROVAL" --expect-visible
 ```
 
-## Evidence requirements
+Replace `area::docs` with the primary `area::` value that matches the
+dispatch plan's scope.
 
-- The dispatch dashboard names every assigned lane PR with its merge
-  status.
-- `tracking status --profile dispatch` reports `RECORD_OPEN_ACTIVE` or
-  later before lane skills are dispatched.
-- `tracking close-ready --profile dispatch` returns `ready: true` only
-  after every lane PR has merged with required-check pass and review
-  evidence is recorded.
+## Workflow
 
-## Stop conditions
-
-- Lane PRs report unmerged or required-check failures.
-- A lane's review evidence reports unresolved blocker findings.
-- `tracking close-ready` blockers — surface, do not bypass.
-- A lane skill returns a `forge-cli` failure that cannot be retried by
-  the user.
-
-## Validation
-
-- `plan-tooling validate` green.
-- `plan-issue record open --profile dispatch --dry-run` returns a stable
-  preview.
-- `tracking close-ready --profile dispatch` returns `ready: true` before
-  handing off to `dispatch-plan-closeout`.
+1. **Preflight** — `plan-tooling validate` plus
+   `tracking status --profile dispatch --expect-visible` (when
+   resuming). Refuse to mutate on `run-state-stale`.
+2. **Open or resume** — `record open --profile dispatch` (first
+   session) or confirm the existing dispatch issue is the
+   orchestrator's to drive.
+3. **Lane dispatch** — assign each lane to `execute-dispatch-lane`
+   with its mandatory bundle and `PLAN_BRANCH` base.
+4. **Dispatch-level checkpoints** — between lane completions, post
+   dispatch state / session / validation / review evidence through
+   `tracking checkpoint --profile dispatch`.
+5. **Read-back** — `tracking status --profile dispatch --expect-visible`
+   after each dispatch checkpoint; confirm dashboard names every lane
+   PR and merge status.
+6. **Close-ready probe** — `tracking close-ready --profile dispatch
+   --expect-visible`. On `ready: true`, hand off to
+   `dispatch-plan-closeout`.
+7. **Stop** on any Failure mode code; never close the dispatch issue
+   from this skill.
 
 ## Boundary
 
-The main agent owns orchestration, integration, and the close-ready
-decision. Subagents own lane implementation, review, and PR delivery.
-`forge-cli` owns PR mechanics. `plan-issue tracking` owns reconciliation,
-checkpoint rendering, and dashboard repair.
+Owns:
+
+- Plan-level orchestration, lane scope dispatch, and integration
+  judgement.
+- Dispatch dashboard freshness while lanes run.
+- The non-mutating close-ready handoff decision.
+
+Does not own:
+
+- Implementing lane tasks — that is `execute-dispatch-lane`.
+- Reviewing lane PRs — that is `review-dispatch-lane-pr`.
+- Closing the dispatch issue — that is `dispatch-plan-closeout`.
+- PR merge mechanics — `forge-cli` and the active PR delivery skills.
+- Lightweight-tracking closeout rules.
+
+Cross-references:
+
+- Downstream lanes: `execute-dispatch-lane` (implementation),
+  `create-dispatch-lane-pr` (PR creation),
+  `review-dispatch-lane-pr` (review evidence).
+- Downstream closeout: `dispatch-plan-closeout`.
+- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
+  Rules section (under docs/source/plan-issue-redesign/).
