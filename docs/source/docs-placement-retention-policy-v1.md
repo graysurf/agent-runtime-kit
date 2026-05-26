@@ -25,7 +25,7 @@ Use the narrowest owner that can maintain the document.
 | `README.md` | Short repository orientation and stable entrypoints | Canonical |
 | `DEVELOPMENT.md` | Current setup, edit preflight, validation, and release boundaries | Canonical |
 | `docs/source/` | Repository-wide architecture, specs, source-of-truth references, and policies | Canonical until superseded |
-| `docs/plans/<slug>/` | Plan bundles: discussion source, plan, and execution state | Coordination; cleanup-eligible after execution unless promoted |
+| `docs/plans/<YYYY-MM-DD>-<slug>/` | Plan bundles: discussion source, plan, and execution state. New bundles use the date prefix; pre-v1 `docs/plans/<slug>/` folders remain valid (see Naming) | Coordination; cleanup-eligible after execution unless promoted |
 | `core/docs/` | Product-independent schemas, ADRs, contributor guides, and policy explainers used by runtime source | Canonical source content |
 | `core/policies/` | Portable agent/runtime policy consumed by product adapters | Canonical source content |
 | `core/skills/<domain>/<skill>/` | Skill-owned docs, examples, references, assets, and local helper notes | Domain-local |
@@ -65,9 +65,21 @@ work unless the user explicitly asks for a cleanup pass.
 ## Naming
 
 - New topic Markdown under `docs/**` should use lowercase kebab-case.
+- Plan bundle folders created after this policy lands use
+  `docs/plans/<YYYY-MM-DD>-<slug>/`, where `<YYYY-MM-DD>` is the UTC
+  date the folder was first created in this repository and `<slug>`
+  is the kebab-case plan slug (three to six words). The date prefix
+  gives chronological ordering at a glance and matches the archive
+  path used by the plan-archive workflow, so migration never has to
+  rename or recompute the date.
+- Plan bundle folders created before this policy landed (slug-only
+  names such as `docs/plans/<slug>/`) remain valid and are not
+  retroactively renamed. Either shape may be referenced from other
+  documents.
 - Plan bundle files should use the plan slug prefix when possible:
   `<slug>-discussion-source.md`, `<slug>-plan.md`, and
-  `<slug>-execution-state.md`.
+  `<slug>-execution-state.md`. The file slug stays unchanged when the
+  enclosing folder adopts a date prefix.
 - Root entrypoints may keep established uppercase names such as `README.md` and
   `DEVELOPMENT.md`.
 - Generated or fixture files may follow the naming required by the renderer,
