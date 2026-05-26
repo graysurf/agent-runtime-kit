@@ -20,6 +20,10 @@ pre-commit:
       glob: "*.json"
       run: jq empty {staged_files}
 
+    - name: skill-body-shape
+      glob: "core/skills/*/*/SKILL.md.tera"
+      run: bash scripts/ci/skill-governance-audit.sh --shape-only {staged_files}
+
 pre-push:
   commands:
     ci-gate-stack:

@@ -7,10 +7,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MODE="repo"
+SHAPE_PATHS=()
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh]
+Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh] [--shape-only [paths...]]
 
 Checks:
   default                   Validate active repo source/manifests/plugins/reminders/counts.
@@ -21,6 +22,8 @@ Checks:
   --fixture create-project  Validate the create-project-skill fixture completeness.
   --fixture remove-project  Validate the remove-project-skill dry-run fixture coverage.
   --fixture count-refresh   Validate stale count detection and whitelist updates.
+  --shape-only [paths...]   Lint H2 section shape on the given SKILL.md.tera paths
+                            (fast pre-commit gate; consumes all remaining args).
 USAGE
 }
 
@@ -53,6 +56,14 @@ while [ "$#" -gt 0 ]; do
       esac
       shift 2
       ;;
+    --shape-only)
+      MODE="shape-only"
+      shift
+      while [ "$#" -gt 0 ]; do
+        SHAPE_PATHS+=("$1")
+        shift
+      done
+      ;;
     -h | --help)
       usage
       exit 0
@@ -65,7 +76,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-python3 - "$MODE" "$REPO_ROOT" <<'PY'
+python3 - "$MODE" "$REPO_ROOT" ${SHAPE_PATHS[@]+"${SHAPE_PATHS[@]}"} <<'PY'
 from __future__ import annotations
 
 import json
@@ -79,6 +90,10 @@ from pathlib import Path
 
 MODE = sys.argv[1]
 ROOT = Path(sys.argv[2])
+SHAPE_ARG_PATHS = sys.argv[3:]
+
+
+CANONICAL_SECTIONS = ("Contract", "Entrypoint", "Workflow", "Boundary")
 
 
 COUNT_TARGETS = [
@@ -330,6 +345,86 @@ def codex_link_skill_ids(root: Path) -> set[str]:
     return ids
 
 
+def parse_h2_sections(text: str) -> list[str]:
+    headings: list[str] = []
+    in_code_fence = False
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if line.startswith("```"):
+            in_code_fence = not in_code_fence
+            continue
+        if in_code_fence:
+            continue
+        if line.startswith("## "):
+            headings.append(line[3:].strip())
+    return headings
+
+
+def audit_skill_body_shape(skill_id: str, source: str) -> None:
+    path = ROOT / source / "SKILL.md.tera"
+    text = read(path)
+    headings = parse_h2_sections(text)
+    if not headings:
+        fail(f"{skill_id} missing any H2 section in {source}/SKILL.md.tera")
+    if headings[0] != "Contract":
+        fail(
+            f"{skill_id} first H2 must be `## Contract`, found `## {headings[0]}` "
+            f"(see core/skills/meta/create-skill for the standard skill shape)"
+        )
+    last_canonical_index = -1
+    last_canonical_name = "Contract"
+    for heading in headings:
+        if heading in CANONICAL_SECTIONS:
+            position = CANONICAL_SECTIONS.index(heading)
+            if position <= last_canonical_index:
+                fail(
+                    f"{skill_id} canonical H2 order must be "
+                    f"Contract -> Entrypoint -> Workflow -> Boundary; "
+                    f"found `## {heading}` after `## {last_canonical_name}`"
+                )
+            last_canonical_index = position
+            last_canonical_name = heading
+
+
+def shape_skill_id_from_path(path: Path) -> tuple[str, str] | None:
+    try:
+        rel = path.resolve().relative_to(ROOT)
+    except ValueError:
+        return None
+    parts = rel.parts
+    if (
+        len(parts) < 5
+        or parts[0] != "core"
+        or parts[1] != "skills"
+        or parts[-1] != "SKILL.md.tera"
+    ):
+        return None
+    domain = parts[2]
+    skill = "/".join(parts[3:-1])
+    return f"{domain}.{skill}", f"core/skills/{domain}/{skill}"
+
+
+def validate_shape_only(raw_paths: list[str]) -> None:
+    if not raw_paths:
+        print("skill-governance-audit: shape OK files_checked=0")
+        return
+    checked = 0
+    for raw in raw_paths:
+        path = Path(raw)
+        if not path.is_absolute():
+            path = (ROOT / path).resolve()
+        if not path.is_file():
+            # Files removed in this commit are not lintable; skip silently.
+            continue
+        ids = shape_skill_id_from_path(path)
+        if ids is None:
+            continue
+        skill_id, source = ids
+        audit_skill_body_shape(skill_id, source)
+        checked += 1
+    print(f"skill-governance-audit: shape OK files_checked={checked}")
+
+
 def validate_repo() -> None:
     skills = parse_skills(ROOT / "manifests" / "skills.yaml")
     plugins = parse_plugins(ROOT / "manifests" / "plugins.yaml")
@@ -383,6 +478,7 @@ def validate_repo() -> None:
             fail(f"{skill_id} source={source!r} expected={expected_source!r}")
         if not (ROOT / source / "SKILL.md.tera").is_file():
             fail(f"{skill_id} missing source SKILL.md.tera")
+        audit_skill_body_shape(skill_id, source)
         if contained_counts.get(skill_id, 0) != 1:
             fail(f"{skill_id} plugin containment count={contained_counts.get(skill_id, 0)}")
         if skill_id not in matrix_ids:
@@ -630,6 +726,8 @@ elif MODE == "count-check":
     )
 elif MODE == "count-update":
     update_counts(ROOT)
+elif MODE == "shape-only":
+    validate_shape_only(SHAPE_ARG_PATHS)
 elif MODE == "create-fixture":
     validate_create_fixture()
 elif MODE == "remove-fixture":
