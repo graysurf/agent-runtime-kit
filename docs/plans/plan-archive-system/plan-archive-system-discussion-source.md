@@ -122,6 +122,30 @@ skills:
   message such as
   `archive(plan): <host>/<org>/<repo> <YYYY-MM-DD>-<slug>`.
 
+### Retention of employer-sourced material
+
+- The archive repository must publish, in its `README.md` or an
+  equivalent top-level notice, a formal statement to the effect that
+  any material originating from an employer-operated GitHub or GitLab
+  instance is retained solely for the maintainer's use during the
+  active employment relationship with that organization, and that all
+  such material will be removed from the archive upon termination of
+  the relevant employment relationship.
+- The canonical wording for the notice is finalized during plan
+  execution. A working draft is:
+
+  > Materials in this repository that originate from an
+  > employer-operated GitHub or GitLab instance are retained solely
+  > for the maintainer's use during the active employment
+  > relationship with the respective organization. Upon termination
+  > of any such employment relationship, all materials originating
+  > from that organization, including archived plan folders and
+  > index snapshots, will be deleted from this repository.
+
+- The notice must reference the `source.host` field in
+  `metadata.yaml` and the matching `_index/<host>/...` paths so that
+  the deletion criterion is mechanically identifiable.
+
 ### Migration skill
 
 - Trigger: user invocation only. The skill is not chained from any
@@ -239,6 +263,11 @@ skills:
    appropriate plugin entries.
 8. Validation includes manifest schema checks, render-golden updates if
    new skill bodies are added, and the standard runtime-smoke pass.
+9. The archive repository's `README.md` (or an equivalent top-level
+   notice) publishes a formal employer-sourced retention statement
+   committing to deletion of all employer-originated material upon
+   termination of the corresponding employment relationship, with the
+   mechanical identification anchored on the `source.host` field.
 
 ## Acceptance Criteria
 
@@ -259,6 +288,10 @@ skills:
   `_index/<host>/<org>/<repo>/<kind>/<number>/`.
 - The standard repo validation (`scripts/ci/all.sh` or its successor)
   passes after the new skills land.
+- The archive repository's `README.md` (or equivalent top-level notice)
+  contains the employer-sourced retention statement and the wording is
+  reviewed and accepted by the maintainer before any company-sourced
+  plan or snapshot is written.
 
 ## Validation Plan
 
@@ -280,9 +313,12 @@ skills:
 - **Cross-organisation data placement (high).** Company-internal
   GitLab plan content placed into a personal GitHub private repository
   may conflict with employment or data-handling agreements. v1
-  proceeds with explicit user acceptance ([U8]). The schema records
+  proceeds with explicit user acceptance ([U8]) and is bounded by the
+  employer-sourced retention statement decided above (see
+  `Retention of employer-sourced material`). The schema records
   `source.host` in every `metadata.yaml` so the archive can be split
-  later by host with a deterministic filter.
+  later by host with a deterministic filter and so the
+  end-of-employment deletion criterion is mechanically identifiable.
 - **Accidental source-repo deletion.** The migration skill defaults to
   dry-run and only deletes after a successful archive push. The plan
   must specify the exact failure modes (push rejected, partial commit,
