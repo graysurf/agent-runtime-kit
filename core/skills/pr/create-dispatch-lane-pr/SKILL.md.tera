@@ -1,56 +1,59 @@
 ---
 name: create-dispatch-lane-pr
 description:
-  Create a dispatch-lane pull / merge request with `forge-cli pr create` after a plan issue assigns the lane (GitHub PR or GitLab MR; provider auto-detected from the cwd remote or `--repo`).
+  Create one provider PR / MR for an assigned dispatch lane through forge-cli pr create. Returns the PR ref for the caller's tracking run update; never posts plan-issue lifecycle comments.
 ---
 
 # Create Dispatch Lane PR
 
-## Purpose
+## Contract
 
-Create one provider PR (GitHub) or MR (GitLab) for an assigned dispatch
-lane through `forge-cli pr create`. The skill never writes plan-issue
-lifecycle comments directly; lane progress is reported by the calling
-dispatch skill via `plan-issue tracking checkpoint`.
+Prereqs:
 
-## When to use
+- Profile: helper (no plan-issue profile attached; the caller carries
+  the dispatch profile).
+- CLI floors: `forge-cli`.
+- Lane precondition: the lane has an assigned `BRANCH` (pushed),
+  `BASE` (`PLAN_BRANCH`), `TASK_ID`, and ready body content.
+- Run state precondition: a dispatch `run-state.json` exists for the
+  shared dispatch issue; the caller will record the PR ref via
+  `tracking run update --linked-pr`.
+- Shared family rules from the Plan Issue Skill Family Redesign V1
+  spec apply (see the Shared Family Rules section in
+  docs/source/plan-issue-redesign/).
 
-- A dispatch lane has been assigned by `deliver-dispatch-plan` or
-  `execute-dispatch-lane` with a branch, base PLAN_BRANCH, task scope,
-  body content, and validation evidence on hand.
-- The PR/MR does not yet exist (use `forge-cli pr update` for existing
-  ones — outside this skill's scope).
-
-## Inputs
+Inputs:
 
 - `OWNER_REPO`, `BRANCH`, `BASE` (assigned `PLAN_BRANCH`).
-- Lane `TASK_ID` and the body content (typically rendered from the lane
-  task scope).
-- `RUN_STATE` path so the skill can record the resulting PR ref.
+- Lane `TASK_ID`, `LANE_TITLE`, and `LANE_BODY` (path to body content,
+  typically rendered from the lane task scope).
+- `RUN_STATE` path so the calling dispatch skill can record the
+  resulting PR ref.
 
-## Preflight
+Outputs:
 
-- `forge-cli` is on `PATH`.
-- The branch exists locally and has been pushed.
-- `BASE` is the dispatch `PLAN_BRANCH`, not the repository default.
+- `forge-cli pr create` returns `pr_url` and `pr_number` in the JSON
+  envelope.
+- The PR base matches the assigned `PLAN_BRANCH`.
+- No plan-issue lifecycle role posts. The PR ref is returned for the
+  calling dispatch skill to record through `plan-issue tracking run
+  update --linked-pr "$OWNER_REPO#$PR_NUMBER"`.
 
-## Allowed lifecycle roles
+Failure modes:
 
-- None directly on the plan issue. The PR / MR is created and its
-  reference is returned for the calling dispatch skill to record through
-  `plan-issue tracking run update --linked-pr ...`.
+- Forbidden lifecycle roles for this skill: every plan-issue lifecycle
+  role — direct posts of any of them abort with
+  `forbidden-role-for-skill`. The skill must not call `record post`,
+  `tracking checkpoint`, `gh issue comment`, `glab issue note`, or
+  `forge-cli issue comment`.
+- `forge-cli pr create` failures: auth, missing branch, wrong base,
+  unpushed branch — surface and stop.
+- Scope-leak: selecting or expanding lane scope (that lives in
+  `deliver-dispatch-plan` / `execute-dispatch-lane`); targeting the
+  repository default branch when a `PLAN_BRANCH` is assigned;
+  bypassing `forge-cli pr create`.
 
-## Forbidden actions
-
-- No plan-issue lifecycle comments (no `record post`, no `tracking
-  checkpoint`, no raw `gh issue comment`).
-- No selecting or expanding lane scope; that decision lives in
-  `deliver-dispatch-plan` and `execute-dispatch-lane`.
-- No targeting the repository default branch when a `PLAN_BRANCH` is
-  assigned.
-- No bypass of `forge-cli pr create`.
-
-## CLI flow
+## Entrypoint
 
 ```bash
 forge-cli pr create \
@@ -62,38 +65,49 @@ forge-cli pr create \
   --format json
 ```
 
-The calling dispatch skill records the PR ref back into the run state:
+The calling dispatch skill then records the PR ref back into the run
+state:
 
 ```bash
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER"
 ```
 
-## Evidence requirements
+## Workflow
 
-- `forge-cli pr create` returns the PR URL and number.
-- The PR base matches the assigned `PLAN_BRANCH`.
-- The dispatch run state captures the new PR ref before the next
-  checkpoint posts.
-
-## Stop conditions
-
-- `forge-cli pr create` fails (auth, branch missing, wrong base) — surface
-  and stop.
-- The branch is unpushed or behind the base — push or rebase before
-  retry; do not paper over.
-- The body file is missing or empty — return for body assembly before
-  creating the PR.
-
-## Validation
-
-- `forge-cli pr create` exits 0 with `pr_url` and `pr_number` in the JSON
-  envelope.
-- Subsequent `plan-issue tracking status --profile dispatch` reflects the
-  new lane PR ref.
+1. **Preflight** — confirm `BASE` is the dispatch `PLAN_BRANCH`,
+   `BRANCH` is pushed, and `LANE_BODY` is non-empty.
+2. **Create PR** — call `forge-cli pr create` with the assigned base
+   and head. Capture `pr_url` and `pr_number` from the JSON envelope.
+3. **Return** — surface `OWNER_REPO#$PR_NUMBER` to the caller. The
+   skill itself does not write run state.
+4. **Read-back (by caller)** — the calling dispatch skill records the
+   PR ref via `tracking run update --linked-pr` and then verifies
+   `tracking status --profile dispatch` reflects the new ref.
+5. **Stop** on any Failure mode code; do not paper over an unpushed
+   branch or empty body file.
 
 ## Boundary
 
-`forge-cli pr create` owns the provider PR / MR creation. The dispatch
-skill that calls this helper owns scope selection, body content, and
-lifecycle reporting through `plan-issue tracking`.
+Owns:
+
+- Provider PR / MR creation for one assigned dispatch lane.
+
+Does not own:
+
+- Lane scope selection — `deliver-dispatch-plan` /
+  `execute-dispatch-lane`.
+- Lifecycle comment posting on the plan issue — the calling dispatch
+  skill via `plan-issue tracking`.
+- Updates to the run state — the calling dispatch skill.
+- PR / MR review or merge — `forge-cli` and the active PR delivery
+  skills.
+
+Cross-references:
+
+- Upstream: `execute-dispatch-lane` (and occasionally
+  `deliver-dispatch-plan`) call this helper.
+- Downstream: the calling dispatch skill records the PR ref through
+  `tracking run update --linked-pr`.
+- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
+  Rules section (under docs/source/plan-issue-redesign/).

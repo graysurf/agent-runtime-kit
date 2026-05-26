@@ -1,67 +1,65 @@
 ---
 name: deliver-plan-tracking-issue
 description:
-  Deliver a lightweight issue-backed plan scope through implementation, review, PR delivery, lifecycle comments, and close readiness gates.
+  Carry one lightweight issue-backed plan tracker through implementation, validation, review, PR delivery, final state, and non-mutating close-ready handoff.
 ---
 
 # Deliver Plan Tracking Issue
 
-## Purpose
+## Contract
 
-Carry one lightweight plan-tracking issue scope from in-progress
-implementation through validation, review, PR delivery, final state, and
-non-mutating close-readiness handoff. The skill uses the `plan-issue
-tracking` controller for every lifecycle decision and stops before
-closeout so `plan-tracking-issue-closeout` can run the strict gate.
+Prereqs:
 
-## When to use
+- Profile: `tracking`.
+- CLI floors: `plan-issue >=0.22.3`, `plan-tooling`, `forge-cli`.
+- Issue precondition: the tracking issue is open with at least
+  `source`, `plan`, and `state` evidence; FSM is at least
+  `RECORD_OPEN_INITIAL` with no `run-state-stale` warning.
+- Run state precondition: `run-state.json` exists for this issue and
+  reconciles against provider evidence.
+- Shared family rules from the Plan Issue Skill Family Redesign V1
+  spec apply (see the Shared Family Rules section in
+  docs/source/plan-issue-redesign/).
 
-- The tracking issue is open with at least `source`, `plan`, and `state`
-  evidence and the user wants the selected scope carried all the way to
-  close-ready handoff.
-- Implementation, validation, review evidence, and PR delivery must all
-  flow through one orchestration entry point.
-
-## Inputs
+Inputs:
 
 - `OWNER_REPO`, `ISSUE`, `RUN_STATE`, `PLAN_BUNDLE`, `BRANCH`.
-- Optional `LINKED_PR` reference if the PR already exists.
+- Optional `LINKED_PR` (e.g., `$OWNER_REPO#$PR_NUMBER`) when the PR
+  already exists.
 - Approval evidence (URL or text) when ready for close-ready handoff.
 
-## Preflight
+Outputs:
 
-- `plan-issue >=0.22.3`, `plan-tooling`, and `forge-cli` are on `PATH`.
-- Run `tracking status --expect-visible` and confirm the FSM is at least
-  `RECORD_OPEN_INITIAL` with no `run-state-stale` warning before posting.
-- Bundle files exist at canonical paths and the execution-state Markdown
-  reflects the latest task ledger.
+- `tracking checkpoint --post state[,session[,validation]]` for
+  progress checkpoints.
+- `tracking checkpoint --post review` for delivery-grade review
+  evidence.
+- `tracking checkpoint --repair-dashboard` to keep the lightweight
+  dashboard fresh.
+- `forge-cli pr deliver` for the merged PR.
+- Non-mutating `tracking close-ready --expect-visible` probe before
+  handoff to `plan-tracking-issue-closeout`.
 
-## Allowed lifecycle roles
+Failure modes:
 
-- `state` checkpoint through `tracking checkpoint --post state`.
-- `session` checkpoint through `tracking checkpoint --post session` for
-  meaningful work blocks or handoffs.
-- `validation` checkpoint when validation actually ran and changed
-  issue-visible status.
-- `review` checkpoint after a review gate runs (specialist findings or a
-  `comments-only` review evidence record).
-- Dashboard repair through `tracking checkpoint --repair-dashboard`.
-- Non-mutating `tracking close-ready` probe before declaring close-ready
-  handoff.
+- Forbidden lifecycle roles for this skill: `record open` / `record
+  attach` (issue already exists), `record close` (owned by
+  `plan-tracking-issue-closeout`). Either aborts with
+  `forbidden-role-for-skill`.
+- Controller refusal codes propagated: `run-state-stale`,
+  `issue-evidence-missing`, `RECORD_BLOCKED`,
+  `visible-completeness-failed`,
+  `tracking-checkpoint-live-not-implemented`,
+  any `close-ready` blocker.
+- Visible-completeness lint codes relevant here:
+  `state-missing-task-ledger`, `validation-missing-overall`,
+  `review-missing-decision`, `review-missing-disposition`,
+  `session-missing-summary`.
+- Scope-leak: bypassing `tracking close-ready` before claiming
+  close-ready handoff; merging a PR without `forge-cli pr deliver`
+  authorization; dispatch-profile bypass.
 
-## Forbidden actions
-
-- No `record open` or `record attach`.
-- No `record close` and no closeout lifecycle comment — that is owned by
-  `plan-tracking-issue-closeout`.
-- No skipping `tracking close-ready` before claiming close-ready handoff.
-- No PR merge unless the active `forge-cli pr deliver` / `pr close`
-  workflow authorizes that step for this profile.
-- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
-  comment` for lifecycle evidence.
-- No bypass of dispatch-only flows (this skill is `--profile tracking`).
-
-## CLI flow
+## Entrypoint
 
 ```bash
 plan-issue --format json tracking status \
@@ -90,7 +88,7 @@ plan-issue --format json tracking checkpoint \
 
 forge-cli pr deliver --repo "$OWNER_REPO" --pr "$PR_NUMBER" --format json
 
-# Final state when validation/review are complete and PR is merged:
+# Final state when validation / review are complete and PR is merged:
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --phase ready_for_close \
   --linked-pr "$OWNER_REPO#$PR_NUMBER"
@@ -106,38 +104,51 @@ plan-issue --format json tracking close-ready \
   --expect-visible
 ```
 
-## Evidence requirements
+## Workflow
 
-- Every `tracking checkpoint` envelope shows `lint_pass: true` for posted
-  roles and no `blocked` entries.
-- `forge-cli pr deliver` returns a merged PR with required checks pass.
-- `tracking close-ready` returns `ready: true` and no `blockers` before
-  handoff.
-- `events.jsonl` records `validation_recorded`, `review_recorded`, and
-  `checkpoint_posted` events in order.
-
-## Stop conditions
-
-- `tracking status` reports `run-state-stale`, missing required evidence,
-  or `RECORD_BLOCKED`.
-- `tracking checkpoint` returns any `visible-completeness-failed` or
-  `tracking-checkpoint-live-not-implemented` blocker — fix or fall back
-  to `record post` for the affected role and resume.
-- `forge-cli pr deliver` reports unmerged PRs or required-check failures.
-- `tracking close-ready` returns `ready: false` — stop and surface the
-  blockers; do not invoke `plan-tracking-issue-closeout`.
-
-## Validation
-
-- `tracking close-ready --expect-visible` reports `ready: true`.
-- `tracking status` confirms `RECORD_READY_FOR_CLOSE` (or the appropriate
-  state for the agreed handoff).
-- `forge-cli pr deliver` evidence is captured in the run-state notes /
-  validation evidence and in the lifecycle comments.
+1. **Preflight** — `tracking status --expect-visible`; abort on
+   `run-state-stale` or `RECORD_BLOCKED`.
+2. **Implementation** — local work and validation runs happen outside
+   the lifecycle calls; come back here when there is durable evidence
+   to post.
+3. **Lifecycle checkpoints** — for each truthful change call
+   `tracking run update` first, then the smallest combined
+   `tracking checkpoint --post …` covering only changed roles.
+4. **PR delivery** — `forge-cli pr deliver`; record the merged PR ref
+   through `tracking run update --linked-pr`.
+5. **Final state checkpoint** — once merged, post the final `state`
+   role with `--repair-dashboard`.
+6. **Close-ready probe** — `tracking close-ready --expect-visible`
+   (non-mutating). If `ready: true`, hand off to
+   `plan-tracking-issue-closeout`. If `ready: false`, surface
+   blockers and stop.
+7. **Stop** on any Failure mode code; never call `record close`.
 
 ## Boundary
 
-`plan-issue tracking` owns reconciliation, checkpoint rendering, and
-close-readiness gate evaluation. `forge-cli` owns PR delivery. The skill
-body owns scope judgment, validation strength, review interpretation,
-and the decision to hand off to `plan-tracking-issue-closeout`.
+Owns:
+
+- Scope judgement, validation strength, and review interpretation for
+  the lightweight tracking flow.
+- The combined `state` / `session` / `validation` / `review`
+  checkpoint timing.
+- The non-mutating close-ready handoff decision.
+
+Does not own:
+
+- Opening the issue — that is `create-plan-tracking-issue`.
+- The closeout post and the `record close` mutation — those belong to
+  `plan-tracking-issue-closeout`.
+- Dispatch-profile flows — see `deliver-dispatch-plan` and siblings.
+- PR creation, update, or review mechanics — those go through
+  `forge-cli` and the active PR delivery skills.
+
+Cross-references:
+
+- Upstream: `execute-plan-tracking-issue` (or
+  `create-plan-tracking-issue` directly) seeds the issue and run
+  state.
+- Downstream: `plan-tracking-issue-closeout` consumes the close-ready
+  audit and runs `record close`.
+- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
+  Rules section (under docs/source/plan-issue-redesign/).

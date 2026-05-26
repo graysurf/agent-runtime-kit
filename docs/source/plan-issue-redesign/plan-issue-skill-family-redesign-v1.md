@@ -435,30 +435,56 @@ Evidence skills such as `review-evidence`, `test-first-evidence`, and
 `web-evidence` produce retained evidence. They do not post plan issue lifecycle
 comments by themselves.
 
-## New Skill Contract Shape
+## Skill Contract Content
 
-Each rewritten skill should use the same section order:
+Every rewritten skill in this family follows the repo-wide `/create-skill`
+section structure: `## Contract`, `## Entrypoint`, `## Workflow`, `## Boundary`.
+The family layers additional content requirements *inside* those sections so
+the nine skills stay readable as a coherent series.
 
-1. Purpose
-2. When to use
-3. Inputs
-4. Preflight
-5. Allowed lifecycle roles
-6. Forbidden actions
-7. CLI flow
-8. Evidence requirements
-9. Stop conditions
-10. Validation
+Required content slotting per skill:
 
-Every skill must explicitly name:
+- `## Contract` → Prereqs / Inputs / Outputs / Failure modes (four labelled
+  sublists).
+  - Prereqs lead with the issue `Profile: tracking | dispatch` (one value
+    only) and list the CLI floors (`plan-issue >=X.Y.Z`, `plan-tooling`,
+    `forge-cli`, optional evidence binaries). Add issue / run-state
+    preconditions and a one-line cross-ref to the
+    [Shared Family Rules](#shared-family-rules).
+  - Inputs name the required environment values (`OWNER_REPO`, `ISSUE`,
+    `RUN_STATE`, …) plus skill-specific scope (task / lane / payload
+    paths).
+  - Outputs name the **allowed lifecycle role posts** explicitly with the
+    `--profile` flag they invoke, the run-state mutations the skill is
+    permitted to make, and the provider artifacts it returns. Lifecycle
+    roles outside this list are forbidden.
+  - Failure modes name the **forbidden lifecycle roles** that abort the
+    skill with `forbidden-role-for-skill`, the controller-surfaced refusal
+    codes the skill must propagate (`run-state-stale`,
+    `tracking-checkpoint-live-not-implemented`, `visible-completeness-failed`,
+    role-specific codes from
+    [`plan-tracking-issue-comment-taxonomy-v1.md`](plan-tracking-issue-comment-taxonomy-v1.md)),
+    and the scope-leak refusals.
+- `## Entrypoint` → the three to six bash invocations the skill actually
+  makes. Each envelope-consuming call ends with `--format json`.
+- `## Workflow` → an ordered list of steps. The list must include a
+  preflight step (`plan-tooling validate` and/or
+  `tracking status --expect-visible`), the lifecycle checkpoint(s) the
+  skill owns, and a read-back step
+  (`tracking status --expect-visible` or `record audit --expect-visible`)
+  before the skill claims success.
+- `## Boundary` → `Owns` and `Does not own` sublists that name sibling
+  skills explicitly when delegating, plus a `Cross-references` line that
+  links upstream / downstream skills and the Shared Family Rules.
 
-- issue profile: `tracking` or `dispatch`
-- lifecycle roles it may write
-- lifecycle roles it must not write
-- required `plan-issue tracking` commands
-- required `forge-cli` commands when PR work is in scope
-- provider mutation points
-- read-back evidence expected after mutation
+Every skill must explicitly surface:
+
+- the issue profile (`tracking` or `dispatch`).
+- the lifecycle roles it may write (in Outputs).
+- the lifecycle roles it must not write (in Failure modes and Boundary).
+- the required `plan-issue tracking` commands (in Entrypoint).
+- the required `forge-cli` commands when PR work is in scope (in Entrypoint).
+- the provider mutation points and read-back evidence (in Workflow).
 
 ## Implementation Order
 

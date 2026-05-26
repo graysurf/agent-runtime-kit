@@ -1,73 +1,62 @@
 ---
 name: execute-plan-tracking-issue
 description:
-  Resume lightweight issue-backed plan execution from lifecycle comments and keep the dashboard current.
+  Resume a lightweight issue-backed plan tracker, reconcile run state with provider evidence, and post state / session / validation checkpoints.
 ---
 
 # Execute Plan Tracking Issue
 
-## Purpose
+## Contract
 
-Resume one lightweight plan-tracking issue for the selected task or sprint
-scope. Reconcile provider issue lifecycle evidence with the local
-run-state before implementation, update the run-state while work
-progresses, and post a checkpoint when issue-visible truth changes.
-`plan-issue tracking` owns reconciliation, rendering, and dashboard
-repair; the skill body owns judgment about what changed and whether to
-post.
+Prereqs:
 
-## When to use
+- Profile: `tracking`.
+- CLI floors: `plan-issue >=0.22.3`, `plan-tooling`.
+- Issue precondition: the tracking issue exists with at least `source`,
+  `plan`, and an initial `state` lifecycle comment.
+- Run state precondition: a `run-state.json` exists for this issue (or
+  the skill must defer to `create-plan-tracking-issue` /
+  `tracking run init` first).
+- Shared family rules from the Plan Issue Skill Family Redesign V1
+  spec apply (see the Shared Family Rules section in
+  docs/source/plan-issue-redesign/).
 
-- A tracking issue already exists with `source`, `plan`, and an initial
-  `state` lifecycle comment, and the user wants to advance the selected
-  task without re-opening the issue.
-- The provider issue may have newer evidence than the local run-state and
-  the next step needs reconciliation.
-
-## Inputs
+Inputs:
 
 - `OWNER_REPO`, `ISSUE`, `PLAN_BUNDLE`, `BRANCH`.
-- `RUN_STATE` — path to the existing `run-state.json` (created by
-  `create-plan-tracking-issue` or a previous run of this skill).
-- Optional `--task <id>` or `--sprint <number>` selection when the run
-  state does not already name it.
+- `RUN_STATE` — path to the existing `run-state.json`.
+- Optional `TASK_ID` or sprint number when the run state does not
+  already name it.
+- Validation evidence path (`$VALIDATION_LOG`) when a validation run
+  has actually completed.
 
-## Preflight
+Outputs:
 
-- `plan-issue >=0.22.3` and `plan-tooling` are on `PATH`.
-- The bundle files exist at canonical paths and the local execution-state
-  Markdown is up to date for the rendered state checkpoint.
-- A `run-state.json` exists or is initialized with `tracking run init`
-  before this skill posts any progress comment.
+- `tracking checkpoint --post state[,session[,validation]]` for
+  in-progress updates (use `--task-ledger-display collapsed` for
+  intermediate state posts).
+- `tracking run update` writes `selected_task`, `branch`, `phase`,
+  `validation_*`, and notes back into the typed run state.
+- Dashboard repair through `tracking checkpoint --repair-dashboard`
+  (or `record repair-dashboard` if a lower-level fix is needed).
 
-## Allowed lifecycle roles
+Failure modes:
 
-- `state` checkpoint through `plan-issue tracking checkpoint --post state`
-  (use `--task-ledger-display collapsed` for intermediate updates).
-- `session` checkpoint when a meaningful work session ended or a handoff
-  needs durable context.
-- `validation` checkpoint when validation actually ran and changed
-  issue-visible status.
-- Dashboard repair only through `plan-issue tracking checkpoint
-  --repair-dashboard` or, if a lower-level surface is needed, through
-  `plan-issue record repair-dashboard`.
+- Forbidden lifecycle roles for this skill: `record open` / `record
+  attach` (issue already exists), `review` posts (that belongs to
+  `deliver-plan-tracking-issue`), `closeout` posts. Any of these abort
+  with `forbidden-role-for-skill`.
+- Controller refusal codes propagated: `run-state-stale`,
+  `issue-evidence-missing`, `RECORD_BLOCKED`,
+  `tracking-checkpoint-live-not-implemented`,
+  `visible-completeness-failed`.
+- Visible-completeness lint codes relevant here:
+  `state-missing-task-ledger`, `validation-missing-overall`,
+  `session-missing-summary`.
+- Scope-leak: rewriting `source` / `plan` snapshots, posting for
+  purely local edits, or posting unchanged validation reruns.
 
-## Forbidden actions
-
-- No `record open` or `record attach` — the issue already exists.
-- No `record close` and no closeout comment.
-- No `review` lifecycle comments — those belong to
-  `deliver-plan-tracking-issue` (which has the review surface in scope).
-- No rewriting `source` or `plan` snapshots.
-- No raw `gh issue comment`, `glab issue note`, or `forge-cli issue
-  comment` for lifecycle evidence.
-- No posting when `tracking status` reports `run-state-stale`,
-  `issue-evidence-missing`, or any other blocked code without
-  reconciliation.
-- No comments for purely local edits, speculative notes, or unchanged
-  validation reruns.
-
-## CLI flow
+## Entrypoint
 
 ```bash
 plan-issue --format json tracking status \
@@ -88,7 +77,7 @@ plan-issue --format json tracking checkpoint \
   --post state
 ```
 
-After validation results land, update run-state and re-checkpoint:
+After validation results land, update run state and re-checkpoint:
 
 ```bash
 plan-issue --format json tracking run update \
@@ -105,39 +94,52 @@ plan-issue --format json tracking checkpoint \
   --repair-dashboard
 ```
 
-## Evidence requirements
+## Workflow
 
-- The `tracking status` envelope reports `fsm_state` and an empty
-  `warnings.run-state-stale` set before any checkpoint posts go live.
-- The `tracking checkpoint` envelope lists every planned `roles_planned`
-  with `lint_pass: true` and an empty `blocked` array.
-- Every progress update appends events to `events.jsonl` under the issue
-  run root.
-
-## Stop conditions
-
-- `tracking status` reports `run-state-stale` — refuse to post until run
-  state is synchronized or explicitly repaired.
-- `tracking status` reports missing required source/plan/state evidence —
-  return to `create-plan-tracking-issue` rather than papering over the
-  gap.
-- `tracking checkpoint` returns a `visible-completeness-failed` blocker —
-  fix the run state / execution-state Markdown before retrying.
-- The FSM reports `RECORD_BLOCKED` — record the blocker through
-  `tracking run update --note` and stop.
-
-## Validation
-
-- `plan-issue tracking status --expect-visible` shows a `fsm_state` that
-  is consistent with the run state phase.
-- `plan-issue tracking checkpoint` (dry-run) writes rendered bodies under
-  `runs/<run-id>/rendered/` and passes the visible lint.
-- For live mode, the audit step from `create-plan-tracking-issue`
-  confirms the new comment appeared with the expected role.
+1. **Preflight** — run `tracking status --expect-visible` and confirm
+   `fsm_state` is consistent with the run state; refuse to post on
+   `run-state-stale` or `issue-evidence-missing`.
+2. **Scope decision** — choose the task / sprint subset for this
+   resume; decide whether a comment would teach a reader something
+   new (started, completed, validation flipped, blocker discovered,
+   PR opened, sprint status changed).
+3. **Implementation** — do the local work outside this skill's CLI
+   flow; the skill resumes after work produces a postable change.
+4. **Lifecycle checkpoint** — call `tracking run update` with the
+   changed fields, then `tracking checkpoint` with only the role(s)
+   whose body actually changed.
+5. **Read-back** — re-run `tracking status --expect-visible` and
+   confirm the new role appears in the reconciled evidence with
+   `lint_pass: true`.
+6. **Stop** on any Failure mode code; record blockers via
+   `tracking run update --note` and surface to the user.
 
 ## Boundary
 
-`plan-issue tracking` owns reconciliation, checkpoint rendering, and
-dashboard repair. `plan-issue record` is the primitive layer this
-controller adapts. The skill body owns scope selection, validation
-interpretation, and the decision to post a checkpoint at all.
+Owns:
+
+- Scope selection for the resumed task / sprint.
+- The judgement of when a checkpoint is worth posting.
+- Validation interpretation and the choice of roles to include in a
+  combined checkpoint.
+
+Does not own:
+
+- Opening or attaching the issue — that is
+  `create-plan-tracking-issue`.
+- `review` checkpoints — those belong to `deliver-plan-tracking-issue`
+  (which carries delivery-grade review evidence).
+- Closeout and `record close` — that is
+  `plan-tracking-issue-closeout`.
+- Reconciliation algorithms and visible-lint enforcement — those are
+  owned by `plan-issue tracking`.
+
+Cross-references:
+
+- Upstream: `create-plan-tracking-issue` provides the issue and
+  initial run state.
+- Downstream: `deliver-plan-tracking-issue` takes over when the
+  selected scope is ready to be carried through PR delivery and
+  close-readiness.
+- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
+  Rules section (under docs/source/plan-issue-redesign/).
