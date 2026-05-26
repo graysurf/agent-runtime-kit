@@ -508,16 +508,39 @@ execution.
 
 ## Recommended Next Artifact
 
-A `create-plan-tracking-issue` invocation that uses this document as
-`Read First` source material and proposes phased tasks for:
+Execution is split across three deliveries that share this master
+design as `Read First` source material:
 
-1. Naming convention and policy update (date prefix, placement policy
-   touch-up).
-2. Archive repository bootstrap and `metadata.yaml` contract.
-3. Migration skill (dry-run-first, transactional).
-4. `_index/` snapshot contract and refresh semantics.
-5. Query skill (single-repo, cross-repo, archive linkage).
-6. Configuration layering: `config/hosts.yaml` schema + seeded
-   entries, machine-local config schema + defaults, integration
-   points with `forge-cli`.
-7. Manifest / plugin registration and validation pass.
+### Plan 1 — nils-cli archive CLI capabilities
+
+- Sibling plan: `docs/plans/plan-archive-nils-cli/plan-archive-nils-cli-plan.md`
+- Tracker repo: `sympoies/nils-cli`
+- Scope: `plan-archive` CLI with `migrate`, `refresh`, and `query`
+  subcommands; schema validators for `config/hosts.yaml`, the
+  machine-local config, and `metadata.yaml`; secret-scrub library.
+- Must release before Plan 3 starts wiring skill bodies.
+
+### Plan 2 — agent-plan-archive bootstrap (one-shot prereq)
+
+- No tracker issue. Delivered as a single small PR / repo bootstrap
+  when needed.
+- Scope:
+  - Create the GitHub private repository (default name
+    `agent-plan-archive`).
+  - Seed `README.md` (or `LEGAL.md`) carrying the formal
+    employer-sourced retention statement decided in this document.
+  - Seed `config/hosts.yaml` with the maintainer's initial host
+    classification.
+  - Commit and push the initial state.
+- Must be done before Plan 3's runtime-smoke fixtures exercise a real
+  archive target. Plan 1 can be authored in parallel and does not
+  depend on this step.
+
+### Plan 3 — agent-runtime-kit skill bodies and manifests
+
+- Sibling plan: `docs/plans/plan-archive-runtime-kit/plan-archive-runtime-kit-plan.md`
+- Tracker repo: `agent-runtime-kit`
+- Scope: placement / naming policy update; `meta:plan-archive-migrate`
+  and `meta:plan-archive-query` skill bodies; manifest + plugin
+  registration; render-goldens and runtime-smoke / sandbox fixtures.
+- Depends on Plan 1 release and Plan 2 prereq.
