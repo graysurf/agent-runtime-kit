@@ -4,128 +4,96 @@ description:
   Create a dispatch-lane pull / merge request with `forge-cli pr create` after a plan issue assigns the lane (GitHub PR or GitLab MR; provider auto-detected from the cwd remote or `--repo`).
 ---
 
-# Create Dispatch Lane PR / MR
+# Create Dispatch Lane PR
 
-## Contract
+## Purpose
 
-Prereqs:
+Create one provider PR (GitHub) or MR (GitLab) for an assigned dispatch
+lane through `forge-cli pr create`. The skill never writes plan-issue
+lifecycle comments directly; lane progress is reported by the calling
+dispatch skill via `plan-issue tracking checkpoint`.
 
-- `forge-cli` and `plan-issue >=0.22.0` are installed from the released
-  nils-cli package and available on `PATH`. (`plan-issue >=0.22.0` ships the
-  GitLab provider abstraction; earlier versions are GitHub-only.)
-- A plan issue or dispatch record identifies the lane, source branch, base
-  plan branch, task scope, and required validation.
-- Dispatch-plan lanes must target `PLAN_BRANCH`, not the repository default
-  branch.
-- Provider authentication succeeds for the target host when running live
-  mode: `gh auth status` for GitHub, `glab auth status` for GitLab.
-- The lane branch has been pushed and has an upstream tracking branch.
+## When to use
 
-Inputs:
+- A dispatch lane has been assigned by `deliver-dispatch-plan` or
+  `execute-dispatch-lane` with a branch, base PLAN_BRANCH, task scope,
+  body content, and validation evidence on hand.
+- The PR/MR does not yet exist (use `forge-cli pr update` for existing
+  ones — outside this skill's scope).
 
-- Dispatch lane id, task id, source branch, base plan branch, title, and body
-  file.
-- Validation evidence or an explicit not-run reason for the lane.
-- Required body sections: `## Summary`, `## Scope`, `## Testing`,
-  `## Test plan`, and `## Issue`.
-- Required labels: one `type::`, one primary `area::`, one `size::`, and
-  `workflow::dispatch`. Optional reviewers.
+## Inputs
 
-Outputs:
+- `OWNER_REPO`, `BRANCH`, `BASE` (assigned `PLAN_BRANCH`).
+- Lane `TASK_ID` and the body content (typically rendered from the lane
+  task scope).
+- `RUN_STATE` path so the skill can record the resulting PR ref.
 
-- A draft PR (GitHub) or MR (GitLab) for the dispatch lane.
-- Provider command evidence in `--dry-run` mode.
-- PR / MR URL recorded back to the owning plan issue or dispatch record.
+## Preflight
 
-Failure modes:
+- `forge-cli` is on `PATH`.
+- The branch exists locally and has been pushed.
+- `BASE` is the dispatch `PLAN_BRANCH`, not the repository default.
 
-- The dispatch record is missing branch, base, task, or validation data.
-- The PR / MR body is missing required `forge-cli` sections such as
-  `## Summary` and `## Test plan`, or dispatch sections `## Scope`,
-  `## Testing`, and `## Issue`, or still contains placeholders.
-- The PR / MR base is not the dispatched `PLAN_BRANCH`.
-- Provider auth, branch upstream checks, labels, or reviewers fail.
+## Allowed lifecycle roles
 
-## Entrypoint
+- None directly on the plan issue. The PR / MR is created and its
+  reference is returned for the calling dispatch skill to record through
+  `plan-issue tracking run update --linked-pr ...`.
 
-Use the released CLI directly. `forge-cli` auto-detects the provider from the
-cwd's git remote (or honors an explicit `--provider {github|gitlab}` / `--repo
-<slug>` override), so the same invocation creates a GitHub PR or a GitLab MR
-depending on where the lane branch lives.
+## Forbidden actions
+
+- No plan-issue lifecycle comments (no `record post`, no `tracking
+  checkpoint`, no raw `gh issue comment`).
+- No selecting or expanding lane scope; that decision lives in
+  `deliver-dispatch-plan` and `execute-dispatch-lane`.
+- No targeting the repository default branch when a `PLAN_BRANCH` is
+  assigned.
+- No bypass of `forge-cli pr create`.
+
+## CLI flow
 
 ```bash
 forge-cli pr create \
-  --kind feature \
-  --base "$PLAN_BRANCH" \
-  --title "$PR_TITLE" \
-  --body-file "$PR_BODY_FILE" \
-  --label type::feature \
-  --label area::skills \
-  --label size::s \
-  --label workflow::dispatch \
-  --label-catalog manifests/forge-labels.yaml \
-  --strict-labels
+  --repo "$OWNER_REPO" \
+  --base "$BASE" \
+  --head "$BRANCH" \
+  --title "$LANE_TITLE" \
+  --body-file "$LANE_BODY" \
+  --format json
 ```
 
-For an audited preview:
+The calling dispatch skill records the PR ref back into the run state:
 
 ```bash
-forge-cli --dry-run --format json pr create \
-  --kind feature \
-  --base "$PLAN_BRANCH" \
-  --title "$PR_TITLE" \
-  --body-file "$PR_BODY_FILE" \
-  --label type::feature \
-  --label area::skills \
-  --label size::s \
-  --label workflow::dispatch \
-  --label-catalog manifests/forge-labels.yaml \
-  --strict-labels
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER"
 ```
 
-Post the issue-visible dispatch handoff comment with the shared record owner:
+## Evidence requirements
 
-```bash
-plan-issue --repo "$REPO" --format json record post \
-  --issue "$PLAN_ISSUE" \
-  --profile dispatch \
-  --kind session \
-  --payload-file "$DISPATCH_SESSION_PAYLOAD" \
-  --summary-file "$DISPATCH_SESSION_FILE"
-```
+- `forge-cli pr create` returns the PR URL and number.
+- The PR base matches the assigned `PLAN_BRANCH`.
+- The dispatch run state captures the new PR ref before the next
+  checkpoint posts.
 
-## Workflow
+## Stop conditions
 
-1. Read the owning dispatch record and confirm the lane scope, source branch,
-   base plan branch, and validation expectations.
-2. Inspect `git status --short --branch`, then push the lane branch and confirm
-   upstream tracking.
-3. Render a PR / MR body with `## Summary`, `## Scope`, `## Testing`,
-   `## Test plan`, and `## Issue`; include the lane id, task ids, validation,
-   issue link, and handoff notes.
-4. Select taxonomy labels before provider mutation. Every dispatch lane needs
-   `type::`, one primary `area::`, `size::`, and `workflow::dispatch`. Use
-   `state::do-not-merge` when a lane is blocked from merging.
-5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
-   --catalog manifests/forge-labels.yaml --repo "$REPO" --format json` before
-   the first live lane PR / MR in that repo. Use `label audit` when mutation
-   is not allowed.
-6. Run the `forge-cli --dry-run` form when the lane needs command-shape
-   evidence before mutation.
-7. Confirm the requested base equals the assigned `PLAN_BRANCH`.
-8. Run `forge-cli pr create ...` to create the draft lane PR (GitHub) or MR
-   (GitLab). Add `--provider github` / `--provider gitlab` only when the cwd
-   remote does not match the intended target.
-9. Write the PR / MR URL back to the owning issue timeline by posting a
-   dispatch `session` comment with `plan-issue record post --profile dispatch`.
-   Use `plan-issue link-pr` only for pre-record compatibility issues that
-   already use a `Task Decomposition` body.
+- `forge-cli pr create` fails (auth, branch missing, wrong base) — surface
+  and stop.
+- The branch is unpushed or behind the base — push or rebase before
+  retry; do not paper over.
+- The body file is missing or empty — return for body assembly before
+  creating the PR.
+
+## Validation
+
+- `forge-cli pr create` exits 0 with `pr_url` and `pr_number` in the JSON
+  envelope.
+- Subsequent `plan-issue tracking status --profile dispatch` reflects the
+  new lane PR ref.
 
 ## Boundary
 
-`forge-cli` owns the PR / MR creation call (GitHub via `gh`, GitLab via
-`glab`). `plan-issue record` owns the dispatch issue timeline update — on
-GitLab, `plan-issue >=0.22.0` routes every lifecycle method through
-`forge-cli`'s provider-neutral surface (sympoies/nils-cli#499 / #503 / #505).
-The dispatch workflow owns lane selection, validation interpretation, and
-reviewer or subagent handoff policy.
+`forge-cli pr create` owns the provider PR / MR creation. The dispatch
+skill that calls this helper owns scope selection, body content, and
+lifecycle reporting through `plan-issue tracking`.

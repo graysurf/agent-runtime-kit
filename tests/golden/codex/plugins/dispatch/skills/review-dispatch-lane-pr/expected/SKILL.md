@@ -6,126 +6,103 @@ description:
 
 # Review Dispatch Lane PR
 
-## Contract
+## Purpose
 
-Prereqs:
+Review one dispatch lane PR (or MR), record retained review evidence,
+post provider review comments via the approved PR workflow, and update
+the shared dispatch issue with the review status. The skill never
+implements fixes unless the user explicitly redirects.
 
-- `forge-cli`, `plan-issue >=0.20.0`, `review-evidence`, and
-  `review-specialists` are available on `PATH`.
-- Target PR, issue, task ID or lane, and review decision are known.
-- Provider auth is available for live PR comments, edits, merges, and issue
-  comments.
-- The reviewer has task-lane facts from a dispatch ledger or dispatch record:
-  owner, branch, worktree, execution mode, PR, base branch, and task scope.
+## When to use
 
-Inputs:
+- A dispatch lane PR is ready for review and the assigned reviewer has
+  the lane scope in context.
+- Review findings need to be recorded so the dispatch issue reflects
+  current review status.
 
-- PR number, issue number, task ID or sprint/PR group, review decision, review
-  evidence directory, optional corrected PR body, and merge/close method.
-- Optional review comment body file and issue note.
-- Optional `code-review-specialists` report for broad, high-risk,
-  security-sensitive, migration-heavy, or API-contract-heavy diffs.
+## Inputs
 
-Outputs:
+- `OWNER_REPO`, lane PR reference, `RUN_STATE`, `ISSUE` (shared dispatch
+  issue).
+- Reviewer judgment outputs: decision (`approve|request-changes|
+  comments-only`), lenses, and finding dispositions.
 
-- Review evidence record validated through `review-evidence`.
-- Review evidence records `code-review-specialists` as `used` or `skipped`
-  with reason/evidence for every decision.
-- PR comment, PR body update, merge, close, or follow-up request through
-  `forge-cli`.
-- Dispatch review or session comment posted through `plan-issue record post`.
-- Decision-scoped evidence with exact PR comment URLs, issue comment URLs, and
-  selected findings when used.
+## Preflight
 
-Failure modes:
+- `plan-issue >=0.22.3`, `forge-cli`, and `review-evidence` are on
+  `PATH`.
+- The PR exists, targets the correct base, and reports passing required
+  checks (or the reviewer has explicit override authority).
+- `tracking status --profile dispatch --expect-visible` is clean before
+  recording review status.
 
-- Required review evidence is missing or fails verification.
-- PR comment/body/merge operations fail through `forge-cli`.
-- Dispatch lane selector is ambiguous or the current issue record does not
-  mention the reviewed PR/lane.
-- Review requests try to start a replacement lane without explicit
-  reassignment.
-- Specialist findings are treated as an automatic merge/close/follow-up
-  decision instead of supplemental evidence for main-agent review judgment.
-- Main-agent implements product-code fixes while acting as reviewer without a
-  documented corrective-fix exception.
+## Allowed lifecycle roles
 
-## Entrypoint
+- `review` checkpoint through `plan-issue tracking checkpoint --profile
+  dispatch --post review` for the lane scope.
+- Dispatch `state` / `session` update when the review outcome changes
+  lane state (e.g., requested-changes flips lane back to implementing).
+- Provider review comments through `forge-cli pr review` (or the
+  appropriate PR helper).
 
-Record and verify review evidence:
+## Forbidden actions
 
-```bash
-review-specialists scope --base "$BASE_REF" --format json
-review-evidence init --out "$REVIEW_OUT" --subject "PR #$PR_NUMBER"
-review-evidence record-validation --out "$REVIEW_OUT" --command "$COMMAND" --status pass
-review-evidence verify --out "$REVIEW_OUT" --format json
-```
+- No implementing fixes unless the user explicitly switches the lane
+  from review to implementation.
+- No `record close` and no closeout comment.
+- No PR merge.
+- No raw `gh pr review`, `glab mr approve`, or raw issue/PR comments for
+  recorded review evidence.
+- No skipping retained review evidence when findings exist (use
+  `review-evidence` to persist findings before posting the checkpoint).
 
-Comment on the PR:
+## CLI flow
 
 ```bash
-forge-cli pr comment "$PR_NUMBER" \
-  --provider github \
-  --repo "$OWNER_REPO" \
-  --body-file "$REVIEW_COMMENT" \
-  --format json
+plan-issue --format json tracking status \
+  --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
+  --profile dispatch --run-state "$RUN_STATE" --expect-visible
+
+review-evidence --plan "$PLAN" --pr "$LANE_PR" --format json \
+  >"$REVIEW_EVIDENCE"
+
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" --review-decision "$DECISION"
+
+plan-issue --format json tracking checkpoint \
+  --profile dispatch --run-state "$RUN_STATE" \
+  --post review --repair-dashboard
+
+forge-cli pr review --repo "$OWNER_REPO" --pr "$PR_NUMBER" \
+  --decision "$DECISION" --comment "$REVIEW_COMMENT" --format json
 ```
 
-Post the issue-visible review update:
+## Evidence requirements
 
-```bash
-plan-issue --repo "$OWNER_REPO" --format json record post \
-  --issue "$ISSUE" \
-  --profile dispatch \
-  --kind review \
-  --payload-file "$DISPATCH_REVIEW_PAYLOAD" \
-  --summary-file "$DISPATCH_REVIEW_MD"
-```
+- `review-evidence` returns a retained findings artifact path or URL.
+- The `tracking checkpoint` envelope shows the `review` role posted with
+  `lint_pass: true` and (when findings exist) a `disposition` row per
+  finding.
+- The shared dispatch dashboard reflects the latest lane review status.
 
-Merge or close only after review evidence and issue-visible dispatch state are
-ready:
+## Stop conditions
 
-```bash
-forge-cli pr merge "$PR_NUMBER" --provider github --repo "$OWNER_REPO" --method squash
-forge-cli pr close "$PR_NUMBER" --provider github --repo "$OWNER_REPO"
-```
+- `tracking status` reports `run-state-stale` — refuse to record review
+  evidence until reconciliation succeeds.
+- Findings contain unresolved blocker severities — the lane must return
+  to implementation (or be explicitly waived) before approval.
+- `forge-cli pr review` fails (auth, missing PR, etc.) — surface and
+  stop.
 
-## Workflow
+## Validation
 
-1. Read the PR, linked dispatch ledger/state, task scope, dispatch record, and
-   current review evidence.
-2. Confirm lane continuity: the PR, dispatch artifacts, branch, base, worktree,
-   owner, and task scope all match.
-3. For broad, high-risk, security-sensitive, migration-heavy, or
-   API-contract-heavy diffs, run `code-review-specialists` before the decision
-   as supplemental read-only evidence. Keep the specialist workflow read-only.
-4. Apply the review rubric and record findings, selected specialist findings,
-   skip rationale, or validation in `review-evidence`.
-5. Use the shared disposition vocabulary from
-   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`
-   for meaningful review items.
-6. Use `forge-cli pr comment` for follow-up requests or approval evidence.
-7. Use `forge-cli pr edit` when PR body hygiene must be repaired before merge.
-8. Post a dispatch review/session comment that records the review outcome,
-   selected findings, validation, PR comment URLs, and next lane status through
-   `plan-issue record post`.
-9. Merge, close, or request follow-up through `forge-cli` according to the
-   review decision.
-10. Record exact PR comment URLs and issue-state evidence in the dispatch
-   session.
+- `tracking checkpoint --post review` envelope has `lint_pass: true` and
+  no blockers.
+- `forge-cli pr review` returns the recorded review URL.
+- Read-back audit against the lane PR finds the review comment.
 
 ## Boundary
 
-`review-evidence` owns durable review records. `forge-cli` owns provider PR
-comment/edit/merge/close operations. `plan-issue record` owns dispatch
-lifecycle comments. The skill body owns review judgment, lane-continuity decisions,
-specialist used/skipped rationale, and whether a finding blocks merge.
-
-## References
-
-- Task lane continuity:
-  `skills/dispatch/deliver-dispatch-plan/references/TASK_LANE_CONTINUITY.md`
-- Main-agent review rubric:
-  `skills/dispatch/deliver-dispatch-plan/references/MAIN_AGENT_REVIEW_RUBRIC.md`
-- Post-review outcomes:
-  `skills/dispatch/deliver-dispatch-plan/references/POST_REVIEW_OUTCOMES.md`
+`review-evidence` owns retained findings. `forge-cli pr review` owns
+provider review comments. `plan-issue tracking` owns the lifecycle
+checkpoint. The skill body owns the review judgment.
