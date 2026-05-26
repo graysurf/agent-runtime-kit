@@ -122,6 +122,59 @@ skills:
   message such as
   `archive(plan): <host>/<org>/<repo> <YYYY-MM-DD>-<slug>`.
 
+### Configuration layering
+
+Configuration that the archive system needs is split into three layers
+so that each piece of state lives at the narrowest correct owner:
+
+- **Layer A — provider authentication and host endpoints.** Owned by
+  the existing `forge-cli` configuration. The archive system does not
+  duplicate authentication, tokens, API base URLs, or default
+  namespaces. All provider API access is delegated to `forge-cli`.
+- **Layer B — host classification.** Owned by a committed file inside
+  the archive repository at `config/hosts.yaml`. Each provider FQDN
+  is classified as `personal` or `employer`. Employer entries name
+  the employer and carry the retention policy. This file is the
+  authoritative source for the retention deletion criterion and must
+  be reviewable through the archive's git history.
+- **Layer C — machine-local state.** Owned by a local config file at
+  `$XDG_CONFIG_HOME/agent-plan-archive/config.yaml`. Carries the
+  per-machine archive clone path, the working-repo scan roots used by
+  the migration skill, and any performance tuning knobs. Never
+  contains tokens, never contains host classification, and is not
+  required for the archive's authoritative behaviour to be
+  reproducible.
+
+A working draft of `config/hosts.yaml` is:
+
+```yaml
+version: 1
+hosts:
+  github.com:
+    class: personal
+    primary_identity: graysurf
+  gitlab.com:
+    class: personal
+  gitlab.example.com:
+    class: employer
+    employer: ExampleCorp
+    retention: delete-on-termination
+```
+
+A working draft of the local config is:
+
+```yaml
+version: 1
+archive_clone_path: ~/Project/graysurf/agent-plan-archive
+working_repo_roots:
+  - ~/Project
+performance:
+  refresh_batch_size: 50
+```
+
+Both schemas are illustrative for v1 and finalized during plan
+execution.
+
 ### Retention of employer-sourced material
 
 - The archive repository must publish, in its `README.md` or an
@@ -142,9 +195,11 @@ skills:
   > from that organization, including archived plan folders and
   > index snapshots, will be deleted from this repository.
 
-- The notice must reference the `source.host` field in
-  `metadata.yaml` and the matching `_index/<host>/...` paths so that
-  the deletion criterion is mechanically identifiable.
+- The notice must explicitly cite `config/hosts.yaml` as the
+  authoritative source of the employer-host list, and reference the
+  `source.host` field in `metadata.yaml` together with the matching
+  `_index/<host>/...` paths so that the deletion criterion is
+  mechanically identifiable and reproducible from the archive alone.
 
 ### Migration skill
 
@@ -156,7 +211,10 @@ skills:
   successfully before deleting the original `docs/plans/<slug>/` folder
   in the working repo.
 - The skill records source provenance into `metadata.yaml` before
-  writing the archive commit.
+  writing the archive commit, and resolves `source.host` against
+  `config/hosts.yaml` so the resulting `metadata.yaml` carries the
+  host classification (and employer label, when applicable) that was
+  in force at archive time.
 - The skill does not chain to commit / PR for the source-repo deletion
   step beyond standard project rules (`semantic-commit` and the active
   delivery skill remain authoritative).
@@ -203,6 +261,9 @@ skills:
 - Define the date-prefixed plan folder naming rule for new plans.
 - Define rules for the local index / cache that lives inside the archive
   repository as append-only snapshots.
+- Define the `config/hosts.yaml` schema inside the archive repository
+  and the machine-local config schema at
+  `$XDG_CONFIG_HOME/agent-plan-archive/config.yaml`.
 - Author two new skills:
   - Plan migration skill (user-invoked, dry-run-first, transactional).
   - Work-history query skill (read cache, explicit refresh, single-repo
@@ -236,6 +297,10 @@ skills:
   `sympoies/nils-cli` (matching the existing `agent-runtime-kit` /
   `nils-cli` boundary called out in
   `docs/source/inventory-target-architecture.md`).
+- Provider authentication and host endpoint configuration remain
+  owned by `forge-cli`. The archive system reads only the
+  classification layer (`config/hosts.yaml`) and does not modify or
+  duplicate `forge-cli` config.
 - Provider API access must go through `forge-cli` so authentication and
   host configuration follow existing conventions.
 - The migration skill should call existing `semantic-commit` and active
@@ -267,7 +332,22 @@ skills:
    notice) publishes a formal employer-sourced retention statement
    committing to deletion of all employer-originated material upon
    termination of the corresponding employment relationship, with the
-   mechanical identification anchored on the `source.host` field.
+   mechanical identification anchored on the `source.host` field and
+   on `config/hosts.yaml`.
+10. The archive repository commits a `config/hosts.yaml` file that
+    classifies every provider host the archive references as
+    `personal` or `employer`, names the employer for employer-class
+    entries, and carries the retention policy. Migration writes the
+    resolved classification into each new `metadata.yaml`.
+11. A machine-local config at
+    `$XDG_CONFIG_HOME/agent-plan-archive/config.yaml` carries the
+    archive clone path, working-repo scan roots, and performance
+    tuning knobs. Skills tolerate its absence by falling back to
+    documented defaults, and never store tokens or host
+    classification there.
+12. `forge-cli` configuration is not modified or duplicated by the
+    archive system; the archive system delegates all provider API
+    access to `forge-cli`.
 
 ## Acceptance Criteria
 
@@ -292,6 +372,13 @@ skills:
   contains the employer-sourced retention statement and the wording is
   reviewed and accepted by the maintainer before any company-sourced
   plan or snapshot is written.
+- Adding a new employer host to `config/hosts.yaml` and re-running
+  the migration skill for a plan from that host results in a
+  `metadata.yaml` whose host classification fields reflect the new
+  entry without any other code or config change.
+- Running the migration or query skill on a machine that has no
+  local config under `$XDG_CONFIG_HOME/agent-plan-archive/` succeeds
+  using documented defaults and reports the defaults it used.
 
 ## Validation Plan
 
@@ -366,4 +453,7 @@ A `create-plan-tracking-issue` invocation that uses this document as
 3. Migration skill (dry-run-first, transactional).
 4. `_index/` snapshot contract and refresh semantics.
 5. Query skill (single-repo, cross-repo, archive linkage).
-6. Manifest / plugin registration and validation pass.
+6. Configuration layering: `config/hosts.yaml` schema + seeded
+   entries, machine-local config schema + defaults, integration
+   points with `forge-cli`.
+7. Manifest / plugin registration and validation pass.
