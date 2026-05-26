@@ -76,6 +76,9 @@ skills:
 
   ```text
   agent-plan-archive/
+  ├── README.md                       (or LEGAL.md; carries the retention notice)
+  ├── config/
+  │   └── hosts.yaml                  (host classification, retention anchor)
   ├── plans/
   │   └── <host>/<org-or-group-path>/<repo>/<YYYY-MM-DD>-<slug>/
   │       ├── PLAN.md
@@ -84,6 +87,7 @@ skills:
   └── _index/
       └── <host>/<org-or-group-path>/<repo>/
           ├── issues/<number>/<ISO8601>.json
+          ├── issues/<number>/<ISO8601>.scrub.log   (when scrubbing redacted content)
           └── pulls/<number>/<ISO8601>.json
   ```
 
@@ -94,20 +98,26 @@ skills:
 - `<org-or-group-path>` preserves nested GitLab groups verbatim
   (`acme/platform/backend`).
 - `<repo>` uses the canonical repo slug.
-- `<YYYY-MM-DD>` records the archive date (plan completion date), not the
-  plan creation date.
+- `<YYYY-MM-DD>` records the date the plan folder was first created in
+  its working repository. The same prefix is preserved verbatim through
+  archive so the working-repo folder name and the archive path always
+  match, and migration never has to rename or recompute the date.
 - `<slug>` keeps the original plan slug, kebab-case, three to six words.
 - Newly created plan folders in working repos adopt the
-  `<YYYY-MM-DD>-<slug>` form so the working-repo name already matches the
-  archive name. Existing pre-v1 plan folders keep their current names.
+  `<YYYY-MM-DD>-<slug>` form. Existing pre-v1 plan folders keep their
+  current slug-only names and are archived under their existing name.
 
 ### Source plan provenance
 
 - Every archived plan carries a `metadata.yaml` capturing source host,
-  org / group path, repo, branch, the archive-time commit SHA, and the
-  original in-repo path, plus references to the issue and PR / MR that
-  drove the plan. The exact field shape is illustrative and finalized in
-  the plan-skill design.
+  org / group path, repo, branch, the archive-time commit SHA, the
+  original in-repo path, the host classification resolved against
+  `config/hosts.yaml` at archive time (and the employer label when
+  applicable), and references to the issue and PR / MR that drove the
+  plan. The captured classification is recorded as audit evidence;
+  it is not the authoritative input for the retention deletion query
+  (see `Retention of employer-sourced material`). The exact field
+  shape is illustrative and finalized in the plan-skill design.
 
 ### Archive repository
 
@@ -177,23 +187,40 @@ execution.
 
 ### Retention of employer-sourced material
 
-- The archive repository must publish, in its `README.md` or an
-  equivalent top-level notice, a formal statement to the effect that
-  any material originating from an employer-operated GitHub or GitLab
-  instance is retained solely for the maintainer's use during the
-  active employment relationship with that organization, and that all
-  such material will be removed from the archive upon termination of
-  the relevant employment relationship.
+- The archive repository must publish, in `README.md` or `LEGAL.md`,
+  a formal statement to the effect that any material originating from
+  an employer-operated GitHub or GitLab instance is retained solely
+  for the maintainer's use during the active employment relationship
+  with that organization, and that the archive repository as a whole
+  will be destroyed on termination of any such employment
+  relationship.
+- Honouring the statement requires deleting the entire archive
+  repository (including its full git history) rather than performing
+  in-tree file deletion, because file-level deletion would leave a
+  reachable copy in git history. After destruction, any personally
+  originated content the maintainer wishes to preserve is
+  reconstructed into a freshly initialized archive.
+- The current state of `config/hosts.yaml` is the authoritative
+  classification input. The retention deletion criterion ("is this
+  archive subject to destruction") is determined by querying the
+  present-day `config/hosts.yaml`, not by reading historical
+  `metadata.yaml` snapshots. Re-classifying a host from `personal` to
+  `employer` is therefore sufficient to bring all existing plans and
+  snapshots from that host under the deletion clause without editing
+  any existing `metadata.yaml`.
 - The canonical wording for the notice is finalized during plan
   execution. A working draft is:
 
   > Materials in this repository that originate from an
-  > employer-operated GitHub or GitLab instance are retained solely
-  > for the maintainer's use during the active employment
-  > relationship with the respective organization. Upon termination
-  > of any such employment relationship, all materials originating
-  > from that organization, including archived plan folders and
-  > index snapshots, will be deleted from this repository.
+  > employer-operated GitHub or GitLab instance, as classified by
+  > `config/hosts.yaml`, are retained solely for the maintainer's
+  > use during the active employment relationship with the
+  > respective organization. Upon termination of any such employment
+  > relationship, the archive repository as a whole, including its
+  > git history, will be destroyed in order to remove all such
+  > materials. Any personally originated content the maintainer
+  > wishes to preserve is reconstructed into a freshly initialized
+  > archive afterwards.
 
 - The notice must explicitly cite `config/hosts.yaml` as the
   authoritative source of the employer-host list, and reference the
@@ -208,13 +235,17 @@ execution.
 - Default behaviour is dry-run. A `--apply` flag (or equivalent) is
   required to actually move files.
 - Move is transactional: the skill pushes the new archive commit
-  successfully before deleting the original `docs/plans/<slug>/` folder
-  in the working repo.
+  successfully before deleting the original plan folder in the working
+  repo (`docs/plans/<YYYY-MM-DD>-<slug>/` for v1 plans, or
+  `docs/plans/<slug>/` for pre-v1 legacy plans).
 - The skill records source provenance into `metadata.yaml` before
   writing the archive commit, and resolves `source.host` against
   `config/hosts.yaml` so the resulting `metadata.yaml` carries the
   host classification (and employer label, when applicable) that was
-  in force at archive time.
+  in force at archive time. This captured classification is audit
+  evidence; the authoritative classification for retention deletion
+  is always the current `config/hosts.yaml` (see `Retention of
+  employer-sourced material`).
 - The skill does not chain to commit / PR for the source-repo deletion
   step beyond standard project rules (`semantic-commit` and the active
   delivery skill remain authoritative).
@@ -232,6 +263,13 @@ execution.
   time (issue body, comments, state, labels, timestamps, and similar
   fields). Exact payload trimming is finalized in the implementation
   plan.
+- Before a snapshot is committed, the refresh step scans the payload
+  for common secret patterns (tokens, API keys, passwords, private
+  key headers, AWS-style access IDs, and similar). Matches are
+  redacted in place, a sibling `<ISO8601>.scrub.log` file lists each
+  redaction by location, and the user is required to review the log
+  before the snapshot commit is created. Snapshots that contain no
+  redactions do not emit a scrub log.
 - "Latest" snapshot is the lexically last file in the ref folder; no
   symlink, no pointer file.
 - Query behaviour reads cache by default and surfaces the latest
@@ -328,12 +366,14 @@ execution.
    appropriate plugin entries.
 8. Validation includes manifest schema checks, render-golden updates if
    new skill bodies are added, and the standard runtime-smoke pass.
-9. The archive repository's `README.md` (or an equivalent top-level
-   notice) publishes a formal employer-sourced retention statement
-   committing to deletion of all employer-originated material upon
-   termination of the corresponding employment relationship, with the
-   mechanical identification anchored on the `source.host` field and
-   on `config/hosts.yaml`.
+9. The archive repository's `README.md` or `LEGAL.md` publishes a
+   formal employer-sourced retention statement committing to
+   destruction of the entire archive repository (working tree plus
+   git history) upon termination of any corresponding employment
+   relationship, with the mechanical identification anchored on the
+   current `config/hosts.yaml`. The statement also describes the
+   freshly-initialized-archive reconstruction step for personally
+   originated content.
 10. The archive repository commits a `config/hosts.yaml` file that
     classifies every provider host the archive references as
     `personal` or `employer`, names the employer for employer-class
@@ -348,6 +388,11 @@ execution.
 12. `forge-cli` configuration is not modified or duplicated by the
     archive system; the archive system delegates all provider API
     access to `forge-cli`.
+13. Snapshot writes pass through a secret-scrubbing step that redacts
+    common token / key / password patterns before commit, emits a
+    `<ISO8601>.scrub.log` sibling when any redaction occurs, and
+    requires user review of the scrub log before the snapshot commit
+    is created.
 
 ## Acceptance Criteria
 
@@ -379,6 +424,14 @@ execution.
 - Running the migration or query skill on a machine that has no
   local config under `$XDG_CONFIG_HOME/agent-plan-archive/` succeeds
   using documented defaults and reports the defaults it used.
+- Re-classifying a host from `personal` to `employer` in
+  `config/hosts.yaml` is sufficient to bring every existing plan
+  folder and `_index/` snapshot from that host under the retention
+  deletion clause, with no edits to any historical `metadata.yaml`.
+- Refreshing a provider issue whose payload contains a deliberately
+  planted secret pattern produces a redacted snapshot plus a
+  `<ISO8601>.scrub.log` enumerating the redaction, and the snapshot
+  commit is held until the user acknowledges the scrub log.
 
 ## Validation Plan
 
@@ -402,10 +455,21 @@ execution.
   may conflict with employment or data-handling agreements. v1
   proceeds with explicit user acceptance ([U8]) and is bounded by the
   employer-sourced retention statement decided above (see
-  `Retention of employer-sourced material`). The schema records
-  `source.host` in every `metadata.yaml` so the archive can be split
-  later by host with a deterministic filter and so the
-  end-of-employment deletion criterion is mechanically identifiable.
+  `Retention of employer-sourced material`). Deletion is implemented
+  by destroying the entire archive repository (working tree plus git
+  history) so file-only deletion of `_index/` or `plans/` paths is
+  explicitly insufficient and never substituted. The schema records
+  `source.host` in every `metadata.yaml` and the authoritative
+  classification lives in `config/hosts.yaml` so the deletion
+  criterion is mechanically identifiable and is responsive to later
+  re-classification without rewriting historical metadata.
+- **Secret leakage through snapshots (medium).** Provider issues and
+  PRs sometimes contain accidentally pasted tokens or keys. Storing
+  the raw payload in the archive extends the exposure window. The
+  refresh step therefore redacts common patterns before commit and
+  emits a per-snapshot `.scrub.log` for user review. Detection is
+  pattern-based and not exhaustive; novel secret shapes remain a
+  residual risk and the plan must enumerate the patterns covered.
 - **Accidental source-repo deletion.** The migration skill defaults to
   dry-run and only deletes after a successful archive push. The plan
   must specify the exact failure modes (push rejected, partial commit,
