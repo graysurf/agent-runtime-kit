@@ -75,9 +75,9 @@ plan-archive refresh --repo <host/org/repo> [--since <YYYY-MM-DD>] --format json
 ## Boundary
 
 `plan-archive query` owns cache reads, cross-repo aggregation, and
-plan↔ref link traversal; `plan-archive refresh` owns the forge-cli
-fetch, secret scrubbing, and append-only snapshot writes. The skill
-body owns the read-vs-refresh decision, surfacing `fetched_at`, and
-enforcing the scrub-log review gate before any refresh commit. It
-never instructs the user to call `forge-cli` directly for a payload
-the CLI already fetches.
+plan↔ref link traversal. `plan-archive refresh` owns the forge-cli
+payload fetch, the scrubbing pass, and the append-only snapshot
+writes. The skill body owns the read-vs-refresh decision, surfacing
+`fetched_at`, and enforcing the scrub-log review gate before any
+refresh commit. It relies on the CLI for every provider payload
+instead of calling `forge-cli` for the same data.
