@@ -2,13 +2,13 @@
 
 ## Current State
 
-- Status: in-progress (Sprint 2 landing under nils-cli v0.14.0)
+- Status: complete (Sprint 2 merged under nils-cli v0.14.0; tracking issue #2 closed)
 - Target scope: whole plan (2-sprint revision)
-- Execution window: Sprint 2 active (final sprint)
+- Execution window: Sprint 2 (final sprint)
 - Staged execution confirmation: not applicable
-- Current task: Sprint 2 wrap-up (open PR)
+- Current task: complete
 - Next task: none — plan complete after Sprint 2 PR merges
-- Last updated: 2026-05-21
+- Last updated: 2026-05-27 (status reconciled at archival: all tasks done, Sprint 2 merged, tracking issue #2 closed)
 - Branch/commit: `feat/plan-03-sprint-2-render-goldens-drift-fixtures` (active; built on Sprint 1 merge `dd31390`)
 - Source document: docs/plans/2026-05-20-03-reporting-poc/03-reporting-poc-plan.md
 - Direct source-doc execution waiver: not applicable
