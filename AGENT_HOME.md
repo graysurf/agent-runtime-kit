@@ -2,91 +2,22 @@
 
 ## Purpose & Scope
 
-- This file defines home-scope/global defaults for the local agent runtime
-  layer, shared by both Codex and Claude Code.
-- It is git-managed in `agent-runtime-kit` and live-loaded through:
+- This file defines shared home-scope defaults for the local agent runtime
+  layer used by Codex and Claude Code.
+- It is git-managed in `agent-runtime-kit` and loaded through:
   - `$CODEX_HOME/AGENTS.md` (normally `$HOME/.codex/AGENTS.md`)
   - `$HOME/.claude/CLAUDE.md`
-  Both symlinks should point directly at this `AGENT_HOME.md` file in the
+  Both should symlink directly to this `AGENT_HOME.md` file in the
   checked-out source repo.
-- It intentionally uses the `AGENT_HOME.md` name, not `AGENTS.md` or
-  `CLAUDE.md`, so neither Codex nor Claude reads the same policy twice when
-  this source repository is the active project and a project-local
-  `AGENTS.md` / `CLAUDE.md` is also present.
-- It must be safe as fallback policy for unrelated workspaces, not only this
-  repo.
-- A closer project or directory `AGENTS.md` / `CLAUDE.md` can override or
-  extend these defaults.
+- The filename is intentionally not `AGENTS.md` or `CLAUDE.md`, so this source
+  repo can also keep project-local policy without double-loading the same
+  defaults.
+- This must be safe fallback policy for unrelated workspaces. A closer project
+  or directory `AGENTS.md` / `CLAUDE.md` can override or extend it.
 - Keep this file concise. Detailed workflows belong in docs resolved by
   `agent-docs`.
 
-## Default Work Mode
-
-- Natural-language collaboration is the default interface.
-- Prompt templates and skills are steering aids, not mandatory entrypoints
-  unless explicitly invoked.
-- For explicit implementation, maintenance, validation, or delivery requests,
-  execute after required preflight instead of prolonging planning.
-- For business, requirement, feasibility, or customer-facing discussions,
-  evaluate first and do not jump to implementation unless asked.
-- Treat user-provided or customer-provided material as input to assess, not as
-  already-validated truth.
-- When conclusions depend on uncertainty, separate known facts, assumptions,
-  inferences, and open questions.
-
-## Delegation Modes
-
-- Subagent delegation is opt-in. Use explicit user instruction or prompt modes
-  such as `parallel-first` or `orchestrator-first` before spawning subagents.
-- `parallel-first` optimizes for safely parallelizable sidecar work.
-- `orchestrator-first` makes the main agent own intent, scope, dispatch,
-  integration, validation, and final answer while subagents own implementation
-  lanes.
-- Outside an explicit delegation mode, follow the runtime harness rules and do
-  not treat this file alone as permission to spawn subagents.
-- Do not use delegation modes for small changes, unclear requirements, tightly
-  coupled refactors, destructive operations, or work whose next step blocks on
-  a subagent result.
-
-## Operating Defaults
-
-- Ask only the minimum clarification needed when objective, done criteria,
-  scope, constraints, environment, or safety/reversibility are materially
-  unclear.
-- When assumptions are acceptable, state them briefly and proceed.
-- Before editing code, scripts, docs, or config, inspect the target plus
-  relevant definitions, call sites, loading paths, or project rules — not just
-  the lines being changed.
-- For testable production behavior changes, prefer failing-test evidence
-  before editing production code; when not practical, state an explicit waiver
-  and substitute validation before editing.
-- For external, unstable, or time-sensitive claims, prefer authoritative
-  sources and cite the evidence used.
-- Keep answers concise, high-signal, and easy to verify.
-- Keep precision-critical technical terms, standards, APIs, commands, and
-  proper nouns in English when clearer.
-- Debug/test artifacts: write to
-  `${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/`
-  instead of `/tmp`, and reference that path in the reply.
-
-## Evidence & Traceability
-
-- Use traceable citations when source material materially affects a
-  requirement, feasibility, work, or external-fact claim.
-- Source tags: `[U#]` user input, `[F#]` local files/code/docs, `[W#]` web
-  source, `[A#]` app/API/CLI/tool result, `[I#]` inference from cited facts.
-- Do not present unsupported assumptions as facts.
-- If external lookup is needed, run the `task-tools` preflight first.
-
-## Memory Usage
-
-- Use personal environment memory only for personal setup, recurring
-  preferences, workspace/account conventions, or phrases like "same as before"
-  and "my usual setup".
-- Follow the checked-out agent-docs runbook for detailed rules.
-- Do not use memory for secrets, temporary task state, or project state.
-
-## `agent-docs` Preflight Policy
+## Required Preflight
 
 - `agent-docs` is mandatory before implementation, external lookup, skill
   lifecycle work, edits, tests, commits, or delivery.
@@ -108,30 +39,59 @@
 - New repository bootstrap: run `agent-doc-init`, then rerun the baseline
   check.
 
-## Commit Rules
+## Work Mode
 
-- Always use the `semantic-commit` (or `semantic-commit-autostage`) skill —
-  direct `git commit` is blocked by hook, and the body gate enforces 1–2
-  bullets on non-trivial commits.
-- Pre-commit: follow `DEVELOPMENT.md` to run the relevant tests/checks before
-  committing.
+- Natural-language collaboration is the default interface.
+- Prompt templates and skills are steering aids, not mandatory entrypoints
+  unless explicitly invoked.
+- For explicit implementation, maintenance, validation, or delivery requests:
+  run required preflight, then execute instead of prolonging planning.
+- For business, requirement, feasibility, or customer-facing discussions,
+  evaluate first and do not jump to implementation unless asked.
+- Treat user-provided or customer-provided material as input to assess, not as
+  already-validated truth.
+- Ask only the minimum clarification needed when objective, done criteria,
+  scope, constraints, environment, or safety/reversibility are materially
+  unclear.
+- When assumptions are acceptable, state them briefly and proceed.
+- When conclusions depend on uncertainty, separate known facts, assumptions,
+  inferences, and open questions.
+- Before editing code, scripts, docs, or config, inspect the target plus
+  relevant definitions, call sites, loading paths, or project rules.
+- For testable production behavior changes, prefer failing-test evidence before
+  editing production code; when not practical, state an explicit waiver and
+  substitute validation before editing.
+- Keep answers concise, high-signal, and easy to verify.
+- Keep precision-critical technical terms, standards, APIs, commands, and
+  proper nouns in English when clearer.
 
-## Issue / PR / MR Rules
+## Delegation
 
-- For agent-owned provider issues, PRs, and MRs, use the active workflow or
-  `forge-cli` surface instead of raw provider commands. Direct `gh pr create`
-  / `glab mr create` are blocked by hook; PR/MR delivery should go through the
-  active delivery skill.
-- Labels describe the record's type, area, state or size, and workflow for
-  triage and automation. When the active project provides
-  `manifests/forge-labels.yaml`, select labels from that catalog and follow
-  `core/policies/forge-label-taxonomy.md`; current CLI / skill surfaces handle
-  ensure, validation, and application details.
-- Branch: `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, 3–6 words;
-  ticket id `ABC-123` → `feat/abc-123-<slug>`).
-- Draft an accurate 1–2 sentence summary grounded in the actual diff before
-  opening — never derive title / body from `git log -1`.
-- Never force-push `main`.
+- Subagent delegation is opt-in. Use explicit user instruction or prompt modes
+  such as `parallel-first` or `orchestrator-first` before spawning subagents.
+- `parallel-first` optimizes for safely parallelizable sidecar work.
+- `orchestrator-first` makes the main agent own intent, scope, dispatch,
+  integration, validation, and final answer while subagents own implementation
+  lanes.
+- Outside an explicit delegation mode, follow the runtime harness rules and do
+  not treat this file alone as permission to spawn subagents.
+- Do not use delegation modes for small changes, unclear requirements, tightly
+  coupled refactors, destructive operations, or work whose next step blocks on
+  a subagent result.
+
+## Evidence, Memory, And External Facts
+
+- Use traceable citations when source material materially affects a
+  requirement, feasibility, work, or external-fact claim.
+- Source tags: `[U#]` user input, `[F#]` local files/code/docs, `[W#]` web
+  source, `[A#]` app/API/CLI/tool result, `[I#]` inference from cited facts.
+- Do not present unsupported assumptions as facts.
+- For external, unstable, or time-sensitive claims, run `task-tools` preflight,
+  prefer authoritative sources, and cite the evidence used.
+- Use personal environment memory only for personal setup, recurring
+  preferences, workspace/account conventions, or phrases like "same as before"
+  and "my usual setup".
+- Do not use memory for secrets, temporary task state, or project state.
 
 ## Files, Hooks, And Validation
 
@@ -139,6 +99,9 @@
   files.
 - For temporary/debug artifacts without a project-defined output path, create
   a project run directory with `agent-out project --topic <topic> --mkdir`.
+- Debug/test artifacts without a project-defined path belong under
+  `${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/`,
+  not `/tmp`; reference that path in the reply.
 - Do not override established tool/workflow artifact contracts; use
   `agent-out audit` before cleaning or enforcing the runtime-kit state
   tree (`$AGENT_HOME/out/`, normally
@@ -158,7 +121,29 @@
   available so `.envrc` / `.env` handling is explicit in non-interactive agent
   sessions. Do not run `direnv allow` automatically.
 
-## Heuristic System
+## Git, Commits, Issues, PRs, And MRs
+
+- Always use the `semantic-commit` (or `semantic-commit-autostage`) skill;
+  direct `git commit` is blocked by hook, and the body gate enforces 1-2
+  bullets on non-trivial commits.
+- Pre-commit: follow `DEVELOPMENT.md` to run the relevant tests/checks before
+  committing.
+- For agent-owned provider issues, PRs, and MRs, use the active workflow or
+  `forge-cli` surface instead of raw provider commands. Direct `gh pr create`
+  or `glab mr create` are blocked by hook; PR/MR delivery should go through
+  the active delivery skill.
+- Labels describe the record's type, area, state or size, and workflow for
+  triage and automation. When the active project provides
+  `manifests/forge-labels.yaml`, select labels from that catalog and follow
+  `core/policies/forge-label-taxonomy.md`; current CLI / skill surfaces handle
+  ensure, validation, and application details.
+- Branch: `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, 3-6 words;
+  ticket id `ABC-123` becomes `feat/abc-123-<slug>`).
+- Draft an accurate 1-2 sentence summary grounded in the actual diff before
+  opening; never derive title or body from `git log -1`.
+- Never force-push `main`.
+
+## Session Closeout
 
 `core/policies/heuristic-system/HEURISTIC_SYSTEM.md` is the detailed routing
 policy for turning workflow failures and repeated lessons into durable

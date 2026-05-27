@@ -260,7 +260,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "AGENT_HOME.md:37-49"
+          - "AGENT_HOME.md:68-80"
           - "docs/source/inventory-target-architecture.md:226-228"
       claude:
         state: not-shipped
@@ -626,7 +626,7 @@ surfaces:
             note: "live Codex session"
             descriptive_only: true
         source_manifest:
-          - "AGENT_HOME.md:37-49"
+          - "AGENT_HOME.md:68-80"
       claude:
         state: shipped
         mechanism: "same shared home prompt, same policy text"
@@ -642,4 +642,4 @@ surfaces:
             note: "live Claude session"
             descriptive_only: true
         source_manifest:
-          - "AGENT_HOME.md:37-49"
+          - "AGENT_HOME.md:68-80"

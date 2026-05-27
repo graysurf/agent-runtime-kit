@@ -73,7 +73,7 @@ can pivot to a uniform table:
 - Codex reads from: `$CODEX_HOME/AGENTS.md` on session start
   (`docs/source/inventory-target-architecture.md:540-544`).
 - arkit source: root `AGENT_HOME.md`, shared with Claude's
-  `$HOME/.claude/CLAUDE.md` (`AGENT_HOME.md:5-15`,
+  `$HOME/.claude/CLAUDE.md` (`AGENT_HOME.md:5-16`,
   `DEVELOPMENT.md:37-41`).
 - arkit install mechanism: symlink `$CODEX_HOME/AGENTS.md →
   <source_root>/AGENT_HOME.md`. The source filename is deliberately
@@ -170,7 +170,7 @@ can pivot to a uniform table:
 
 - Codex reads from: **nowhere** in the runtime-kit activation surface;
   `AGENT_HOME.md` describes opt-in delegation modes as policy text, not
-  file-backed subagent discovery (`AGENT_HOME.md:37-49`).
+  file-backed subagent discovery (`AGENT_HOME.md:68-80`).
 - arkit source: **none**.
 - arkit install mechanism: not installed.
 - Acceptance lane: none.
@@ -330,7 +330,7 @@ can pivot to a uniform table:
 - Codex reads from: the loaded home prompt (`$CODEX_HOME/AGENTS.md`)
   carries opt-in delegation modes such as `parallel-first` and
   `orchestrator-first`; there is no separate Codex file loader for
-  subagent definitions (`AGENT_HOME.md:37-49`).
+  subagent definitions (`AGENT_HOME.md:68-80`).
 - arkit source: root `AGENT_HOME.md`.
 - arkit install mechanism: same symlink as surface 1; policy text is
   loaded as part of the home-scope prompt.
