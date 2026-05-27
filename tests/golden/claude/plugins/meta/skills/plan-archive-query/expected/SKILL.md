@@ -1,7 +1,7 @@
 ---
 name: plan-archive-query
 description:
-  Read and refresh the agent-plan-archive work-history cache through the nils-cli `plan-archive query` and `plan-archive refresh` commands, holding any refresh commit until the scrub log is reviewed.
+  Read and refresh the agent-plan-archive work-history cache through the nils-cli `plan-archive query` and `plan-archive refresh` commands before opening a new plan or diagnosing a suspected recurring problem; hold any refresh commit until the scrub log is reviewed.
 ---
 
 # Plan Archive Query
@@ -23,6 +23,8 @@ Inputs:
 - For reads: a single ref URL (`--ref`), aggregate filters
   (`--host` / `--org` / `--repo` / `--since`), or an archived-plan
   link (`--plan` / `--refs-from`).
+- For discovery: grep over `<archive-root>/catalog.json` when the
+  exact issue, PR, MR, or plan ref is unknown.
 - For refresh: a single ref (`--ref`) or a repo batch
   (`--repo` [`--since`]).
 
@@ -62,13 +64,16 @@ plan-archive refresh --repo <host/org/repo> [--since <YYYY-MM-DD>] --format json
 
 1. Default to reading the cache; only refresh when the user asks for
    fresh data or a ref is known to be stale.
-2. For reads, present each record's `fetched_at` so the user can judge
+2. Consult the archive only before opening a new plan or when
+   diagnosing a suspected recurring / previously resolved problem; do
+   not turn lookup into an every-task step.
+3. For reads, present each record's `fetched_at` so the user can judge
    staleness.
-3. For a refresh, run the command, then inspect the JSON
+4. For a refresh, run the command, then inspect the JSON
    `requires_review` flag. If any snapshot emitted a `.scrub.log`,
    stop and have the user review the log before committing the
    snapshot. Never commit a redacted snapshot without that review.
-4. After review, commit the new `_index/` snapshots through the
+5. After review, commit the new `_index/` snapshots through the
    standard commit flow. Snapshots are append-only — never overwrite
    or delete an existing one.
 
