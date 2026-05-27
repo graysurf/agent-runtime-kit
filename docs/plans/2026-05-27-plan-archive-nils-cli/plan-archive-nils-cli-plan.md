@@ -22,7 +22,7 @@ sub-plan tree co-located, following the precedent set by
 
 ## Read First
 
-- Primary source: docs/plans/plan-archive-nils-cli/plan-archive-nils-cli-discussion-source.md
+- Primary source: docs/plans/2026-05-27-plan-archive-nils-cli/plan-archive-nils-cli-discussion-source.md
 - Source type: discussion-to-implementation-doc
 - Master design: docs/plans/plan-archive-system/plan-archive-system-discussion-source.md
 - Sibling plan: docs/plans/plan-archive-runtime-kit/plan-archive-runtime-kit-plan.md

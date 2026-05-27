@@ -10,8 +10,8 @@
 
 ## Execution
 
-- Recommended plan: docs/plans/plan-archive-nils-cli/plan-archive-nils-cli-plan.md
-- Recommended execution state: docs/plans/plan-archive-nils-cli/plan-archive-nils-cli-execution-state.md
+- Recommended plan: docs/plans/2026-05-27-plan-archive-nils-cli/plan-archive-nils-cli-plan.md
+- Recommended execution state: docs/plans/2026-05-27-plan-archive-nils-cli/plan-archive-nils-cli-execution-state.md
 
 ## Purpose
 
