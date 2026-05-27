@@ -70,7 +70,8 @@ state:
 
 ```bash
 plan-issue --format json tracking run update \
-  --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER"
+  --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ## Workflow
