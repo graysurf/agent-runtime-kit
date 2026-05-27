@@ -36,6 +36,13 @@ limit). Agents iterate two or three times before discovering the workaround
 - Source: sympoies/nils-cli#506 P1-2 (F-5); originally surfaced in
   `terrylin/agent-runtime-testing:docs/plans/gitlab-skill-validation/
   gitlab-skill-validation-discussion-source.md` Findings table F-5.
+- Recurrence (2026-05-27): hit again during sympoies/nils-cli#589 delivery. A
+  body bullet starting with `- --now stays the deterministic override …` was
+  rejected with `commit body line 5 must start with '- ' followed by uppercase
+  letter`. New trigger class — a leading double-dash flag (`--now`), common when
+  a bullet describes a CLI flag; `--auto-fix` did not rescue it (it cannot
+  capitalize a flag). Confirms the gap recurs across session families (now also
+  PR-delivery commits).
 
 ## Impact
 
@@ -58,7 +65,8 @@ with a regular verb / noun:
 - After:  `- Fixes \`forge-cli list\` rejection on empty repos.`
 
 Backticked identifiers as the first token after `- ` are also rejected; quote
-or rephrase as above.
+or rephrase as above. Leading CLI flags (e.g. `- --now …`) are rejected too;
+lead with a capitalized verb instead, e.g. `- Keep \`--now\` as the override`.
 
 ## Promotion Criteria
 
