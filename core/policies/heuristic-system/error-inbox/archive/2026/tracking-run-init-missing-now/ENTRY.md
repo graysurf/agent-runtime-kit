@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-27
 - Host-side fix landed: 2026-05-27 (sympoies/nils-cli#589)
 - Area: dispatch/create-plan-tracking-issue
@@ -42,4 +42,12 @@ validated, and linked from this entry.
 
 ## Next Action
 
-Land graysurf/agent-runtime-kit#134 (pass `--now` in the tracking skill run init/update examples for deterministic parity). Upstream default-hardening is done — sympoies/nils-cli#588 closed via nils-cli#589 — so the remaining work is skill-side only and no longer safety-critical.
+None — resolved: #134 landed via PR #139 (squash 4d78adb on main); all 11 tracking run init/update invocations now pass --now and rendered surfaces + goldens were refreshed. Upstream nils-cli#589 already closed #588.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/139`
+
+## Archive
+
+- Archived: 2026-05-27
+- Reason: Promoted: skill-side fix landed in #139; upstream hardening nils-cli#589 closed #588.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/139`
