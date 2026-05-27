@@ -2,7 +2,7 @@
 #
 # Schema: ../core/docs/schemas/surfaces.schema.json
 # Architecture: docs/source/inventory-target-architecture.md
-# Plan: docs/plans/2026-05-23-support-matrix-rendered/
+# Plan: docs/plans/support-matrix-rendered/
 #
 # This manifest is the canonical row registry for the cross-product
 # SUPPORT_MATRIX view rendered by `agent-runtime render --target

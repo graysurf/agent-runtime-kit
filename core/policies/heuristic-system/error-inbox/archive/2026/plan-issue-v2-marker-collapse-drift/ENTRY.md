@@ -8,7 +8,7 @@
 - Severity: medium
 - Source upstream PRs: sympoies/nils-cli#453, #454, #455, #456
 - Source upstream release: sympoies/nils-cli v0.17.7
-- Source local context: this repo pins the nils-cli surface in `docs/source/nils-cli-surface.md` at v0.17.6 while `brew install sympoies/tap/nils-cli` has already advanced the host to v0.17.7; the discussion source under `docs/plans/2026-05-24-nils-cli-version-alignment/` was authored to close exactly this silent-drift class.
+- Source local context: this repo pins the nils-cli surface in `docs/source/nils-cli-surface.md` at v0.17.6 while `brew install sympoies/tap/nils-cli` has already advanced the host to v0.17.7; the discussion source under `docs/plans/nils-cli-version-alignment/` was authored to close exactly this silent-drift class.
 
 ## Signal
 
@@ -117,7 +117,7 @@ archive) when all four of the following are true:
   later); `README.md:19` and `SUPPORT_MATRIX.md` `min_nils_cli`
   cells are refreshed in the same PR per the existing checklist.
 - The Step 1 CI gate from
-  `docs/plans/2026-05-24-nils-cli-version-alignment/` lands so the next time a
+  `docs/plans/nils-cli-version-alignment/` lands so the next time a
   host advances past the pinned surface, the gate fires before
   downstream tests assume the host binary matches.
 
@@ -136,7 +136,7 @@ description and either:
 
 This rule applies to every plan-issue / forge-cli minor across the
 0.x series until the version-alignment doctor class
-(`docs/plans/2026-05-24-nils-cli-version-alignment/` Step 2) lands and enforces
+(`docs/plans/nils-cli-version-alignment/` Step 2) lands and enforces
 it mechanically.
 
 ## Next Action

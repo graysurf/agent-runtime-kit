@@ -151,9 +151,9 @@ Verified on 2026-05-24 with installed nils-cli v0.18.0:
 - Upstream release: `v0.18.0` is published and non-prerelease.
 - Real tracking issue exercise:
   graysurf/agent-runtime-kit#84 was created from
-  `docs/plans/2026-05-24-skill-lifecycle-management/` using
+  `docs/plans/skill-lifecycle-management/` using
   `plan-issue record open --format json --repo graysurf/agent-runtime-kit`
-  with bundle `docs/plans/2026-05-24-skill-lifecycle-management`.
+  with bundle `docs/plans/skill-lifecycle-management`.
 - Dry-run comment-shape check before live create:
   source, plan, and state comments all returned
   `visible_fence=false` and `hidden_payload=true`.
@@ -175,7 +175,7 @@ Verified on 2026-05-24 with installed nils-cli v0.18.0:
   `Seeded from plan`.
 - Plan bundle validation and repo gate:
   `plan-tooling validate --file
-  docs/plans/2026-05-24-skill-lifecycle-management/skill-lifecycle-management-plan.md
+  docs/plans/skill-lifecycle-management/skill-lifecycle-management-plan.md
   --format text --explain` passed, and the pre-push hook ran
   `scripts/ci/all.sh` positions 1-11 successfully before pushing
   `feat/skill-lifecycle-management-plan`.
