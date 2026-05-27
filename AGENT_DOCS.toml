@@ -17,17 +17,25 @@
 # notes = "Cross-repo guidance inherited from AGENT_DOCS_HOME for any project"
 
 [[document]]
+context = "startup"
+scope = "global"
+path = "docs/source/global-pointers/plan-archive-query-pointer-v1.md"
+required = true
+when = "always"
+notes = "Narrow cross-repo cue for consulting agent-plan-archive before new plans or recurring-problem diagnosis"
+
+[[document]]
+context = "startup"
+scope = "global"
+path = "docs/source/global-pointers/heuristic-system-pointer-v1.md"
+required = true
+when = "always"
+notes = "Heuristic System routing summary; full policy in core/policies/heuristic-system/HEURISTIC_SYSTEM.md"
+
+[[document]]
 context = "project-dev"
 scope = "project"
 path = "docs/source/docs-placement-retention-policy-v1.md"
 required = true
 when = "always"
 notes = "Docs placement and retention policy for docs/** and repository-root Markdown changes"
-
-[[document]]
-context = "project-dev"
-scope = "global"
-path = "docs/source/plan-archive-query-pointer-v1.md"
-required = true
-when = "always"
-notes = "Narrow cross-repo cue for consulting agent-plan-archive before new plans or recurring-problem diagnosis"
