@@ -163,18 +163,61 @@ def extract_message(command: str) -> str | None:
     double_quoted_re = re.compile(r'(?:--message|-m)\s+"((?:\\.|[^"\\])*)"', re.DOTALL)
     match = double_quoted_re.search(command)
     if match:
-        raw = match.group(1)
-        return (
-            raw.replace("\\\\", "\x00")
-            .replace('\\"', '"')
-            .replace("\\n", "\n")
-            .replace("\\t", "\t")
-            .replace("\x00", "\\")
-        )
+        return _unescape_double_quoted(match.group(1))
 
     single_quoted_re = re.compile(r"(?:--message|-m)\s+'([^']*)'", re.DOTALL)
     match = single_quoted_re.search(command)
     if match:
         return match.group(1)
 
+    return None
+
+
+def _unescape_double_quoted(raw: str) -> str:
+    """Undo the common backslash escapes inside a double-quoted shell string."""
+    return (
+        raw.replace("\\\\", "\x00")
+        .replace('\\"', '"')
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace("\x00", "\\")
+    )
+
+
+def iter_flag_values(command: str, *flags: str) -> list[str]:
+    """Recover every value passed to any of `flags` in a shell command.
+
+    Recognizes `--flag value` and `--flag=value`, where the value is a
+    single-quoted string, a double-quoted string (with common escapes), or a
+    bare unquoted token. Best-effort guardrail parsing, not a real shell, so
+    flag names are matched only when followed by `=` or whitespace.
+    """
+    values: list[str] = []
+    for flag in flags:
+        pattern = re.compile(
+            re.escape(flag)
+            + r"""(?:=|\s+)(?:'(?P<sq>[^']*)'|"(?P<dq>(?:\\.|[^"\\])*)"|(?P<bare>[^\s'"]\S*))"""
+        )
+        for match in pattern.finditer(command):
+            if match.group("sq") is not None:
+                values.append(match.group("sq"))
+            elif match.group("dq") is not None:
+                values.append(_unescape_double_quoted(match.group("dq")))
+            elif match.group("bare") is not None:
+                values.append(match.group("bare"))
+    return values
+
+
+def read_message_file(command: str, *, max_bytes: int = 65536) -> str | None:
+    """Best-effort read of a `--message-file` argument's contents.
+
+    Returns the file text (capped at `max_bytes`) for the first readable
+    `--message-file` path, or None when no path parses or can be read.
+    """
+    for path in iter_flag_values(command, "--message-file"):
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                return handle.read(max_bytes)
+        except OSError:
+            continue
     return None
