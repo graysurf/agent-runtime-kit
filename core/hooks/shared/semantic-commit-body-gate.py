@@ -9,7 +9,14 @@ import sys
 # Codex may execute hooks through a source symlink; keep the checkout clean.
 sys.dont_write_bytecode = True
 
-from hook_common import ALLOW, command_from, emit_block, read_payload
+from hook_common import (
+    ALLOW,
+    command_from,
+    emit_block,
+    extract_message,
+    is_semantic_commit_commit,
+    read_payload,
+)
 
 BLOCK_REASON_TEMPLATE = (
     "semantic-commit message is missing a body\n"
@@ -22,63 +29,6 @@ BLOCK_REASON_TEMPLATE = (
 
 TRIVIAL_TYPES = {"chore", "docs", "style", "build"}
 TRIVIAL_KEYWORDS = ("bump", "refresh", "regenerate", "pin", "lockfile")
-
-
-def is_semantic_commit_commit(command: str) -> bool:
-    if not re.search(r"\bsemantic-commit\s+commit\b", command):
-        return False
-    if re.search(r"(--validate-only|--dry-run|-h\b|--help\b)", command):
-        return False
-    return not re.search(
-        r"\bsemantic-commit\s+(staged-context|config|help|--help)\b",
-        command,
-    )
-
-
-def extract_message(command: str) -> str | None:
-    heredoc_re = re.compile(
-        r"""(?:--message|-m)
-            \s+
-            ["']?
-            \$\(
-            \s*cat\s*<<(?P<dash>-)?
-            \s*
-            (?P<q>['"])?
-            (?P<tag>\w+)
-            (?P=q)?
-            \s*\n
-            (?P<body>.*?)
-            \n
-            (?P<leading>[ \t]*)
-            (?P=tag)
-            \s*
-            \n?
-            \s*\)
-            ["']?""",
-        re.DOTALL | re.VERBOSE,
-    )
-    match = heredoc_re.search(command)
-    if match:
-        return match.group("body")
-
-    double_quoted_re = re.compile(r'(?:--message|-m)\s+"((?:\\.|[^"\\])*)"', re.DOTALL)
-    match = double_quoted_re.search(command)
-    if match:
-        raw = match.group(1)
-        return (
-            raw.replace("\\\\", "\x00")
-            .replace('\\"', '"')
-            .replace("\\n", "\n")
-            .replace("\\t", "\t")
-            .replace("\x00", "\\")
-        )
-
-    single_quoted_re = re.compile(r"(?:--message|-m)\s+'([^']*)'", re.DOTALL)
-    match = single_quoted_re.search(command)
-    if match:
-        return match.group(1)
-
-    return None
 
 
 def split_subject_body(message: str) -> tuple[str, list[str]]:

@@ -13,6 +13,7 @@ stays in `targets/<product>/`.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections.abc import Iterable, Mapping
 from typing import Any
@@ -109,3 +110,71 @@ def file_paths_from_payload(payload: Mapping[str, Any]) -> list[str]:
     for candidate in patch_text_candidates(payload):
         paths.extend(apply_patch_paths(candidate))
     return paths
+
+
+def is_semantic_commit_commit(command: str) -> bool:
+    """True when the command is a mutating `semantic-commit commit` invocation.
+
+    Dry-run / validate-only / help / non-commit subcommands are excluded so
+    message-content gates only fire on commands that actually write a commit.
+    """
+    if not re.search(r"\bsemantic-commit\s+commit\b", command):
+        return False
+    if re.search(r"(--validate-only|--dry-run|-h\b|--help\b)", command):
+        return False
+    return not re.search(
+        r"\bsemantic-commit\s+(staged-context|config|help|--help)\b",
+        command,
+    )
+
+
+def extract_message(command: str) -> str | None:
+    """Best-effort recovery of the commit message from a semantic-commit command.
+
+    Handles `--message`/`-m` passed as a `$(cat <<TAG ...)` HEREDOC, a
+    double-quoted string (with common escapes), or a single-quoted string.
+    Returns None when no message argument can be parsed.
+    """
+    heredoc_re = re.compile(
+        r"""(?:--message|-m)
+            \s+
+            ["']?
+            \$\(
+            \s*cat\s*<<(?P<dash>-)?
+            \s*
+            (?P<q>['"])?
+            (?P<tag>\w+)
+            (?P=q)?
+            \s*\n
+            (?P<body>.*?)
+            \n
+            (?P<leading>[ \t]*)
+            (?P=tag)
+            \s*
+            \n?
+            \s*\)
+            ["']?""",
+        re.DOTALL | re.VERBOSE,
+    )
+    match = heredoc_re.search(command)
+    if match:
+        return match.group("body")
+
+    double_quoted_re = re.compile(r'(?:--message|-m)\s+"((?:\\.|[^"\\])*)"', re.DOTALL)
+    match = double_quoted_re.search(command)
+    if match:
+        raw = match.group(1)
+        return (
+            raw.replace("\\\\", "\x00")
+            .replace('\\"', '"')
+            .replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace("\x00", "\\")
+        )
+
+    single_quoted_re = re.compile(r"(?:--message|-m)\s+'([^']*)'", re.DOTALL)
+    match = single_quoted_re.search(command)
+    if match:
+        return match.group(1)
+
+    return None
