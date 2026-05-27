@@ -287,6 +287,32 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.plan-archive-migrate.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.plan-archive-migrate
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: seed a synthetic working repo with a closed plan folder and a synthetic archive clone with config/hosts.yaml
+    invocation: plan-archive migrate dry-run JSON probe against the seeded plan folder
+    expected_exit_code: 0
+    expected_artifacts: dry-run report with archive target, file list, classification, and metadata payload
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: meta.plan-archive-query.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.plan-archive-query
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: seed a synthetic archive clone with a seeded _index/ snapshot tree
+    invocation: plan-archive query single-ref and aggregate JSON probes against the seeded index
+    expected_exit_code: 0
+    expected_artifacts: snapshot records with fetched_at surfaced
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: media.image-processing.shared-cli.deterministic
     product: shared-cli
     domain: media

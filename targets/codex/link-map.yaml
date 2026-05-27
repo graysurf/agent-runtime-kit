@@ -156,6 +156,18 @@ entries:
     destination: skills/meta/setup-project
     recursive: false
 
+  - id: meta.plan-archive-migrate.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/plan-archive-migrate
+    destination: skills/meta/plan-archive-migrate
+    recursive: false
+
+  - id: meta.plan-archive-query.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/plan-archive-query
+    destination: skills/meta/plan-archive-query
+    recursive: false
+
   - id: media.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/media/.codex-plugin/plugin.json
