@@ -26,6 +26,8 @@ pre-commit:
 
 pre-push:
   commands:
+    signed-commits:
+      run: bash scripts/ci/verify-signed-commits.sh
     ci-gate-stack:
       files: echo README.md
       run: bash -c 'bash scripts/ci/all.sh' -- {files}
