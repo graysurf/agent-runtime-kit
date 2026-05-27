@@ -88,44 +88,25 @@
 
 ## `agent-docs` Preflight Policy
 
-- `agent-docs` is the mandatory home-scope dispatch contract before
-  implementation, external lookup, or skill lifecycle work.
-- `agent-docs` resolves its catalog from `$AGENT_DOCS_HOME` (or the
-  `--docs-home` flag). Export `AGENT_DOCS_HOME` to point at the active
-  `agent-runtime-kit` checkout (the home-scope docs catalog now lives in
-  this repo, not in the retired `$HOME/.config/agent-kit`).
-- Do not use `$HOME/.agents` or `$AGENT_HOME` as the docs-home indirection.
-  `$AGENT_HOME` is reserved for `agent-out` artifacts (runtime-kit state
-  tree). The `$HOME/.agents` alias is retired; live Codex skill discovery
-  works from `$HOME/.codex/skills` directly against the runtime-kit build
-  output.
-- Required context sequence:
-  - new session or task: `startup`
-  - repository edits, tests, commits, or delivery:
-    `startup` → `project-dev`
-  - technical research or external verification: `startup` → `task-tools`
-  - skill lifecycle work: `startup` → `skill-dev`
-- Resolve each required context in strict checklist mode (with
-  `AGENT_DOCS_HOME` exported, `--docs-home` may be omitted):
+- `agent-docs` is mandatory before implementation, external lookup, skill
+  lifecycle work, edits, tests, commits, or delivery.
+- Resolve docs from the active `agent-runtime-kit` checkout. Export
+  `AGENT_DOCS_HOME=/path/to/agent-runtime-kit` (or pass `--docs-home`) before
+  preflight; the catalog lives here, not in retired `$HOME/.config/agent-kit`.
+- Do not use `$HOME/.agents` or `$AGENT_HOME` as docs-home. `$AGENT_HOME` is
+  for `agent-out` runtime artifacts, and `$HOME/.agents` is retired.
+- Always run `startup`, then add one strict context for the active intent:
+  - repo edits, tests, commits, or delivery: `project-dev`
+  - technical research or external verification: `task-tools`
+  - skill lifecycle work: `skill-dev`
+- Resolve every required context in strict checklist mode:
   `agent-docs resolve --context <context> --strict --format checklist`
-- Concrete preflight sequence before edits/tests/commits:
-  1. Determine runtime intent (`startup`, `project implementation`,
-     `technical research`, `skill authoring`).
-  2. `agent-docs resolve --context startup --strict --format checklist`
-  3. Run the strict gate for the active intent:
-     - Project implementation:
-       `agent-docs resolve --context project-dev --strict --format checklist`
-     - Technical research:
-       `agent-docs resolve --context task-tools --strict --format checklist`
-     - Skill authoring:
-       `agent-docs resolve --context skill-dev --strict --format checklist`
-  4. If any required doc is missing or strict resolve fails, stop write
-     actions and run
-     `agent-docs baseline --check --target all --strict --format text`.
-  5. Proceed with edits/tests/commits only when required preflight docs are
-     `status=present`.
-- New repository bootstrap (missing baseline docs): run `agent-doc-init` and
-  then verify with the baseline check above.
+- If any required doc is missing or strict resolve fails, stop write actions
+  and run `agent-docs baseline --check --target all --strict --format text`.
+- Proceed with edits/tests/commits only when required docs are
+  `status=present`.
+- New repository bootstrap: run `agent-doc-init`, then rerun the baseline
+  check.
 
 ## Commit Rules
 
