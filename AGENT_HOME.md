@@ -63,8 +63,6 @@
 - For external, unstable, or time-sensitive claims, prefer authoritative
   sources and cite the evidence used.
 - Keep answers concise, high-signal, and easy to verify.
-- Default user-facing language is Traditional Chinese unless requested
-  otherwise.
 - Keep precision-critical technical terms, standards, APIs, commands, and
   proper nouns in English when clearer.
 - Debug/test artifacts: write to
