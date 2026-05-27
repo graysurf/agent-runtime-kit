@@ -163,6 +163,73 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_allowed(decision)
 
+    def test_blocks_claude_coauthor_via_trailer_flag(self) -> None:
+        # Reproduces the gate bypass: the Claude trailer is passed via
+        # `--trailer` alongside structured `--subject`/`--body-bullet`, so there
+        # is no `--message` body for extract_message() to recover.
+        command = (
+            "semantic-commit commit --type fix --scope hooks "
+            "--subject 'tighten gate' --body-bullet 'why it matters' "
+            "--trailer 'Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "Claude Co-Authored-By trailer")
+
+    def test_blocks_claude_coauthor_in_body_bullet(self) -> None:
+        command = (
+            "semantic-commit commit --subject 'fix: thing' "
+            "--body-bullet 'Co-authored-by: Claude Haiku 4.5 <noreply@anthropic.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "Claude Co-Authored-By trailer")
+
+    def test_blocks_claude_coauthor_via_message_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            msg = Path(tmp) / "msg.txt"
+            msg.write_text(
+                "feat: thing\n\n- why\n\n"
+                "Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>\n",
+                encoding="utf-8",
+            )
+            code, decision, stderr = run_hook(
+                "block-claude-coauthor-trailer.py",
+                command_payload(f"semantic-commit commit --message-file {msg}"),
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "Claude Co-Authored-By trailer")
+
+    def test_allows_non_claude_trailer_flag(self) -> None:
+        command = (
+            "semantic-commit commit --subject 'feat: thing' --body-bullet 'why' "
+            "--trailer 'Co-Authored-By: Jane Dev <jane@example.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+    def test_allows_structured_fields_without_trailer(self) -> None:
+        command = (
+            "semantic-commit commit --type fix --scope hooks "
+            "--subject 'tighten gate' --body-bullet 'why it matters'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
     def test_claude_coauthor_gate_is_claude_only(self) -> None:
         script = "block-claude-coauthor-trailer.py"
         self.assertTrue((HOOK_DIR / script).is_file(), script)
