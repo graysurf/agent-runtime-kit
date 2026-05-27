@@ -292,6 +292,35 @@ skills:
     required_clis: {}
     state_out_mode: runtime
 
+  - id: meta.plan-archive-migrate
+    domain: meta
+    source: core/skills/meta/plan-archive-migrate
+    products:
+      codex:
+        name: plan-archive-migrate
+        render_to: plugins/meta/skills/plan-archive-migrate/SKILL.md
+      claude:
+        name: plan-archive-migrate
+        render_to: plugins/meta/skills/plan-archive-migrate/SKILL.md
+    required_clis:
+      plan-archive: ">=0.25.0"
+      semantic-commit: ">=0.25.0"
+    state_out_mode: runtime
+
+  - id: meta.plan-archive-query
+    domain: meta
+    source: core/skills/meta/plan-archive-query
+    products:
+      codex:
+        name: plan-archive-query
+        render_to: plugins/meta/skills/plan-archive-query/SKILL.md
+      claude:
+        name: plan-archive-query
+        render_to: plugins/meta/skills/plan-archive-query/SKILL.md
+    required_clis:
+      plan-archive: ">=0.25.0"
+    state_out_mode: runtime
+
   - id: media.image-processing
     domain: media
     source: core/skills/media/image-processing

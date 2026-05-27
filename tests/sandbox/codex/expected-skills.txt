@@ -39,6 +39,8 @@ meta.create-skill
 meta.deploy
 meta.heuristic-inbox
 meta.heuristic-session-closeout
+meta.plan-archive-migrate
+meta.plan-archive-query
 meta.pre-pr
 meta.release
 meta.remove-project-skill

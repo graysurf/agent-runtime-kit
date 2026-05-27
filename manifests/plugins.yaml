@@ -41,6 +41,8 @@ plugins:
       - meta.repo-retro
       - meta.semantic-commit
       - meta.setup-project
+      - meta.plan-archive-migrate
+      - meta.plan-archive-query
     product_manifests:
       codex: targets/codex/plugins/meta/.codex-plugin/plugin.json
       claude: targets/claude/plugins/meta/.claude-plugin/plugin.json

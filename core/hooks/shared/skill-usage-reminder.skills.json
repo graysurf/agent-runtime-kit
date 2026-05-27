@@ -262,5 +262,21 @@
     "aliases": ["remove-project-skill"],
     "reason": "Project-local skill removal changes future agent behavior in a consuming repo.",
     "record_when": "The workflow removes a project-local skill directory or purges project-local references."
+  },
+  {
+    "skill": "plan-archive-migrate",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["plan-archive-migrate", "plan archive migrate", "archive plan", "migrate plan"],
+    "reason": "Migrating a plan moves a closed plan folder into the archive repo and deletes it from the working repo — a durable, hard-to-reverse lifecycle change.",
+    "record_when": "The workflow runs plan-archive migrate --apply or commits an archived plan."
+  },
+  {
+    "skill": "plan-archive-query",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["plan-archive-query", "plan archive query", "query archive", "refresh archive snapshot"],
+    "reason": "Refreshing a snapshot writes an append-only provider payload that may require scrub-log review before commit.",
+    "record_when": "The workflow runs plan-archive refresh and commits a new _index/ snapshot."
   }
 ]
