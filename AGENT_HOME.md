@@ -183,18 +183,7 @@
 
 `core/policies/heuristic-system/HEURISTIC_SYSTEM.md` is the detailed routing
 policy for turning workflow failures and repeated lessons into durable
-knowledge.
-
-- Same-turn transient fixes need no retained record; mention them in the reply.
-- Important unresolved workflow gaps or suspected nils-cli / primitive bugs go
-  through `heuristic-inbox`, with version, minimal repro, upstream issue link
-  when found, and the current workaround.
-- Reproducible product bugs should get a focused test or script fix. Repeated
-  cross-skill lessons belong in operation records; stable policy belongs in
-  `AGENT_HOME.md`, project policy files, or the relevant skill `SKILL.md`.
-- Use `$heuristic-session-closeout` after the session goal is achieved to review
-  available evidence, update or create retained Heuristic System records when
-  warranted, validate them, and preserve eligible changes on `main`.
-- Active inbox entries live under
-  `core/policies/heuristic-system/error-inbox/`; archive promoted or `wontfix`
-  entries via `heuristic-inbox`, never by deleting them in place.
+knowledge; the startup preflight surfaces its routing summary via the
+`agent-docs` global pointer. After the session goal is achieved, run
+`$heuristic-session-closeout` to review available evidence and preserve
+warranted retained records on `main`.
