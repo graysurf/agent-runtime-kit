@@ -18,6 +18,11 @@ Skill `meta/heuristic-inbox` ended with `pass`. Summary: Prepared source evidenc
 - Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/93
 - Plan bundle:
   `docs/plans/plan-issue-v3-surface-alignment/plan-issue-v3-surface-alignment-plan.md`
+- Ingested evidence:
+  `evidence/issue-132-closeout-surface-drift.md` — issue #132 closeout showed
+  `tracking close-ready --provider-repo --issue` can still classify a live,
+  close-ready tracking issue as `RECORD_UNOPENED`, while deterministic
+  body/comments evidence and `record close --dry-run` / `record close` succeed.
 
 ## Impact
 
@@ -62,6 +67,12 @@ session, validation, review, and closeout lifecycle comments; prefer
 for strict closeout plus provider close. Avoid documenting the retired helpers
 as a supported path even while the installed CLI still accepts them.
 
+For final lightweight tracking closeout, treat `record close --dry-run` plus
+`record close` as the authoritative live gate when the `tracking close-ready`
+controller cannot reconcile provider evidence. Do not respond to a false
+`RECORD_UNOPENED` by reposting source/plan/progress evidence if `record audit`
+already sees the lifecycle comments.
+
 ## Promotion Criteria
 
 Promote after the durable fix or accepted-risk decision is implemented,
@@ -69,4 +80,8 @@ validated, and linked from this entry.
 
 ## Next Action
 
-Write implementation handoff, deliver runtime-kit skill alignment, then remove retired transitional helpers from nils-cli.
+Write implementation handoff, deliver runtime-kit skill alignment, and either
+fix live `tracking close-ready --provider-repo --issue` reconciliation or
+update `plan-tracking-issue-closeout` guidance to call `record close --dry-run`
+as the live pre-close gate. Then remove retired transitional helpers from
+nils-cli.
