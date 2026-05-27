@@ -74,14 +74,16 @@ plan-issue --format json tracking status \
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --phase validating \
   --validation-overall pass --validation-command "cargo test" \
-  --validation-status pass --validation-evidence "$VALIDATION_LOG"
+  --validation-status pass --validation-evidence "$VALIDATION_LOG" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --run-state "$RUN_STATE" --post state,session,validation \
   --repair-dashboard
 
 plan-issue --format json tracking run update \
-  --run-state "$RUN_STATE" --review-decision approve
+  --run-state "$RUN_STATE" --review-decision approve \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --run-state "$RUN_STATE" --post review --repair-dashboard
@@ -91,7 +93,8 @@ forge-cli pr deliver --repo "$OWNER_REPO" --pr "$PR_NUMBER" --format json
 # Final state when validation / review are complete and PR is merged:
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --phase ready_for_close \
-  --linked-pr "$OWNER_REPO#$PR_NUMBER"
+  --linked-pr "$OWNER_REPO#$PR_NUMBER" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --run-state "$RUN_STATE" --post state --repair-dashboard

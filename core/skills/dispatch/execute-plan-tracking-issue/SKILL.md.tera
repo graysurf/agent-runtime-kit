@@ -70,7 +70,8 @@ plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" \
   --selected-task "$TASK_ID" \
   --branch "$BRANCH" \
-  --note "starting $TASK_ID"
+  --note "starting $TASK_ID" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --run-state "$RUN_STATE" \
@@ -86,7 +87,8 @@ plan-issue --format json tracking run update \
   --validation-overall pass \
   --validation-command "cargo test -p ..." \
   --validation-status pass \
-  --validation-evidence "$VALIDATION_LOG"
+  --validation-evidence "$VALIDATION_LOG" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --run-state "$RUN_STATE" \

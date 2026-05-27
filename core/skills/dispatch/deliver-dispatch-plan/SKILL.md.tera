@@ -83,7 +83,8 @@ plan-issue --repo "$OWNER_REPO" --format json record open \
 
 plan-issue --format json tracking run init \
   --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
-  --profile dispatch --bundle "$PLAN_BUNDLE"
+  --profile dispatch --bundle "$PLAN_BUNDLE" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # For each lane: dispatch `execute-dispatch-lane` with the lane scope.
 # After lane PRs and reviews land, post dispatch-level state / session

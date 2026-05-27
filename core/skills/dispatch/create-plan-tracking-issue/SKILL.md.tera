@@ -87,7 +87,8 @@ plan-issue --format json tracking run init \
   --issue "$ISSUE" \
   --bundle "$PLAN_BUNDLE" \
   --execution-state-file "$PLAN_BUNDLE/$SLUG-execution-state.md" \
-  --branch "$BRANCH"
+  --branch "$BRANCH" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 Replace `area::docs` with the primary `area::` value that matches the

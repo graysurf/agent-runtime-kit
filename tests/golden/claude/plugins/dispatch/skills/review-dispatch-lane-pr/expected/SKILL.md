@@ -70,7 +70,8 @@ review-evidence --plan "$PLAN" --pr "$LANE_PR" --format json \
   >"$REVIEW_EVIDENCE"
 
 plan-issue --format json tracking run update \
-  --run-state "$RUN_STATE" --review-decision "$DECISION"
+  --run-state "$RUN_STATE" --review-decision "$DECISION" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --profile dispatch --run-state "$RUN_STATE" \

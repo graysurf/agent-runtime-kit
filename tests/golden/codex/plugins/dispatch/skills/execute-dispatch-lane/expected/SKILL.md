@@ -69,7 +69,8 @@ plan-issue --format json tracking status \
 
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" \
-  --selected-task "$TASK_ID" --branch "$BRANCH"
+  --selected-task "$TASK_ID" --branch "$BRANCH" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # After local work completes:
 forge-cli pr create --repo "$OWNER_REPO" --base "$PLAN_BRANCH" \
@@ -78,7 +79,8 @@ forge-cli pr create --repo "$OWNER_REPO" --base "$PLAN_BRANCH" \
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER" \
   --validation-overall pass --validation-command "cargo test" \
-  --validation-status pass --validation-evidence "$VALIDATION_LOG"
+  --validation-status pass --validation-evidence "$VALIDATION_LOG" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
   --profile dispatch \
