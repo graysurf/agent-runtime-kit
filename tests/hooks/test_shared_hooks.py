@@ -103,6 +103,78 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "missing a body")
 
+    def test_blocks_claude_coauthor_trailer_in_heredoc(self) -> None:
+        command = (
+            "semantic-commit commit --message \"$(cat <<'MSG'\n"
+            "feat(hook): add gate\n\n"
+            "- explain why\n\n"
+            "Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\n"
+            "MSG\n)\""
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "Claude Co-Authored-By trailer")
+
+    def test_blocks_claude_coauthor_for_any_model_inline(self) -> None:
+        # Model name after `Claude` must not matter — block Sonnet/Haiku too.
+        command = (
+            "semantic-commit commit --message "
+            "'fix: thing\n\n- why\n\nCo-authored-by: Claude Sonnet 4.6 <noreply@anthropic.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "Claude Co-Authored-By trailer")
+
+    def test_allows_non_claude_coauthor(self) -> None:
+        command = (
+            "semantic-commit commit --message "
+            "'feat: thing\n\n- why\n\nCo-Authored-By: Jane Dev <jane@example.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+    def test_allows_message_without_claude_trailer(self) -> None:
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload("semantic-commit commit --message 'feat: thing\n\n- why'"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+    def test_allows_claude_trailer_on_dry_run(self) -> None:
+        command = (
+            "semantic-commit commit --dry-run --message "
+            "'feat: thing\n\nCo-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "block-claude-coauthor-trailer.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+    def test_claude_coauthor_gate_is_claude_only(self) -> None:
+        script = "block-claude-coauthor-trailer.py"
+        self.assertTrue((HOOK_DIR / script).is_file(), script)
+        claude_fragment = (
+            REPO_ROOT / "core" / "hooks" / "claude" / "settings.hooks.jsonc"
+        ).read_text(encoding="utf-8")
+        codex_block = (
+            REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml"
+        ).read_text(encoding="utf-8")
+        self.assertIn(f"hooks/{script}", claude_fragment)
+        self.assertNotIn(f"hooks/{script}", codex_block)
+
     def test_blocks_bare_python_in_uv_project_and_allows_shared_bypass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)

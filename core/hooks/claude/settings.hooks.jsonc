@@ -63,6 +63,11 @@
         },
         {
           "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-claude-coauthor-trailer.py\"",
+          "statusMessage": "agent-runtime-kit: Block Claude co-author trailer"
+        },
+        {
+          "type": "command",
           "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-direct-pr-create.py\"",
           "statusMessage": "agent-runtime-kit: Block direct PR/MR creation"
         },
