@@ -3,19 +3,22 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: not started; plan bundle being prepared for tracking issue
+- Status: not started; tracking issue opened
 - Target scope: read-only `plan-archive discover` CLI in `nils-cli`, plus thin
   `plan-archive-discover` skill wrapper in `agent-runtime-kit`
 - Execution window: Sprint 1 CLI, then Sprint 2 skill wrapper
 - Current task: none
 - Next task: Task 1.1 — define candidate model and shared discovery inputs
 - Last updated: 2026-05-27
-- Branch/commit/PR: feat/plan-archive-discover; plan commit pending; PR pending
+- Branch/commit/PR: feat/plan-archive-discover; plan commit a5c6ea6; PR pending
 - Source document: docs/plans/2026-05-27-plan-archive-discover/plan-archive-discover-discussion-source.md
-- Tracking issue: pending
-- Source snapshot: pending
-- Plan snapshot: pending
-- Initial state snapshot: pending
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/135>
+- Source snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/135#issuecomment-4556244805>
+- Plan snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/135#issuecomment-4556244987>
+- Initial state snapshot:
+  <https://github.com/graysurf/agent-runtime-kit/issues/135#issuecomment-4556245331>
 
 ## Validation Plan
 
@@ -46,6 +49,9 @@
   plan-archive work in other checkouts does not conflict. Authored the source,
   plan, and execution-state bundle for Option B: CLI-owned discovery plus a thin
   runtime skill wrapper. No implementation has started.
+- 2026-05-27: Opened tracking issue #135 with source, plan, and initial state
+  snapshots from plan commit a5c6ea6. Initialized run state for issue #135 and
+  confirmed `record audit --expect-visible` passes.
 
 ## Validation
 
@@ -55,6 +61,9 @@
 | `agent-docs resolve --context project-dev --strict --format checklist` | pass | 2/2 required docs present. | n/a |
 | `plan-tooling validate --file docs/plans/2026-05-27-plan-archive-discover/plan-archive-discover-plan.md --format json` | pass | `{"ok":true,"errors":[]}` (exit 0). | n/a |
 | `rumdl check docs/plans/2026-05-27-plan-archive-discover/*.md` | pass | No issues found. | n/a |
+| `plan-issue --repo graysurf/agent-runtime-kit --format json record open --profile tracking ...` | pass | Opened issue #135 and posted source, plan, and state snapshots. | n/a |
+| `plan-issue --format json tracking run init --provider-repo graysurf/agent-runtime-kit --issue 135 ...` | pass | Initialized run `00000000000000-issue-135`. | n/a |
+| `plan-issue --format json record audit --profile tracking --expect-visible ...` | pass | Visible audit passed for source, plan, and state roles. | `agent-out` run dir |
 
 ## Notes
 
