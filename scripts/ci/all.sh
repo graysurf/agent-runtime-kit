@@ -227,7 +227,7 @@ CODEX_HOME="$ACCEPTANCE_CODEX_HOME" bash scripts/ci/validate-surfaces-manifest.s
 #
 # Shape validation only. Live Codex Desktop discovery still requires
 # `codex debug prompt-input` in a fresh session — see
-# docs/plans/codex-skill-surface-acceptance-cutover/ for the live acceptance
+# docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/ for the live acceptance
 # protocol. The expected check count is documented in that plan's execution
 # state; bump SHAPE_EXPECTED_MIN_CHECKS together with a recorded reason.
 # -----------------------------------------------------------------------------
@@ -274,7 +274,7 @@ if not isinstance(checks, int) or checks < expected_min:
         "checks=%r below documented baseline %d "
         "(bump SHAPE_EXPECTED_MIN_CHECKS in scripts/ci/all.sh "
         "and record the reason in "
-        "docs/plans/codex-skill-surface-acceptance-cutover/"
+        "docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/"
         "codex-skill-surface-acceptance-cutover-execution-state.md)"
         % (checks, expected_min)
     )

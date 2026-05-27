@@ -220,7 +220,7 @@ preflight, not live Codex Desktop acceptance. It validates only the
 runtime-kit source/link-map surface that Codex would discover; live skill
 visibility still requires `codex debug prompt-input` in a fresh Codex
 Desktop session. See
-`docs/plans/codex-skill-surface-acceptance-cutover/` for the live
+`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/` for the live
 acceptance protocol. When the source surface grows new entries, bump
 `SHAPE_EXPECTED_MIN_CHECKS` only if the doctor-reported check count changes;
 record the reason in the cutover execution state.

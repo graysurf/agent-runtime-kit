@@ -328,7 +328,7 @@ Quarantined (not in default CI):
 Live Claude acceptance (a fresh Claude session reading the installed
 surface) has no in-tree CI gate today. The closest analogue on the
 Codex side is `codex debug prompt-input` in
-`docs/plans/codex-skill-surface-acceptance-cutover/`; no equivalent
+`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`; no equivalent
 Claude protocol exists yet.
 
 ## Open Items For Schema Design

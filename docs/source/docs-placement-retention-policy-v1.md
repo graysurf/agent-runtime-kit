@@ -72,10 +72,11 @@ work unless the user explicitly asks for a cleanup pass.
   gives chronological ordering at a glance and matches the archive
   path used by the plan-archive workflow, so migration never has to
   rename or recompute the date.
-- Plan bundle folders created before this policy landed (slug-only
-  names such as `docs/plans/<slug>/`) remain valid and are not
-  retroactively renamed. Either shape may be referenced from other
-  documents.
+- All pre-existing plan bundle folders were normalized to the
+  `<YYYY-MM-DD>-<slug>/` form on 2026-05-27, using the UTC date each
+  folder was first created in this repository. No slug-only
+  `docs/plans/<slug>/` bundles remain; intra-repo references point at
+  the dated paths.
 - Plan bundle files should use the plan slug prefix when possible:
   `<slug>-discussion-source.md`, `<slug>-plan.md`, and
   `<slug>-execution-state.md`. The file slug stays unchanged when the

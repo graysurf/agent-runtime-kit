@@ -55,7 +55,7 @@ Scope rules:
   (`manifests/skills.yaml:481-715`).
 - Live Codex Desktop acceptance is separate from the deterministic
   version floor: `codex debug prompt-input` must show required skills
-  in a fresh session (`docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:29-40`).
+  in a fresh session (`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:29-40`).
 
 ## Surface-By-Surface Shape
 
@@ -302,7 +302,7 @@ can pivot to a uniform table:
   Desktop acceptance requires `codex debug prompt-input`
   (`DEVELOPMENT.md:157-178`,
   `tests/sandbox/codex/expected-skills.txt:1-61`,
-  `docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
+  `docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
 - arkit support today: **shipped (rendered + directory symlink)**.
 
 ### 16. Codex hook registration (`config.toml` managed block)
@@ -414,8 +414,8 @@ Live Codex acceptance:
   `- <name>: ...` entry in the `<skills_instructions>` block with a
   file path under
   `agent-runtime-kit/build/codex/plugins/<domain>/skills/<skill>/SKILL.md`
-  (`docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:29-40`,
-  `docs/plans/codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
+  (`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:29-40`,
+  `docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/codex-skill-surface-acceptance-cutover-execution-state.md:91-107`).
 
 ## Open Items For Schema Design
 

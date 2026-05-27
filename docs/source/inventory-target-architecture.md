@@ -577,7 +577,7 @@ matching loader for each Claude concept. It does not.
   that checks the source/link-map shape feeding this root; it is not a
   substitute for live Codex Desktop acceptance, which still requires
   `codex debug prompt-input` in a fresh session per
-  `docs/plans/codex-skill-surface-acceptance-cutover/`.
+  `docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`.
 - `~/.codex/config.toml` — TOML config with custom hooks declared
   inline. The runtime kit writes only into the
   `# >>> agent-runtime-kit:hooks >>>` managed block; everything outside
