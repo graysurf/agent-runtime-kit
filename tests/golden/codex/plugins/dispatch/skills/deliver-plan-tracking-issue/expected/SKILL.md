@@ -108,11 +108,20 @@ plan-issue --format json tracking run update \
 plan-issue --format json tracking checkpoint \
   --run-state "$RUN_STATE" --live --post review --repair-dashboard
 
-forge-cli pr deliver --repo "$OWNER_REPO" --pr "$PR_NUMBER" --format json
+# `forge-cli pr deliver` is an open→merge macro: it CREATES the PR, waits on
+# required checks, marks it ready, then merges. It does not take an existing
+# `--pr <number>`; it selects the branch-prefix rule from `--kind` (feat→
+# feature, fix→bug, chore→chore, …) and reads HEAD from `--head`. The body
+# MUST contain a `## Summary` section or it aborts with `body_missing_summary`.
+forge-cli pr deliver --repo "$OWNER_REPO" \
+  --kind feature --title "$PR_TITLE" \
+  --head "$BRANCH" --base main \
+  --body-file "$PR_BODY_FILE" \
+  --format json
 
 # Final state when validation / review are complete and PR is merged:
 plan-issue --format json tracking run update \
-  --run-state "$RUN_STATE" --phase ready_for_close \
+  --run-state "$RUN_STATE" --phase ready-for-close \
   --linked-pr "$OWNER_REPO#$PR_NUMBER" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
@@ -148,8 +157,10 @@ plan-issue --format json tracking close-ready \
 5. **Final state + review evidence** — once merged, post a final
    `state` role with `status=complete` AND a `review` role with the
    delivery decision through one canonical `tracking checkpoint --live`
-   invocation. First bump the run state to `phase=ready_for_close` and
-   record the delivery decision; the controller derives
+   invocation. First bump the run state to `phase=ready-for-close`
+   (kebab-case as accepted by the CLI; persisted as `ready_for_close`
+   in `run-state.json`) and record the delivery decision; the
+   controller derives
    `state.status=complete` from that phase and renders the review body
    from `--review-decision`. For single-author plans the deliver agent
    records its own `decision=approve` referencing the merged PRs as
@@ -164,7 +175,7 @@ plan-issue --format json tracking close-ready \
 
    ```bash
    plan-issue --format json tracking run update \
-     --run-state "$RUN_STATE" --phase ready_for_close \
+     --run-state "$RUN_STATE" --phase ready-for-close \
      --linked-pr "$OWNER_REPO#$PR_NUMBER" \
      --review-decision approve \
      --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
