@@ -278,5 +278,13 @@
     "aliases": ["plan-archive-query", "plan archive query", "query archive", "refresh archive snapshot"],
     "reason": "Refreshing a snapshot writes an append-only provider payload that may require scrub-log review before commit.",
     "record_when": "The workflow runs plan-archive refresh and commits a new _index/ snapshot."
+  },
+  {
+    "skill": "plan-archive-discover",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["plan-archive-discover", "plan archive discover", "discover archive candidates", "scan archive candidates"],
+    "reason": "Discover surfaces archive candidates and hands selected folders to plan-archive-migrate, which then drives the durable archive + source-delete lifecycle change.",
+    "record_when": "The workflow scans plan folders, narrows candidate selection, and hands a folder off to plan-archive-migrate."
   }
 ]

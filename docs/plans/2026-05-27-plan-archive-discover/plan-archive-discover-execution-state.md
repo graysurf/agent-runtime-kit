@@ -72,3 +72,16 @@
   implementation lane still lands in `sympoies/nils-cli`.
 - Use `area::cli` for the initial tracking label because the CLI surface is the
   durable behavior owner; the runtime skill remains a wrapper.
+
+## Resolved Open Questions
+
+- Migrate command shape (plan §Open questions): the released CLI
+  (`plan-archive` v0.25.5) emits a single combined `suggested_migrate_command`
+  per eligible folder, preferring self-referential `--issue` / `--pr` / `--mr`
+  refs (`crates/plan-archive/src/discover/mod.rs::build_migrate_command`). The
+  runtime-kit skill follows that contract verbatim and does not synthesize
+  per-ref commands.
+- Closeout markers (plan §Open questions): the CLI owns the verdict via
+  `DiscoverStatus`; the skill never promotes `unknown` to `eligible` based on
+  agent-side heuristics. The skill body codifies that boundary so future agent
+  reviewers do not regress it.
