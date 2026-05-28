@@ -23,13 +23,17 @@ require_cmd git
 [ -d "${TESTBED_ROOT}/.git" ] ||
   die "testbed not found at ${TESTBED_ROOT}"
 
-$quiet || log "closing every open issue in ${TESTBED_REPO}…"
+# Close every open *e2e fixture* issue, but preserve the durable
+# plan-issue-finding tracker issues — this repo doubles as the bug
+# tracker for the plan-issue / plan-tracking skill family, and those
+# issues must survive driver resets.
+$quiet || log "closing open e2e issues in ${TESTBED_REPO} (preserving plan-issue-finding)…"
 open_issues=$(gh issue list \
   --repo "${TESTBED_REPO}" \
   --state open \
   --limit 100 \
-  --json number \
-  --jq '.[].number' 2>/dev/null || true)
+  --json number,labels \
+  --jq '.[] | select(any(.labels[].name; . == "plan-issue-finding") | not) | .number' 2>/dev/null || true)
 if [ -n "${open_issues}" ]; then
   while IFS= read -r n; do
     [ -z "${n}" ] && continue
