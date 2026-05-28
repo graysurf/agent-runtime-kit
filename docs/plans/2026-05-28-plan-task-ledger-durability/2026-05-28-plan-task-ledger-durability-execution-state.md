@@ -83,8 +83,8 @@
 | 3.4 | done | Wire `plan-tracking-issue-closeout` SKILL | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.1. Requires final `tracking run update --note <summary>` before `record close`; adds `ledger-rows-pending` to Failure-modes. |
 | 3.5 | done | Update `handoff-session-prompt` SKILL | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.1. Adds "Plan-tracking handoff" subsection per [D7]. |
 | 3.6 | done | Re-render Codex / Claude / shared goldens | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.2, 3.3, 3.4, 3.5. `agent-runtime render --update-golden`; review diff for unrelated drift. |
-| 3.7 | pending | Add new deterministic smoke probes (ledger-pending + ledger-clean) |  | `graysurf/agent-runtime-kit`. Depends on 2.2. Two new rows in acceptance-matrix; dispatch domain climbs to 13/13. |
-| 3.8 | pending | Runtime-kit CI + deliver via `forge-cli pr deliver --kind feature` |  | `graysurf/agent-runtime-kit`. Depends on 3.1-3.7. Dogfood `ledger-update` on this plan's own rows. |
+| 3.7 | done | Add new deterministic smoke probes (ledger-pending + ledger-clean) | graysurf/agent-runtime-kit#148 squash cf24fcd; dispatch smoke 13/13 | `graysurf/agent-runtime-kit`. Depends on 2.2. Two new rows in acceptance-matrix; dispatch domain climbs to 13/13. |
+| 3.8 | done | Runtime-kit CI + deliver via `forge-cli pr deliver --kind feature` | graysurf/agent-runtime-kit#147 squash 4371584; graysurf/agent-runtime-kit#148 squash cf24fcd; ci/all.sh 1-13 OK; dogfooded ledger-update across rows 3.1-3.8 | `graysurf/agent-runtime-kit`. Depends on 3.1-3.7. Dogfood `ledger-update` on this plan's own rows. |
 
 ## Session Log
 
