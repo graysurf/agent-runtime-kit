@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=0.22.3`.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
 - Issue precondition: `tracking close-ready --profile dispatch` returns
   `ready: true` and `blockers: []`. Every lane PR must be merged with
   required-check pass, every lane review must have no unresolved
@@ -34,9 +34,14 @@ Outputs:
 
 - `record repair-dashboard` for a pre-closeout dispatch dashboard fix
   when needed.
+- `tracking run update --profile dispatch --note "<closing summary>"`
+  writes a final closeout summary event to `events.jsonl` immediately
+  before `record close`. The summary must enumerate lanes / tasks done,
+  linked PR(s), and any deferred follow-up; format is free-form.
 - `record close --profile dispatch` posts the canonical dispatch
   `closeout` lifecycle comment and closes the provider issue.
-- No run-state mutation beyond marking the issue closed in events.
+- No run-state mutation beyond the final `--note` event and marking the
+  issue closed in events.
 
 Failure modes:
 
@@ -52,6 +57,13 @@ Failure modes:
 - Visible-completeness lint codes relevant here:
   `closeout-missing-approval`, `closeout-missing-linked-pr`,
   `closeout-missing-summary`.
+- `ledger-rows-pending` (from `tracking close-ready --profile
+  dispatch`): a per-lane ledger row is still `pending` or
+  `in-progress` at `phase=ready_for_close`. Remediation: run
+  `plan-tooling ledger-update --execution-state <path> --task '<id>'
+  --status done --evidence <evidence>` for the offending row(s) before
+  re-running the gate; never proceed to `record close` while the
+  blocker fires.
 - Scope-leak: lane implementation; PR creation, update, or merge;
   lightweight-tracking closeout rules applied to a dispatch issue;
   raw `gh issue comment` / `glab issue note` / `forge-cli issue
@@ -72,6 +84,12 @@ plan-issue --format json tracking close-ready \
 plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
   --issue "$ISSUE"
 
+# Final closing summary written to events.jsonl before record close:
+plan-issue --format json tracking run update \
+  --profile dispatch --run-state "$RUN_STATE" \
+  --note "Closeout: <lanes/tasks>; PRs <linked-pr>; followup <none|...>" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
 plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile dispatch \
   --issue "$ISSUE" \
@@ -86,13 +104,18 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 2. **Dashboard repair (optional)** — only when the live dispatch
    dashboard is stale, call `record repair-dashboard` and confirm it
    matches the latest lane evidence.
-3. **Closeout post** — call `record close --profile dispatch` with
+3. **Closing summary event** — immediately before `record close`, call
+   `tracking run update --profile dispatch --note "<closing summary>"`
+   so `events.jsonl` carries a final summary event of the rollout. The
+   summary must enumerate lanes / tasks done, linked PR(s), and any
+   deferred follow-up; format is free-form.
+4. **Closeout post** — call `record close --profile dispatch` with
    every lane PR ref and approval. The strict gate enforces required
    checks and merge SHAs.
-4. **Read-back** — `record audit --profile dispatch --expect-visible`
+5. **Read-back** — `record audit --profile dispatch --expect-visible`
    against the closed issue body and comments; confirm the
    `closeout` role appears with `visible.codes` empty.
-5. **Stop** on any Failure mode code; do not retry blindly.
+6. **Stop** on any Failure mode code; do not retry blindly.
 
 ## Boundary
 
