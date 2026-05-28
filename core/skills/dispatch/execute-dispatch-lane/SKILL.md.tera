@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=0.22.3`, `forge-cli`.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`, `forge-cli`.
 - Issue precondition: the shared dispatch issue exists and is at least
   `RECORD_OPEN_ACTIVE` with no `run-state-stale` warning.
 - Run state precondition: the dispatch `run-state.json` is reconciled
@@ -34,10 +34,18 @@ Inputs:
 
 Outputs:
 
-- Lane-scoped `tracking checkpoint --profile dispatch --post
+- Lane-scoped `tracking checkpoint --profile dispatch --live --post
   state[,session[,validation]]` (only for this lane's task subset).
+  `--live` is the default execution path so the prescribed lifecycle
+  posting writes to the provider instead of returning a dry-run
+  envelope.
 - `tracking run update` writes lane fields (`selected_task`,
   `branch`, `linked_pr`, `validation_*`, notes) for this lane only.
+- `plan-tooling ledger-update --execution-state <path> --task <id>
+  --status <status> --evidence <evidence>` patches the canonical
+  per-lane ledger row in `<slug>-execution-state.md` immediately after
+  the lane's task transitions (started → done / blocked / waived), so
+  the bundle's `## Task Ledger` stays faithful to actual execution.
 - `forge-cli pr create` / `forge-cli pr update` (typically through
   `create-dispatch-lane-pr`).
 
@@ -54,6 +62,12 @@ Failure modes:
 - Visible-completeness lint codes relevant here:
   `state-missing-task-ledger`, `validation-missing-overall`,
   `session-missing-summary`.
+- `ledger-rows-pending` (from `tracking close-ready`): a per-lane
+  ledger row is still `pending` or `in-progress` at
+  `phase=ready_for_close`. Remediation: run `plan-tooling
+  ledger-update --execution-state <path> --task '<id>' --status done
+  --evidence <evidence>` for the offending row(s) before re-running
+  the gate.
 - Scope-leak: reassigning lane scope; mutating unrelated lanes'
   fields; targeting the repository default branch when a
   `PLAN_BRANCH` is assigned; raw `gh issue comment` / `glab issue
@@ -84,7 +98,18 @@ plan-issue --format json tracking run update \
 plan-issue --format json tracking checkpoint \
   --profile dispatch \
   --run-state "$RUN_STATE" \
+  --live \
   --post state,session,validation
+```
+
+After the lane's task transitions, patch the canonical ledger row:
+
+```bash
+plan-tooling ledger-update \
+  --execution-state "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  --task "$TASK_ID" \
+  --status done \
+  --evidence "$VALIDATION_LOG"
 ```
 
 ## Workflow
@@ -99,12 +124,18 @@ plan-issue --format json tracking checkpoint \
    repository default branch.
 4. **Run state update** — `tracking run update` records the lane PR
    ref and validation evidence.
-5. **Lane checkpoint** — `tracking checkpoint --profile dispatch
-   --post state,session,validation` (lane scope only).
-6. **Read-back** — `tracking status --profile dispatch
+5. **Per-lane ledger update** — immediately after the lane's task
+   transitions (started → done / blocked / waived), call `plan-tooling
+   ledger-update --execution-state <path> --task <id> --status
+   <status> --evidence <evidence>` so the bundle's canonical
+   `## Task Ledger` table is patched before the lane checkpoint reads
+   it.
+6. **Lane checkpoint** — `tracking checkpoint --profile dispatch
+   --live --post state,session,validation` (lane scope only).
+7. **Read-back** — `tracking status --profile dispatch
    --expect-visible` and confirm the lane PR ref appears in the
    reconciled view.
-7. **Stop** on any Failure mode code; if the orchestrator redirected
+8. **Stop** on any Failure mode code; if the orchestrator redirected
    lane scope, finish the current update and stop instead of
    expanding.
 

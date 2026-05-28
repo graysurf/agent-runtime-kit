@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=0.22.3`, `forge-cli`, `review-evidence`.
+- CLI floors: `plan-issue >=0.25.10`, `forge-cli`, `review-evidence`.
 - Issue precondition: the shared dispatch issue exists and the lane PR
   has been created by `execute-dispatch-lane` /
   `create-dispatch-lane-pr`.
@@ -34,11 +34,13 @@ Inputs:
 
 Outputs:
 
-- `tracking checkpoint --profile dispatch --post review` for the lane
-  scope (with `--repair-dashboard` when the dashboard is stale).
+- `tracking checkpoint --profile dispatch --live --post review` for the
+  lane scope (with `--repair-dashboard` when the dashboard is stale).
+  `--live` is the default posting hop so the review evidence writes to
+  the provider instead of a dry-run envelope.
 - Dispatch lane `state` / `session` update through `tracking
-  checkpoint --post state,session` when the review outcome flips the
-  lane back to implementation.
+  checkpoint --live --post state,session` when the review outcome flips
+  the lane back to implementation.
 - `forge-cli pr review` posts the provider review comment.
 - `review-evidence` produces a retained findings artifact path or
   URL.
@@ -74,6 +76,7 @@ plan-issue --format json tracking run update \
 
 plan-issue --format json tracking checkpoint \
   --profile dispatch --run-state "$RUN_STATE" \
+  --live \
   --post review --repair-dashboard
 
 forge-cli pr review --repo "$OWNER_REPO" --pr "$PR_NUMBER" \
@@ -89,7 +92,7 @@ forge-cli pr review --repo "$OWNER_REPO" --pr "$PR_NUMBER" \
    `$REVIEW_EVIDENCE` through `review-evidence`. Findings get
    dispositions before approval.
 3. **Run state update** — `tracking run update --review-decision`.
-4. **Review checkpoint** — `tracking checkpoint --post review
+4. **Review checkpoint** — `tracking checkpoint --live --post review
    --repair-dashboard`. If findings flip the lane back to
    implementation, also post `state,session` for the lane scope.
 5. **Provider review comment** — `forge-cli pr review` records the

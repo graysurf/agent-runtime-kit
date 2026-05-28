@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=0.22.3`, `plan-tooling`, `forge-cli`.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`, `forge-cli`.
 - Issue precondition: the dispatch issue does not exist yet, or exists
   and is being resumed by the same orchestrator.
 - Run state precondition: `run-state.json` for the dispatch issue is
@@ -42,10 +42,16 @@ Outputs:
   opens the shared dispatch issue.
 - `tracking run init --profile dispatch` writes the dispatch run
   state.
-- Dispatch-level `tracking checkpoint --profile dispatch --post
+- Dispatch-level `tracking checkpoint --profile dispatch --live --post
   state[,session[,validation[,review]]]` for orchestrator-grade
-  evidence.
-- `tracking checkpoint --repair-dashboard` (or
+  evidence. `--live` is the default posting hop so dispatch-level
+  evidence writes to the provider instead of a dry-run envelope.
+- `plan-tooling ledger-update --execution-state <path> --task <id>
+  --status <status> --evidence <evidence>` finalizes any per-lane
+  ledger row not already patched by `execute-dispatch-lane`, so the
+  bundle's `## Task Ledger` is complete before the close-ready handoff
+  to `dispatch-plan-closeout`.
+- `tracking checkpoint --live --repair-dashboard` (or
   `record repair-dashboard`) to keep the dispatch dashboard fresh.
 - Non-mutating `tracking close-ready --profile dispatch --expect-visible`
   probe before handing off to `dispatch-plan-closeout`.
@@ -91,7 +97,13 @@ plan-issue --format json tracking run init \
 plan-issue --format json tracking checkpoint \
   --profile dispatch \
   --run-state "$RUN_STATE" \
+  --live \
   --post state,session --repair-dashboard
+
+# Finalize any per-lane ledger row not already patched by the lane:
+plan-tooling ledger-update \
+  --execution-state "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  --task "$TASK_ID" --status done --evidence "$LANE_PR_1"
 
 plan-issue --format json tracking close-ready \
   --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
@@ -115,14 +127,19 @@ dispatch plan's scope.
    with its mandatory bundle and `PLAN_BRANCH` base.
 4. **Dispatch-level checkpoints** — between lane completions, post
    dispatch state / session / validation / review evidence through
-   `tracking checkpoint --profile dispatch`.
-5. **Read-back** — `tracking status --profile dispatch --expect-visible`
+   `tracking checkpoint --profile dispatch --live`.
+5. **Ledger finalize** — before the close-ready probe, run
+   `plan-tooling ledger-update` for any per-lane row not already
+   patched by `execute-dispatch-lane`, so the bundle's
+   `## Task Ledger` is complete (`tracking close-ready` refuses on
+   `ledger-rows-pending` otherwise).
+6. **Read-back** — `tracking status --profile dispatch --expect-visible`
    after each dispatch checkpoint; confirm dashboard names every lane
    PR and merge status.
-6. **Close-ready probe** — `tracking close-ready --profile dispatch
+7. **Close-ready probe** — `tracking close-ready --profile dispatch
    --expect-visible`. On `ready: true`, hand off to
    `dispatch-plan-closeout`.
-7. **Stop** on any Failure mode code; never close the dispatch issue
+8. **Stop** on any Failure mode code; never close the dispatch issue
    from this skill.
 
 ## Boundary
