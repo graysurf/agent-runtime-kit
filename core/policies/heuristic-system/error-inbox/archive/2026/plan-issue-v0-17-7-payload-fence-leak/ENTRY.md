@@ -91,11 +91,14 @@ carry the visible JSON fence).
   redundant JSON tail; the state comment loses its markdown narrative
   surface.
 - The user explicitly flagged the regression on
-  graysurf/agent-runtime-kit#83
-  (`"為什麼 留言那些會帶到 json 的輸出？ 你可以參考別的 tracking issue
-  應該都沒有這些格式錯誤的問題"`). Manual patching of #83's three
-  comments via `gh api -X PATCH issues/comments/<id>` was required to
-  restore the prior render shape.
+  graysurf/agent-runtime-kit#83, asking why the issue's three
+  lifecycle comments now carried JSON output in their visible body
+  and pointing out that older tracking issues did not exhibit the
+  format defect. Manual patching of #83's three comments via
+  `gh api -X PATCH issues/comments/<id>` was required to restore the
+  prior render shape. (Original user report was in Chinese;
+  paraphrased to English here per repo convention that source-tag
+  citations are recorded in English.)
 - `dispatch:create-plan-tracking-issue` and any sibling skill that
   surfaces a freshly opened tracker (including
   `dispatch:deliver-plan-tracking-issue` and

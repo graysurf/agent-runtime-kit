@@ -77,11 +77,15 @@ close.
 ## Confirmed Facts
 
 - [U1] User agreed on shipping Bundle A and Bundle B together:
-  「1 2 3 應該要做」+「durable summary + handoff dump 也可以一起補上」.
-- [U2] User framed the goal as: 「在 plan issue 裡要照實回報 execute state
-  才能繼續往下做」. The remediation must keep both the issue and the
-  plan bundle honest enough that a new session can resume without
-  re-deriving per-task progress from git history.
+  approved the three-part per-task ledger remediation (`plan-tooling
+  ledger-update` CLI, skill-body wiring, `tracking close-ready`
+  blocker) AND asked for the durable summary + handoff dump pieces to
+  be folded into the same rollout.
+- [U2] User framed the goal as: the plan issue must faithfully report
+  the execution state so the work can continue across sessions. The
+  remediation must keep both the issue and the plan bundle honest
+  enough that a new session can resume without re-deriving per-task
+  progress from git history.
 - [F1] C tracking issue: `https://github.com/graysurf/agent-runtime-kit/issues/144`
   (state `CLOSED`, closeout comment `4561644146`).
   `record audit --expect-visible` against the closed issue reports

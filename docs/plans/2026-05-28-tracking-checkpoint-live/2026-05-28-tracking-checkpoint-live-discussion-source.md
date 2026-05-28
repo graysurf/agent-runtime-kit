@@ -58,8 +58,8 @@ controller is profile-agnostic ([F10]).
 ## Confirmed Facts
 
 - [U1] The user authorized C after A + B with the explicit instruction
-  "等等要做c的設計 所以在做ab時記得不要做跟c衝突的事" (do not introduce
-  anything that conflicts with C while landing A + B).
+  to design Part C next and to avoid introducing anything during the
+  A + B work that would conflict with the upcoming C design.
 - [U2] The user resolved four bottleneck decisions in this session:
   release cadence = 0.25.6 patch; skill-body scope = minimal (only the two
   transitional fallback blocks); cross-references = remove the
