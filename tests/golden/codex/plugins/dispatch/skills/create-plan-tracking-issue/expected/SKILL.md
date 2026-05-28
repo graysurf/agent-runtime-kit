@@ -30,7 +30,9 @@ Inputs:
   title.
 - Selected labels from the shared taxonomy: `type::chore`, one primary
   `area::*`, `state::needs-triage`, `workflow::plan`,
-  `workflow::tracking`, plus the rollout `plan` label.
+  `workflow::tracking`. Projects that maintain a non-taxonomy rollout
+  marker (e.g. a bare `plan` label) may add it as an extra
+  `--label` — it is project-local, not part of the shared catalog.
 - Optional explicit source / plan / execution-state paths when bundle
   discovery is not enough.
 
@@ -58,6 +60,10 @@ Failure modes:
 ## Entrypoint
 
 ```bash
+# Run every plan-issue command from the bundle's git toplevel — the
+# CLI uses the cwd's repo for source / plan commit verification.
+cd "$(git -C "$PLAN_BUNDLE" rev-parse --show-toplevel)"
+
 plan-tooling validate --file "$PLAN" --format text --explain
 
 plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \
@@ -68,8 +74,7 @@ plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \
   --label area::docs \
   --label state::needs-triage \
   --label workflow::plan \
-  --label workflow::tracking \
-  --label plan
+  --label workflow::tracking
 
 plan-issue --repo "$OWNER_REPO" --format json record open \
   --profile tracking \
@@ -79,8 +84,7 @@ plan-issue --repo "$OWNER_REPO" --format json record open \
   --label area::docs \
   --label state::needs-triage \
   --label workflow::plan \
-  --label workflow::tracking \
-  --label plan
+  --label workflow::tracking
 
 plan-issue --format json tracking run init \
   --provider-repo "$OWNER_REPO" \
@@ -92,7 +96,8 @@ plan-issue --format json tracking run init \
 ```
 
 Replace `area::docs` with the primary `area::` value that matches the
-plan's scope.
+plan's scope. Append project-local rollout labels (e.g. `--label
+plan`) only when the target repo declares them.
 
 ## Workflow
 

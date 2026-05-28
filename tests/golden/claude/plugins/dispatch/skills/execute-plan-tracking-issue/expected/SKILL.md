@@ -33,10 +33,12 @@ Inputs:
 Outputs:
 
 - `tracking checkpoint --live --post state[,session[,validation]]` for
-  in-progress updates (use `--task-ledger-display collapsed` for
-  intermediate state posts). `--live` is the default execution path so
-  the prescribed lifecycle posting writes to the provider instead of
-  returning a dry-run envelope.
+  in-progress updates. `--live` is the default execution path so the
+  prescribed lifecycle posting writes to the provider instead of
+  returning a dry-run envelope. `tracking close-ready` later treats
+  `session` and `validation` as required, so post both at least once
+  before handing off to `plan-tracking-issue-closeout` (post them in
+  the final combined checkpoint after the last task transitions).
 - `tracking run update` writes `selected_task`, `branch`, `phase`,
   `validation_*`, and notes back into the typed run state.
 - `plan-tooling ledger-update --execution-state <path> --task <id>
@@ -73,11 +75,20 @@ Failure modes:
 ## Entrypoint
 
 ```bash
+# tracking status and tracking checkpoint --live both refuse to derive
+# issue state from the provider directly; pass body + comments JSON
+# explicitly. Snapshot once at the start of each checkpoint round.
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments \
+  >"$ISSUE_JSON"
+jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+
 plan-issue --format json tracking status \
   --provider-repo "$OWNER_REPO" \
   --issue "$ISSUE" \
   --profile tracking \
   --run-state "$RUN_STATE" \
+  --body-file "$ISSUE_BODY" \
+  --comments-json "$ISSUE_JSON" \
   --expect-visible
 
 plan-issue --format json tracking run update \
@@ -88,7 +99,11 @@ plan-issue --format json tracking run update \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
+  --provider-repo "$OWNER_REPO" \
+  --issue "$ISSUE" \
   --run-state "$RUN_STATE" \
+  --body-file "$ISSUE_BODY" \
+  --comments-json "$ISSUE_JSON" \
   --live \
   --post state
 ```
@@ -105,8 +120,18 @@ plan-issue --format json tracking run update \
   --validation-evidence "$VALIDATION_LOG" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+# Re-snapshot the issue before posting — the checkpoint controller
+# reads body + comments to detect record-opened state.
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments \
+  >"$ISSUE_JSON"
+jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+
 plan-issue --format json tracking checkpoint \
+  --provider-repo "$OWNER_REPO" \
+  --issue "$ISSUE" \
   --run-state "$RUN_STATE" \
+  --body-file "$ISSUE_BODY" \
+  --comments-json "$ISSUE_JSON" \
   --live \
   --post state,session,validation \
   --repair-dashboard

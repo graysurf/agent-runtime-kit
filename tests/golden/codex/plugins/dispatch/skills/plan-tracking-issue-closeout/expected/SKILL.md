@@ -50,12 +50,14 @@ Failure modes:
   `validation` / `review` posts **after `record close` succeeds**;
   any `tracking checkpoint` for the `closeout` role (the controller
   refuses this anyway). Post-closeout direct posts abort with
-  `forbidden-role-for-skill`. **Preflight repair** of missing
-  prerequisites surfaced by `tracking close-ready` (e.g.
-  `review-missing`, `state_complete-missing`) is in scope — see
-  Workflow step 1 — because the upstream `deliver-plan-tracking-issue`
-  may have shipped without them (tracked under
-  `error-inbox/tracking-closeout-review-state-complete-gap`).
+  `forbidden-role-for-skill`. **Preflight repair** of any missing
+  prerequisite role surfaced by `tracking close-ready` —
+  `review-missing`, `state_complete-missing`, `session-missing`,
+  `validation-missing` — is in scope (see Workflow step 1). The
+  upstream `execute-plan-tracking-issue` and
+  `deliver-plan-tracking-issue` skills may legitimately omit one or
+  more of these mid-run; closeout has the last write opportunity
+  before `record close`.
 - Controller refusal codes propagated: any `close-ready` blocker,
   `linked-pr-not-merged`, `linked-pr-checks-failed`,
   `linked-pr-missing-merge-sha`, `closeout-missing-approval`,
@@ -75,11 +77,19 @@ Failure modes:
 ## Entrypoint
 
 ```bash
+# Snapshot the issue once per call — close-ready, checkpoint, and
+# record audit all need explicit body + comments JSON.
+gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments \
+  >"$ISSUE_JSON"
+jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
+
 plan-issue --format json tracking close-ready \
   --profile tracking \
   --provider-repo "$OWNER_REPO" \
   --issue "$ISSUE" \
   --run-state "$RUN_STATE" \
+  --body-file "$ISSUE_BODY" \
+  --comments-json "$ISSUE_JSON" \
   --linked-pr "$LINKED_PR" \
   --approval "$APPROVAL" \
   --expect-visible
@@ -97,37 +107,52 @@ plan-issue --format json tracking run update \
 plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile tracking \
   --issue "$ISSUE" \
+  --bundle "$PLAN_BUNDLE" \
   --linked-pr "$LINKED_PR" \
-  --approval "$APPROVAL"
+  --approval "$APPROVAL" \
+  --add-label state::closed \
+  --remove-label state::needs-triage
 ```
 
 ## Workflow
 
 1. **Preflight** — call `tracking close-ready --expect-visible`. If
-   `ready: true`, continue. If `ready: false` with blockers
-   `review-missing` and/or `state_complete-missing`, the upstream
-   `deliver-plan-tracking-issue` handoff omitted prerequisite roles;
-   repair them in scope through one canonical `tracking checkpoint
-   --live` invocation. First bump the run state to
-   `phase=ready_for_close` and record the delivery decision; the
-   controller derives `state.status=complete` from that phase. Then
-   post both prerequisite roles and refresh the dashboard in the same
-   call. `tracking checkpoint --live --post review,state
+   `ready: true`, continue. If `ready: false` with any combination of
+   `review-missing`, `state_complete-missing`, `session-missing`, or
+   `validation-missing`, the upstream `execute-plan-tracking-issue` /
+   `deliver-plan-tracking-issue` handoff omitted those roles; repair
+   them in scope through one canonical `tracking checkpoint --live`
+   invocation. First bump the run state to `phase=ready-for-close`
+   (kebab-case as accepted by the CLI; persisted as `ready_for_close`
+   in `run-state.json`), record the delivery decision, and — when
+   you have a real validation run — set `--validation-overall pass`
+   plus its evidence fields. The controller derives
+   `state.status=complete` from `phase=ready-for-close`. Then post
+   every prerequisite role and refresh the dashboard in the same
+   call. `tracking checkpoint --live --post state,session,validation,review
    --repair-dashboard` posts in declaration order and aborts on the
    first per-role failure with `tracking-checkpoint-live-post-failed`;
-   only retry preflight once both roles succeed. For any other
-   blocker, stop and never patch around it.
+   only retry preflight once every required role posts. For any
+   other blocker, stop and never patch around it.
 
    ```bash
    plan-issue --format json tracking run update \
-     --run-state "$RUN_STATE" --phase ready_for_close \
+     --run-state "$RUN_STATE" --phase ready-for-close \
      --linked-pr "$LINKED_PR" \
      --review-decision approve \
+     --validation-overall pass \
+     --validation-command "<validation command>" \
+     --validation-status pass \
+     --validation-evidence "$VALIDATION_LOG" \
      --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments \
+     >"$ISSUE_JSON"
+   jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
    plan-issue --format json tracking checkpoint \
      --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
      --run-state "$RUN_STATE" \
-     --profile tracking --post review,state \
+     --body-file "$ISSUE_BODY" --comments-json "$ISSUE_JSON" \
+     --profile tracking --post state,session,validation,review \
      --repair-dashboard --live
    ```
 
