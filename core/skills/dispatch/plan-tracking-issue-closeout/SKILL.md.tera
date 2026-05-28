@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.9`, `plan-tooling >=0.25.9`.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
 - Issue precondition: `tracking close-ready --profile tracking` returns
   `ready: true` and `blockers: []`. Required-check pass on every linked
   PR is part of that gate.

@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.7`, `plan-tooling >=0.25.7`, `forge-cli`.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`, `forge-cli`.
 - Issue precondition: the tracking issue is open with at least
   `source`, `plan`, and `state` evidence; FSM is at least
   `RECORD_OPEN_INITIAL` with no `run-state-stale` warning.

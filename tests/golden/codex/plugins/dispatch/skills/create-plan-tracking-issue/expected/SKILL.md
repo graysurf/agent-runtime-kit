@@ -11,8 +11,8 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.9`, `plan-tooling >=0.25.9`. `forge-cli`
-  is not required by this skill.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
+  `forge-cli` is not required by this skill.
 - Issue precondition: the tracking issue does not exist yet (or the
   bundle was just revised and `record attach` is the right call).
 - Run state precondition: no `run-state.json` for this bundle yet — the

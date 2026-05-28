@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.9`, `plan-tooling >=0.25.9`.
+- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
 - Issue precondition: the tracking issue exists with at least `source`,
   `plan`, and an initial `state` lifecycle comment.
 - Run state precondition: a `run-state.json` exists for this issue (or
