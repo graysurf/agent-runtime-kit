@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.22.3`.
+- CLI floors: `plan-issue >=0.25.7`, `plan-tooling >=0.25.7`.
 - Issue precondition: `tracking close-ready --profile tracking` returns
   `ready: true` and `blockers: []`. Required-check pass on every linked
   PR is part of that gate.
@@ -34,9 +34,15 @@ Outputs:
 
 - `record repair-dashboard` for a pre-closeout dashboard fix when
   needed.
+- `tracking run update --note "<closing summary>"` writes a final
+  closeout summary event to `events.jsonl` immediately before
+  `record close`. The summary must enumerate tasks done, linked
+  PR(s), and any deferred follow-up; format is free-form because
+  `events.jsonl` accepts free-form notes.
 - `record close --profile tracking` posts the canonical `closeout`
   lifecycle comment and closes the provider issue.
-- No run-state mutation beyond marking the issue closed in events.
+- No run-state mutation beyond the final `--note` event and marking
+  the issue closed.
 
 Failure modes:
 
@@ -57,6 +63,12 @@ Failure modes:
 - Visible-completeness lint codes relevant here:
   `closeout-missing-approval`, `closeout-missing-linked-pr`,
   `closeout-missing-summary`.
+- `ledger-rows-pending` (from `tracking close-ready`): a per-task
+  ledger row is still `pending` or `in-progress` at
+  `phase=ready_for_close`. Remediation: run `plan-tooling
+  ledger-update --execution-state <path> --task '<id>' --status done
+  --evidence <evidence>` for the offending row(s) before re-running
+  the gate; never proceed to `record close` while the blocker fires.
 - Scope-leak: implementing tasks, opening / closing PRs, or treating
   missing approval / PR evidence as implicit approval.
 
@@ -75,6 +87,12 @@ plan-issue --format json tracking close-ready \
 # Optional repair when the dashboard is stale:
 plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
   --issue "$ISSUE"
+
+# Final closing summary written to events.jsonl before record close:
+plan-issue --format json tracking run update \
+  --run-state "$RUN_STATE" \
+  --note "Closeout: <tasks>; PRs <linked-pr>; followup <none|...>" \
+  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile tracking \
@@ -116,10 +134,23 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 2. **Dashboard repair (optional)** — only when the live dashboard is
    stale, call `record repair-dashboard` and confirm the rendered
    dashboard matches the latest evidence.
-3. **Closeout post** — call `record close --profile tracking` with the
+3. **Closing summary event** — immediately before `record close`,
+   call `tracking run update --note "<closing summary>"` so
+   `events.jsonl` carries a final summary event of the rollout. The
+   summary must enumerate tasks done, linked PR(s), and any deferred
+   follow-up; format is free-form. Example:
+
+   ```bash
+   plan-issue --format json tracking run update \
+     --run-state "$RUN_STATE" \
+     --note "Closeout: 1.1-3.8 done; PRs $OWNER_REPO#123; followup: none" \
+     --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   ```
+
+4. **Closeout post** — call `record close --profile tracking` with the
    linked PR refs and approval. The strict gate enforces required
    checks and merge SHAs.
-4. **Read-back** — `record audit --profile tracking --expect-visible`
+5. **Read-back** — `record audit --profile tracking --expect-visible`
    against the closed issue body and comments; confirm the `closeout`
    role appears with `visible.codes` empty:
 
@@ -134,7 +165,7 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
      --expect-visible
    ```
 
-5. **Stop** on any Failure mode code; do not retry blindly.
+6. **Stop** on any Failure mode code; do not retry blindly.
 
 ## Boundary
 

@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.22.3`, `plan-tooling`, `forge-cli`.
+- CLI floors: `plan-issue >=0.25.7`, `plan-tooling >=0.25.7`, `forge-cli`.
 - Issue precondition: the tracking issue is open with at least
   `source`, `plan`, and `state` evidence; FSM is at least
   `RECORD_OPEN_INITIAL` with no `run-state-stale` warning.
@@ -30,12 +30,18 @@ Inputs:
 
 Outputs:
 
-- `tracking checkpoint --post state[,session[,validation]]` for
-  progress checkpoints.
-- `tracking checkpoint --post review` for delivery-grade review
+- `tracking checkpoint --live --post state[,session[,validation]]` for
+  progress checkpoints. `--live` is the default execution path so the
+  prescribed lifecycle posting writes to the provider.
+- `tracking checkpoint --live --post review` for delivery-grade review
   evidence.
-- `tracking checkpoint --repair-dashboard` to keep the lightweight
-  dashboard fresh.
+- `tracking checkpoint --live --repair-dashboard` to keep the
+  lightweight dashboard fresh.
+- `plan-tooling ledger-update --execution-state <path> --task <id>
+  --status <status> --evidence <evidence>` patches the canonical
+  per-task ledger row after each task transitions; ordering is
+  `tracking run update --selected-task` → local task work →
+  `plan-tooling ledger-update` → `tracking checkpoint --live`.
 - `forge-cli pr deliver` for the merged PR.
 - Non-mutating `tracking close-ready --expect-visible` probe before
   handoff to `plan-tracking-issue-closeout`.
@@ -55,6 +61,12 @@ Failure modes:
   `state-missing-task-ledger`, `validation-missing-overall`,
   `review-missing-decision`, `review-missing-disposition`,
   `session-missing-summary`.
+- `ledger-rows-pending` (from `tracking close-ready`): a per-task
+  ledger row is still `pending` or `in-progress` at
+  `phase=ready_for_close`. Remediation: run `plan-tooling
+  ledger-update --execution-state <path> --task '<id>' --status done
+  --evidence <evidence>` for the offending row(s) before re-running
+  the gate.
 - Scope-leak: bypassing `tracking close-ready` before claiming
   close-ready handoff; merging a PR without `forge-cli pr deliver`
   authorization; dispatch-profile bypass.
@@ -78,15 +90,23 @@ plan-issue --format json tracking run update \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
-  --run-state "$RUN_STATE" --post state,session,validation \
+  --run-state "$RUN_STATE" --live \
+  --post state,session,validation \
   --repair-dashboard
+
+# After each task transitions, patch the canonical ledger row:
+plan-tooling ledger-update \
+  --execution-state "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  --task "$TASK_ID" \
+  --status done \
+  --evidence "$EVIDENCE"
 
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --review-decision approve \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
-  --run-state "$RUN_STATE" --post review --repair-dashboard
+  --run-state "$RUN_STATE" --live --post review --repair-dashboard
 
 forge-cli pr deliver --repo "$OWNER_REPO" --pr "$PR_NUMBER" --format json
 
@@ -97,7 +117,7 @@ plan-issue --format json tracking run update \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
-  --run-state "$RUN_STATE" --post state --repair-dashboard
+  --run-state "$RUN_STATE" --live --post state --repair-dashboard
 
 plan-issue --format json tracking close-ready \
   --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
@@ -116,7 +136,13 @@ plan-issue --format json tracking close-ready \
    to post.
 3. **Lifecycle checkpoints** — for each truthful change call
    `tracking run update` first, then the smallest combined
-   `tracking checkpoint --post …` covering only changed roles.
+   `tracking checkpoint --live --post …` covering only changed roles.
+   Immediately after each task transitions (started → done / blocked /
+   waived), call `plan-tooling ledger-update --execution-state <path>
+   --task <id> --status <status> --evidence <evidence>` so the
+   canonical ledger row matches the run-state cadence. Step ordering
+   is `tracking run update --selected-task` → local task work →
+   `plan-tooling ledger-update` → `tracking checkpoint --live`.
 4. **PR delivery** — `forge-cli pr deliver`; record the merged PR ref
    through `tracking run update --linked-pr`.
 5. **Final state + review evidence** — once merged, post a final

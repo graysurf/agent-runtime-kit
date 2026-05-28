@@ -57,7 +57,7 @@ bash scripts/ci/skill-governance-audit.sh --fixture remove
 # -----------------------------------------------------------------------------
 # Position 2 — nils-cli surface floor alignment
 #
-# Compares the host's `agent-runtime --version` against the floor recorded in
+# Compares the host's nils-cli surface binary against the floor recorded in
 # `docs/source/nils-cli-surface.md`. The floor line is matched by the literal
 # prefix '- Active `git describe --tags` output:' so a future reorder of
 # the snapshot header makes a parse miss visible in the gate banner. Closes
@@ -66,8 +66,15 @@ bash scripts/ci/skill-governance-audit.sh --fixture remove
 # floor leaves downstream gates running against a binary the fixtures and skill
 # bodies were not written for. Newer host binaries are allowed; later gates own
 # compatibility checks for rendered output and runtime smoke.
+#
+# The probe binary is `plan-tooling --version`. The nils-cli workspace does not
+# always bump every crate in lock-step (e.g. v0.25.7 bumped only `plan-tooling`
+# + `plan-issue-cli`); checking the binary whose surface this release actually
+# moves keeps the gate honest. If a future release bumps `agent-runtime-cli`
+# but not `plan-tooling`, flip the probe to whichever crate carries the new
+# consumed surface for that release.
 # -----------------------------------------------------------------------------
-banner 2 "nils-cli surface floor vs agent-runtime --version"
+banner 2 "nils-cli surface floor vs plan-tooling --version"
 SURFACE_DOC="docs/source/nils-cli-surface.md"
 # shellcheck disable=SC2016
 # Single quotes intentional: the grep / sed patterns embed literal
@@ -80,9 +87,9 @@ if [ -z "$PIN_LINE" ]; then
 fi
 # shellcheck disable=SC2016
 SURFACE_FLOOR="$(printf '%s\n' "$PIN_LINE" | sed -E 's/^- Active `git describe --tags` output: `([^`]+)`.*$/\1/')"
-HOST_VERSION_RAW="$(agent-runtime --version 2>/dev/null | awk 'NR==1 {print $NF}')"
+HOST_VERSION_RAW="$(plan-tooling --version 2>/dev/null | awk 'NR==1 {print $NF}')"
 if [ -z "$HOST_VERSION_RAW" ]; then
-  echo "ci/all.sh: agent-runtime --version produced no output" >&2
+  echo "ci/all.sh: plan-tooling --version produced no output" >&2
   exit 1
 fi
 case "$HOST_VERSION_RAW" in
@@ -126,7 +133,7 @@ set -e
 if [ "$VERSION_CHECK_EXIT" -ne 0 ]; then
   echo "ci/all.sh: nils-cli surface floor check failed" >&2
   echo "  minimum in $SURFACE_DOC : $SURFACE_FLOOR" >&2
-  echo "  host agent-runtime    : $HOST_TAG" >&2
+  echo "  host plan-tooling     : $HOST_TAG" >&2
   echo "  parsed line           : $PIN_LINE" >&2
   if [ -n "$VERSION_CHECK" ]; then
     printf '  detail: %s\n' "$VERSION_CHECK" >&2
