@@ -152,6 +152,14 @@
     "record_when": "The workflow opens, updates, or continues a GitHub issue for durable follow-up."
   },
   {
+    "skill": "report-plan-issue-finding",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["report-plan-issue-finding", "report plan issue finding", "plan-issue finding", "plan-tracking finding"],
+    "reason": "Plan-issue findings are tracked as labeled issues in a central tracker so skill/CLI drift is not lost.",
+    "record_when": "The workflow finds drift or a bug while running the plan-issue / plan-tracking skills or their CLIs and files or closes a finding issue."
+  },
+  {
     "skill": "review-dispatch-lane-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",
