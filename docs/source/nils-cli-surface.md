@@ -1,19 +1,21 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-27
+- Snapshot date: 2026-05-28
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.25.0`
-- Head commit: `694c764` (`chore(release): bump cli versions to 0.25.0`)
+- Active `git describe --tags` output: `v0.25.5`
+- Head commit: `1b8d2dd` (`chore(release): bump cli versions to 0.25.5`)
 - Release:
-  [`v0.25.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.25.0),
+  [`v0.25.5`](https://github.com/sympoies/nils-cli/releases/tag/v0.25.5),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.22.4` at `f82c131` (`chore(release): bump cli versions to
-  0.22.4`); `v0.25.0` adds the `plan-archive` binary with the `migrate`,
-  `refresh`, and `query` subcommands (plus the `validate-hosts`,
-  `validate-local`, `validate-metadata` validators) consumed by the
+- Prior pin: `v0.25.0` at `694c764` (`chore(release): bump cli versions to
+  0.25.0`); `v0.25.5` adds the `plan-archive discover` read-only candidate
+  scanner consumed by the `meta:plan-archive-discover` skill. `v0.25.0`
+  introduced the `plan-archive` binary with the `migrate`, `refresh`, and
+  `query` subcommands (plus the `validate-hosts`, `validate-local`,
+  `validate-metadata` validators) consumed by the
   `meta:plan-archive-migrate` and `meta:plan-archive-query` skills.
 
 This file is the pin source for `required_clis` placeholders in
@@ -62,7 +64,7 @@ Notes on derivation:
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
 | `nils-test-support`         | (library only)                                                                                                      | Integration-test harness; test-only, never appears in `required_clis`.                                                                                                                                                                                                 |
-| `plan-archive`              | `plan-archive`                                                                                                      | Plan-archive workflow CLI. As of `v0.25.0`, ships `validate-hosts` / `validate-local` / `validate-metadata` validators, `migrate` (dry-run default, `--apply`), `refresh` (forge-cli payload fetch + secret-scrub + append-only `_index/` snapshots, holds commit for scrub-log review), and `query` (single-ref / cross-host aggregate / plan-link traversal). Consumed by `meta:plan-archive-migrate` and `meta:plan-archive-query`. |
+| `plan-archive`              | `plan-archive`                                                                                                      | Plan-archive workflow CLI. As of `v0.25.0`, ships `validate-hosts` / `validate-local` / `validate-metadata` validators, `migrate` (dry-run default, `--apply`), `refresh` (forge-cli payload fetch + secret-scrub + append-only `_index/` snapshots, holds commit for scrub-log review), and `query` (single-ref / cross-host aggregate / plan-link traversal). As of `v0.25.5`, adds `discover` (read-only candidate scanner that classifies plan folders as eligible / blocked / unknown and emits one combined `suggested_migrate_command` per eligible folder). Consumed by `meta:plan-archive-migrate`, `meta:plan-archive-query`, and `meta:plan-archive-discover`. |
 | `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names. As of `v0.20.0`, issue-backed records use the provider-backed `record open`, `record post`, `record audit`, `record repair-dashboard`, and `record close` surface. The current marker is `plan-issue-record:v2 role=<source|plan|state|session|validation|review|closeout> profile=<tracking|dispatch>`. As of `v0.22.3`, state lifecycle comments can render canonical execution-state markdown through `record post --kind state --execution-state-file <path>`, support `--task-ledger-display auto|collapsed|expanded`, and render validation, review, session, and closeout evidence visibly alongside hidden payload carriers. **vNext (pending the next nils-cli release):** adds `record template --kind <role> --shape markdown|json` for non-mutating skeleton preview, `record audit --expect-visible` for visible-completeness lint, and the `tracking` controller surface (`tracking status`, `tracking run init`, `tracking run update`, `tracking checkpoint`, `tracking close-ready`) backed by `plan-issue.execution-run.v1` run state and `plan-issue.execution-event.v1` events. Runtime-kit skills consume the vNext surface from the local development binary until the floor is released. |
 | `plan-tooling`              | `plan-tooling`                                                                                                      | Plan bundle linter / validator.                                                                                                                                                                                                                                        |
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |

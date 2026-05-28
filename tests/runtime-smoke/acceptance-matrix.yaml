@@ -313,6 +313,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.plan-archive-discover.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.plan-archive-discover
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: seed a synthetic working repo with one plan folder lacking provider refs and a synthetic archive clone with config/hosts.yaml
+    invocation: plan-archive discover read-only JSON probe against the seeded plan folder
+    expected_exit_code: 0
+    expected_artifacts: discover envelope with summary counts and one blocked candidate carrying the no-provider-refs reason
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: media.image-processing.shared-cli.deterministic
     product: shared-cli
     domain: media

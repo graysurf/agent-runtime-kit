@@ -554,6 +554,35 @@ run_plan_archive_query_probe() {
   grep -q '"fetched_at":"2026-05-27T01:00:00Z"' "$out"
 }
 
+run_plan_archive_discover_probe() {
+  local out="$META_ARTIFACTS_DIR/plan-archive-discover.scan.json"
+  require_meta_bin plan-archive || return 1
+  local root="$META_ARTIFACTS_DIR/plan-archive-discover"
+  local src="$root/source"
+  local archive="$root/archive"
+  rm -rf "$root"
+  mkdir -p "$src" "$archive/config"
+  (
+    cd "$src"
+    git init -q -b main
+    git remote add origin git@github.com:graysurf/agent-runtime-kit.git
+    mkdir -p docs/plans/2026-05-27-discover-smoke
+    printf '# discover smoke plan\n' >docs/plans/2026-05-27-discover-smoke/PLAN.md
+    git add docs/plans
+    git -c user.name=smoke -c user.email=smoke@example.com commit -q -m "seed plan"
+  )
+  printf 'version: 1\nhosts:\n  github.com:\n    class: personal\n    primary_identity: graysurf\n' \
+    >"$archive/config/hosts.yaml"
+  plan-archive discover \
+    --source-repo "$src" \
+    --archive "$archive" \
+    --hosts "$archive/config/hosts.yaml" \
+    --format json >"$out" 2>&1
+  grep -q '"schema_version":"cli.plan-archive.discover.v1"' "$out"
+  grep -q '"status":"blocked"' "$out"
+  grep -q '"code":"no-provider-refs"' "$out"
+}
+
 failures=0
 record_case "meta.agent-docs" "project-dev docs resolve passed from fixture workspace" run_agent_docs_probe || failures=1
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
@@ -573,6 +602,7 @@ record_case "meta.semantic-commit" "semantic-commit dry-run validated staged tem
 record_case "meta.setup-project" "setup-project dry-run/apply adoption probes passed" run_setup_project_probe || failures=1
 record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe resolved archive target" run_plan_archive_migrate_probe || failures=1
 record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe || failures=1
+record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills no-prune flag reports skipped prune" run_sync_runtime_skills_no_prune_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1

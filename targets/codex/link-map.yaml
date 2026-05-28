@@ -168,6 +168,12 @@ entries:
     destination: skills/meta/plan-archive-query
     recursive: false
 
+  - id: meta.plan-archive-discover.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/plan-archive-discover
+    destination: skills/meta/plan-archive-discover
+    recursive: false
+
   - id: media.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/media/.codex-plugin/plugin.json

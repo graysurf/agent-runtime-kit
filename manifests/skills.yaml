@@ -321,6 +321,20 @@ skills:
       plan-archive: ">=0.25.0"
     state_out_mode: runtime
 
+  - id: meta.plan-archive-discover
+    domain: meta
+    source: core/skills/meta/plan-archive-discover
+    products:
+      codex:
+        name: plan-archive-discover
+        render_to: plugins/meta/skills/plan-archive-discover/SKILL.md
+      claude:
+        name: plan-archive-discover
+        render_to: plugins/meta/skills/plan-archive-discover/SKILL.md
+    required_clis:
+      plan-archive: ">=0.25.5"
+    state_out_mode: runtime
+
   - id: media.image-processing
     domain: media
     source: core/skills/media/image-processing

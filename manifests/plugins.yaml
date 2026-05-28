@@ -43,6 +43,7 @@ plugins:
       - meta.setup-project
       - meta.plan-archive-migrate
       - meta.plan-archive-query
+      - meta.plan-archive-discover
     product_manifests:
       codex: targets/codex/plugins/meta/.codex-plugin/plugin.json
       claude: targets/claude/plugins/meta/.claude-plugin/plugin.json
