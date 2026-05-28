@@ -6,8 +6,9 @@
 #               present in body+comments at least once each.
 #   execute   — issue still open; ≥2 distinct state-role comments.
 #   deliver   — issue still open; ≥1 review-role comment posted; the
-#               final state body still carries the full Task Ledger.
-#               (Only used by fixtures that declare
+#               final state body still carries the full Task Ledger; and
+#               the linked PR (resolved by head branch) is MERGED with a
+#               real merge SHA. (Only used by fixtures that declare
 #               FIXTURE_EXPECTED_ROLES_DELIVER.)
 #   closeout  — issue closed; closeout-role comment present;
 #               state label transitioned to FIXTURE_EXPECTED_FINAL_STATE.
@@ -169,6 +170,37 @@ check_state_body_not_synthesized_fallback() {
   fi
 }
 
+check_linked_pr_merged() {
+  # Finding #16 (deliver scope): a deliver run must produce a *merged* PR
+  # with a real merge SHA. The lifecycle markers alone do not prove the PR
+  # actually landed. Resolve the PR by its head branch (retained on the PR
+  # record even after the branch is auto-deleted on merge); newest first.
+  local pr_json pr_number pr_state merge_sha
+  pr_json=$(gh pr list \
+    --repo "${TESTBED_REPO}" \
+    --head "${FIXTURE_BRANCH}" \
+    --state all \
+    --json number,state,mergeCommit \
+    --jq 'sort_by(.number) | reverse | .[0] // empty')
+  if [ -z "${pr_json}" ]; then
+    fail "no PR found for head branch ${FIXTURE_BRANCH}"
+    return
+  fi
+  pr_number=$(echo "${pr_json}" | jq -r '.number')
+  pr_state=$(echo "${pr_json}" | jq -r '.state')
+  merge_sha=$(echo "${pr_json}" | jq -r '.mergeCommit.oid // empty')
+  if [ "${pr_state}" = "MERGED" ]; then
+    pass "linked PR #${pr_number} merged"
+  else
+    fail "linked PR #${pr_number} state ${pr_state} (expected MERGED)"
+  fi
+  if [ -n "${merge_sha}" ]; then
+    pass "linked PR #${pr_number} has merge SHA (${merge_sha:0:7})"
+  else
+    fail "linked PR #${pr_number} missing merge SHA"
+  fi
+}
+
 # ---- Per-phase checks -------------------------------------------------
 
 case "${phase}" in
@@ -228,6 +260,8 @@ case "${phase}" in
       check_state_body_contains_ledger_row "${tid}"
     done
     check_state_body_not_synthesized_fallback
+    # The delivery must have landed: linked PR merged with a merge SHA.
+    check_linked_pr_merged
     ;;
   closeout)
     if [ "${issue_state}" = "CLOSED" ]; then
@@ -238,9 +272,10 @@ case "${phase}" in
     check_role_present closeout
     check_label_present "${FIXTURE_EXPECTED_FINAL_STATE}"
     # For fixtures that ran a deliver phase, the review role must still
-    # be present after closeout.
+    # be present after closeout and the linked PR must remain merged.
     if [ -n "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
       check_role_present review
+      check_linked_pr_merged
     fi
     # Final state body must also reflect the full per-task ledger.
     for tid in ${FIXTURE_EXPECTED_LEDGER_TASK_IDS}; do
