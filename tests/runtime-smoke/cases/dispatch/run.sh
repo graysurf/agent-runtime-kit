@@ -683,6 +683,140 @@ JSON
   grep -q '"blockers":\[\]' "$probe_out" || return 1
 }
 
+run_tracking_closeout_gate_ledger_pending_probe() {
+  # Assert `tracking close-ready` raises one `ledger-rows-pending` blocker
+  # per stuck row when `phase=ready_for_close` and the run-state's `bundle`
+  # resolves to a `*-execution-state.md` whose `## Task Ledger` carries
+  # rows at `pending` / `in-progress`. Locks the v0.25.7 blocker contract
+  # that the deliver / closeout SKILL bodies depend on. Other close-ready
+  # gates pass by construction: comments fixture is the visible-complete
+  # variant with review+state=complete already posted, so the only blocker
+  # we can attribute to this probe is the new ledger one.
+  local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-ledger-pending"
+  local source_comments="$fixture/source-comments.json"
+  local comments_json="$fixture/comments.json"
+  local body_md="$fixture/body.md"
+  local run_state="$fixture/run-state.json"
+  local ledger_md="$fixture/demo-execution-state.md"
+  local probe_out="$fixture/close-ready.json"
+  local rc
+  require_dispatch_bin plan-issue || return 1
+  rm -rf "$fixture"
+  mkdir -p "$fixture"
+  printf '## Current Dashboard\n\n- Status: ready-for-close\n' >"$body_md"
+  write_visible_tracking_comments_json "$source_comments"
+  cp "$source_comments" "$comments_json"
+  cat >"$ledger_md" <<'MD'
+# Execution State: Demo
+
+- Status: ready-for-close
+
+## Task Ledger
+
+| ID | Status | Task | Evidence | Notes |
+| --- | --- | --- | --- | --- |
+| 1.1 | pending | First pending row |  | first stuck row |
+| 1.2 | in-progress | Second in-progress row |  | second stuck row |
+| 1.3 | done | Already-done row | runtime-smoke fixture | not stuck |
+MD
+  cat >"$run_state" <<JSON
+{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-ledger-pending","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","bundle":"$fixture","review":{"decision":"approve"}}
+JSON
+
+  set +e
+  plan-issue --format json tracking close-ready \
+    --profile tracking \
+    --provider-repo graysurf/agent-runtime-kit \
+    --issue 1 \
+    --run-state "$run_state" \
+    --body-file "$body_md" \
+    --comments-json "$comments_json" \
+    --linked-pr "graysurf/agent-runtime-kit#123" \
+    --approval "runtime smoke fixture approval" \
+    --state-dir "$DISPATCH_STATE_DIR" \
+    --expect-visible >"$probe_out" 2>&1
+  rc="$?"
+  set -e
+
+  if [ "$rc" -ne 0 ]; then
+    return 1
+  fi
+  grep -q '"ready":false' "$probe_out" || return 1
+  grep -q '"code":"ledger-rows-pending"' "$probe_out" || return 1
+  # One blocker entry per stuck row (1.1 + 1.2). Count occurrences and
+  # require ≥2 so a regression that emits a single combined blocker still
+  # fails the probe. The JSON envelope is a single line, so `grep -c`
+  # would return 1 — use `grep -o | wc -l` to count occurrences.
+  local count
+  count="$(grep -o '"code":"ledger-rows-pending"' "$probe_out" | wc -l | awk '{print $1}')"
+  [ "$count" -ge 2 ] || return 1
+  grep -q '"task_id":"1.1"' "$probe_out" || return 1
+  grep -q '"task_id":"1.2"' "$probe_out" || return 1
+}
+
+run_tracking_closeout_gate_ledger_clean_probe() {
+  # Sibling to run_tracking_closeout_gate_ledger_pending_probe with the
+  # same scaffold but every ledger row at `done` with non-empty Evidence.
+  # Asserts that `tracking close-ready --expect-visible` returns
+  # `ready=true` and `blockers=[]` — proving the ledger blocker is
+  # cleanly absent when the ledger matches a finished plan. Together with
+  # the pending probe this locks both halves of the v0.25.7 ledger
+  # close-ready contract.
+  local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-ledger-clean"
+  local source_comments="$fixture/source-comments.json"
+  local comments_json="$fixture/comments.json"
+  local body_md="$fixture/body.md"
+  local run_state="$fixture/run-state.json"
+  local ledger_md="$fixture/demo-execution-state.md"
+  local probe_out="$fixture/close-ready.json"
+  local rc
+  require_dispatch_bin plan-issue || return 1
+  rm -rf "$fixture"
+  mkdir -p "$fixture"
+  printf '## Current Dashboard\n\n- Status: ready-for-close\n' >"$body_md"
+  write_visible_tracking_comments_json "$source_comments"
+  cp "$source_comments" "$comments_json"
+  cat >"$ledger_md" <<'MD'
+# Execution State: Demo
+
+- Status: complete
+
+## Task Ledger
+
+| ID | Status | Task | Evidence | Notes |
+| --- | --- | --- | --- | --- |
+| 1.1 | done | First row | runtime-smoke fixture | clean |
+| 1.2 | done | Second row | runtime-smoke fixture | clean |
+| 1.3 | done | Third row | runtime-smoke fixture | clean |
+MD
+  cat >"$run_state" <<JSON
+{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-ledger-clean","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","bundle":"$fixture","review":{"decision":"approve"}}
+JSON
+
+  set +e
+  plan-issue --format json tracking close-ready \
+    --profile tracking \
+    --provider-repo graysurf/agent-runtime-kit \
+    --issue 1 \
+    --run-state "$run_state" \
+    --body-file "$body_md" \
+    --comments-json "$comments_json" \
+    --linked-pr "graysurf/agent-runtime-kit#123" \
+    --approval "runtime smoke fixture approval" \
+    --state-dir "$DISPATCH_STATE_DIR" \
+    --expect-visible >"$probe_out" 2>&1
+  rc="$?"
+  set -e
+
+  if [ "$rc" -ne 0 ]; then
+    return 1
+  fi
+  grep -q '"ready":true' "$probe_out" || return 1
+  grep -q '"blockers":\[\]' "$probe_out" || return 1
+  grep -q '"ledger-rows-pending"' "$probe_out" && return 1
+  return 0
+}
+
 record_missing_session_closeout_gate_case() {
   local id="dispatch.plan-issue-session-closeout-gate"
   set +e
@@ -949,6 +1083,8 @@ record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixtu
 record_missing_session_closeout_gate_case || failures=1
 record_case "dispatch.plan-tracking-closeout-gate" "tracking close-ready refuses missing review + state=complete prereqs with the expected blocker codes" run_tracking_closeout_gate_prereq_blockers_probe || failures=1
 record_case "dispatch.plan-tracking-closeout-gate-happy-path" "tracking checkpoint --live --fixture posts review + state=complete and close-ready then returns ready=true with no blockers" run_tracking_closeout_gate_prereq_happy_path_probe || failures=1
+record_case "dispatch.plan-tracking-closeout-gate-ledger-pending" "tracking close-ready raises one ledger-rows-pending blocker per stuck row when bundle resolves to a ledger with pending/in-progress rows" run_tracking_closeout_gate_ledger_pending_probe || failures=1
+record_case "dispatch.plan-tracking-closeout-gate-ledger-clean" "tracking close-ready returns ready=true with no ledger blocker when every ledger row is done with non-empty evidence" run_tracking_closeout_gate_ledger_clean_probe || failures=1
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe || failures=1
 record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe || failures=1
 record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe || failures=1

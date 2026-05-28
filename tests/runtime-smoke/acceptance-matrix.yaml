@@ -859,6 +859,32 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: dispatch.plan-tracking-closeout-gate-ledger-pending.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.plan-tracking-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: build a plan bundle fixture whose demo-execution-state.md carries a `## Task Ledger` table with two rows at `pending`/`in-progress` plus one `done` row, alongside the visible-complete tracking comments fixture and a minimal run-state with phase=ready_for_close and bundle pointing at the fixture
+    invocation: plan-issue tracking close-ready --expect-visible against the fixture body/comments with the run-state's `bundle` field set
+    expected_exit_code: 0
+    expected_artifacts: close-ready JSON envelope with ready=false and at least two `ledger-rows-pending` blocker entries carrying task_id 1.1 and 1.2 — proving the v0.25.7 blocker fires one entry per stuck row
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
+  - id: dispatch.plan-tracking-closeout-gate-ledger-clean.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.plan-tracking-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: same scaffold as plan-tracking-closeout-gate-ledger-pending but every Task Ledger row is `done` with non-empty Evidence cells, proving the blocker stays silent when the ledger matches a finished plan
+    invocation: plan-issue tracking close-ready --expect-visible against the clean ledger fixture with the run-state's `bundle` field set
+    expected_exit_code: 0
+    expected_artifacts: close-ready JSON envelope with ready=true and blockers empty, with `ledger-rows-pending` absent from the output
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: dispatch.execute-plan-tracking-issue.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
