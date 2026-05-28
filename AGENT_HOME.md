@@ -83,7 +83,8 @@
 
 - Use traceable citations when source material materially affects a
   requirement, feasibility, work, or external-fact claim.
-- Source tags: `[U#]` user input, `[F#]` local files/code/docs, `[W#]` web
+- Source tags: `[U#]` user input (record in English, paraphrasing
+  non-English input), `[F#]` local files/code/docs, `[W#]` web
   source, `[A#]` app/API/CLI/tool result, `[I#]` inference from cited facts.
 - Do not present unsupported assumptions as facts.
 - For external, unstable, or time-sensitive claims, run `task-tools` preflight,
