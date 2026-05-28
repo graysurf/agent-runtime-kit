@@ -11,8 +11,8 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.22.3`, `plan-tooling`. `forge-cli` is not
-  required by this skill.
+- CLI floors: `plan-issue >=0.25.9`, `plan-tooling >=0.25.9`. `forge-cli`
+  is not required by this skill.
 - Issue precondition: the tracking issue does not exist yet (or the
   bundle was just revised and `record attach` is the right call).
 - Run state precondition: no `run-state.json` for this bundle yet — the
@@ -60,10 +60,6 @@ Failure modes:
 ## Entrypoint
 
 ```bash
-# Run every plan-issue command from the bundle's git toplevel — the
-# CLI uses the cwd's repo for source / plan commit verification.
-cd "$(git -C "$PLAN_BUNDLE" rev-parse --show-toplevel)"
-
 plan-tooling validate --file "$PLAN" --format text --explain
 
 plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \

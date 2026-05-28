@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.7`, `plan-tooling >=0.25.7`.
+- CLI floors: `plan-issue >=0.25.9`, `plan-tooling >=0.25.9`.
 - Issue precondition: `tracking close-ready --profile tracking` returns
   `ready: true` and `blockers: []`. Required-check pass on every linked
   PR is part of that gate.
@@ -77,19 +77,11 @@ Failure modes:
 ## Entrypoint
 
 ```bash
-# Snapshot the issue once per call — close-ready, checkpoint, and
-# record audit all need explicit body + comments JSON.
-gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments \
-  >"$ISSUE_JSON"
-jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
-
 plan-issue --format json tracking close-ready \
   --profile tracking \
   --provider-repo "$OWNER_REPO" \
   --issue "$ISSUE" \
   --run-state "$RUN_STATE" \
-  --body-file "$ISSUE_BODY" \
-  --comments-json "$ISSUE_JSON" \
   --linked-pr "$LINKED_PR" \
   --approval "$APPROVAL" \
   --expect-visible
@@ -145,13 +137,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
      --validation-status pass \
      --validation-evidence "$VALIDATION_LOG" \
      --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-   gh issue view "$ISSUE" --repo "$OWNER_REPO" --json body,comments \
-     >"$ISSUE_JSON"
-   jq -r .body "$ISSUE_JSON" >"$ISSUE_BODY"
    plan-issue --format json tracking checkpoint \
      --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
      --run-state "$RUN_STATE" \
-     --body-file "$ISSUE_BODY" --comments-json "$ISSUE_JSON" \
      --profile tracking --post state,session,validation,review \
      --repair-dashboard --live
    ```
