@@ -278,10 +278,8 @@ write_missing_review_state_complete_comments_json() {
   # refuse with `review-missing` + `state_complete-missing`. Used to assert
   # the close-ready gate contract that the deliver → closeout handoff
   # depends on; the assertion is C-compatible because the gate's blocker
-  # codes are stable independent of which surface (`record post` today vs.
-  # `tracking checkpoint --live` once
-  # `tracking-checkpoint-live-not-implemented` resolves) emits the prereq
-  # lifecycle comments.
+  # codes are stable independent of which surface (`record post` or
+  # `tracking checkpoint --live`) emits the prereq lifecycle comments.
   local src="$1"
   local dst="$2"
   jq '.comments |= (
@@ -563,9 +561,9 @@ run_tracking_closeout_gate_prereq_blockers_probe() {
   # deliver-plan-tracking-issue → plan-tracking-issue-closeout handoff
   # depends on; see
   # core/policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/.
-  # Stays valid through the `tracking-checkpoint-live-not-implemented`
-  # fix in `sympoies/nils-cli` because that fix changes the posting path,
-  # not the gate's blocker codes.
+  # Stays valid through the `tracking checkpoint --live` posting-path
+  # change in `sympoies/nils-cli` because that change moved the posting
+  # path, not the gate's blocker codes.
   local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-prereq-blockers"
   local source_comments="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-prereq-blockers-source-comments.json"
   local comments_json="$fixture/comments.json"

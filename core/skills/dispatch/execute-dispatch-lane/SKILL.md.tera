@@ -50,7 +50,6 @@ Failure modes:
   `forbidden-role-for-skill`.
 - Controller refusal codes propagated: `run-state-stale`,
   `RECORD_BLOCKED`,
-  `tracking-checkpoint-live-not-implemented`,
   `visible-completeness-failed`.
 - Visible-completeness lint codes relevant here:
   `state-missing-task-ledger`, `validation-missing-overall`,
