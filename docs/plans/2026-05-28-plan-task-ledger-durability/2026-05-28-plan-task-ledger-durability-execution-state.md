@@ -77,12 +77,12 @@
 | 1.5 | done | Open the upstream PR against `sympoies/nils-cli` main | https://github.com/sympoies/nils-cli/pull/607 (draft, awaiting CI) | `sympoies/nils-cli`. Depends on 1.4. forge-cli workflow; raw `gh pr create` blocked by hook. |
 | 2.1 | done | Cut the `v0.25.7` tag | sympoies/nils-cli v0.25.7 release: https://github.com/sympoies/nils-cli/releases/tag/v0.25.7 | `sympoies/nils-cli`. Depends on 1.5 merged. Workspace lock-step release for both crates. |
 | 2.2 | done | Bump the Homebrew tap formulas | sympoies/homebrew-tap nils-cli-v0.25.7 (commit 71c1f23); brew upgrade -> 0.25.7 verified on PATH | `sympoies/homebrew-tap`. Depends on 2.1. Both `plan-tooling` and `plan-issue-cli` formulas. |
-| 3.1 | pending | Bump the surface-floor doc to `v0.25.7` |  | `graysurf/agent-runtime-kit`. Depends on 2.2 (released CLIs on PATH). |
-| 3.2 | pending | Wire `execute-plan-tracking-issue` SKILL |  | `graysurf/agent-runtime-kit`. Depends on 3.1. Prescribes `plan-tooling ledger-update` + switches entrypoint `tracking checkpoint --post …` to `--live`. |
-| 3.3 | pending | Wire `deliver-plan-tracking-issue` SKILL |  | `graysurf/agent-runtime-kit`. Depends on 3.1. Same wiring as 3.2; ledger-update follows the existing `tracking run update --selected-task` cadence. |
-| 3.4 | pending | Wire `plan-tracking-issue-closeout` SKILL |  | `graysurf/agent-runtime-kit`. Depends on 3.1. Requires final `tracking run update --note <summary>` before `record close`; adds `ledger-rows-pending` to Failure-modes. |
-| 3.5 | pending | Update `handoff-session-prompt` SKILL |  | `graysurf/agent-runtime-kit`. Depends on 3.1. Adds "Plan-tracking handoff" subsection per [D7]. |
-| 3.6 | pending | Re-render Codex / Claude / shared goldens |  | `graysurf/agent-runtime-kit`. Depends on 3.2, 3.3, 3.4, 3.5. `agent-runtime render --update-golden`; review diff for unrelated drift. |
+| 3.1 | done | Bump the surface-floor doc to `v0.25.7` | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 2.2 (released CLIs on PATH). |
+| 3.2 | done | Wire `execute-plan-tracking-issue` SKILL | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.1. Prescribes `plan-tooling ledger-update` + switches entrypoint `tracking checkpoint --post …` to `--live`. |
+| 3.3 | done | Wire `deliver-plan-tracking-issue` SKILL | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.1. Same wiring as 3.2; ledger-update follows the existing `tracking run update --selected-task` cadence. |
+| 3.4 | done | Wire `plan-tracking-issue-closeout` SKILL | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.1. Requires final `tracking run update --note <summary>` before `record close`; adds `ledger-rows-pending` to Failure-modes. |
+| 3.5 | done | Update `handoff-session-prompt` SKILL | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.1. Adds "Plan-tracking handoff" subsection per [D7]. |
+| 3.6 | done | Re-render Codex / Claude / shared goldens | graysurf/agent-runtime-kit#147 squash 4371584 | `graysurf/agent-runtime-kit`. Depends on 3.2, 3.3, 3.4, 3.5. `agent-runtime render --update-golden`; review diff for unrelated drift. |
 | 3.7 | pending | Add new deterministic smoke probes (ledger-pending + ledger-clean) |  | `graysurf/agent-runtime-kit`. Depends on 2.2. Two new rows in acceptance-matrix; dispatch domain climbs to 13/13. |
 | 3.8 | pending | Runtime-kit CI + deliver via `forge-cli pr deliver --kind feature` |  | `graysurf/agent-runtime-kit`. Depends on 3.1-3.7. Dogfood `ledger-update` on this plan's own rows. |
 
