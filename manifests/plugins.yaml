@@ -103,6 +103,7 @@ plugins:
     contained_skills:
       - issue.issue-follow-up
       - issue.issue-triage
+      - issue.report-plan-issue-finding
     product_manifests:
       codex: targets/codex/plugins/issue/.codex-plugin/plugin.json
       claude: targets/claude/plugins/issue/.claude-plugin/plugin.json

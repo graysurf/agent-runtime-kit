@@ -81,6 +81,7 @@ Routing guidance for the skill family lives in
 | --- | --- | --- |
 | Issue triage | [issue-triage](./issue/issue-triage/) | Reviews open GitHub or GitLab issues from `forge-cli inbox`, classifies readiness and blockers, and recommends execution order. |
 | Durable issue follow-up | [issue-follow-up](./issue/issue-follow-up/) | Opens or continues a GitHub or GitLab issue as the durable timeline for a discovered problem, blocker, or handoff. |
+| Plan-issue finding report | [report-plan-issue-finding](./issue/report-plan-issue-finding/) | Files plan-issue / plan-tracking family skill, CLI, or driver drift as a labeled issue in the canonical tracker, and closes it when the upstream fix lands. |
 
 ## Media
 

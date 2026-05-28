@@ -703,6 +703,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: issue.report-plan-issue-finding.shared-cli.deterministic
+    product: shared-cli
+    domain: issue
+    skill_id: issue.report-plan-issue-finding
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: none
+    invocation: forge-cli issue list dedup + issue create dry-run with plan-issue-finding taxonomy labels
+    expected_exit_code: 0
+    expected_artifacts: forge-cli issue list and issue create dry-run provider commands with plan-issue-finding labels
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: code-review.code-review-focused-lens.shared-cli.deterministic
     product: shared-cli
     domain: code-review

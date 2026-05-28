@@ -28,6 +28,7 @@ evidence.test-first-evidence
 evidence.web-evidence
 issue.issue-follow-up
 issue.issue-triage
+issue.report-plan-issue-finding
 media.image-processing
 media.screen-record
 meta.agent-docs

@@ -595,6 +595,20 @@ skills:
       forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
+  - id: issue.report-plan-issue-finding
+    domain: issue
+    source: core/skills/issue/report-plan-issue-finding
+    products:
+      codex:
+        name: report-plan-issue-finding
+        render_to: plugins/issue/skills/report-plan-issue-finding/SKILL.md
+      claude:
+        name: report-plan-issue-finding
+        render_to: plugins/issue/skills/report-plan-issue-finding/SKILL.md
+    required_clis:
+      forge-cli: ">=0.20.1"
+    state_out_mode: runtime
+
   - id: code-review.code-review-focused-lens
     domain: code-review
     source: core/skills/code-review/code-review-focused-lens
