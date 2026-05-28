@@ -121,35 +121,34 @@ plan-issue --format json tracking close-ready \
    through `tracking run update --linked-pr`.
 5. **Final state + review evidence** — once merged, post a final
    `state` role with `status=complete` AND a `review` role with the
-   delivery decision. For single-author plans the deliver agent posts
-   its own `decision=approve` referencing the merged PRs as evidence;
-   multi-author plans surface the upstream reviewer's decision.
-   Refresh the dashboard so `## Current Dashboard` reflects the new
-   state. `tracking close-ready` will refuse with `state_complete-missing`
-   or `review-missing` unless both posts exist.
-
-   **Transitional fallback (remove once
-   [`tracking-checkpoint-live-not-implemented`][gap] resolves):**
-   the canonical surface is `tracking checkpoint --live --post
-   state,review`, but live posting is not yet implemented, so use
-   `record post` directly for these two prerequisite roles. Use the
-   `record post` payloads with `status=complete` and
-   `decision=approve|request-changes|comments-only`, then refresh the
-   dashboard:
+   delivery decision through one canonical `tracking checkpoint --live`
+   invocation. First bump the run state to `phase=ready_for_close` and
+   record the delivery decision; the controller derives
+   `state.status=complete` from that phase and renders the review body
+   from `--review-decision`. For single-author plans the deliver agent
+   records its own `decision=approve` referencing the merged PRs as
+   evidence; multi-author plans pass the upstream reviewer's decision.
+   `tracking checkpoint --live --post state,review --repair-dashboard`
+   posts one provider comment per role in declaration order, refreshes
+   the dashboard once both succeed, and aborts on the first per-role
+   failure with `tracking-checkpoint-live-post-failed` so the caller
+   can decide whether to retry. `tracking close-ready` will refuse
+   with `state_complete-missing` or `review-missing` unless both posts
+   exist.
 
    ```bash
-   plan-issue --repo "$OWNER_REPO" --format json record post \
-     --issue "$ISSUE" --profile tracking --kind state \
-     --payload-file state-complete-payload.json \
-     --execution-state-file "$EXECUTION_STATE_MD"
-   plan-issue --repo "$OWNER_REPO" --format json record post \
-     --issue "$ISSUE" --profile tracking --kind review \
-     --payload-file review-payload.json
-   plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
-     --issue "$ISSUE"
+   plan-issue --format json tracking run update \
+     --run-state "$RUN_STATE" --phase ready_for_close \
+     --linked-pr "$OWNER_REPO#$PR_NUMBER" \
+     --review-decision approve \
+     --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   plan-issue --format json tracking checkpoint \
+     --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
+     --run-state "$RUN_STATE" \
+     --profile tracking --post state,review \
+     --repair-dashboard --live
    ```
 
-   [gap]: ../../policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/ENTRY.md
 6. **Close-ready probe** — `tracking close-ready --expect-visible`
    (non-mutating). If `ready: true`, hand off to
    `plan-tracking-issue-closeout`. If `ready: false`, surface
@@ -184,6 +183,3 @@ Cross-references:
   audit and runs `record close`.
 - Family rules: Plan Issue Skill Family Redesign V1, Shared Family
   Rules section (under docs/source/plan-issue-redesign/).
-- Open heuristic gap: see
-  `core/policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/`
-  for the transitional fallback that step 5 currently relies on.

@@ -88,33 +88,31 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 1. **Preflight** — call `tracking close-ready --expect-visible`. If
    `ready: true`, continue. If `ready: false` with blockers
    `review-missing` and/or `state_complete-missing`, the upstream
-   `deliver-plan-tracking-issue` handoff omitted prerequisite roles
-   (see
-   `error-inbox/tracking-closeout-review-state-complete-gap`); post
-   the missing role(s) via `record post --kind review` and
-   `record post --kind state` (with `status=complete`), refresh the
-   dashboard, and re-run preflight. For any other blocker, stop and
-   never patch around it.
-
-   **Transitional fallback (remove once
-   [`tracking-checkpoint-live-not-implemented`][gap] resolves):**
-   the canonical preflight-repair surface is `tracking checkpoint
-   --live --post state,review`, but live posting is not yet
-   implemented, so use `record post` for the two roles:
+   `deliver-plan-tracking-issue` handoff omitted prerequisite roles;
+   repair them in scope through one canonical `tracking checkpoint
+   --live` invocation. First bump the run state to
+   `phase=ready_for_close` and record the delivery decision; the
+   controller derives `state.status=complete` from that phase. Then
+   post both prerequisite roles and refresh the dashboard in the same
+   call. `tracking checkpoint --live --post review,state
+   --repair-dashboard` posts in declaration order and aborts on the
+   first per-role failure with `tracking-checkpoint-live-post-failed`;
+   only retry preflight once both roles succeed. For any other
+   blocker, stop and never patch around it.
 
    ```bash
-   plan-issue --repo "$OWNER_REPO" --format json record post \
-     --issue "$ISSUE" --profile tracking --kind review \
-     --payload-file review-payload.json
-   plan-issue --repo "$OWNER_REPO" --format json record post \
-     --issue "$ISSUE" --profile tracking --kind state \
-     --payload-file state-complete-payload.json \
-     --execution-state-file "$EXECUTION_STATE_MD"
-   plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
-     --issue "$ISSUE"
+   plan-issue --format json tracking run update \
+     --run-state "$RUN_STATE" --phase ready_for_close \
+     --linked-pr "$LINKED_PR" \
+     --review-decision approve \
+     --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   plan-issue --format json tracking checkpoint \
+     --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
+     --run-state "$RUN_STATE" \
+     --profile tracking --post review,state \
+     --repair-dashboard --live
    ```
 
-   [gap]: ../../policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/ENTRY.md
 2. **Dashboard repair (optional)** — only when the live dashboard is
    stale, call `record repair-dashboard` and confirm the rendered
    dashboard matches the latest evidence.
@@ -161,7 +159,3 @@ Cross-references:
 - Upstream: `deliver-plan-tracking-issue` (the close-ready handoff).
 - Family rules: Plan Issue Skill Family Redesign V1, Shared Family
   Rules section (under docs/source/plan-issue-redesign/).
-- Open heuristic gap: see
-  `core/policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/`
-  for the prerequisite ownership ambiguity that the Workflow step 1
-  preflight-repair clause currently bridges.

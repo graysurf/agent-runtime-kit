@@ -250,6 +250,27 @@ write_close_fixture() {
 JSON
 }
 
+write_visible_tracking_comments_json() {
+  # Variant of `write_tracking_comments_json` whose per-role bodies pass the
+  # `tracking close-ready --expect-visible` visible-completeness lint
+  # (`## Source Snapshot`, `## Plan Snapshot`, `## Execution Session` +
+  # `- Summary:`, `## Validation Evidence` + `- Overall:` + a command row).
+  # Used by the close-ready happy-path probe; the canonical
+  # `write_tracking_comments_json` stays payload-only because the other
+  # probes consume it through `record post --dry-run` and `record audit`
+  # without `--expect-visible`.
+  local path="$1"
+  cat >"$path" <<'JSON'
+{"comments":[
+{"body":"<!-- plan-issue-record:v2 role=source profile=tracking -->\n\n## Source Snapshot\n\n- Path: docs/source.md\n- Commit: abc123\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"source\",\"profile\":\"tracking\",\"data\":{\"path\":\"docs/source.md\",\"commit\":\"abc123\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-source","createdAt":"2026-01-01T00:00:00Z"},
+{"body":"<!-- plan-issue-record:v2 role=plan profile=tracking -->\n\n## Plan Snapshot\n\n- Path: docs/plan.md\n- Commit: abc123\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"plan\",\"profile\":\"tracking\",\"data\":{\"path\":\"docs/plan.md\",\"commit\":\"abc123\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-plan","createdAt":"2026-01-01T00:00:01Z"},
+{"body":"<!-- plan-issue-record:v2 role=state profile=tracking -->\n\n## Execution State\n\n- Profile: tracking\n- Status: complete\n\n## Task Ledger\n\n| ID | Status | Task |\n| --- | --- | --- |\n| 1.1 | done | Validate dispatch smoke |\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"state\",\"profile\":\"tracking\",\"data\":{\"status\":\"complete\",\"target_scope\":\"runtime smoke tracking\",\"current\":\"complete\",\"next_action\":\"closeout\",\"tasks\":[{\"id\":\"1.1\",\"status\":\"done\",\"title\":\"Validate dispatch smoke\"}],\"prs\":[{\"ref\":\"graysurf/agent-runtime-kit#123\",\"url\":\"https://github.com/graysurf/agent-runtime-kit/pull/123\",\"status\":\"merged\"}],\"blockers\":[],\"links\":{}}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
+{"body":"<!-- plan-issue-record:v2 role=session profile=tracking -->\n\n## Execution Session\n\n- Summary: Runtime smoke session\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"session\",\"profile\":\"tracking\",\"data\":{\"summary\":\"Runtime smoke session\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
+{"body":"<!-- plan-issue-record:v2 role=validation profile=tracking -->\n\n## Validation Evidence\n\n- Overall: pass\n\n| Command | Status |\n| --- | --- |\n| true | pass |\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"validation\",\"profile\":\"tracking\",\"data\":{\"overall\":\"pass\",\"commands\":[{\"command\":\"true\",\"status\":\"pass\"}],\"waivers\":[]}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
+{"body":"<!-- plan-issue-record:v2 role=review profile=tracking -->\n\n## Review Evidence\n\n- Decision: approve\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"review\",\"profile\":\"tracking\",\"data\":{\"decision\":\"approve\",\"lenses\":[\"testing\",\"maintainability\"],\"findings\":[]}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
+JSON
+}
+
 write_missing_review_state_complete_comments_json() {
   # Rewrite the canonical tracking comments JSON to (1) drop the role=review
   # comment and (2) downgrade the role=state payload's `status` from
@@ -580,6 +601,88 @@ run_tracking_closeout_gate_prereq_blockers_probe() {
   grep -q '"code":"state_complete-missing"' "$probe_out" || return 1
 }
 
+run_tracking_closeout_gate_prereq_happy_path_probe() {
+  # Sibling to run_tracking_closeout_gate_prereq_blockers_probe. Starts from
+  # the same fixture (role=review missing, role=state status=in-progress),
+  # then exercises the canonical close-ready handoff: bump the run-state
+  # phase to `ready_for_close` with `review.decision=approve` and call
+  # `tracking checkpoint --live --fixture <dir> --post state,review
+  # --repair-dashboard`. Fixture-mode live posting synthesizes
+  # `fixture://issue/<n>/<role>` URLs without provider mutation and emits
+  # the rendered state (status=complete) and review (decision=approve)
+  # bodies under `payload.result.rendered[]`. The probe merges those bodies
+  # back into the fixture's `comments.json` (dropping the in-progress state
+  # comment) and re-runs `tracking close-ready --expect-visible`, which must
+  # now return `ready=true` with `blockers: []`. Together with the refusal
+  # probe this locks both halves of the close-ready gate contract.
+  local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-prereq-happy-path"
+  local source_comments="$fixture/source-comments.json"
+  local comments_json="$fixture/comments.json"
+  local body_md="$fixture/body.md"
+  local run_state="$fixture/run-state.json"
+  local checkpoint_out="$fixture/checkpoint.json"
+  local final_comments="$fixture/final-comments.json"
+  local probe_out="$fixture/close-ready.json"
+  local rc
+  require_dispatch_bin plan-issue || return 1
+  rm -rf "$fixture"
+  mkdir -p "$fixture"
+  printf '## Current Dashboard\n\n- Status: in-progress\n' >"$body_md"
+  write_visible_tracking_comments_json "$source_comments"
+  write_missing_review_state_complete_comments_json "$source_comments" "$comments_json"
+  cat >"$run_state" <<'JSON'
+{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-happy-path","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","review":{"decision":"approve"}}
+JSON
+
+  plan-issue --format json tracking checkpoint \
+    --provider-repo graysurf/agent-runtime-kit \
+    --issue 1 \
+    --profile tracking \
+    --run-state "$run_state" \
+    --post state,review \
+    --repair-dashboard \
+    --live \
+    --fixture "$fixture" \
+    --state-dir "$DISPATCH_STATE_DIR" >"$checkpoint_out" 2>&1
+
+  grep -q '"mode":"fixture"' "$checkpoint_out" || return 1
+  grep -q '"comment_url":"fixture://issue/1/state"' "$checkpoint_out" || return 1
+  grep -q '"comment_url":"fixture://issue/1/review"' "$checkpoint_out" || return 1
+  grep -q '"blocked":\[\]' "$checkpoint_out" || return 1
+
+  jq --slurpfile chk "$checkpoint_out" '
+    {comments: (
+      (.comments | map(select((.body | contains("role=state")) | not)))
+      + ($chk[0].payload.result.rendered
+         | map({
+             body: .body,
+             url: ("https://github.com/example/repo/issues/1#issuecomment-" + .role + "-live"),
+             createdAt: "2026-01-01T00:00:10Z"
+           }))
+    )}
+  ' "$comments_json" >"$final_comments"
+
+  set +e
+  plan-issue --format json tracking close-ready \
+    --profile tracking \
+    --provider-repo graysurf/agent-runtime-kit \
+    --issue 1 \
+    --body-file "$body_md" \
+    --comments-json "$final_comments" \
+    --linked-pr "graysurf/agent-runtime-kit#123" \
+    --approval "runtime smoke fixture approval" \
+    --state-dir "$DISPATCH_STATE_DIR" \
+    --expect-visible >"$probe_out" 2>&1
+  rc="$?"
+  set -e
+
+  if [ "$rc" -ne 0 ]; then
+    return 1
+  fi
+  grep -q '"ready":true' "$probe_out" || return 1
+  grep -q '"blockers":\[\]' "$probe_out" || return 1
+}
+
 record_missing_session_closeout_gate_case() {
   local id="dispatch.plan-issue-session-closeout-gate"
   set +e
@@ -845,6 +948,7 @@ record_case "dispatch.dispatch-plan-closeout" "dispatch record close fixture pro
 record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixture probe passed" run_tracking_issue_closeout_probe || failures=1
 record_missing_session_closeout_gate_case || failures=1
 record_case "dispatch.plan-tracking-closeout-gate" "tracking close-ready refuses missing review + state=complete prereqs with the expected blocker codes" run_tracking_closeout_gate_prereq_blockers_probe || failures=1
+record_case "dispatch.plan-tracking-closeout-gate-happy-path" "tracking checkpoint --live --fixture posts review + state=complete and close-ready then returns ready=true with no blockers" run_tracking_closeout_gate_prereq_happy_path_probe || failures=1
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe || failures=1
 record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe || failures=1
 record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe || failures=1
