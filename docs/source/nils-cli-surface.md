@@ -1,19 +1,25 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-28 (refreshed for `v0.25.7`)
+- Snapshot date: 2026-05-28 (refreshed for `v0.25.8`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.25.7`
-- Head commit: `0c070f8`
-  (`feat(plan-tooling): per-task ledger durability (0.25.7) (#607)`)
+- Active `git describe --tags` output: `v0.25.8`
+- Head commit: `4d0d621`
+  (`chore(release): bump cli versions to 0.25.8 (#608)`)
 - Release:
-  [`v0.25.7`](https://github.com/sympoies/nils-cli/releases/tag/v0.25.7),
+  [`v0.25.8`](https://github.com/sympoies/nils-cli/releases/tag/v0.25.8),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.25.6` at `1edf007` (`chore(release): bump cli versions
-  to 0.25.6`); `v0.25.7` adds the `plan-tooling ledger-update` and
-  `plan-tooling ledger-sync --from-issue` subcommands plus the
+- Prior pin: `v0.25.7` at `0c070f8` (`feat(plan-tooling): per-task ledger
+  durability (0.25.7) (#607)`); `v0.25.8` is a workspace-wide lock-step
+  bump that catches the 31 crates skipped by the v0.25.7 partial release
+  (`agent-runtime-cli`, `forge-cli`, `semantic-commit`, the `api-*` and
+  `git-*` families, the rest) up to the workspace floor, restoring the
+  convention from `1edf007` that every release tag matches every crate's
+  `Cargo.toml` version. No new consumed surface relative to v0.25.7. The
+  v0.25.7 entry remains the source of the `plan-tooling ledger-update`
+  and `plan-tooling ledger-sync --from-issue` subcommands plus the
   `ledger-rows-pending` blocker on `plan-issue tracking close-ready`
   (read-mostly drift reconciliation against issue lifecycle evidence;
   one-call row patching for the canonical `*-execution-state.md`
