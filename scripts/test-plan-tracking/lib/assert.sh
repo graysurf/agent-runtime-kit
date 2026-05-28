@@ -5,6 +5,10 @@
 #   create    — issue exists; labels match; source/plan/state markers
 #               present in body+comments at least once each.
 #   execute   — issue still open; ≥2 distinct state-role comments.
+#   deliver   — issue still open; ≥1 review-role comment posted; the
+#               final state body still carries the full Task Ledger.
+#               (Only used by fixtures that declare
+#               FIXTURE_EXPECTED_ROLES_DELIVER.)
 #   closeout  — issue closed; closeout-role comment present;
 #               state label transitioned to FIXTURE_EXPECTED_FINAL_STATE.
 #
@@ -203,6 +207,28 @@ case "${phase}" in
     done
     check_state_body_not_synthesized_fallback
     ;;
+  deliver)
+    if [ -z "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
+      die "fixture ${FIXTURE_NAME} has no deliver phase (no FIXTURE_EXPECTED_ROLES_DELIVER)"
+    fi
+    if [ "${issue_state}" = "OPEN" ]; then
+      pass "issue state OPEN"
+    else
+      fail "issue state ${issue_state} (expected OPEN — closeout has not run yet)"
+    fi
+    # Roles up to and including review.
+    for r in source plan state review; do
+      check_role_present "${r}"
+    done
+    # State role should have grown further (initial + per-task + final
+    # state-complete after phase=ready_for_close), so require >= 2.
+    check_role_min_count state 2
+    # The final state body must still carry the per-task ledger.
+    for tid in ${FIXTURE_EXPECTED_LEDGER_TASK_IDS}; do
+      check_state_body_contains_ledger_row "${tid}"
+    done
+    check_state_body_not_synthesized_fallback
+    ;;
   closeout)
     if [ "${issue_state}" = "CLOSED" ]; then
       pass "issue state CLOSED"
@@ -211,6 +237,11 @@ case "${phase}" in
     fi
     check_role_present closeout
     check_label_present "${FIXTURE_EXPECTED_FINAL_STATE}"
+    # For fixtures that ran a deliver phase, the review role must still
+    # be present after closeout.
+    if [ -n "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
+      check_role_present review
+    fi
     # Final state body must also reflect the full per-task ledger.
     for tid in ${FIXTURE_EXPECTED_LEDGER_TASK_IDS}; do
       check_state_body_contains_ledger_row "${tid}"

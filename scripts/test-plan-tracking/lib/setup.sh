@@ -53,10 +53,11 @@ log "validating plan markdown in canonical position…"
 
 log "committing fixture bundle…"
 testbed_git add "docs/plans/${FIXTURE_SLUG}/"
+commit_type="${FIXTURE_COMMIT_TYPE:-chore}"
 (cd "${TESTBED_ROOT}" &&
   semantic-commit commit --message "$(
     cat <<EOF
-chore: drop happy-path plan bundle for skill flow test
+${commit_type}: drop ${FIXTURE_NAME} plan bundle for skill flow test
 
 - Bundle copied from agent-runtime-kit/scripts/test-plan-tracking/
   fixtures/${fixture} for a single test run.
@@ -75,17 +76,27 @@ state_save \
   "FIXTURE_LABELS=${FIXTURE_LABELS}" \
   "FIXTURE_EXPECTED_ROLES_CREATE=${FIXTURE_EXPECTED_ROLES_CREATE}" \
   "FIXTURE_EXPECTED_ROLES_EXECUTE=${FIXTURE_EXPECTED_ROLES_EXECUTE}" \
+  "FIXTURE_EXPECTED_ROLES_DELIVER=${FIXTURE_EXPECTED_ROLES_DELIVER:-}" \
   "FIXTURE_EXPECTED_ROLES_CLOSEOUT=${FIXTURE_EXPECTED_ROLES_CLOSEOUT}" \
   "FIXTURE_EXPECTED_FINAL_STATE=${FIXTURE_EXPECTED_FINAL_STATE}" \
+  "FIXTURE_EXPECTED_LEDGER_TASK_IDS=${FIXTURE_EXPECTED_LEDGER_TASK_IDS:-}" \
   "TESTBED_REPO=${TESTBED_REPO}" \
   "TESTBED_ROOT=${TESTBED_ROOT}" \
   "BUNDLE_PATH=${TESTBED_ROOT}/docs/plans/${FIXTURE_SLUG}" \
   "PHASE=setup"
 
+phase_sequence="create -> execute -> closeout"
+if [ -n "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
+  phase_sequence="create -> execute -> deliver -> closeout"
+fi
+
 cat <<EOM
 
 ==============================================================
 setup complete.
+
+Phase sequence for fixture '${FIXTURE_NAME}':
+  ${phase_sequence}
 
 Next step (agent action):
   invoke /create-plan-tracking-issue with:

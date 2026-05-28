@@ -4,13 +4,15 @@
 # Usage:
 #   run.sh setup [fixture]
 #   run.sh status
-#   run.sh assert <phase>     # phase: create | execute | closeout
+#   run.sh assert <phase>     # phase: create | execute | deliver | closeout
 #   run.sh teardown
 #
 # Agent-in-the-loop: between `setup` and the first `assert`, the agent
 # invokes /create-plan-tracking-issue. Between `assert create` and
 # `assert execute`, the agent invokes /execute-plan-tracking-issue.
-# Same shape for the closeout phase.
+# For fixtures that declare a deliver phase (e.g. `fixtures/deliver/`),
+# the agent then invokes /deliver-plan-tracking-issue and the driver
+# moves to `assert deliver`. Closeout follows in both shapes.
 
 set -euo pipefail
 
@@ -30,14 +32,14 @@ case "${cmd}" in
     bash "${DRIVER_ROOT}/lib/status.sh"
     ;;
   assert)
-    phase="${1:?phase required: create | execute | closeout}"
+    phase="${1:?phase required: create | execute | deliver | closeout}"
     bash "${DRIVER_ROOT}/lib/assert.sh" "${phase}"
     ;;
   teardown)
     bash "${DRIVER_ROOT}/lib/teardown.sh"
     ;;
   help | --help | -h)
-    sed -n '2,15p' "$0"
+    sed -n '2,17p' "$0"
     ;;
   *)
     die "unknown command: ${cmd} (run 'run.sh help')"
