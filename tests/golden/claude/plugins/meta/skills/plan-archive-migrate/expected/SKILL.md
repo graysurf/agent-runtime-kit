@@ -90,3 +90,14 @@ copy/commit/push/delete sequence, and all `git` / `semantic-commit`
 invocation. The skill body owns when to migrate, presenting the
 dry-run for review, and gating the apply on explicit user
 confirmation. It does not duplicate CLI logic or call `git` directly.
+
+## Related Skills
+
+- `plan-archive-discover` — read-only candidate scanner. Run it
+  first to enumerate eligible plan folders and let the user pick
+  which to migrate; this skill applies migration only for the
+  folders the user selects from that list.
+- `plan-archive-query` — read past archived plans, issues, PRs, and
+  MRs from the archive cache. Orthogonal to migration, but uses the
+  same archive clone and respects the same source / host
+  classification.
