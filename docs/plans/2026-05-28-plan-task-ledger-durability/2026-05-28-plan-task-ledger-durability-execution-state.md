@@ -75,8 +75,8 @@
 | 1.3 | done | Add `ledger-rows-pending` blocker to `tracking close-ready` | sympoies/nils-cli#607 | `sympoies/nils-cli`. Depends on 1.1. Reads ledger via `plan-tooling`'s shared reader; silent-skip when `bundle` is absent. |
 | 1.4 | done | Rust tests, stable error codes, version bump 0.25.6 → 0.25.7 | sympoies/nils-cli#607 | `sympoies/nils-cli`. Depends on 1.1, 1.2, 1.3. Covers all branches plus the new error codes `ledger-row-not-found`, `ledger-row-ambiguous`, `ledger-table-malformed`. |
 | 1.5 | done | Open the upstream PR against `sympoies/nils-cli` main | https://github.com/sympoies/nils-cli/pull/607 (draft, awaiting CI) | `sympoies/nils-cli`. Depends on 1.4. forge-cli workflow; raw `gh pr create` blocked by hook. |
-| 2.1 | pending | Cut the `v0.25.7` tag |  | `sympoies/nils-cli`. Depends on 1.5 merged. Workspace lock-step release for both crates. |
-| 2.2 | pending | Bump the Homebrew tap formulas |  | `sympoies/homebrew-tap`. Depends on 2.1. Both `plan-tooling` and `plan-issue-cli` formulas. |
+| 2.1 | done | Cut the `v0.25.7` tag | sympoies/nils-cli v0.25.7 release: https://github.com/sympoies/nils-cli/releases/tag/v0.25.7 | `sympoies/nils-cli`. Depends on 1.5 merged. Workspace lock-step release for both crates. |
+| 2.2 | done | Bump the Homebrew tap formulas | sympoies/homebrew-tap nils-cli-v0.25.7 (commit 71c1f23); brew upgrade -> 0.25.7 verified on PATH | `sympoies/homebrew-tap`. Depends on 2.1. Both `plan-tooling` and `plan-issue-cli` formulas. |
 | 3.1 | pending | Bump the surface-floor doc to `v0.25.7` |  | `graysurf/agent-runtime-kit`. Depends on 2.2 (released CLIs on PATH). |
 | 3.2 | pending | Wire `execute-plan-tracking-issue` SKILL |  | `graysurf/agent-runtime-kit`. Depends on 3.1. Prescribes `plan-tooling ledger-update` + switches entrypoint `tracking checkpoint --post …` to `--live`. |
 | 3.3 | pending | Wire `deliver-plan-tracking-issue` SKILL |  | `graysurf/agent-runtime-kit`. Depends on 3.1. Same wiring as 3.2; ledger-update follows the existing `tracking run update --selected-task` cadence. |
