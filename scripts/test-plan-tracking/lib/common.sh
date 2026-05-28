@@ -77,3 +77,8 @@ testbed_git() {
 testbed_run() {
   (cd "${TESTBED_ROOT}" && "$@")
 }
+
+# Provenance + CLI-floor helpers (finding #19). Sourced last so every phase
+# entrypoint that sources common.sh also gets stamp_provenance / assert_cli_floor.
+# shellcheck disable=SC1091
+. "${DRIVER_ROOT}/lib/provenance.sh"

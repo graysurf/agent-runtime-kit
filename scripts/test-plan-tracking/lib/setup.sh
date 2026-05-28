@@ -23,6 +23,17 @@ require_cmd git
 require_cmd plan-tooling
 require_cmd plan-issue
 
+# Fail fast when the host CLIs are below the floor the source skills declare
+# (finding #19). A run against an out-of-floor CLI otherwise fails late and
+# confusingly instead of at this precondition gate.
+log "checking CLI version floors against the source skills…"
+assert_cli_floor plan-issue plan-issue
+assert_cli_floor plan-tooling plan-tooling
+
+# Stamp run provenance (kit checkout SHA + per-CLI version/source) so a finding
+# filed from this run can pin the exact upstream state it ran against.
+stamp_provenance "${fixture}"
+
 [ -d "${TESTBED_ROOT}/.git" ] ||
   die "testbed not found at ${TESTBED_ROOT} (clone graysurf/plan-tracking-testbed first)"
 
@@ -97,6 +108,9 @@ setup complete.
 
 Phase sequence for fixture '${FIXTURE_NAME}':
   ${phase_sequence}
+
+Run provenance (embed in any finding filed from this run):
+  ${STATE_DIR}/provenance.md   (machine-readable: provenance.env)
 
 Next step (agent action):
   invoke /create-plan-tracking-issue with:

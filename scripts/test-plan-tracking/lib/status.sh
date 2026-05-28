@@ -16,6 +16,12 @@ else
   printf '(no current run state — run setup first)\n\n'
 fi
 
+if [ -f "${STATE_DIR}/provenance.md" ]; then
+  printf '== run provenance ==\n'
+  cat "${STATE_DIR}/provenance.md"
+  printf '\n'
+fi
+
 printf '== open issues in %s ==\n' "${TESTBED_REPO}"
 gh issue list --repo "${TESTBED_REPO}" --state open --limit 20
 

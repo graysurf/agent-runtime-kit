@@ -88,7 +88,10 @@ if [ -z "$PIN_LINE" ]; then
 fi
 # shellcheck disable=SC2016
 SURFACE_FLOOR="$(printf '%s\n' "$PIN_LINE" | sed -E 's/^- Active `git describe --tags` output: `([^`]+)`.*$/\1/')"
-HOST_VERSION_RAW="$(agent-runtime --version 2>/dev/null | awk 'NR==1 {print $NF}')"
+# Field 2 is the semver token (`agent-runtime 0.27.0 (v0.27.0, rustc … DATE)`);
+# $NF would capture the trailing rustc-annotation date. The Python comparator
+# below strips any [-+] build/pre suffix, so this also handles `0.27.0+g<sha>`.
+HOST_VERSION_RAW="$(agent-runtime --version 2>/dev/null | awk 'NR==1 {print $2}')"
 if [ -z "$HOST_VERSION_RAW" ]; then
   echo "ci/all.sh: agent-runtime --version produced no output" >&2
   exit 1
