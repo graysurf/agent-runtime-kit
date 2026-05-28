@@ -86,3 +86,13 @@ writes. The skill body owns the read-vs-refresh decision, surfacing
 `fetched_at`, and enforcing the scrub-log review gate before any
 refresh commit. It relies on the CLI for every provider payload
 instead of calling `forge-cli` for the same data.
+
+## Related Skills
+
+- `plan-archive-discover` — read-only scanner over a working repo's
+  plan folders. Use it when the question is "which of my local plan
+  folders are ready to archive?" rather than "what was the outcome
+  of past plan X?".
+- `plan-archive-migrate` — destructive single-folder archival path.
+  After query confirms a plan's archive target is clear, discover
+  selects the candidate and migrate applies it.

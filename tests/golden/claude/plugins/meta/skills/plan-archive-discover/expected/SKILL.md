@@ -108,3 +108,13 @@ body owns when to run discovery, how to surface candidates for
 selection, and the handoff to `plan-archive-migrate` for each
 selected folder. It does not duplicate CLI logic, invent closeout
 evidence, or call the migrate apply path itself.
+
+## Related Skills
+
+- `plan-archive-migrate` — single-folder destructive archival path
+  that discover hands each selected folder off to. Discover never
+  applies a migration itself.
+- `plan-archive-query` — read past archived plans, issues, PRs, and
+  MRs from the archive cache. Use it before opening new work or to
+  cross-check an archive target that discover reports as already
+  existing.
