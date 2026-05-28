@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-28
 - Transitional mitigation landed: 2026-05-28 — both skill bodies now
   document the `record post --kind state` (`status=complete`) +
@@ -13,10 +13,22 @@
   `tracking close-ready` smoke probe (`dispatch.plan-tracking-closeout-gate`)
   locks the gate's `review-missing` + `state_complete-missing` contract
   so future skill-body changes cannot regress it silently.
-- Root-cause fix pending: `tracking checkpoint --live` is still
-  unimplemented upstream (`sympoies/nils-cli` `plan-issue-cli`);
-  promote this entry once that gate closes and the transitional
-  fallback can be excised from both skill bodies.
+- Resolved: 2026-05-28 — upstream `plan-issue-cli@0.25.6` ships live
+  `tracking checkpoint --live --post <roles> --repair-dashboard` posting
+  (`sympoies/nils-cli#605` merged at `09677b7`; release
+  `sympoies/nils-cli#606` merged at `1edf007`; Homebrew tap formula
+  bumped at `de38023`). The runtime-kit feature PR opened against the
+  C tracking issue `graysurf/agent-runtime-kit#144` bumps the surface
+  floor, excises the transitional `record post` fallback blocks from
+  `deliver-plan-tracking-issue/SKILL.md.tera` (Workflow step 5) and
+  `plan-tracking-issue-closeout/SKILL.md.tera` (Workflow step 1),
+  removes the `Open heuristic gap` cross-references, regenerates
+  Codex/Claude goldens, and adds the
+  `dispatch.plan-tracking-closeout-gate-happy-path` smoke probe sibling
+  to the existing refusal probe so both halves of the gate's blocker
+  contract are locked. Closeout proof: issue #144 posted its close-ready
+  `state`+`review` checkpoint through the new `tracking checkpoint
+  --live` surface, no `record post` workaround used.
 - Area: dispatch:tracking lifecycle (`deliver-plan-tracking-issue` →
   `plan-tracking-issue-closeout` handoff)
 - Severity: medium
