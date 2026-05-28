@@ -461,7 +461,7 @@ Required content slotting per skill:
   - Failure modes name the **forbidden lifecycle roles** that abort the
     skill with `forbidden-role-for-skill`, the controller-surfaced refusal
     codes the skill must propagate (`run-state-stale`,
-    `tracking-checkpoint-live-not-implemented`, `visible-completeness-failed`,
+    `RECORD_BLOCKED`, `visible-completeness-failed`,
     role-specific codes from
     [`plan-tracking-issue-comment-taxonomy-v1.md`](plan-tracking-issue-comment-taxonomy-v1.md)),
     and the scope-leak refusals.

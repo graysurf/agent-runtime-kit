@@ -55,7 +55,6 @@ Failure modes:
 - Controller refusal codes propagated: `run-state-stale`,
   `issue-evidence-missing`, `RECORD_BLOCKED`,
   `visible-completeness-failed`,
-  `tracking-checkpoint-live-not-implemented`,
   any `close-ready` blocker.
 - Visible-completeness lint codes relevant here:
   `state-missing-task-ledger`, `validation-missing-overall`,
