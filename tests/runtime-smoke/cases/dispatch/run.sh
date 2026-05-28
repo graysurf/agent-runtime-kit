@@ -250,6 +250,27 @@ write_close_fixture() {
 JSON
 }
 
+write_missing_review_state_complete_comments_json() {
+  # Rewrite the canonical tracking comments JSON to (1) drop the role=review
+  # comment and (2) downgrade the role=state payload's `status` from
+  # `complete` to `in-progress`. Result: `tracking close-ready` should
+  # refuse with `review-missing` + `state_complete-missing`. Used to assert
+  # the close-ready gate contract that the deliver → closeout handoff
+  # depends on; the assertion is C-compatible because the gate's blocker
+  # codes are stable independent of which surface (`record post` today vs.
+  # `tracking checkpoint --live` once
+  # `tracking-checkpoint-live-not-implemented` resolves) emits the prereq
+  # lifecycle comments.
+  local src="$1"
+  local dst="$2"
+  jq '.comments |= (
+        map(select((.body | contains("role=review")) | not))
+        | map(if .body | contains("role=state")
+              then .body |= gsub("\"status\":\"complete\""; "\"status\":\"in-progress\"")
+              else . end)
+      )' "$src" >"$dst"
+}
+
 write_missing_session_close_fixture() {
   local fixture="$1"
   local comments_json="$2"
@@ -511,6 +532,52 @@ run_missing_session_closeout_gate_probe() {
     return 2
   fi
   return 1
+}
+
+run_tracking_closeout_gate_prereq_blockers_probe() {
+  # Assert `tracking close-ready` refuses with both `review-missing` and
+  # `state_complete-missing` when the issue evidence carries only a state
+  # checkpoint with status=in-progress and no role=review comment. This
+  # locks the close-ready gate contract that the
+  # deliver-plan-tracking-issue → plan-tracking-issue-closeout handoff
+  # depends on; see
+  # core/policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/.
+  # Stays valid through the `tracking-checkpoint-live-not-implemented`
+  # fix in `sympoies/nils-cli` because that fix changes the posting path,
+  # not the gate's blocker codes.
+  local fixture="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-prereq-blockers"
+  local source_comments="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-prereq-blockers-source-comments.json"
+  local comments_json="$fixture/comments.json"
+  local body_md="$fixture/body.md"
+  local probe_out="$DISPATCH_ARTIFACTS_DIR/plan-tracking-closeout-gate-prereq-blockers.json"
+  local rc
+  require_dispatch_bin plan-issue || return 1
+  rm -rf "$fixture"
+  mkdir -p "$fixture"
+  printf '## Current Dashboard\n\n- Status: in-progress\n' >"$body_md"
+  write_tracking_comments_json "$source_comments"
+  write_missing_review_state_complete_comments_json "$source_comments" "$comments_json"
+
+  set +e
+  plan-issue --format json tracking close-ready \
+    --profile tracking \
+    --provider-repo graysurf/agent-runtime-kit \
+    --issue 1 \
+    --body-file "$body_md" \
+    --comments-json "$comments_json" \
+    --linked-pr "graysurf/agent-runtime-kit#123" \
+    --approval "runtime smoke fixture approval" \
+    --state-dir "$DISPATCH_STATE_DIR" \
+    --expect-visible >"$probe_out" 2>&1
+  rc="$?"
+  set -e
+
+  if [ "$rc" -ne 0 ]; then
+    return 1
+  fi
+  grep -q '"ready":false' "$probe_out" || return 1
+  grep -q '"code":"review-missing"' "$probe_out" || return 1
+  grep -q '"code":"state_complete-missing"' "$probe_out" || return 1
 }
 
 record_missing_session_closeout_gate_case() {
@@ -777,6 +844,7 @@ record_case "dispatch.deliver-dispatch-plan" "dispatch post/repair/audit, split,
 record_case "dispatch.dispatch-plan-closeout" "dispatch record close fixture probe passed" run_dispatch_issue_closeout_probe || failures=1
 record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixture probe passed" run_tracking_issue_closeout_probe || failures=1
 record_missing_session_closeout_gate_case || failures=1
+record_case "dispatch.plan-tracking-closeout-gate" "tracking close-ready refuses missing review + state=complete prereqs with the expected blocker codes" run_tracking_closeout_gate_prereq_blockers_probe || failures=1
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe || failures=1
 record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe || failures=1
 record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe || failures=1

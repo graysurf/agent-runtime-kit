@@ -833,6 +833,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: skip-host-capability
     skip_policy: older plan-issue releases do not yet enforce session-missing
+  - id: dispatch.plan-tracking-closeout-gate.shared-cli.deterministic
+    product: shared-cli
+    domain: dispatch
+    skill_id: dispatch.plan-tracking-issue-closeout
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: rewrite the canonical tracking comments fixture to remove the role=review comment and downgrade the role=state payload from status=complete to status=in-progress
+    invocation: plan-issue tracking close-ready --expect-visible against the rewritten body/comments fixture
+    expected_exit_code: 0
+    expected_artifacts: close-ready JSON envelope with ready=false and blockers carrying both review-missing and state_complete-missing codes
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: dispatch.execute-plan-tracking-issue.shared-cli.deterministic
     product: shared-cli
     domain: dispatch
