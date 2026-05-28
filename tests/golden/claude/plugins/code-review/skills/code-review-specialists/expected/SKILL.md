@@ -133,6 +133,14 @@ after fixes.
     retained `review-evidence` record, but this workflow does not execute that
     decision.
 
+## Boundary
+
+`code-review-specialists` owns scope detection, specialist selection,
+read-only findings, validation, and the merged report. It does not fix code,
+post PR or MR review comments, mark a draft reviewable ready, merge, close
+issues, or execute the recommended next step — those belong to the owning
+PR / MR delivery skills, `review-dispatch-lane-pr`, or `review-evidence`.
+
 ## References
 
 - Specialist review contract:

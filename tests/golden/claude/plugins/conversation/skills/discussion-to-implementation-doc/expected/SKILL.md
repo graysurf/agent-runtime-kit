@@ -170,19 +170,10 @@ Failure modes:
    - Do not run a code review workflow by default only because this skill is
      writing a source document. Put the expected review gate in the document's
      validation plan or execution notes.
-   - Use `code-review-quick-pass` for small, routine, docs-only, or ordinary
-     diffs where a compact read-only review is enough before escalation.
-   - Use `code-review-focused-lens` when the user or source document requests
-     one or more explicit lenses such as testing, security, performance,
-     data-migration, API-contract, maintainability, or red-team.
-   - Use `code-review-pre-merge-gate` for PR/MR delivery gates. It forces at
-     least testing and maintainability and produces the delivery outcome that
-     the owning PR/MR workflow posts.
-   - Use `code-review-follow-up` after review findings have been repaired and
-     the next reviewer needs finding-by-finding disposition evidence.
-   - Use `code-review-specialists` only for broad, risky, security-sensitive,
-     migration-heavy, API-contract-heavy, or otherwise full-bundle specialist
-     review.
+   - When the document does prescribe review, pick the workflow from the
+     "Relationship To Nearby Skills" section below — quick-pass for ordinary
+     diffs, focused-lens for explicit lenses, pre-merge-gate for PR/MR delivery
+     gates, follow-up after fixes, specialists for broad or risky bundles.
    - Link `review-evidence` records when retained review findings or validation
      records materially affect the implementation source. Keep this document as
      the primary read-first artifact.

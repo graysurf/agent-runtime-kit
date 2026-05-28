@@ -57,6 +57,4 @@ review-evidence verify --out /tmp/review --format json
 
 ## Boundary
 
-`review-evidence` owns record structure. Review judgment, severity assignment, and whether a finding blocks delivery remain caller responsibilities.
-Do not use `review-evidence` or `code-review-specialists` as a substitute for
-review judgment; both provide evidence inputs.
+`review-evidence` owns record structure; it and `code-review-specialists` provide evidence inputs only. Review judgment, severity assignment, and whether a finding blocks delivery remain caller responsibilities.

@@ -105,7 +105,7 @@ SOURCE_WEIGHTS = {
     "polymarket": 15.0,
     "news": 12.0,
 }
-USER_AGENT = "agent-kit-topic-radar/0.3 (+https://github.com/sympoies/agent-kit)"
+USER_AGENT = f"agent-runtime-kit-topic-radar/{VERSION} (+https://github.com/graysurf/agent-runtime-kit)"
 POLYMARKET_MCP_SOURCE_DETAIL = "polymarket-mcp"
 POLYMARKET_CLOB_IDS_CAMEL_KEY = "clob" + "Tok" + "enIds"
 POLYMARKET_CLOB_IDS_SNAKE_KEY = "clob_" + "tok" + "en_ids"
@@ -670,7 +670,7 @@ def build_topic_query(topics: list[str], max_topics: int = 5) -> str:
 def default_cache_dir() -> Path:
     xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
     root = Path(xdg_cache_home) if xdg_cache_home else Path.home() / ".cache"
-    return root / "agent-kit" / "topic-radar"
+    return root / "agent-runtime-kit" / "topic-radar"
 
 
 def cache_key(url: str, headers: dict[str, str] | None, context: str | None = None) -> str:

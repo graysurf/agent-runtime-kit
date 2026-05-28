@@ -82,9 +82,8 @@ bash scripts/sync-runtime-skills.sh --apply --no-prune
 ## Workflow
 
 1. Resolve the intended `agent-runtime-kit` checkout:
-   - For live `--apply`, use a durable primary checkout. Do not use linked git
-     worktrees, Codex transient worktrees, or paths under
-     `$CODEX_HOME/worktrees`.
+   - For live `--apply`, use a durable primary checkout (see Prereqs) — not a
+     linked git or Codex transient worktree.
    - If the current repository root contains `scripts/sync-runtime-skills.sh`
      and is not a worktree, use it.
    - Otherwise, use an explicit user-provided path, `AGENT_DOCS_HOME`, or the
