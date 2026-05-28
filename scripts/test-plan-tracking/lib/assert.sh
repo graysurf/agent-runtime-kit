@@ -124,6 +124,47 @@ check_role_min_count() {
   fi
 }
 
+# Concatenate every state-role comment body into a single blob so the
+# rendered `## Task Ledger` row can be matched against expected task ids
+# regardless of which checkpoint posted it.
+state_bodies_blob() {
+  local out="${snap_dir}/state-bodies.md"
+  jq -r '
+    .comments[]
+    | select(.body | test("plan-issue-record:v[0-9]+ role=state"))
+    | .body
+  ' "${snap_dir}/issue.json" >"${out}"
+  printf '%s\n' "${out}"
+}
+
+check_state_body_contains_ledger_row() {
+  local task_id="$1"
+  local bodies
+  bodies="$(state_bodies_blob)"
+  # Match a pipe-table row whose first cell is exactly the task id, in
+  # any state lifecycle body. Status column is intentionally not pinned
+  # (rows transition pending → in-progress → done).
+  if grep -E -q "^\| ${task_id} \|" "${bodies}"; then
+    pass "state body has ledger row: ${task_id}"
+  else
+    fail "state body missing ledger row: ${task_id}"
+  fi
+}
+
+check_state_body_not_synthesized_fallback() {
+  # Finding #9 regression guard: the pre-fix renderer emitted a single
+  # synthesized row of the form `| Task <id> | <status> | selected |`
+  # when no execution_state_file was wired up. Real per-task ledger rows
+  # start with the bare id (`| 1.1 |`), never `| Task 1.1 |`.
+  local bodies
+  bodies="$(state_bodies_blob)"
+  if grep -E -q '^\| Task [0-9.]+ \| [a-z-]+ \| selected \|' "${bodies}"; then
+    fail "state body regressed to synthesized fallback ledger row (finding #9)"
+  else
+    pass "state body has no synthesized fallback ledger row"
+  fi
+}
+
 # ---- Per-phase checks -------------------------------------------------
 
 case "${phase}" in
@@ -156,6 +197,11 @@ case "${phase}" in
     for r in source plan; do
       check_role_present "${r}"
     done
+    # Rendered state body must carry every expected per-task ledger row.
+    for tid in ${FIXTURE_EXPECTED_LEDGER_TASK_IDS}; do
+      check_state_body_contains_ledger_row "${tid}"
+    done
+    check_state_body_not_synthesized_fallback
     ;;
   closeout)
     if [ "${issue_state}" = "CLOSED" ]; then
@@ -165,6 +211,11 @@ case "${phase}" in
     fi
     check_role_present closeout
     check_label_present "${FIXTURE_EXPECTED_FINAL_STATE}"
+    # Final state body must also reflect the full per-task ledger.
+    for tid in ${FIXTURE_EXPECTED_LEDGER_TASK_IDS}; do
+      check_state_body_contains_ledger_row "${tid}"
+    done
+    check_state_body_not_synthesized_fallback
     ;;
   *)
     die "unknown phase: ${phase}"

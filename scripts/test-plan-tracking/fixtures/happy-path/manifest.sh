@@ -21,3 +21,9 @@ FIXTURE_EXPECTED_ROLES_CLOSEOUT="source plan state state closeout"
 
 # Expected final state label after closeout (close-ready audit pass).
 FIXTURE_EXPECTED_FINAL_STATE="state::closed"
+
+# Task IDs that must appear in the state lifecycle body's `## Task Ledger`
+# table. Used by assert.sh to regression-guard the rendered ledger from
+# finding #9 (state body rendered single-row "selected" instead of the
+# full per-task ledger). Space-separated.
+FIXTURE_EXPECTED_LEDGER_TASK_IDS="1.1 1.2"
