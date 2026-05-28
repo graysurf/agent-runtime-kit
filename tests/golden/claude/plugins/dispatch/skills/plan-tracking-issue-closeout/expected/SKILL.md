@@ -53,11 +53,9 @@ Failure modes:
   `forbidden-role-for-skill`. **Preflight repair** of any missing
   prerequisite role surfaced by `tracking close-ready` —
   `review-missing`, `state_complete-missing`, `session-missing`,
-  `validation-missing` — is in scope (see Workflow step 1). The
-  upstream `execute-plan-tracking-issue` and
-  `deliver-plan-tracking-issue` skills may legitimately omit one or
-  more of these mid-run; closeout has the last write opportunity
-  before `record close`.
+  `validation-missing` — is in scope; see Workflow step 1 for the
+  repair procedure and the rationale for why closeout owns this last
+  write opportunity.
 - Controller refusal codes propagated: any `close-ready` blocker,
   `linked-pr-not-merged`, `linked-pr-checks-failed`,
   `linked-pr-missing-merge-sha`, `closeout-missing-approval`,

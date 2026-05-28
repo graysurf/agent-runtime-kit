@@ -13,9 +13,9 @@ human index for scanning the skill catalog by category and skill series.
 | `conversation` | 7 | Advice, knowledge, handoff, work modes |
 | `dispatch` | 8 | Plan-tracking issues, dispatch plans, dispatch lanes |
 | `evidence` | 6 | Evidence records, impact scans, cross-checks |
-| `issue` | 2 | Issue triage and durable follow-up |
+| `issue` | 3 | Issue triage, durable follow-up, plan-issue finding reports |
 | `media` | 2 | Image conversion, screen capture |
-| `meta` | 17 | Runtime primitives, script dispatchers, skill lifecycle, heuristics |
+| `meta` | 20 | Runtime primitives, script dispatchers, skill lifecycle, plan archive, heuristics |
 | `pr` | 7 | GitHub PRs, GitLab MRs, dispatch-lane PRs |
 | `reporting` | 3 | Topic radar, daily brief, project retrospective |
 
@@ -111,6 +111,9 @@ Routing guidance for the skill family lives in
 | Heuristic system | [heuristic-session-closeout](./meta/heuristic-session-closeout/) | Reviews session evidence for heuristic-system updates and writes retained records when warranted. |
 | Commit and retrospectives | [semantic-commit](./meta/semantic-commit/) | Commits staged changes with Semantic Commit format through `semantic-commit`. |
 | Commit and retrospectives | [repo-retro](./meta/repo-retro/) | Generates local repository retrospective data through `repo-retro`. |
+| Plan archive | [plan-archive-discover](./meta/plan-archive-discover/) | Read-only scan of a working repo's plan folders for archive candidates, handing selected folders to `plan-archive-migrate`. |
+| Plan archive | [plan-archive-migrate](./meta/plan-archive-migrate/) | Migrates a closed plan folder into the agent-plan-archive repository, dry-run first and apply only on explicit confirmation. |
+| Plan archive | [plan-archive-query](./meta/plan-archive-query/) | Reads and refreshes the agent-plan-archive work-history cache before opening new work or diagnosing recurring problems. |
 
 ## PR And MR
 

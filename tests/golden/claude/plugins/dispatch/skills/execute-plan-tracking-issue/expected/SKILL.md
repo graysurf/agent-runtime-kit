@@ -146,12 +146,10 @@ blocked | waived`. `--notes` is the only path that mutates the
 4. **Lifecycle checkpoint** — call `tracking run update` with the
    changed fields, then `tracking checkpoint --live` with only the
    role(s) whose body actually changed.
-5. **Per-task ledger update** — immediately after a task transitions
-   (started → done / blocked / waived), call `plan-tooling
-   ledger-update --execution-state <path> --task <id> --status
-   <status> --evidence <evidence>` so the bundle's canonical
-   `## Task Ledger` table is patched before the next checkpoint
-   reads it.
+5. **Per-task ledger update** — immediately after a task transitions,
+   run the `plan-tooling ledger-update` call shown in the Entrypoint so
+   the bundle's canonical `## Task Ledger` table is patched before the
+   next checkpoint reads it.
 6. **Read-back** — re-run `tracking status --expect-visible` and
    confirm the new role appears in the reconciled evidence with
    `lint_pass: true`.
