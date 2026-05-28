@@ -119,8 +119,37 @@ plan-issue --format json tracking close-ready \
    `tracking checkpoint --post …` covering only changed roles.
 4. **PR delivery** — `forge-cli pr deliver`; record the merged PR ref
    through `tracking run update --linked-pr`.
-5. **Final state checkpoint** — once merged, post the final `state`
-   role with `--repair-dashboard`.
+5. **Final state + review evidence** — once merged, post a final
+   `state` role with `status=complete` AND a `review` role with the
+   delivery decision. For single-author plans the deliver agent posts
+   its own `decision=approve` referencing the merged PRs as evidence;
+   multi-author plans surface the upstream reviewer's decision.
+   Refresh the dashboard so `## Current Dashboard` reflects the new
+   state. `tracking close-ready` will refuse with `state_complete-missing`
+   or `review-missing` unless both posts exist.
+
+   **Transitional fallback (remove once
+   [`tracking-checkpoint-live-not-implemented`][gap] resolves):**
+   the canonical surface is `tracking checkpoint --live --post
+   state,review`, but live posting is not yet implemented, so use
+   `record post` directly for these two prerequisite roles. Use the
+   `record post` payloads with `status=complete` and
+   `decision=approve|request-changes|comments-only`, then refresh the
+   dashboard:
+
+   ```bash
+   plan-issue --repo "$OWNER_REPO" --format json record post \
+     --issue "$ISSUE" --profile tracking --kind state \
+     --payload-file state-complete-payload.json \
+     --execution-state-file "$EXECUTION_STATE_MD"
+   plan-issue --repo "$OWNER_REPO" --format json record post \
+     --issue "$ISSUE" --profile tracking --kind review \
+     --payload-file review-payload.json
+   plan-issue --repo "$OWNER_REPO" --format json record repair-dashboard \
+     --issue "$ISSUE"
+   ```
+
+   [gap]: ../../policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/ENTRY.md
 6. **Close-ready probe** — `tracking close-ready --expect-visible`
    (non-mutating). If `ready: true`, hand off to
    `plan-tracking-issue-closeout`. If `ready: false`, surface
@@ -155,3 +184,6 @@ Cross-references:
   audit and runs `record close`.
 - Family rules: Plan Issue Skill Family Redesign V1, Shared Family
   Rules section (under docs/source/plan-issue-redesign/).
+- Open heuristic gap: see
+  `core/policies/heuristic-system/error-inbox/tracking-closeout-review-state-complete-gap/`
+  for the transitional fallback that step 5 currently relies on.

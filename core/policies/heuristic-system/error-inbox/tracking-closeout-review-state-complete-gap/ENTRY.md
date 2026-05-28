@@ -4,6 +4,19 @@
 
 - Status: open
 - First observed: 2026-05-28
+- Transitional mitigation landed: 2026-05-28 — both skill bodies now
+  document the `record post --kind state` (`status=complete`) +
+  `record post --kind review` fallback explicitly, scoped to the
+  "until `tracking-checkpoint-live-not-implemented` resolves" window;
+  closeout's preflight allows the prerequisite repair instead of
+  rejecting it as `forbidden-role-for-skill`. A deterministic
+  `tracking close-ready` smoke probe (`dispatch.plan-tracking-closeout-gate`)
+  locks the gate's `review-missing` + `state_complete-missing` contract
+  so future skill-body changes cannot regress it silently.
+- Root-cause fix pending: `tracking checkpoint --live` is still
+  unimplemented upstream (`sympoies/nils-cli` `plan-issue-cli`);
+  promote this entry once that gate closes and the transitional
+  fallback can be excised from both skill bodies.
 - Area: dispatch:tracking lifecycle (`deliver-plan-tracking-issue` →
   `plan-tracking-issue-closeout` handoff)
 - Severity: medium
