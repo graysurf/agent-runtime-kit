@@ -112,7 +112,11 @@ Use `label audit` instead when mutation is not allowed.
 
 2. **Compose** — write the body to a file using the template below. Keep it
    evidence-based: name the exact skill + phase or command, the CLI versions,
-   and a verifiable repro.
+   and a verifiable repro. When the finding comes from a `test-plan-tracking`
+   run, paste that run's provenance block (`<driver>/.state/provenance.md` —
+   `agent-runtime-kit` checkout SHA + each CLI's version and install source)
+   verbatim into the `## Provenance` section so the finding pins the exact
+   upstream build it was produced against.
 
 3. **Create** — open the issue with the marker plus mapped labels:
 
@@ -150,6 +154,19 @@ Use `label audit` instead when mutation is not allowed.
 - Skill / command: <e.g. deliver-plan-tracking-issue step 5 / `forge-cli pr deliver`>
 - CLI versions: plan-issue <x.y.z>, plan-tooling <x.y.z>
 - Run / evidence: <issue / PR / comment URL or driver assert output>
+
+## Provenance
+
+<!-- For findings from a `test-plan-tracking` run, paste the driver's
+     .state/provenance.md block verbatim so the finding pins the exact build.
+     Otherwise fill in best-available identity. -->
+
+- Run: fixture `<name>` at <UTC timestamp>
+- agent-runtime-kit: `<short-sha>(+dirty)` (checkout SHA — skills carry no semver)
+- plan-issue: `<x.y.z>` — <brew release (formula <ver>) | local checkout <sha>(+dirty)>
+- plan-tooling: `<x.y.z>` — <source>
+- forge-cli: `<x.y.z>` — <source>
+- Declared skill floors: `plan-issue >=<x.y.z>`, `plan-tooling >=<x.y.z>`
 
 ## Repro
 
