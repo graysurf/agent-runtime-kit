@@ -1,0 +1,34 @@
+name: agent-runtime-kit
+
+# Convenience wrapper for interactive use. The base image needs no host
+# bind-mounts; mounts below are optional and commented out by default.
+#
+#   docker compose -f docker/compose.yaml build
+#   docker compose -f docker/compose.yaml run --rm agent            # shell
+#   docker compose -f docker/compose.yaml run --rm agent claude     # Claude Code
+#   docker compose -f docker/compose.yaml run --rm agent codex      # Codex CLI
+
+services:
+  agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      # NILS_CLI_VERSION is not pinned here on purpose: the Dockerfile default is
+      # the fallback, and `docker/build.sh` is the pin-aligned entrypoint (it
+      # reads docs/source/nils-cli-pin.yaml). Avoid a second place to bump.
+    image: agent-runtime-kit:dev
+    init: true
+    stdin_open: true
+    tty: true
+    # docker/.env is gitignored; copy docker/env.example to docker/.env.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GH_TOKEN: ${GH_TOKEN:-}
+    working_dir: /work
+    # Optional: mount a host project into /work to operate on real code.
+    # volumes:
+    #   - ./workspace:/work
