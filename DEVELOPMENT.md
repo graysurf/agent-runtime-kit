@@ -44,6 +44,32 @@ skill-surface doctor probes; it is dry-run by default and writes only with
 `--apply`. Keep `scripts/setup.sh` for first-time host bootstrap and CLI tool
 installation.
 
+## Overlaying Private Skills
+
+Personal **global skills** — ones that should be available in every session but
+do not belong in this repo's governed, rendered catalog — are created under
+`$AGENT_PRIVATE_SKILLS_HOME`, not committed here and not hand-placed in the
+runtime homes. This is the canonical home for opening a new global skill
+(including sensitive or machine-local ones): scaffold it with the
+create-project-skill tooling into `$AGENT_PRIVATE_SKILLS_HOME/.agents/skills/<name>/`,
+then manage it from here through `scripts/sync-private-skills.sh`. The script
+keeps that private skill SOURCE tree separate and symlinks each skill into the
+per-user global skill namespaces that Codex and Claude discover directly:
+
+- Codex: `$CODEX_HOME/skills/<name>` (default `$HOME/.codex/skills/<name>`)
+- Claude: `$HOME/.claude/skills/<name>`
+
+Unlike `sync-runtime-skills.sh`, this overlay does not render, install through
+nils-cli, or touch any manifest — project-local `SKILL.md` is already the
+native format both products consume. The target namespaces do not collide with
+the runtime-kit managed surface (Codex domain dirs and Claude
+`plugins/<domain>/skills/`), and the overlay refuses to clobber any path it
+does not own, so a private skill named after a runtime-kit domain dir is
+skipped rather than overwriting it. The script is dry-run by default; pass
+`--apply` to write, and `--prune` to drop overlay symlinks whose source skill
+was removed. When `$AGENT_PRIVATE_SKILLS_HOME` is unset it is a safe no-op, so
+hosts without a private tree are unaffected.
+
 ## Repo Layout
 
 - `core/`: portable source content.
