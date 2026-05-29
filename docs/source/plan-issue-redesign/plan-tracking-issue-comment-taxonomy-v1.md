@@ -348,8 +348,12 @@ Posting policy:
 - Post through `tracking checkpoint` after meaningful task ledger changes, PR
   changes, blockers, or handoff decisions.
 - Post a final expanded state before closeout.
+- `record open` posts the initial state with `--task-ledger-display open` (an
+  open `<details open>` fold) so the full Task Ledger is visible when the issue
+  loads while the collapse toggle stays.
 - Use `--task-ledger-display collapsed` for intermediate updates.
-- Use `--task-ledger-display expanded` for final pre-closeout state.
+- Use `--task-ledger-display expanded` for the final pre-closeout state (raw
+  rows, no `<details>` wrapper — required by visible-completeness lint).
 
 ## Execution Session Template
 
