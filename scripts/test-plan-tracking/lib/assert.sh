@@ -163,14 +163,17 @@ check_state_body_contains_ledger_row() {
 }
 
 check_state_body_not_synthesized_fallback() {
-  # Finding #9 regression guard: the pre-fix renderer emitted a single
-  # synthesized row of the form `| Task <id> | <status> | selected |`
-  # when no execution_state_file was wired up. Real per-task ledger rows
-  # start with the bare id (`| 1.1 |`), never `| Task 1.1 |`.
+  # Finding #9 / graysurf/plan-tracking-testbed#37 regression guard: when no
+  # execution-state file is wired into the run state, the renderer emits a
+  # single synthesized row whose task cell is literally `selected` — either
+  # `| Task <id> | <status> | selected |` (older shape) or the bare-id
+  # `| <id> | <status> | selected |` (current shape). Real per-task ledger
+  # rows carry the task title in the third cell, never `selected`, so the
+  # `| selected |` cell uniquely marks the fallback. Match both id shapes.
   local bodies
   bodies="$(state_bodies_blob)"
-  if grep -E -q '^\| Task [0-9.]+ \| [a-z-]+ \| selected \|' "${bodies}"; then
-    fail "state body regressed to synthesized fallback ledger row (finding #9)"
+  if grep -E -q '^\| (Task )?[0-9.]+ \| [a-z-]+ \| selected \|' "${bodies}"; then
+    fail "state body regressed to synthesized fallback ledger row (finding #9 / #37)"
   else
     pass "state body has no synthesized fallback ledger row"
   fi
