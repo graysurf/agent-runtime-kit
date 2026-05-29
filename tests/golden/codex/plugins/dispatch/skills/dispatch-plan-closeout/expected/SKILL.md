@@ -39,7 +39,9 @@ Outputs:
   before `record close`. The summary must enumerate lanes / tasks done,
   linked PR(s), and any deferred follow-up; format is free-form.
 - `record close --profile dispatch` posts the canonical dispatch
-  `closeout` lifecycle comment and closes the provider issue.
+  `closeout` lifecycle comment, closes the provider issue, and
+  transitions the workflow-state label `state::needs-triage` ->
+  `state::closed` (parity with `plan-tracking-issue-closeout`).
 - No run-state mutation beyond the final `--note` event and marking the
   issue closed in events.
 
@@ -94,7 +96,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
   --profile dispatch \
   --issue "$ISSUE" \
   --linked-pr "$LANE_PR_1" --linked-pr "$LANE_PR_2" \
-  --approval "$APPROVAL"
+  --approval "$APPROVAL" \
+  --add-label state::closed \
+  --remove-label state::needs-triage
 ```
 
 ## Workflow
@@ -110,8 +114,10 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
    summary must enumerate lanes / tasks done, linked PR(s), and any
    deferred follow-up; format is free-form.
 4. **Closeout post** — call `record close --profile dispatch` with
-   every lane PR ref and approval. The strict gate enforces required
-   checks and merge SHAs.
+   every lane PR ref and approval, plus `--add-label state::closed
+   --remove-label state::needs-triage` so the closed dispatch issue
+   lands on `state::closed` (parity with `plan-tracking-issue-closeout`).
+   The strict gate enforces required checks and merge SHAs.
 5. **Read-back** — `record audit --profile dispatch --expect-visible`
    against the closed issue body and comments; confirm the
    `closeout` role appears with `visible.codes` empty.
