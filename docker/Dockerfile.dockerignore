@@ -1,0 +1,35 @@
+# BuildKit per-Dockerfile ignore.
+#
+# BuildKit reads "<dockerfile>.dockerignore" (this file) in preference to a
+# repo-root .dockerignore, so the whole Docker setup stays inside docker/ and
+# nothing is added at the repo root. The build context is still the repo root
+# (the image bakes the source), but these entries keep it lean.
+
+.git
+**/.git
+**/.gitignore
+
+# Regenerated inside the image by `agent-runtime render`.
+build/
+
+# Local caches / tooling state.
+.rumdl_cache/
+.claude/
+**/node_modules
+
+# Not needed at runtime.
+tests/
+docs/plans/
+
+# Secrets / local overrides must never enter the build context.
+*.local.*
+.env
+.env.*
+secrets/
+secrets.*.yaml
+auth.json
+.credentials*
+backup-*.zip
+
+# Docker's own scratch area.
+docker/workspace/
