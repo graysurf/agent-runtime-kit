@@ -271,10 +271,17 @@ case "${phase}" in
     fi
     check_role_present closeout
     check_label_present "${FIXTURE_EXPECTED_FINAL_STATE}"
-    # For fixtures that ran a deliver phase, the review role must still
-    # be present after closeout and the linked PR must remain merged.
+    # Every role the fixture expects at closeout must be present, including
+    # `review`: the lightweight happy-path records its completion review at
+    # closeout (the plan-tracking-issue-closeout preflight posts it when
+    # close-ready reports `review-missing`), and the deliver flow records the
+    # PR review upstream — so both carry `review` by closeout.
+    # shellcheck disable=SC2086  # intentional word-splitting of the role list.
+    for r in ${FIXTURE_EXPECTED_ROLES_CLOSEOUT}; do
+      check_role_present "${r}"
+    done
+    # Deliver fixtures additionally require the linked PR to remain merged.
     if [ -n "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
-      check_role_present review
       check_linked_pr_merged
     fi
     # Final state body must also reflect the full per-task ledger.
