@@ -112,7 +112,11 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
    `validation-missing`, the upstream `execute-plan-tracking-issue` /
    `deliver-plan-tracking-issue` handoff omitted those roles; repair
    them in scope through one canonical `tracking checkpoint --live`
-   invocation. First bump the run state to `phase=ready-for-close`
+   invocation. For the lightweight happy-path (create → execute →
+   closeout, no deliver) this is the **normal** path, not an exception:
+   there is no deliver phase to record a PR `review`, so the completion
+   `review` and final complete `state` are posted here as the standard
+   closeout step. First bump the run state to `phase=ready-for-close`
    (kebab-case as accepted by the CLI; persisted as `ready_for_close`
    in `run-state.json`), record the delivery decision, and — when
    you have a real validation run — set `--validation-overall pass`
