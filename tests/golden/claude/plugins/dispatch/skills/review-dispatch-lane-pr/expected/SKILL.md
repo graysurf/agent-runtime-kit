@@ -75,6 +75,7 @@ plan-issue --format json tracking run update \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
+  --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
   --profile dispatch --run-state "$RUN_STATE" \
   --live \
   --post review --repair-dashboard

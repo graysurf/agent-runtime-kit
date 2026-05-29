@@ -101,6 +101,7 @@ plan-issue --format json tracking run init \
 # After lane PRs and reviews land, post dispatch-level state / session
 # evidence:
 plan-issue --format json tracking checkpoint \
+  --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
   --profile dispatch \
   --run-state "$RUN_STATE" \
   --live \
