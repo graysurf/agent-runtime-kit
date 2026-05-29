@@ -1,22 +1,36 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-29 (refreshed for `v0.28.3`)
+- Snapshot date: 2026-05-30 (refreshed for `v0.28.4`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.28.3`
+- Active `git describe --tags` output: `v0.28.4`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.28.3`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.28.4`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `bcae357`
-  (`chore(release): bump cli versions to 0.28.3 (#647)`)
+- Head commit: `6335148`
+  (`chore(release): bump cli versions to 0.28.4 (#654)`)
 - Release:
-  [`v0.28.3`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.3),
+  [`v0.28.4`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.4),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.28.2` at `1803032` (`chore(release): bump cli versions to
-  0.28.2 (#643)`). `v0.28.3` is an additive patch bump for the dispatch
+- Prior pin: `v0.28.3` at `bcae357` (`chore(release): bump cli versions to
+  0.28.3 (#647)`). `v0.28.4` is an additive patch bump adding two consumed
+  surfaces: `plan-issue record restore` re-materializes a tracking issue's
+  `source` / `plan` snapshot comments back into bundle files (latest-per-role,
+  online or offline `--comments-json`, non-destructive unless `--force`), the
+  inverse of `record open`
+  ([#652](https://github.com/sympoies/nils-cli/pull/652)); and `forge-cli pr
+  deliver --dry-run` now runs the non-mutating lock-down rules and reports each
+  verdict in an additive `data.local_preflight[]` block (no provider backend),
+  body-section validation aggregates into one `body_missing_sections` error
+  when both are missing, and `agent-runtime pr-body render --kind` covers all
+  six deliver kinds with a scaffold pointer in the body-missing errors
+  ([#653](https://github.com/sympoies/nils-cli/pull/653)). No consumed surface
+  was retired or renamed; `required_clis[]` floors are unchanged because no
+  agent-runtime-kit consumer depends on the new surfaces yet. `v0.28.3` was an
+  additive patch bump for the dispatch
   `tracking checkpoint` lifecycle: `tracking checkpoint --live` now inherits
   `repo`/`issue` from the run-state when `--provider-repo`/`--issue` are
   omitted, so the documented dispatch entrypoint posts instead of silently
