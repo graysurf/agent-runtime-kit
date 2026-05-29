@@ -40,6 +40,7 @@ meta.create-skill
 meta.deploy
 meta.heuristic-inbox
 meta.heuristic-session-closeout
+meta.nils-cli-bump
 meta.plan-archive-discover
 meta.plan-archive-migrate
 meta.plan-archive-query

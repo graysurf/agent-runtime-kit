@@ -1,19 +1,31 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-28 (refreshed for `v0.25.8`)
+- Snapshot date: 2026-05-29 (refreshed for `v0.28.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.25.8`
-- Head commit: `4d0d621`
-  (`chore(release): bump cli versions to 0.25.8 (#608)`)
+- Active `git describe --tags` output: `v0.28.0`
+- Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
+  (`pinned_tag: v0.28.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
+  and the `Active git describe --tags output:` line above in lock-step.
+- Head commit: `e04ede0`
+  (`chore(release): bump cli versions to 0.28.0 (#637)`)
 - Release:
-  [`v0.25.8`](https://github.com/sympoies/nils-cli/releases/tag/v0.25.8),
+  [`v0.28.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.25.7` at `0c070f8` (`feat(plan-tooling): per-task ledger
-  durability (0.25.7) (#607)`); `v0.25.8` is a workspace-wide lock-step
-  bump that catches the 31 crates skipped by the v0.25.7 partial release
+- Prior pin: `v0.25.8` at `4d0d621` (`chore(release): bump cli versions to
+  0.25.8 (#608)`). `v0.28.0` spans the v0.25.9–v0.28.0 releases and adds: the
+  `agent-runtime doctor --class version-alignment` surface
+  ([#636](https://github.com/sympoies/nils-cli/pull/636)) — now consumed by
+  this repo's `scripts/ci/all.sh` Position 2 through
+  `docs/source/nils-cli-pin.yaml`; build metadata in the `agent-runtime
+  --version` output (#625); the new `nils-build-info` library crate; and the
+  `plan-issue` accumulative state payload tasks ledger (#633). Earlier release
+  history retained below. `v0.25.7` at `0c070f8` (`feat(plan-tooling):
+  per-task ledger durability (0.25.7) (#607)`); `v0.25.8` is a workspace-wide
+  lock-step bump that catches the 31 crates skipped by the v0.25.7 partial release
   (`agent-runtime-cli`, `forge-cli`, `semantic-commit`, the `api-*` and
   `git-*` families, the rest) up to the workspace floor, restoring the
   convention from `1edf007` that every release tag matches every crate's
@@ -39,16 +51,18 @@
   `validate-metadata` validators) consumed by the
   `meta:plan-archive-migrate` and `meta:plan-archive-query` skills.
 
-This file is the pin source for `required_clis` placeholders in
-`manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
+This file is the human-readable pin source for `required_clis` placeholders
+in `manifests/skills.yaml` and `manifests/plugins.yaml`. Manifest authors
 should reference binary names from the **Binary** column when declaring
 `required_clis`, and refresh this snapshot at every nils-cli release that
-changes a consumed surface (the next bump after `v0.25.0`).
+changes a consumed surface. The machine-readable pin the CI gate enforces
+lives in `docs/source/nils-cli-pin.yaml`; the `meta:nils-cli-bump` skill
+keeps both in sync on a release bump.
 
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (33 entries).
+  `crates/` in the source repo (34 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -61,7 +75,7 @@ Notes on derivation:
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight. As of `v0.18.0`, global scope inheritance is available from the released binary.                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
-| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. |
+| `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
 | `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
@@ -82,7 +96,9 @@ Notes on derivation:
 | `image-processing`          | `image-processing`                                                                                                  | User-facing image-processing CLI.                                                                                                                                                                                                                                      |
 | `macos-agent`               | `macos-agent`                                                                                                       | macOS automation helper (AX, app intents).                                                                                                                                                                                                                             |
 | `memo-cli`                  | `memo-cli`                                                                                                          | Memo storage CLI.                                                                                                                                                                                                                                                      |
+| `nils-build-info`           | (library only)                                                                                                      | Build metadata helper for the workspace `--version` output; consumed transitively, never appears in `required_clis`. New crate as of `v0.28.0` (#625).                                                                                                                 |
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
+| `nils-markdown`             | `md-render`                                                                                                         | Shared Tera-backed Markdown template layer. Ships the `md-render` binary behind the `bin-cli` cargo feature (enumerated by `workspace-bins.sh`); library role otherwise, not consumed by any skill today. Present since before `v0.25.8`; the prior snapshot omitted it. |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
 | `nils-test-support`         | (library only)                                                                                                      | Integration-test harness; test-only, never appears in `required_clis`.                                                                                                                                                                                                 |
 | `plan-archive`              | `plan-archive`                                                                                                      | Plan-archive workflow CLI. As of `v0.25.0`, ships `validate-hosts` / `validate-local` / `validate-metadata` validators, `migrate` (dry-run default, `--apply`), `refresh` (forge-cli payload fetch + secret-scrub + append-only `_index/` snapshots, holds commit for scrub-log review), and `query` (single-ref / cross-host aggregate / plan-link traversal). As of `v0.25.5`, adds `discover` (read-only candidate scanner that classifies plan folders as eligible / blocked / unknown and emits one combined `suggested_migrate_command` per eligible folder). Consumed by `meta:plan-archive-migrate`, `meta:plan-archive-query`, and `meta:plan-archive-discover`. |

@@ -1,0 +1,41 @@
+# nils-cli surface pin — machine-readable gate input.
+#
+# Consumed by `scripts/ci/all.sh` Position 2 through
+#   agent-runtime doctor --class version-alignment --pin docs/source/nils-cli-pin.yaml
+# (released in nils-cli v0.28.0, sympoies/nils-cli#636).
+#
+# Contract: the doctor class blocks on ANY deviation of the host
+# `agent-runtime` from `pinned_tag` — ahead OR behind — because a silent
+# `brew upgrade sympoies/tap/nils-cli` past the pin is exactly the drift
+# this guards (the v0.17.6 -> v0.17.7 incident in the
+# `plan-issue-v2-marker-collapse-drift` inbox case). This is stricter than
+# the prior shell gate, which tolerated a newer host; bumping the host now
+# requires a conscious pin bump (see the `meta:nils-cli-bump` skill).
+#
+# The human-readable surface snapshot — crate -> binary table, consumed
+# surfaces, refresh procedure — stays in docs/source/nils-cli-surface.md.
+# Keep `pinned_tag` here and the `Active git describe --tags output:` line
+# there in lock-step.
+schema_version: 1
+
+nils_cli:
+  # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
+  pinned_tag: "v0.28.0"
+
+# Optional per-binary floors for the downstream-consumed CLIs. nils-cli
+# ships every crate in lock-step, so the exact `pinned_tag` above is the
+# primary gate; these floors are a belt-and-suspenders guard against a
+# partial release (e.g. the v0.25.7 partial bump) and document the minimum
+# consumed surface each binary must satisfy. Values track the
+# surface-introduction versions recorded in docs/source/nils-cli-surface.md.
+required_clis:
+  - bin: plan-issue       # tracking controller + ledger-rows-pending close-ready blocker
+    min: "0.25.7"
+  - bin: plan-tooling     # ledger-update / ledger-sync --from-issue
+    min: "0.25.7"
+  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces
+    min: "0.20.1"
+  - bin: plan-archive     # discover / migrate / refresh / query
+    min: "0.25.5"
+  - bin: agent-docs       # global scope inheritance
+    min: "0.18.0"

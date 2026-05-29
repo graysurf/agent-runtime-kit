@@ -44,6 +44,7 @@ plugins:
       - meta.plan-archive-migrate
       - meta.plan-archive-query
       - meta.plan-archive-discover
+      - meta.nils-cli-bump
     product_manifests:
       codex: targets/codex/plugins/meta/.codex-plugin/plugin.json
       claude: targets/claude/plugins/meta/.claude-plugin/plugin.json

@@ -187,10 +187,11 @@ That currently performs:
 
 1. `plan-tooling validate --format text --explain` plus
    `scripts/ci/skill-governance-audit.sh` repo/create/remove fixture checks
-2. nils-cli surface floor alignment: parse the tag from
-   `docs/source/nils-cli-surface.md` and require `agent-runtime --version` to be
-   greater than or equal to it; fail closed when the host is below the
-   documented floor
+2. nils-cli surface pin alignment: `agent-runtime doctor --class
+   version-alignment --pin docs/source/nils-cli-pin.yaml` — blocks on any
+   deviation of the host `agent-runtime` from the manifest `pinned_tag`
+   (ahead or behind) and on any `required_clis[]` floor miss; fail closed
+   with the doctor's remediation banner
 3. `agent-runtime render --product codex`
 4. `agent-runtime render --product claude`
 5. `agent-runtime render --target support-matrix`
@@ -203,13 +204,17 @@ That currently performs:
 12. `bash tests/projects/project-local-smoke/run.sh`
 13. `bash tests/hooks/run.sh`
 
-Position 2 closes the stale-host class identified by the inbox case
-`plan-issue-v2-marker-collapse-drift`: before this gate, a host below the
-documented nils-cli surface could leave downstream positions running against a
-binary the fixtures, skill bodies, and goldens were not written for. Newer host
-binaries are allowed; later gates still catch render, drift, and smoke
-incompatibilities. The gate emits a remediation banner naming both the
-documented floor and the host's `agent-runtime --version`.
+Position 2 closes the silent-drift class identified by the inbox case
+`plan-issue-v2-marker-collapse-drift`: before this gate, a host that drifted
+from the documented nils-cli surface could leave downstream positions running
+against a binary the fixtures, skill bodies, and goldens were not written for.
+As of nils-cli v0.28.0 the gate delegates to the `version-alignment` doctor
+class (sympoies/nils-cli#636), which reads `docs/source/nils-cli-pin.yaml` and
+blocks on any deviation from `pinned_tag` — ahead OR behind. This is stricter
+than the prior floor gate, which tolerated a newer host: a silent
+`brew upgrade` past the pin now fails closed, so bumping the host is a
+conscious pin bump via the `meta:nils-cli-bump` skill. The doctor emits the
+remediation banner naming both versions and every offending check.
 
 The surface manifest validation at position 8 also executes the promoted
 acceptance entries, which currently cover one `kind=ci` command and one

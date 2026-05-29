@@ -55,102 +55,44 @@ bash scripts/ci/skill-governance-audit.sh --fixture create
 bash scripts/ci/skill-governance-audit.sh --fixture remove
 
 # -----------------------------------------------------------------------------
-# Position 2 — nils-cli surface floor alignment
+# Position 2 — nils-cli surface pin alignment (version-alignment doctor class)
 #
-# Compares the host's `agent-runtime --version` against the floor recorded in
-# `docs/source/nils-cli-surface.md`. The floor line is matched by the literal
-# prefix '- Active `git describe --tags` output:' so a future reorder of
-# the snapshot header makes a parse miss visible in the gate banner. Closes
-# the silent-drift class identified by the heuristic-inbox case
-# `plan-issue-v2-marker-collapse-drift`: a host binary below the documented
-# floor leaves downstream gates running against a binary the fixtures and skill
-# bodies were not written for. Newer host binaries are allowed; later gates own
-# compatibility checks for rendered output and runtime smoke.
+# Delegates to `agent-runtime doctor --class version-alignment`, released in
+# nils-cli v0.28.0 (sympoies/nils-cli#636), instead of the prior hand-rolled
+# shell + python floor compare. The class reads the machine-readable pin
+# manifest `docs/source/nils-cli-pin.yaml` (`pinned_tag` plus optional
+# `required_clis[]` floors) and blocks on ANY deviation of the host
+# `agent-runtime` from `pinned_tag` — ahead OR behind. This is a deliberate
+# strictening from the old floor gate, which tolerated a newer host: a silent
+# `brew upgrade` past the pin is exactly the drift identified by the
+# heuristic-inbox case `plan-issue-v2-marker-collapse-drift`, where fixtures,
+# skill bodies, and goldens were written for the pinned surface. Bumping the
+# host now requires a conscious pin bump via the `meta:nils-cli-bump` skill.
 #
-# Probe binary: `agent-runtime --version`. Assumes the nils-cli workspace
-# bumps every crate in lock-step (the `chore(release): bump cli versions
-# to <vX.Y.Z>` convention from `1edf007`). v0.25.7 was a temporary exception
-# that only bumped `plan-tooling` + `plan-issue-cli`; v0.25.8 restored the
-# lock-step contract, so this probe is back on `agent-runtime`. If a future
-# release breaks the lock-step contract again, fix the release rather than
-# flipping the probe — the contract is the cheaper invariant to preserve.
+# The doctor emits a remediation-quality banner naming both versions and every
+# offending check, and exits non-zero (2) on block, so this gate is a thin
+# exit-code wrapper — no markdown parse or python version compare needed. The
+# human-readable surface snapshot stays in `docs/source/nils-cli-surface.md`;
+# the YAML manifest is the gate's pin source. Keep the two in lock-step.
 # -----------------------------------------------------------------------------
-banner 2 "nils-cli surface floor vs agent-runtime --version"
-SURFACE_DOC="docs/source/nils-cli-surface.md"
-# shellcheck disable=SC2016
-# Single quotes intentional: the grep / sed patterns embed literal
-# backticks from the snapshot doc and must not be expanded by the shell.
-PIN_LINE="$(grep -E '^- Active `git describe --tags` output:' "$SURFACE_DOC" | head -n 1)"
-if [ -z "$PIN_LINE" ]; then
-  echo "ci/all.sh: nils-cli surface floor line not found in $SURFACE_DOC" >&2
-  echo "  expected line prefix: - Active \`git describe --tags\` output:" >&2
+banner 2 "nils-cli surface pin vs agent-runtime (version-alignment)"
+PIN_MANIFEST="docs/source/nils-cli-pin.yaml"
+if [ ! -f "$PIN_MANIFEST" ]; then
+  echo "ci/all.sh: nils-cli pin manifest not found: $PIN_MANIFEST" >&2
   exit 1
 fi
-# shellcheck disable=SC2016
-SURFACE_FLOOR="$(printf '%s\n' "$PIN_LINE" | sed -E 's/^- Active `git describe --tags` output: `([^`]+)`.*$/\1/')"
-# Field 2 is the semver token (`agent-runtime 0.27.0 (v0.27.0, rustc … DATE)`);
-# $NF would capture the trailing rustc-annotation date. The Python comparator
-# below strips any [-+] build/pre suffix, so this also handles `0.27.0+g<sha>`.
-HOST_VERSION_RAW="$(agent-runtime --version 2>/dev/null | awk 'NR==1 {print $2}')"
-if [ -z "$HOST_VERSION_RAW" ]; then
-  echo "ci/all.sh: agent-runtime --version produced no output" >&2
-  exit 1
-fi
-case "$HOST_VERSION_RAW" in
-  v*) HOST_TAG="$HOST_VERSION_RAW" ;;
-  *) HOST_TAG="v$HOST_VERSION_RAW" ;;
-esac
-
-set +e
-VERSION_CHECK="$(
-  python3 - "$SURFACE_FLOOR" "$HOST_TAG" 2>&1 <<'PY'
-from __future__ import annotations
-
-import re
-import sys
-
-
-def parse_version(value: str, label: str):
-    raw = value.strip()
-    match = re.match(r"^v?([0-9]+)\.([0-9]+)\.([0-9]+)(?:[-+].*)?$", raw)
-    if not match:
-        print(f"invalid {label} version: {value}", file=sys.stderr)
-        raise SystemExit(2)
-    return tuple(int(part) for part in match.groups())
-
-
-floor_raw, host_raw = sys.argv[1], sys.argv[2]
-floor = parse_version(floor_raw, "surface floor")
-host = parse_version(host_raw, "host")
-if host < floor:
-    print(
-        f"host {host_raw} is below surface floor {floor_raw}",
-        file=sys.stderr,
-    )
-    raise SystemExit(1)
-print("ok")
-PY
-)"
-VERSION_CHECK_EXIT=$?
-set -e
-
-if [ "$VERSION_CHECK_EXIT" -ne 0 ]; then
-  echo "ci/all.sh: nils-cli surface floor check failed" >&2
-  echo "  minimum in $SURFACE_DOC : $SURFACE_FLOOR" >&2
-  echo "  host agent-runtime    : $HOST_TAG" >&2
-  echo "  parsed line           : $PIN_LINE" >&2
-  if [ -n "$VERSION_CHECK" ]; then
-    printf '  detail: %s\n' "$VERSION_CHECK" >&2
-  fi
+if ! agent-runtime doctor --class version-alignment --pin "$PIN_MANIFEST" --format text; then
+  echo >&2
+  echo "ci/all.sh: nils-cli surface pin alignment failed (see doctor block above)" >&2
   echo >&2
   echo "  Remediation:" >&2
-  echo "  - If the snapshot doc is stale, refresh the floor (and any related" >&2
-  echo "    consumers under core/skills/, tests/runtime-smoke/, tests/golden/)" >&2
-  echo "    to the minimum supported surface, then re-run scripts/ci/all.sh." >&2
-  echo "  - If the host is below the floor, run: brew upgrade sympoies/tap/nils-cli" >&2
+  echo "  - Host below the pin: brew upgrade sympoies/tap/nils-cli" >&2
+  echo "  - Host ahead of the pin, or a consumed surface changed: bump the pin" >&2
+  echo "    and refresh consumers via the meta:nils-cli-bump skill, which updates" >&2
+  echo "    $PIN_MANIFEST, docs/source/nils-cli-surface.md, and any SKILL bodies," >&2
+  echo "    runtime-smoke fixtures, and goldens that referenced the retired surface." >&2
   exit 1
 fi
-printf 'nils-cli surface floor: %s   host: %s   aligned (host >= floor)\n' "$SURFACE_FLOOR" "$HOST_TAG"
 
 # -----------------------------------------------------------------------------
 # Position 3 — render codex
