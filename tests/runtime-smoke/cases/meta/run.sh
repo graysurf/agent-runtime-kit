@@ -583,6 +583,36 @@ run_plan_archive_discover_probe() {
   grep -q '"code":"no-provider-refs"' "$out"
 }
 
+run_nils_cli_bump_probe() {
+  local drift="$META_ARTIFACTS_DIR/nils-cli-bump.drift.json"
+  local aligned="$META_ARTIFACTS_DIR/nils-cli-bump.aligned.json"
+  local pin_dir="$META_ARTIFACTS_DIR/nils-cli-bump"
+  local host_tag status
+  require_meta_bin agent-runtime || return 1
+  mkdir -p "$pin_dir"
+
+  # Drift path: an impossible pinned_tag must block (exit 2). Host-version
+  # independent, so the probe stays deterministic across host bumps.
+  printf 'schema_version: 1\nnils_cli:\n  pinned_tag: "v0.0.0"\n' >"$pin_dir/drift.yaml"
+  set +e
+  agent-runtime doctor --class version-alignment \
+    --pin "$pin_dir/drift.yaml" --format json >"$drift" 2>&1
+  status=$?
+  set -e
+  [ "$status" -eq 2 ]
+  grep -q '"schema_version": "agent-runtime-cli.doctor.v1"' "$drift"
+  grep -q '"check": "version-alignment.host"' "$drift"
+  grep -q 'drifted from pinned v0.0.0' "$drift"
+
+  # Aligned path: pinning to the host's own tag must pass (block=0, exit 0).
+  host_tag="$(agent-runtime --version | awk 'NR==1 {print $2}')"
+  case "$host_tag" in v*) : ;; *) host_tag="v$host_tag" ;; esac
+  printf 'schema_version: 1\nnils_cli:\n  pinned_tag: "%s"\n' "$host_tag" >"$pin_dir/aligned.yaml"
+  agent-runtime doctor --class version-alignment \
+    --pin "$pin_dir/aligned.yaml" --format json >"$aligned" 2>&1
+  grep -q '"block": 0' "$aligned"
+}
+
 failures=0
 record_case "meta.agent-docs" "project-dev docs resolve passed from fixture workspace" run_agent_docs_probe || failures=1
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
@@ -603,6 +633,7 @@ record_case "meta.setup-project" "setup-project dry-run/apply adoption probes pa
 record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe resolved archive target" run_plan_archive_migrate_probe || failures=1
 record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe || failures=1
 record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe || failures=1
+record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills no-prune flag reports skipped prune" run_sync_runtime_skills_no_prune_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1

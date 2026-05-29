@@ -335,6 +335,21 @@ skills:
       plan-archive: ">=0.25.5"
     state_out_mode: runtime
 
+  - id: meta.nils-cli-bump
+    domain: meta
+    source: core/skills/meta/nils-cli-bump
+    products:
+      codex:
+        name: nils-cli-bump
+        render_to: plugins/meta/skills/nils-cli-bump/SKILL.md
+      claude:
+        name: nils-cli-bump
+        render_to: plugins/meta/skills/nils-cli-bump/SKILL.md
+    required_clis:
+      agent-runtime: ">=0.28.0"
+      forge-cli: ">=0.20.0"
+    state_out_mode: runtime
+
   - id: media.image-processing
     domain: media
     source: core/skills/media/image-processing
