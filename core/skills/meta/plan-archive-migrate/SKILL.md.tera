@@ -33,8 +33,12 @@ Outputs:
 - A dry-run JSON report (archive target path, files to copy, resolved
   host classification, `metadata.yaml` payload, source files to
   delete) for the user to review.
-- On confirmed apply: one archive commit, one source-repo deletion
-  commit, and an apply JSON report.
+- On confirmed apply: one archive commit and one source-repo deletion
+  commit, plus an apply JSON report. The CLI commits AND pushes the
+  archive repo as part of its transaction, but the source-repo deletion
+  commit is left unpushed on the working branch — pushing the working
+  repo is a separate operator step (and runs that repo's own pre-push
+  checks).
 
 Failure modes:
 
@@ -77,7 +81,9 @@ plan-archive migrate \
 3. Stop and require explicit user confirmation before applying. Never
    apply automatically.
 4. On confirmation, run the same command with `--apply`. Report the
-   archive commit and the source-repo deletion commit.
+   archive commit and the source-repo deletion commit, and remind the
+   user the working repo still needs a manual push — the CLI pushes only
+   the archive side.
 5. On any failure, surface the error code and message; do not retry a
    destructive step. The source folder is only removed after the
    archive push succeeds.
