@@ -1,30 +1,35 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-29 (refreshed for `v0.28.1`)
+- Snapshot date: 2026-05-29 (refreshed for `v0.28.2`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.28.1`
+- Active `git describe --tags` output: `v0.28.2`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.28.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.28.2`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `d31e365`
-  (`chore(release): bump cli versions to 0.28.1 (#641)`)
+- Head commit: `1803032`
+  (`chore(release): bump cli versions to 0.28.2 (#643)`)
 - Release:
-  [`v0.28.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.1),
+  [`v0.28.2`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.2),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.28.0` at `e04ede0` (`chore(release): bump cli versions to
-  0.28.0 (#637)`). `v0.28.1` is an additive patch bump that adds the
+- Prior pin: `v0.28.1` at `d31e365` (`chore(release): bump cli versions to
+  0.28.1 (#641)`). `v0.28.2` is an additive patch bump that makes the
+  dispatch-profile dashboard name every lane PR: `plan-issue` now accumulates
+  each lane's linked PR into the state-checkpoint payload `prs[]`, so the
+  dispatch dashboard's Linked PRs field lists every lane PR instead of
+  `none yet` ([#642](https://github.com/sympoies/nils-cli/pull/642)). No
+  consumed surface was retired or renamed. `v0.28.1` added the
   `plan-issue record post --task-ledger-display open` mode plus the
   `record open` open-fold default for the first Execution State
   ([#640](https://github.com/sympoies/nils-cli/pull/640)), `profile=dispatch`
   markers on dispatch `tracking checkpoint` lifecycle comments
   ([#639](https://github.com/sympoies/nils-cli/pull/639)), and the new
   `agent-memory` CLI ([#638](https://github.com/sympoies/nils-cli/pull/638),
-  not consumed by this repo). No consumed surface was retired or renamed.
-  Earlier release history retained below. `v0.25.8` at `4d0d621`
+  not consumed by this repo). Earlier release history retained below.
+  `v0.25.8` at `4d0d621`
   (`chore(release): bump cli versions to 0.25.8 (#608)`). `v0.28.0` spans the
   v0.25.9–v0.28.0 releases and adds: the
   `agent-runtime doctor --class version-alignment` surface
