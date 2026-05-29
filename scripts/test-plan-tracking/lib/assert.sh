@@ -255,10 +255,23 @@ check_lane_prs_merged() {
 }
 
 check_dispatch_dashboard_names_lanes() {
-  # The dispatch dashboard (issue body) must name every lane PR so a reader
-  # sees the full fan-out at a glance.
-  local body branch pr_number
+  # The dispatch dashboard's structured `Linked PRs` field must name every
+  # lane PR so a reader sees the full fan-out at a glance. We assert against
+  # the field itself, not the whole body — otherwise the check passes
+  # incidentally when some other line (the approval / closeout summary)
+  # happens to mention a PR number. Since `record close --linked-pr ... ` and
+  # `tracking checkpoint --repair-dashboard` now populate the dashboard's
+  # `prs[]` from the accumulative run-state linked PRs
+  # (sympoies/nils-cli#642), the `Linked PRs` line lists every lane.
+  local body linked_line branch pr_number
   body=$(jq -r '.body' "${snap_dir}/issue.json")
+  # The dashboard renders a single "Linked PRs:" line listing every linked PR.
+  linked_line=$(printf '%s\n' "${body}" |
+    grep -iE '^[-*]?[[:space:]]*Linked PRs?:' | head -1)
+  if [ -z "${linked_line}" ]; then
+    fail "dispatch dashboard: no structured 'Linked PRs' field found"
+    return
+  fi
   for branch in ${FIXTURE_LANE_BRANCHES}; do
     pr_number=$(gh pr list \
       --repo "${TESTBED_REPO}" \
@@ -270,11 +283,10 @@ check_dispatch_dashboard_names_lanes() {
       fail "dispatch dashboard: no PR resolved for lane branch ${branch}"
       continue
     fi
-    if printf '%s' "${body}" | grep -qE "#${pr_number}([^0-9]|\$)" ||
-      printf '%s' "${body}" | grep -qE "pull/${pr_number}([^0-9]|\$)"; then
-      pass "dispatch dashboard names lane PR #${pr_number} (${branch})"
+    if printf '%s' "${linked_line}" | grep -qE "#${pr_number}([^0-9]|\$)"; then
+      pass "dispatch dashboard 'Linked PRs' names lane PR #${pr_number} (${branch})"
     else
-      fail "dispatch dashboard missing lane PR #${pr_number} (${branch})"
+      fail "dispatch dashboard 'Linked PRs' field omits lane PR #${pr_number} (${branch}); field: ${linked_line}"
     fi
   done
 }
@@ -353,12 +365,12 @@ case "${phase}" in
       check_state_body_contains_ledger_row "${tid}"
     done
     check_state_body_not_synthesized_fallback
-    # The delivery must have landed. Dispatch: every lane PR merged and named
-    # on the dashboard. Tracking: the single linked PR merged.
-    # Mid-flight the dispatch run-state tracks a single current PR, so the
-    # dashboard names only the latest lane here; the Final Dashboard built by
-    # `record close --linked-pr ... --linked-pr ...` names every lane (checked
-    # at closeout).
+    # The delivery must have landed. Dispatch: every lane PR merged.
+    # Tracking: the single linked PR merged. The dispatch run-state now
+    # accumulates every lane's linked PR (sympoies/nils-cli#642), so once the
+    # dashboard is repaired the `Linked PRs` field names every lane — the
+    # authoritative dashboard-naming assertion still runs at closeout against
+    # the Final Dashboard built by `record close --linked-pr ... --linked-pr ...`.
     if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
       check_lane_prs_merged
       check_all_markers_profile dispatch
