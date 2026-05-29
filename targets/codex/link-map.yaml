@@ -180,6 +180,12 @@ entries:
     destination: skills/meta/nils-cli-bump
     recursive: false
 
+  - id: meta.worktree-triage.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/worktree-triage
+    destination: skills/meta/worktree-triage
+    recursive: false
+
   - id: media.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/media/.codex-plugin/plugin.json

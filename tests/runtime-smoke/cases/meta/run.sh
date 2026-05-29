@@ -613,6 +613,51 @@ run_nils_cli_bump_probe() {
   grep -q '"block": 0' "$aligned"
 }
 
+run_worktree_triage_probe() {
+  local out="$META_ARTIFACTS_DIR/worktree-triage.scan.json"
+  local root="$META_ARTIFACTS_DIR/worktree-triage"
+  local repo="$root/repo"
+  local helper="$REPO_ROOT/core/skills/meta/worktree-triage/bin/worktree_triage.py"
+  require_meta_bin python3 || return 1
+  rm -rf "$root"
+  mkdir -p "$repo"
+  (
+    cd "$repo"
+    git init -q -b main
+    git config user.email smoke@example.com
+    git config user.name smoke
+    printf 'base\n' >f.txt
+    git add f.txt
+    git commit -q -m "base"
+    git update-ref refs/remotes/origin/main HEAD
+    # safe-merged: branch worktree at base, nothing ahead.
+    git worktree add -q wt-merged -b merged-branch main
+    # safe-superseded: super-branch adds g.txt; the base independently gains the
+    # same change as a DIFFERENT commit (the real "landed via another PR"
+    # case). The branch is ahead by SHA but patch-equivalent to the base, so
+    # git cherry reports its commit as already-applied.
+    git worktree add -q wt-super -b super-branch main
+    (cd wt-super && printf 'super\n' >g.txt && git add g.txt && git commit -q -m "add g")
+    printf 'super\n' >g.txt
+    git add g.txt
+    git commit -q -m "add g (base route)"
+    git update-ref refs/remotes/origin/main HEAD
+    # rescue-candidate: a unique commit not represented on the base.
+    git worktree add -q wt-real -b real-work main
+    (cd wt-real && printf 'unique\n' >h.txt && git add h.txt && git commit -q -m "unique work")
+  )
+  python3 "$helper" --repo "$repo" --base origin/main --format json >"$out" 2>&1
+  python3 - "$out" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert data["schema_version"] == "worktree-triage.scan.v1", data
+by = {w.get("branch"): w["disposition"] for w in data["worktrees"]}
+assert by.get("merged-branch") == "safe-merged", by
+assert by.get("super-branch") == "safe-superseded", by
+assert by.get("real-work") == "rescue-candidate", by
+PY
+}
+
 failures=0
 record_case "meta.agent-docs" "project-dev docs resolve passed from fixture workspace" run_agent_docs_probe || failures=1
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
@@ -634,6 +679,7 @@ record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe
 record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe || failures=1
 record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe || failures=1
 record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe || failures=1
+record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills no-prune flag reports skipped prune" run_sync_runtime_skills_no_prune_probe || failures=1
 record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1

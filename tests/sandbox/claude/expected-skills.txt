@@ -52,6 +52,7 @@ meta.repo-retro
 meta.semantic-commit
 meta.setup-project
 meta.sync-runtime-skills
+meta.worktree-triage
 pr.close-github-pr
 pr.close-gitlab-mr
 pr.create-dispatch-lane-pr
