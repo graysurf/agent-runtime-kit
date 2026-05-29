@@ -350,6 +350,20 @@ skills:
       forge-cli: ">=0.20.0"
     state_out_mode: runtime
 
+  - id: meta.worktree-triage
+    domain: meta
+    source: core/skills/meta/worktree-triage
+    products:
+      codex:
+        name: worktree-triage
+        render_to: plugins/meta/skills/worktree-triage/SKILL.md
+      claude:
+        name: worktree-triage
+        render_to: plugins/meta/skills/worktree-triage/SKILL.md
+    required_clis:
+      forge-cli: ">=0.20.0"
+    state_out_mode: runtime
+
   - id: media.image-processing
     domain: media
     source: core/skills/media/image-processing

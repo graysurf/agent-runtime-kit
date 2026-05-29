@@ -339,6 +339,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.worktree-triage.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.worktree-triage
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: seed a synthetic git repo with a synthetic base ref and three linked worktrees (a fully-merged branch, a patch-equivalent branch, and a branch carrying a unique commit)
+    invocation: worktree_triage.py read-only JSON scan classifying each worktree against the synthetic base ref
+    expected_exit_code: 0
+    expected_artifacts: worktree-triage.scan.v1 envelope classifying safe-merged, safe-superseded, and rescue-candidate dispositions
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: media.image-processing.shared-cli.deterministic
     product: shared-cli
     domain: media
