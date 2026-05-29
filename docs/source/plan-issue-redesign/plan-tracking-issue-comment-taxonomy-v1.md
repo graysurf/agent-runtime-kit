@@ -316,7 +316,9 @@ Payload data:
   "current": "<current task or state>",
   "next_action": "<next task or unblock action>",
   "tasks": [
-    {"id": "1.1", "status": "pending|in-progress|done|deferred", "title": "<task title>"}
+    {"id": "1.1", "status": "done", "title": "<task title>"},
+    {"id": "1.2", "status": "in-progress", "title": "<task title>"},
+    {"id": "1.3", "status": "pending|in-progress|done|deferred|blocked|waived", "title": "<task title>"}
   ],
   "prs": [
     {"ref": "owner/repo#123", "url": "<url>", "status": "open|merged|closed"}
@@ -329,6 +331,14 @@ Payload data:
   }
 }
 ```
+
+`tasks[]` is **accumulative**: every `state` post carries the full per-task
+table from the canonical execution-state `## Task Ledger` (every task known at
+post time), not just the current/selected task, and `tasks[].status` shares the
+ledger vocabulary (`pending|in-progress|done|deferred|blocked|waived`). The
+canonical payload schema is owned by `nils-cli`
+(`crates/plan-issue-cli/docs/specs/issue-backed-plan-record-contract-v2.md`);
+this taxonomy mirrors it.
 
 Posting policy:
 
