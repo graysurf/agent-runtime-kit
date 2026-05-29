@@ -91,6 +91,9 @@ state_save \
   "FIXTURE_EXPECTED_ROLES_CLOSEOUT=${FIXTURE_EXPECTED_ROLES_CLOSEOUT}" \
   "FIXTURE_EXPECTED_FINAL_STATE=${FIXTURE_EXPECTED_FINAL_STATE}" \
   "FIXTURE_EXPECTED_LEDGER_TASK_IDS=${FIXTURE_EXPECTED_LEDGER_TASK_IDS:-}" \
+  "FIXTURE_PROFILE=${FIXTURE_PROFILE:-tracking}" \
+  "FIXTURE_LANES=${FIXTURE_LANES:-}" \
+  "FIXTURE_LANE_BRANCHES=${FIXTURE_LANE_BRANCHES:-}" \
   "TESTBED_REPO=${TESTBED_REPO}" \
   "TESTBED_ROOT=${TESTBED_ROOT}" \
   "BUNDLE_PATH=${TESTBED_ROOT}/docs/plans/${FIXTURE_SLUG}" \
@@ -101,17 +104,30 @@ if [ -n "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
   phase_sequence="create -> execute -> deliver -> closeout"
 fi
 
-cat <<EOM
-
-==============================================================
-setup complete.
-
-Phase sequence for fixture '${FIXTURE_NAME}':
-  ${phase_sequence}
-
-Run provenance (embed in any finding filed from this run):
-  ${STATE_DIR}/provenance.md   (machine-readable: provenance.env)
-
+# Profile-aware next-step guidance. The dispatch profile has no separate
+# create skill — `deliver-dispatch-plan` opens the shared issue via
+# `record open --profile dispatch`, then dispatches the lanes.
+if [ "${FIXTURE_PROFILE:-tracking}" = "dispatch" ]; then
+  next_step=$(
+    cat <<EOS
+Next step (agent action):
+  invoke /deliver-dispatch-plan with:
+    OWNER_REPO   = ${TESTBED_REPO}
+    PLAN_BUNDLE  = ${TESTBED_ROOT}/docs/plans/${FIXTURE_SLUG}
+    PLAN         = ${TESTBED_ROOT}/docs/plans/${FIXTURE_SLUG}/${FIXTURE_SLUG}-plan.md
+    SLUG         = ${FIXTURE_SLUG}
+    TITLE        = ${FIXTURE_TITLE}
+    PLAN_BRANCH  = ${FIXTURE_BRANCH}
+    LANES        = ${FIXTURE_LANES:-}
+    LABELS       = ${FIXTURE_LABELS}
+  It opens the shared dispatch issue (record open --profile dispatch),
+  then dispatches each lane to /execute-dispatch-lane and each lane PR
+  to /review-dispatch-lane-pr before the close-ready handoff.
+EOS
+  )
+else
+  next_step=$(
+    cat <<EOS
 Next step (agent action):
   invoke /create-plan-tracking-issue with:
     OWNER_REPO   = ${TESTBED_REPO}
@@ -121,6 +137,22 @@ Next step (agent action):
     TITLE        = ${FIXTURE_TITLE}
     BRANCH       = ${FIXTURE_BRANCH}
     LABELS       = ${FIXTURE_LABELS}
+EOS
+  )
+fi
+
+cat <<EOM
+
+==============================================================
+setup complete.
+
+Phase sequence for fixture '${FIXTURE_NAME}' (profile ${FIXTURE_PROFILE:-tracking}):
+  ${phase_sequence}
+
+Run provenance (embed in any finding filed from this run):
+  ${STATE_DIR}/provenance.md   (machine-readable: provenance.env)
+
+${next_step}
 
 When the skill has finished, run:
   bash scripts/test-plan-tracking/run.sh assert create

@@ -57,8 +57,13 @@ fi
 
 $quiet || log "resetting local main…"
 testbed_git fetch origin --prune --quiet
-testbed_git checkout main --quiet 2>/dev/null ||
-  testbed_git checkout -B main origin/main --quiet
+# Force the switch so an uncommitted working tree never blocks teardown.
+# Flows append working-tree edits to the bundle execution-state via
+# `plan-tooling ledger-update`; teardown is destructive by design, so those
+# edits must be discarded, not preserved (`checkout main` without `-f` aborts
+# on a dirty tree).
+testbed_git checkout -f main --quiet 2>/dev/null ||
+  testbed_git checkout -fB main origin/main --quiet
 testbed_git reset --hard origin/main --quiet
 
 $quiet || log "deleting local non-main branches…"
