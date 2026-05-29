@@ -2,13 +2,16 @@
 
 ## Current State
 
-- Status: Sprint 2 Task 2.4 complete; Sprint 2 closed; Sprint 3 active
+- Status: superseded-complete. Sprint 1–2 delivered as tracked; Sprint
+  3–5 deliverables subsequently shipped through the broader nils-cli
+  `0.2.0 → 0.28.3` release train (verified present 2026-05-30; see the
+  2026-05-30 closeout entry).
 - Target scope: whole plan
-- Execution window: 2026-05-21 → TBD
+- Execution window: 2026-05-21 → 2026-05-30 (closed superseded-complete)
 - Staged execution confirmation: not applicable
-- Current task: Task 3.1
-- Next task: Task 3.2
-- Last updated: 2026-05-21
+- Current task: none (plan superseded-complete)
+- Next task: none (plan superseded-complete)
+- Last updated: 2026-05-30
 - Branch/commit: pre-work merged at `31c79e9`; Sprint 1 Task 1.1 merged at nils-cli `3309c3e`; Sprint 1 Task 1.2 PR A merged at agent-runtime-kit `f89eec1`; PR B merged at nils-cli `5d351bb`; Sprint 1 Task 1.3 merged at nils-cli `cee0903`; Sprint 2 Task 2.1 merged at nils-cli `6bf6102`; Sprint 2 Task 2.2 merged at nils-cli `2ae3075`; Sprint 2 Task 2.3 merged at nils-cli `4799169`; Sprint 2 Task 2.4 merged at nils-cli `4339c8d`
 - Source document: docs/plans/2026-05-20-04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
 - Direct source-doc execution waiver: not applicable
@@ -54,6 +57,38 @@
   has real fodder to pin against.
 
 ## Session Log
+
+### 2026-05-30 — Closeout: Sprint 3–5 verified superseded-complete
+
+- Plan re-examined during a `plan-archive` discover / archival sweep.
+  The execution-state had frozen at Sprint 2 (2026-05-21) with Sprints
+  3–5 marked `pending`, but every remaining deliverable was found
+  already shipped through the broader `nils-cli` `0.2.0 → 0.28.3`
+  release train rather than this plan's tracked sprints. Surfaces
+  verified present on PATH / in-repo as of 2026-05-30
+  (`agent-runtime` v0.28.3):
+  - Sprint 3 (doctor): `agent-runtime doctor` with `--suggest-upgrade`,
+    `--check-project`, and `--class version-alignment` (5-status).
+  - Sprint 4.1 (unsafe composite scoring): `agent-runtime-cli`
+    `src/audit_drift/unsafe_score.rs` — sensitive-path 0.4 + keyword
+    0.4 + entropy 0.4, scores `>= 0.8` block / `>= 0.4` warn, with the
+    `audit_drift_unsafe_score` integration suite.
+  - Sprint 4.2 (allowlist): `drift-audit.allow.yaml` with one-tier
+    `block → warn → suppressed` demotion.
+  - Sprint 4.3 (finding classes): `audit_drift/classes/intentional.rs`
+    (`intentional-difference`) and `audit_drift/classes/extra.rs`.
+  - Sprint 4.4: superseded — the `0.2.0` release target is now
+    `0.28.3`.
+  - Sprint 5: `scripts/setup.sh` (filled),
+    `tests/sandbox/{claude,codex}/expected-skills.txt`, and
+    `scripts/ci/sandbox-install-rehearsal.sh` wired at `ci/all.sh`
+    Position 10; `manifests/skills.yaml` `required_clis` floors are
+    pinned well above the plan's `>=0.2.0` target.
+- Per-row evidence is intentionally not back-filled: the deliverables
+  landed via later, separately-tracked work, not this plan's sprints.
+  The plan is closed as **superseded-complete** to drop it from the
+  active plan set and avoid stale `pending` signals in future archive
+  search.
 
 ### 2026-05-21 — Sprint 2 closed; Task 2.4 gc-backups body lands
 
