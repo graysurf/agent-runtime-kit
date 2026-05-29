@@ -89,6 +89,12 @@ plan-issue --format json tracking run update \
 forge-cli pr create --repo "$OWNER_REPO" --base "$PLAN_BRANCH" \
   --head "$BRANCH" --format json
 
+# Lane PRs target the plan branch, not the repo default branch, so the
+# eventual merge needs `--allow-non-default-base` — without it `forge-cli
+# pr merge` aborts with `default_branch_protected`:
+forge-cli pr merge "$PR_NUMBER" --repo "$OWNER_REPO" \
+  --method squash --allow-non-default-base --format json
+
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --linked-pr "$OWNER_REPO#$PR_NUMBER" \
   --validation-overall pass --validation-command "cargo test" \
@@ -121,7 +127,10 @@ plan-tooling ledger-update \
    `BRANCH`. Validation runs locally and produces `$VALIDATION_LOG`.
 3. **PR creation** — call `create-dispatch-lane-pr` (or `forge-cli pr
    create` directly) with `--base "$PLAN_BRANCH"`. Never target the
-   repository default branch.
+   repository default branch. Because the base is the plan branch (not
+   the repo default), merging the lane PR requires
+   `forge-cli pr merge --allow-non-default-base`; the default merge path
+   aborts a non-default base with `default_branch_protected`.
 4. **Run state update** — `tracking run update` records the lane PR
    ref and validation evidence.
 5. **Per-lane ledger update** — immediately after the lane's task

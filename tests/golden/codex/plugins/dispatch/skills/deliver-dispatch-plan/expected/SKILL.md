@@ -40,8 +40,13 @@ Outputs:
 - `record open --profile dispatch` (or `record attach --profile
   dispatch`) posts `source`, `plan`, and initial `state` snapshots and
   opens the shared dispatch issue.
-- `tracking run init --profile dispatch` writes the dispatch run
-  state.
+- `tracking run init --profile dispatch --execution-state-file
+  <bundle>/<slug>-execution-state.md` writes the dispatch run state.
+  Always pass `--execution-state-file`: it is what lets every later
+  `tracking checkpoint --post state` render the **accumulative** per-task
+  ledger. Omit it (init with `--bundle` alone) and the run state has no
+  execution-state path, so checkpoints fall back to a single-row
+  synthesized ledger instead of the full table.
 - Dispatch-level `tracking checkpoint --profile dispatch --live --post
   state[,session[,validation[,review]]]` for orchestrator-grade
   evidence. `--live` is the default posting hop so dispatch-level
@@ -89,6 +94,7 @@ plan-issue --repo "$OWNER_REPO" --format json record open \
 plan-issue --format json tracking run init \
   --provider-repo "$OWNER_REPO" --issue "$ISSUE" \
   --profile dispatch --bundle "$PLAN_BUNDLE" \
+  --execution-state-file "$PLAN_BUNDLE/$SLUG-execution-state.md" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # For each lane: dispatch `execute-dispatch-lane` with the lane scope.
