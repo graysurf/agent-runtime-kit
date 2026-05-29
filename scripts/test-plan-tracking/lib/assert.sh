@@ -25,6 +25,12 @@ DRIVER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 phase="${1:?phase required: create | execute | closeout}"
 state_load
 
+# Profile-aware defaults so tracking fixtures (which omit these) keep
+# working unchanged. The dispatch fixture sets them in its manifest.
+FIXTURE_PROFILE="${FIXTURE_PROFILE:-tracking}"
+FIXTURE_LANES="${FIXTURE_LANES:-}"
+FIXTURE_LANE_BRANCHES="${FIXTURE_LANE_BRANCHES:-}"
+
 require_cmd gh
 require_cmd jq
 
@@ -201,6 +207,75 @@ check_linked_pr_merged() {
   fi
 }
 
+# ---- Dispatch-profile checks ------------------------------------------
+
+check_all_markers_profile() {
+  # Every lifecycle marker must carry the expected profile. Guards against
+  # the class of drift fixed by graysurf/plan-tracking-testbed#28, where a
+  # dispatch checkpoint emitted `profile=tracking` markers.
+  local want="$1" total wrong
+  total=$(grep -oE 'plan-issue-record:v[0-9]+ role=[a-z][a-z0-9_-]* profile=[a-z]+' \
+    "${snap_dir}/all-text.md" | wc -l | tr -d ' ')
+  wrong=$(grep -oE 'plan-issue-record:v[0-9]+ role=[a-z][a-z0-9_-]* profile=[a-z]+' \
+    "${snap_dir}/all-text.md" | grep -vc "profile=${want}" || true)
+  if [ "${total}" -gt 0 ] && [ "${wrong}" -eq 0 ]; then
+    pass "all ${total} lifecycle markers carry profile=${want}"
+  else
+    fail "expected every lifecycle marker profile=${want} (total=${total}, wrong=${wrong})"
+  fi
+}
+
+check_lane_prs_merged() {
+  # Dispatch close gate: every lane PR must be merged with a real merge
+  # SHA. Resolve each by its lane head branch (FIXTURE_LANE_BRANCHES).
+  local branch pr_json pr_number pr_state merge_sha
+  for branch in ${FIXTURE_LANE_BRANCHES}; do
+    pr_json=$(gh pr list \
+      --repo "${TESTBED_REPO}" \
+      --head "${branch}" \
+      --state all \
+      --json number,state,mergeCommit \
+      --jq 'sort_by(.number) | reverse | .[0] // empty')
+    if [ -z "${pr_json}" ]; then
+      fail "no lane PR found for head branch ${branch}"
+      continue
+    fi
+    pr_number=$(echo "${pr_json}" | jq -r '.number')
+    pr_state=$(echo "${pr_json}" | jq -r '.state')
+    merge_sha=$(echo "${pr_json}" | jq -r '.mergeCommit.oid // empty')
+    if [ "${pr_state}" = "MERGED" ] && [ -n "${merge_sha}" ]; then
+      pass "lane PR #${pr_number} (${branch}) merged (${merge_sha:0:7})"
+    else
+      fail "lane PR #${pr_number} (${branch}) state ${pr_state} sha '${merge_sha:-none}'"
+    fi
+  done
+}
+
+check_dispatch_dashboard_names_lanes() {
+  # The dispatch dashboard (issue body) must name every lane PR so a reader
+  # sees the full fan-out at a glance.
+  local body branch pr_number
+  body=$(jq -r '.body' "${snap_dir}/issue.json")
+  for branch in ${FIXTURE_LANE_BRANCHES}; do
+    pr_number=$(gh pr list \
+      --repo "${TESTBED_REPO}" \
+      --head "${branch}" \
+      --state all \
+      --json number \
+      --jq 'sort_by(.number) | reverse | .[0].number // empty')
+    if [ -z "${pr_number}" ]; then
+      fail "dispatch dashboard: no PR resolved for lane branch ${branch}"
+      continue
+    fi
+    if printf '%s' "${body}" | grep -qE "#${pr_number}([^0-9]|\$)" ||
+      printf '%s' "${body}" | grep -qE "pull/${pr_number}([^0-9]|\$)"; then
+      pass "dispatch dashboard names lane PR #${pr_number} (${branch})"
+    else
+      fail "dispatch dashboard missing lane PR #${pr_number} (${branch})"
+    fi
+  done
+}
+
 # ---- Per-phase checks -------------------------------------------------
 
 case "${phase}" in
@@ -212,6 +287,7 @@ case "${phase}" in
       fail "issue state ${issue_state} (expected OPEN)"
     fi
     # All expected labels.
+    # shellcheck disable=SC2153  # FIXTURE_LABELS is set by the sourced fixture manifest/state.
     IFS=',' read -ra labels_arr <<<"${FIXTURE_LABELS}"
     for l in "${labels_arr[@]}"; do
       check_label_present "${l}"
@@ -220,6 +296,10 @@ case "${phase}" in
     for r in ${FIXTURE_EXPECTED_ROLES_CREATE}; do
       check_role_present "${r}"
     done
+    # Dispatch: the open snapshots must already be marked profile=dispatch.
+    if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
+      check_all_markers_profile dispatch
+    fi
     ;;
   execute)
     if [ "${issue_state}" = "OPEN" ]; then
@@ -238,6 +318,14 @@ case "${phase}" in
       check_state_body_contains_ledger_row "${tid}"
     done
     check_state_body_not_synthesized_fallback
+    # Dispatch multi-lane proof: the initial state plus one lane-scoped
+    # state / session / validation checkpoint per lane.
+    if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
+      check_role_min_count state 3
+      check_role_min_count session 2
+      check_role_min_count validation 2
+      check_all_markers_profile dispatch
+    fi
     ;;
   deliver)
     if [ -z "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
@@ -248,8 +336,10 @@ case "${phase}" in
     else
       fail "issue state ${issue_state} (expected OPEN — closeout has not run yet)"
     fi
-    # Roles up to and including review.
-    for r in source plan state review; do
+    # Every role the fixture expects by deliver (data-driven so dispatch can
+    # additionally require session / validation rollups).
+    # shellcheck disable=SC2086  # intentional word-splitting of the role list.
+    for r in ${FIXTURE_EXPECTED_ROLES_DELIVER}; do
       check_role_present "${r}"
     done
     # State role should have grown further (initial + per-task + final
@@ -260,8 +350,18 @@ case "${phase}" in
       check_state_body_contains_ledger_row "${tid}"
     done
     check_state_body_not_synthesized_fallback
-    # The delivery must have landed: linked PR merged with a merge SHA.
-    check_linked_pr_merged
+    # The delivery must have landed. Dispatch: every lane PR merged and named
+    # on the dashboard. Tracking: the single linked PR merged.
+    # Mid-flight the dispatch run-state tracks a single current PR, so the
+    # dashboard names only the latest lane here; the Final Dashboard built by
+    # `record close --linked-pr ... --linked-pr ...` names every lane (checked
+    # at closeout).
+    if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
+      check_lane_prs_merged
+      check_all_markers_profile dispatch
+    else
+      check_linked_pr_merged
+    fi
     ;;
   closeout)
     if [ "${issue_state}" = "CLOSED" ]; then
@@ -280,9 +380,19 @@ case "${phase}" in
     for r in ${FIXTURE_EXPECTED_ROLES_CLOSEOUT}; do
       check_role_present "${r}"
     done
-    # Deliver fixtures additionally require the linked PR to remain merged.
+    # Deliver fixtures additionally require the linked PR(s) to remain merged.
     if [ -n "${FIXTURE_EXPECTED_ROLES_DELIVER:-}" ]; then
-      check_linked_pr_merged
+      if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
+        check_lane_prs_merged
+      else
+        check_linked_pr_merged
+      fi
+    fi
+    # Dispatch markers must stay profile=dispatch through closeout, and the
+    # Final Dashboard must name every lane PR.
+    if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
+      check_all_markers_profile dispatch
+      check_dispatch_dashboard_names_lanes
     fi
     # Final state body must also reflect the full per-task ledger.
     for tid in ${FIXTURE_EXPECTED_LEDGER_TASK_IDS}; do

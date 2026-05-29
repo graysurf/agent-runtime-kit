@@ -2,17 +2,25 @@
 # Phase dispatcher for the plan-tracking skill flow test driver.
 #
 # Usage:
-#   run.sh setup [fixture]
+#   run.sh setup [fixture]    # fixture: happy-path | deliver | dispatch
 #   run.sh status
 #   run.sh assert <phase>     # phase: create | execute | deliver | closeout
 #   run.sh teardown
 #
-# Agent-in-the-loop: between `setup` and the first `assert`, the agent
-# invokes /create-plan-tracking-issue. Between `assert create` and
-# `assert execute`, the agent invokes /execute-plan-tracking-issue.
+# Agent-in-the-loop (tracking — happy-path / deliver): between `setup`
+# and the first `assert`, the agent invokes /create-plan-tracking-issue.
+# Between `assert create` and `assert execute`, /execute-plan-tracking-issue.
 # For fixtures that declare a deliver phase (e.g. `fixtures/deliver/`),
 # the agent then invokes /deliver-plan-tracking-issue and the driver
 # moves to `assert deliver`. Closeout follows in both shapes.
+#
+# Agent-in-the-loop (dispatch): there is no separate create skill.
+# /deliver-dispatch-plan opens the shared dispatch issue (record open
+# --profile dispatch); `assert create` checks it. The agent then drives
+# each lane via /execute-dispatch-lane and each lane PR via
+# /review-dispatch-lane-pr (`assert execute`), /deliver-dispatch-plan
+# posts the dispatch rollup + close-ready handoff (`assert deliver`),
+# and /dispatch-plan-closeout closes (`assert closeout`).
 
 set -euo pipefail
 
@@ -39,7 +47,7 @@ case "${cmd}" in
     bash "${DRIVER_ROOT}/lib/teardown.sh"
     ;;
   help | --help | -h)
-    sed -n '2,17p' "$0"
+    sed -n '2,23p' "$0"
     ;;
   *)
     die "unknown command: ${cmd} (run 'run.sh help')"
