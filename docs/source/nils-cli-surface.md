@@ -1,27 +1,37 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-29 (refreshed for `v0.28.2`)
+- Snapshot date: 2026-05-29 (refreshed for `v0.28.3`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.28.2`
+- Active `git describe --tags` output: `v0.28.3`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.28.2`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.28.3`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `1803032`
-  (`chore(release): bump cli versions to 0.28.2 (#643)`)
+- Head commit: `bcae357`
+  (`chore(release): bump cli versions to 0.28.3 (#647)`)
 - Release:
-  [`v0.28.2`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.2),
+  [`v0.28.3`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.3),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.28.1` at `d31e365` (`chore(release): bump cli versions to
-  0.28.1 (#641)`). `v0.28.2` is an additive patch bump that makes the
-  dispatch-profile dashboard name every lane PR: `plan-issue` now accumulates
-  each lane's linked PR into the state-checkpoint payload `prs[]`, so the
-  dispatch dashboard's Linked PRs field lists every lane PR instead of
-  `none yet` ([#642](https://github.com/sympoies/nils-cli/pull/642)). No
-  consumed surface was retired or renamed. `v0.28.1` added the
+- Prior pin: `v0.28.2` at `1803032` (`chore(release): bump cli versions to
+  0.28.2 (#643)`). `v0.28.3` is an additive patch bump for the dispatch
+  `tracking checkpoint` lifecycle: `tracking checkpoint --live` now inherits
+  `repo`/`issue` from the run-state when `--provider-repo`/`--issue` are
+  omitted, so the documented dispatch entrypoint posts instead of silently
+  no-opping ([#644](https://github.com/sympoies/nils-cli/pull/644)); and
+  `tracking checkpoint --post session` synthesizes the session summary from
+  run-state activity (selected task, branch, linked PRs, validation, phase)
+  when no explicit note exists, instead of dropping the role
+  ([#645](https://github.com/sympoies/nils-cli/pull/645)). The release tooling
+  also re-pins only workspace versions in the lockfile refresh
+  ([#646](https://github.com/sympoies/nils-cli/pull/646), not a consumed
+  surface). No consumed surface was retired or renamed. `v0.28.2` made the
+  dispatch-profile dashboard name every lane PR: `plan-issue` accumulates each
+  lane's linked PR into the state-checkpoint payload `prs[]`, so the dispatch
+  dashboard's Linked PRs field lists every lane PR instead of `none yet`
+  ([#642](https://github.com/sympoies/nils-cli/pull/642)). `v0.28.1` added the
   `plan-issue record post --task-ledger-display open` mode plus the
   `record open` open-fold default for the first Execution State
   ([#640](https://github.com/sympoies/nils-cli/pull/640)), `profile=dispatch`
@@ -117,7 +127,7 @@ Notes on derivation:
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
 | `nils-test-support`         | (library only)                                                                                                      | Integration-test harness; test-only, never appears in `required_clis`.                                                                                                                                                                                                 |
 | `plan-archive`              | `plan-archive`                                                                                                      | Plan-archive workflow CLI. As of `v0.25.0`, ships `validate-hosts` / `validate-local` / `validate-metadata` validators, `migrate` (dry-run default, `--apply`), `refresh` (forge-cli payload fetch + secret-scrub + append-only `_index/` snapshots, holds commit for scrub-log review), and `query` (single-ref / cross-host aggregate / plan-link traversal). As of `v0.25.5`, adds `discover` (read-only candidate scanner that classifies plan folders as eligible / blocked / unknown and emits one combined `suggested_migrate_command` per eligible folder). Consumed by `meta:plan-archive-migrate`, `meta:plan-archive-query`, and `meta:plan-archive-discover`. |
-| `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names. As of `v0.20.0`, issue-backed records use the provider-backed `record open`, `record post`, `record audit`, `record repair-dashboard`, and `record close` surface. The current marker is `plan-issue-record:v2 role=<source|plan|state|session|validation|review|closeout> profile=<tracking|dispatch>`. As of `v0.22.3`, state lifecycle comments can render canonical execution-state markdown through `record post --kind state --execution-state-file <path>`, support `--task-ledger-display auto|collapsed|expanded|open`, and render validation, review, session, and closeout evidence visibly alongside hidden payload carriers. As of `v0.25.6`, ships `record template --kind <role> --shape markdown|json` for non-mutating skeleton preview, `record audit --expect-visible` for visible-completeness lint, and the `tracking` controller surface (`tracking status`, `tracking run init`, `tracking run update`, `tracking checkpoint`, `tracking close-ready`) backed by `plan-issue.execution-run.v1` run state and `plan-issue.execution-event.v1` events. `tracking checkpoint --live --post <roles> --repair-dashboard` posts one provider lifecycle comment per role in declaration order, aborts on the first per-role failure with a `tracking-checkpoint-live-post-failed` blocker, and only refreshes the dashboard once every role succeeds; combine with `--fixture DIR` to exercise the live path deterministically (synthesized `fixture://issue/N/role` URLs and no provider mutation). As of `v0.25.7`, `tracking close-ready` emits a `ledger-rows-pending` blocker (one entry per stuck row) when `phase ∈ {ready_for_close, closed}` and the run-state's `bundle` resolves to a `*-execution-state.md` whose ledger still carries `Status ∈ {pending, in-progress}`; the silent-skip path keeps older run-states without a `bundle` field working. The `open` task-ledger-display mode renders an open `<details open>` fold (toggle present, rows visible by default), and `record open` posts the first Execution State with it so the full Task Ledger is visible on load while `expanded` stays raw rows for the final pre-closeout state. |
+| `plan-issue-cli`            | `plan-issue`, `plan-issue-local`                                                                                    | Multi-binary crate. `plan-issue` is the GitHub-backed orchestrator; `plan-issue-local` is the local rehearsal pair. Manifests pin individual binary names. As of `v0.20.0`, issue-backed records use the provider-backed `record open`, `record post`, `record audit`, `record repair-dashboard`, and `record close` surface. The current marker is `plan-issue-record:v2 role=<source|plan|state|session|validation|review|closeout> profile=<tracking|dispatch>`. As of `v0.22.3`, state lifecycle comments can render canonical execution-state markdown through `record post --kind state --execution-state-file <path>`, support `--task-ledger-display auto|collapsed|expanded|open`, and render validation, review, session, and closeout evidence visibly alongside hidden payload carriers. As of `v0.25.6`, ships `record template --kind <role> --shape markdown|json` for non-mutating skeleton preview, `record audit --expect-visible` for visible-completeness lint, and the `tracking` controller surface (`tracking status`, `tracking run init`, `tracking run update`, `tracking checkpoint`, `tracking close-ready`) backed by `plan-issue.execution-run.v1` run state and `plan-issue.execution-event.v1` events. `tracking checkpoint --live --post <roles> --repair-dashboard` posts one provider lifecycle comment per role in declaration order, aborts on the first per-role failure with a `tracking-checkpoint-live-post-failed` blocker, and only refreshes the dashboard once every role succeeds; combine with `--fixture DIR` to exercise the live path deterministically (synthesized `fixture://issue/N/role` URLs and no provider mutation). As of `v0.25.7`, `tracking close-ready` emits a `ledger-rows-pending` blocker (one entry per stuck row) when `phase ∈ {ready_for_close, closed}` and the run-state's `bundle` resolves to a `*-execution-state.md` whose ledger still carries `Status ∈ {pending, in-progress}`; the silent-skip path keeps older run-states without a `bundle` field working. The `open` task-ledger-display mode renders an open `<details open>` fold (toggle present, rows visible by default), and `record open` posts the first Execution State with it so the full Task Ledger is visible on load while `expanded` stays raw rows for the final pre-closeout state. As of `v0.28.3`, `tracking checkpoint --live` inherits `repo`/`issue` from the run-state when `--provider-repo`/`--issue` are omitted (consistent with `tracking status` / `close-ready`), and `tracking checkpoint --post session` synthesizes the session summary from run-state activity (selected task, branch, linked PRs, validation, phase) when no explicit `--note` exists instead of silently dropping the role ([#644](https://github.com/sympoies/nils-cli/pull/644), [#645](https://github.com/sympoies/nils-cli/pull/645)). |
 | `plan-tooling`              | `plan-tooling`                                                                                                      | Plan bundle linter / validator. As of `v0.25.7`, adds `ledger-update` (atomic one-call row patch for the canonical `*-execution-state.md` `## Task Ledger` table; stable error codes `ledger-row-not-found`, `ledger-row-ambiguous`, `ledger-table-malformed`, `ledger-status-invalid`) and `ledger-sync --from-issue` (read-mostly drift reconciliation against issue body + comments; `--write` patches only empty Evidence cells via the empty-cell preference rule). Both consumed by the tracking-profile SKILL bodies and by the `plan-issue tracking close-ready` `ledger-rows-pending` blocker. |
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |
