@@ -30,23 +30,29 @@ Inputs:
 
 Outputs:
 
-- A repo-local implementation-readiness or improvement source document. When it
-  exists to feed plan execution, save it under
-  `docs/plans/<slug>/<slug>-discussion-source.md` by default for requirements,
-  design, feasibility, product, architecture, or customer-facing source
-  material.
-- For review findings, risk registers, lessons learned, validation guardrails,
-  or fix-later backlogs, save it under
-  `docs/plans/<slug>/<slug>-review-source.md` by default.
-- If the document is long-lived knowledge rather than execution coordination, save it in the relevant domain docs/runbook area instead.
+- A repo-local discussion / implementation-readiness source document. Place it
+  by destination — do not default it into the plan area:
+  - Default (non-plan capture): `docs/discussions/<YYYY-MM-DD>-<slug>.md` for
+    converged requirements, design, feasibility, product, architecture,
+    customer-facing, review, risk, lessons-learned, or fix-later material that
+    is captured for later work but is not an executed-and-archived plan bundle.
+  - L2 plan source: only when the document will feed a plan that is executed and
+    archived, save it inside the bundle as
+    `docs/plans/<YYYY-MM-DD>-<slug>/<slug>-discussion-source.md` (or
+    `<slug>-review-source.md` for review / risk / backlog material) and include
+    the `Execution` plan lines below.
+  - Durable canon: when the content is already authoritative knowledge rather
+    than coordination, promote it to the owning domain docs area (or
+    `docs/source/` for repo-wide architecture / specs / policy) — a deliberate
+    promotion, not this skill's default.
 - A source artifact that a plan-tracking or dispatch delivery workflow can link
   under `Read First` when execution sequencing is needed.
 - A source document that avoids unresolved open questions; report any
   non-blocking open questions in the final response instead of writing them into
   the document.
 - An `Execution` section with stable `Recommended plan` and
-  `Recommended execution state` lines when the document is intended to feed
-  plan execution.
+  `Recommended execution state` lines only for the L2 plan-source case; omit
+  them for a `docs/discussions/` capture and for promoted canon.
 - Updated local docs index or README only when the document is intentionally promoted as retained knowledge and should be discoverable
   outside the plan.
 - When following the skill usage recording convention, a `skill-usage.record.v1` envelope that links the created document and validation
@@ -88,24 +94,31 @@ Failure modes:
    - For unresolved HEURISTIC_SYSTEM workflow gaps that should be versioned but
      are not ready for a fix, use
      `core/policies/heuristic-system/error-inbox/<slug>/ENTRY.md` instead of a
-     temporary `docs/plans/` source document.
-   - Treat `docs/plans/` as the default location for plan-source documents. Promote or rewrite into domain docs/runbooks only when the
-     content has value after execution finishes.
+     `docs/discussions/` capture.
+   - Treat `docs/discussions/<YYYY-MM-DD>-<slug>.md` as the default home. Use a
+     `docs/plans/<YYYY-MM-DD>-<slug>/` bundle only for a document that will feed
+     an executed-and-archived plan; promote into domain docs/runbooks (or
+     `docs/source/`) only when the content is durable canon.
    - Do not use the document as a session prompt. If continuity is needed, write or reference this document first, then use
      `handoff-session-prompt`.
    - Do not use `review-evidence` as the primary artifact for this workflow. If review findings or validation records matter, attach or link
      those evidence files from the document.
 
-2. Run project preflight and inspect docs structure
+2. Run project preflight and choose the destination
    - Follow the active project's required preflight before edits.
    - Read nearby docs and local project rules before choosing a path.
-   - If this document is a source for plan generation, place it inside the plan folder using
-     `docs/plans/<slug>/<slug>-discussion-source.md`.
-   - If the source material is review findings, risks, lessons learned,
-     validation guardrails, or a fix-later backlog, place it inside the plan
-     folder using `docs/plans/<slug>/<slug>-review-source.md`.
-   - Prefer an existing domain docs folder or runbook area only when the artifact is meant to remain after execution.
-   - Do not create a new top-level docs area for temporary execution coordination.
+   - Default: place the document at `docs/discussions/<YYYY-MM-DD>-<slug>.md`
+     for captured discussion / spec material that is not an
+     executed-and-archived plan.
+   - L2 plan source: only when the document will feed a plan that runs and is
+     archived, place it inside the bundle as
+     `docs/plans/<YYYY-MM-DD>-<slug>/<slug>-discussion-source.md` (or
+     `<slug>-review-source.md` for review / risk / backlog material).
+   - Durable canon: promote to the owning domain docs area (or `docs/source/`
+     for repo-wide) only when the content is authoritative knowledge meant to
+     remain after execution.
+   - Do not invent another top-level docs area; `docs/discussions/`,
+     `docs/plans/`, and the canon homes already cover these cases.
 
 3. Gather and classify discussion content
    - Separate confirmed facts, decisions, findings, assumptions, inferences,
@@ -157,10 +170,11 @@ Failure modes:
      question would materially change the document's facts, scope, acceptance
      criteria, or next artifact, pause and ask before writing instead of
      publishing a misleading source document.
-   - For plan-source documents, include these stable machine-checkable lines in
-     the `Execution` section:
-     - `Recommended plan: docs/plans/<slug>/<slug>-plan.md`
-     - `Recommended execution state: docs/plans/<slug>/<slug>-execution-state.md`
+   - For an L2 plan source only (inside `docs/plans/<YYYY-MM-DD>-<slug>/`),
+     include these stable machine-checkable lines in the `Execution` section:
+     - `Recommended plan: docs/plans/<YYYY-MM-DD>-<slug>/<slug>-plan.md`
+     - `Recommended execution state: docs/plans/<YYYY-MM-DD>-<slug>/<slug>-execution-state.md`
+     Omit the `Execution` plan lines for a `docs/discussions/` capture.
    - When a plan's `Read First` section links a document produced by this
      skill, use `Source type: discussion-to-implementation-doc` for both
      `*-discussion-source.md` and `*-review-source.md`; do not use the retired
@@ -179,7 +193,9 @@ Failure modes:
      the primary read-first artifact.
 
 6. Update discoverability
-   - For `docs/plans/<slug>/` source documents, use the plan's `Read First` section as the discoverability path; do not update broad
+   - For a `docs/plans/<YYYY-MM-DD>-<slug>/` source document, use the plan's
+     `Read First` section as the discoverability path; for a `docs/discussions/`
+     capture, link it from the PR or issue that acts on it. Do not update broad
      indexes by default.
    - Update the nearest docs index or README only when the document is promoted or intentionally retained after execution.
    - Link from broader docs entrypoints only when future maintainers should find the document without prior plan/session context.

@@ -45,8 +45,8 @@ Routing guidance for the skill family lives in
 | --- | --- | --- |
 | Advice and knowledge | [actionable-advice](./conversation/actionable-advice/) | Structures actionable engineering advice around options, tradeoffs, assumptions, and one recommendation. |
 | Advice and knowledge | [actionable-knowledge](./conversation/actionable-knowledge/) | Explains concepts or confusion through multiple lenses with one recommended next step. |
-| Durable discussion artifacts | [discussion-to-implementation-doc](./conversation/discussion-to-implementation-doc/) | Converts completed requirements, design, feasibility, or customer-facing discussion into implementation-ready source material. |
-| Durable discussion artifacts | [handoff-session-prompt](./conversation/handoff-session-prompt/) | Generates a next-session initialization prompt from current context and user-specified references. |
+| Discussion capture and handoff | [discussion-to-implementation-doc](./conversation/discussion-to-implementation-doc/) | Converts completed requirements, design, feasibility, or customer-facing discussion into implementation-ready source material. |
+| Discussion capture and handoff | [handoff-session-prompt](./conversation/handoff-session-prompt/) | Generates a next-session initialization prompt from current context and user-specified references. |
 | Work modes | [orchestrator-first](./conversation/orchestrator-first/) | Makes the main agent own scope, dispatch, integration, validation, and final synthesis while subagents own lanes. |
 | Work modes | [parallel-first](./conversation/parallel-first/) | Applies the shared parallel delegation protocol for safely parallelizable sidecar work. |
 | Work modes | [test-first](./conversation/test-first/) | Governs implementation with failing-test evidence or an explicit waiver before production code changes. |
