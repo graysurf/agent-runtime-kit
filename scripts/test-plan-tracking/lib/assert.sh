@@ -31,21 +31,14 @@ FIXTURE_PROFILE="${FIXTURE_PROFILE:-tracking}"
 FIXTURE_LANES="${FIXTURE_LANES:-}"
 FIXTURE_LANE_BRANCHES="${FIXTURE_LANE_BRANCHES:-}"
 
-require_cmd gh
+require_cmd forge-cli
 require_cmd jq
 
 snap_dir="${STATE_DIR}/snapshots/${phase}"
 mkdir -p "${snap_dir}"
 
 log "looking up tracking issue by title…"
-issue_number=$(gh issue list \
-  --repo "${TESTBED_REPO}" \
-  --state all \
-  --limit 10 \
-  --search "in:title \"${FIXTURE_TITLE}\"" \
-  --json number,title,state \
-  --jq ".[] | select(.title == \"${FIXTURE_TITLE}\") | .number" |
-  head -1)
+issue_number=$(tb_issue_find_by_title "${FIXTURE_TITLE}")
 
 if [ -z "${issue_number}" ]; then
   echo "FAIL: no tracking issue found with title '${FIXTURE_TITLE}'"
@@ -53,10 +46,7 @@ if [ -z "${issue_number}" ]; then
 fi
 
 log "found issue #${issue_number}; snapshotting…"
-gh issue view "${issue_number}" \
-  --repo "${TESTBED_REPO}" \
-  --json number,title,state,labels,body,comments \
-  >"${snap_dir}/issue.json"
+tb_issue_snapshot "${issue_number}" "${snap_dir}/issue.json"
 
 state_update "ISSUE_NUMBER=${issue_number}"
 
@@ -185,12 +175,7 @@ check_linked_pr_merged() {
   # actually landed. Resolve the PR by its head branch (retained on the PR
   # record even after the branch is auto-deleted on merge); newest first.
   local pr_json pr_number pr_state merge_sha
-  pr_json=$(gh pr list \
-    --repo "${TESTBED_REPO}" \
-    --head "${FIXTURE_BRANCH}" \
-    --state all \
-    --json number,state,mergeCommit \
-    --jq 'sort_by(.number) | reverse | .[0] // empty')
+  pr_json=$(tb_pr_resolve_by_head "${FIXTURE_BRANCH}")
   if [ -z "${pr_json}" ]; then
     fail "no PR found for head branch ${FIXTURE_BRANCH}"
     return
@@ -233,12 +218,7 @@ check_lane_prs_merged() {
   # SHA. Resolve each by its lane head branch (FIXTURE_LANE_BRANCHES).
   local branch pr_json pr_number pr_state merge_sha
   for branch in ${FIXTURE_LANE_BRANCHES}; do
-    pr_json=$(gh pr list \
-      --repo "${TESTBED_REPO}" \
-      --head "${branch}" \
-      --state all \
-      --json number,state,mergeCommit \
-      --jq 'sort_by(.number) | reverse | .[0] // empty')
+    pr_json=$(tb_pr_resolve_by_head "${branch}")
     if [ -z "${pr_json}" ]; then
       fail "no lane PR found for head branch ${branch}"
       continue
@@ -273,12 +253,7 @@ check_dispatch_dashboard_names_lanes() {
     return
   fi
   for branch in ${FIXTURE_LANE_BRANCHES}; do
-    pr_number=$(gh pr list \
-      --repo "${TESTBED_REPO}" \
-      --head "${branch}" \
-      --state all \
-      --json number \
-      --jq 'sort_by(.number) | reverse | .[0].number // empty')
+    pr_number=$(tb_pr_resolve_by_head "${branch}" | jq -r '.number // empty')
     if [ -z "${pr_number}" ]; then
       fail "dispatch dashboard: no PR resolved for lane branch ${branch}"
       continue

@@ -18,7 +18,7 @@ DRIVER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fixture="${1:?fixture name required}"
 load_fixture "${fixture}"
 
-require_cmd gh
+require_cmd forge-cli
 require_cmd git
 require_cmd plan-tooling
 require_cmd plan-issue

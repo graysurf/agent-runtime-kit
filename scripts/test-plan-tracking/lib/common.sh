@@ -78,6 +78,87 @@ testbed_run() {
   (cd "${TESTBED_ROOT}" && "$@")
 }
 
+# ---- Provider seam ----------------------------------------------------
+# The driver inspects provider state through `forge-cli` (issues / PRs) and
+# plain `git` (branch ops), never `gh` directly, so it runs against GitHub
+# or GitLab unchanged. Each helper normalizes forge-cli's v1 envelope
+# (snake_case fields, lowercase state) back into the gh-shaped JSON the
+# call sites historically consumed — so the phase logic in assert.sh /
+# teardown.sh / status.sh stays provider-agnostic and barely changes.
+
+# Echo the number of the newest issue whose title exactly matches $1, or
+# empty. forge-cli has no server-side title search, so filter the full
+# issue list client-side.
+tb_issue_find_by_title() {
+  local title="$1"
+  forge-cli issue list --repo "${TESTBED_REPO}" --state all --format json |
+    jq -r --arg t "${title}" \
+      '[.data.items[] | select(.title == $t) | .number] | sort | reverse | .[0] // empty'
+}
+
+# Write a gh-shaped snapshot of issue $1 to file $2:
+#   {number,title,state(UPPER),labels:[{name}],body,comments:[{body,...}]}
+# State is upper-cased and labels re-objectified so existing call-site jq
+# (`.state == "OPEN"`, `.labels[].name`, `.comments[].body`) is unchanged.
+tb_issue_snapshot() {
+  local number="$1" out="$2"
+  # --with-comments: forge-cli omits the comment stream otherwise (returns an
+  # empty array), and the phase checks count role markers across comments.
+  forge-cli issue view "${number}" --repo "${TESTBED_REPO}" --with-comments --format json |
+    jq '.data | {
+      number, title,
+      state: (.state | ascii_upcase),
+      labels: [.labels[] | {name: .}],
+      body,
+      comments: [.comments[] | {body, url, author, created_at}]
+    }' >"${out}"
+}
+
+# Echo gh-shaped JSON for the newest PR on head branch $1, or empty:
+#   {number,state(UPPER),mergeCommit:{oid}}
+# `pr list` omits the merge SHA, so resolve the number by head, then
+# `pr view` for state + merge_commit_sha.
+tb_pr_resolve_by_head() {
+  local head="$1" number
+  number=$(forge-cli pr list --repo "${TESTBED_REPO}" --head "${head}" --state all --format json |
+    jq -r '[.data.items[].number] | sort | reverse | .[0] // empty')
+  [ -z "${number}" ] && return 0
+  forge-cli pr view "${number}" --repo "${TESTBED_REPO}" --format json |
+    jq '.data | {
+      number,
+      state: (.state | ascii_upcase),
+      mergeCommit: { oid: (.merge_commit_sha // "") }
+    }'
+}
+
+# Echo, one per line, the numbers of OPEN issues that do NOT carry the
+# durable `plan-issue-finding` label (those trackers must survive teardown).
+tb_open_issues_except_finding() {
+  forge-cli issue list --repo "${TESTBED_REPO}" --state open --format json |
+    jq -r '.data.items[] | select((.labels | index("plan-issue-finding")) | not) | .number'
+}
+
+# Comment (optional $2) then close issue $1. forge-cli has no close-reason
+# flag; GitHub's "not planned" reason is dropped (cosmetic for teardown).
+tb_issue_close() {
+  local number="$1" comment="${2:-}"
+  if [ -n "${comment}" ]; then
+    forge-cli issue comment "${number}" --repo "${TESTBED_REPO}" --body "${comment}" >/dev/null
+  fi
+  forge-cli issue close "${number}" --repo "${TESTBED_REPO}" >/dev/null
+}
+
+# Echo, one per line, every remote branch name. git-native — no provider API.
+tb_remote_branches() {
+  testbed_git ls-remote --heads origin |
+    sed -E 's#^[0-9a-f]+[[:space:]]+refs/heads/##'
+}
+
+# Delete a remote branch. git-native.
+tb_remote_branch_delete() {
+  testbed_git push origin --delete "$1"
+}
+
 # Provenance + CLI-floor helpers (finding #19). Sourced last so every phase
 # entrypoint that sources common.sh also gets stamp_provenance / assert_cli_floor.
 # shellcheck disable=SC1091

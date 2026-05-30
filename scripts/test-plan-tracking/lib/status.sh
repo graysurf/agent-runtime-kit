@@ -23,7 +23,7 @@ if [ -f "${STATE_DIR}/provenance.md" ]; then
 fi
 
 printf '== open issues in %s ==\n' "${TESTBED_REPO}"
-gh issue list --repo "${TESTBED_REPO}" --state open --limit 20
+forge-cli issue list --repo "${TESTBED_REPO}" --state open
 
 printf '\n== branches on remote ==\n'
-gh api "repos/${TESTBED_REPO}/branches" --jq '.[].name'
+tb_remote_branches
