@@ -1,20 +1,27 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-31 (refreshed for `v0.31.0`)
+- Snapshot date: 2026-05-31 (refreshed for `v0.31.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.31.0`
+- Active `git describe --tags` output: `v0.31.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.31.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.31.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `7a42080`
-  (`chore(release): bump cli versions to 0.31.0 (#695)`)
+- Head commit: `bc873ea`
+  (`chore(release): bump cli versions to 0.31.1 (#699)`)
 - Release:
-  [`v0.31.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.0),
+  [`v0.31.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.31.1` is a **patch** fixing `repo-retro` path classification: generated
+  Markdown fixtures under `tests/golden/**` (and test-tree files) now classify
+  as `tests` instead of `productDocs`, so a single skill edit is no longer
+  triple-counted across `source` + `productDocs` in `churnByClass` /
+  `fileHotspots`; `docs/specs` stays `productDocs`. Additive — no surface
+  retired or renamed, no consumer floor moves
+  ([#698](https://github.com/sympoies/nils-cli/pull/698)).
 - `v0.31.0` is a **minor** that ships `repo-retro report` **schema v2**
   (`cli.repo-retro.report.v2` / `repo-retro.report.v2`): a deterministic
   pre-digestion layer — `git.churnByClass` (source / tests / productDocs /
