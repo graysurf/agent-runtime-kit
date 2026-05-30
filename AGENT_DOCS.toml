@@ -23,3 +23,21 @@ path = "docs/source/docs-placement-retention-policy-v1.md"
 required = true
 when = "always"
 notes = "Docs placement and retention policy for docs/** and repository-root Markdown changes"
+
+[[document]]
+context = "project-dev"
+scope = "project"
+path = "DEVELOPMENT.md"
+required = true
+when = "path-exists:Cargo.toml || path-exists:package.json || path-exists:src/** || path-exists:scripts/ci/all.sh"
+notes = "Local validation and CI gate procedure; required only for code repos (auto-skipped in a docs-only checkout)"
+
+# Per-intent validation contract: what must run before declaring a project-dev
+# task done. Consumed by the finish-line gate via `preflight --intent
+# project-dev --format json`; the gate blocks a stop when code was edited but
+# `marker` is missing/stale, and a waiver releases it.
+[[validation]]
+context = "project-dev"
+commands = ["bash scripts/ci/all.sh", "bash tests/hooks/run.sh"]
+marker = ".cache/agent-validation/project-dev.ok"
+description = "Run the kit CI gate stack and hook tests before declaring a project-dev task done."

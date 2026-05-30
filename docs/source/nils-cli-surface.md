@@ -1,21 +1,32 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-30 (refreshed for `v0.29.1`)
+- Snapshot date: 2026-05-30 (refreshed for `v0.30.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.29.1`
+- Active `git describe --tags` output: `v0.30.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.29.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.30.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `9681bb8`
-  (`docs(plans): align orphan-skip bundle tables for rumdl MD060 (#670)`; the
-  `v0.29.1` tag was re-pointed here after the `0.29.1` bump #669)
+- Head commit: `23af09a`
+  (`chore(release): bump cli versions to 0.30.0 (#674)`)
 - Release:
-  [`v0.29.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.29.1),
+  [`v0.30.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.30.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.30.0` is a **breaking** bump: the `agent-docs` engine was redesigned to be
+  fully data-driven. It retires the `resolve` / `baseline` / `scaffold-*` /
+  `add` / `contexts` commands and the `startup` per-task context, and removes
+  all hardcoded builtin requirements; required docs plus the per-repo validation
+  contract are declared in `AGENT_DOCS.toml` (`[[document]]` + `[[validation]]`,
+  with real `when` predicates and content validation). The new surface is
+  `audit` / `preflight --intent X` (versioned `agent-docs.preflight.v1` JSON) /
+  `init` / `explain` / `list` / `remove`, with docs-home derived from the
+  install symlink. This is the surface adopted in agent-runtime-kit#181; the
+  `agent-docs` `required_clis` floor moves to `0.30.0`
+  ([#671](https://github.com/sympoies/nils-cli/pull/671),
+  [#674](https://github.com/sympoies/nils-cli/pull/674)).
 - Prior pin: `v0.29.0` at `0f757df` (`chore(release): bump cli versions to
   0.29.0 (#661)`). `v0.29.1` is a patch bump hardening the same
   `git-cli branch cleanup --squash` path: branches with no merge-base against
@@ -155,7 +166,7 @@ Notes on derivation:
 
 | Crate                       | Binary                                                                                                              | Notes                                                                                                                                                                                                                                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight. As of `v0.18.0`, global scope inheritance is available from the released binary. As of `v0.28.6`, a project can opt out of a non-`startup` built-in requirement via a matching `required = false` `AGENT_DOCS.toml` entry (`source = builtin-opt-out`).                                                                                                  |
+| `agent-docs`                | `agent-docs`                                                                                                        | Data-driven required-doc resolver and auditor; no hardcoded builtins. As of `v0.30.0` the surface is `audit` (repo health: install-symlink wiring + declared-doc presence/validity + catalog validity), `preflight --intent X` (resolve the doc set plus the per-repo validation contract as versioned `agent-docs.preflight.v1` JSON for hooks to inject and enforce), and `init` / `explain` / `list` / `remove`. Policy is declared in `AGENT_DOCS.toml` (`[[document]]` + `[[validation]]`, `when` predicates, content validation); docs-home is derived from the install symlink. The `resolve` / `baseline` / `scaffold-*` / `add` / `contexts` commands and the `startup` per-task context were retired in the redesign.                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |

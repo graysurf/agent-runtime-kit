@@ -43,16 +43,16 @@ record_case() {
 }
 
 run_agent_docs_probe() {
-  local out="$META_ARTIFACTS_DIR/agent-docs.checklist.txt"
+  local out="$META_ARTIFACTS_DIR/agent-docs.preflight.txt"
   require_meta_bin agent-docs || return 1
   (
     cd "$META_WORKSPACE"
     agent-docs \
       --docs-home "$REPO_ROOT" \
       --project-path "$REPO_ROOT" \
-      resolve --context project-dev --strict --format checklist
+      preflight --intent project-dev --strict
   ) >"$out" 2>&1
-  grep -q 'REQUIRED_DOCS_END .*missing=0' "$out"
+  grep -q 'missing_required=0' "$out"
 }
 
 run_agent_out_probe() {
@@ -659,7 +659,7 @@ PY
 }
 
 failures=0
-record_case "meta.agent-docs" "project-dev docs resolve passed from fixture workspace" run_agent_docs_probe || failures=1
+record_case "meta.agent-docs" "project-dev docs preflight passed from fixture workspace" run_agent_docs_probe || failures=1
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
 record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe || failures=1
 record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap || failures=1
