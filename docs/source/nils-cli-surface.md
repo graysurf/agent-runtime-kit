@@ -1,20 +1,29 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-31 (refreshed for `v0.31.1`)
+- Snapshot date: 2026-05-31 (refreshed for `v0.31.2`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.31.1`
+- Active `git describe --tags` output: `v0.31.2`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.31.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.31.2`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `bc873ea`
-  (`chore(release): bump cli versions to 0.31.1 (#699)`)
+- Head commit: `937e7b1`
+  (`chore(release): bump cli versions to 0.31.2 (#704)`)
 - Release:
-  [`v0.31.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.1),
+  [`v0.31.2`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.2),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.31.2` is a **patch** fixing plan-tracking dashboard/state staleness:
+  `tracking checkpoint` now derives the state payload's `current` /
+  `next_action` / `target_scope` from the durable `## Task Ledger` plus the
+  authored scope, and re-renders the visible Execution State header from that
+  payload, so a completed plan's Final Dashboard and state comment no longer
+  show pre-flight values. Internal rendering only — no surface retired or
+  renamed, no consumer floor moves
+  ([#702](https://github.com/sympoies/nils-cli/pull/702),
+  [#703](https://github.com/sympoies/nils-cli/pull/703)).
 - `v0.31.1` is a **patch** fixing `repo-retro` path classification: generated
   Markdown fixtures under `tests/golden/**` (and test-tree files) now classify
   as `tests` instead of `productDocs`, so a single skill edit is no longer
