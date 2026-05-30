@@ -34,7 +34,7 @@ ARG YQ_VERSION=v4.44.6
 # release tarball. We download the arch-matched tarball and verify it against
 # the published .sha256 sidecar — no Linuxbrew required.
 # -----------------------------------------------------------------------------
-FROM debian:bookworm-slim AS nils
+FROM debian:trixie-slim AS nils
 ARG NILS_CLI_VERSION
 ARG TARGETARCH
 RUN set -eux; \
@@ -61,8 +61,13 @@ RUN set -eux; \
 # Stage 2 — runtime image.
 # Node base gives Node + npm for Claude Code and Codex CLI (both Node-launched,
 # glibc-linked native binaries — hence Debian, not Alpine).
+#
+# Debian *trixie* (glibc 2.41), not bookworm (glibc 2.36): the nils-cli
+# `*-unknown-linux-gnu` release binaries require GLIBC_2.39, so bookworm cannot
+# run `agent-runtime`. Keep this at trixie (or newer) while the pinned nils-cli
+# needs glibc ≥ 2.39.
 # -----------------------------------------------------------------------------
-FROM node:${NODE_VERSION}-bookworm-slim AS runtime
+FROM node:${NODE_VERSION}-trixie-slim AS runtime
 ARG CLAUDE_CODE_VERSION
 ARG CODEX_VERSION
 ARG GH_VERSION
