@@ -17,7 +17,7 @@ if [ "${1:-}" = "--quiet" ]; then
   quiet=true
 fi
 
-require_cmd gh
+require_cmd forge-cli
 require_cmd git
 
 [ -d "${TESTBED_ROOT}/.git" ] ||
@@ -28,30 +28,23 @@ require_cmd git
 # tracker for the plan-issue / plan-tracking skill family, and those
 # issues must survive driver resets.
 $quiet || log "closing open e2e issues in ${TESTBED_REPO} (preserving plan-issue-finding)…"
-open_issues=$(gh issue list \
-  --repo "${TESTBED_REPO}" \
-  --state open \
-  --limit 100 \
-  --json number,labels \
-  --jq '.[] | select(any(.labels[].name; . == "plan-issue-finding") | not) | .number' 2>/dev/null || true)
+open_issues=$(tb_open_issues_except_finding 2>/dev/null || true)
 if [ -n "${open_issues}" ]; then
   while IFS= read -r n; do
     [ -z "${n}" ] && continue
     $quiet || log "  closing #${n}"
-    gh issue close "${n}" --repo "${TESTBED_REPO}" --reason "not planned" \
-      --comment "Test teardown — closed by scripts/test-plan-tracking/teardown.sh." \
-      >/dev/null
+    tb_issue_close "${n}" \
+      "Test teardown — closed by scripts/test-plan-tracking/teardown.sh."
   done <<<"${open_issues}"
 fi
 
 $quiet || log "deleting non-main remote branches…"
-remote_branches=$(gh api "repos/${TESTBED_REPO}/branches" --jq '.[].name' |
-  grep -v '^main$' || true)
+remote_branches=$(tb_remote_branches | grep -v '^main$' || true)
 if [ -n "${remote_branches}" ]; then
   while IFS= read -r b; do
     [ -z "${b}" ] && continue
     $quiet || log "  deleting remote branch ${b}"
-    gh api -X DELETE "repos/${TESTBED_REPO}/git/refs/heads/${b}" >/dev/null
+    tb_remote_branch_delete "${b}" >/dev/null
   done <<<"${remote_branches}"
 fi
 
