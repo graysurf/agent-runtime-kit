@@ -2,11 +2,36 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-30
+- Resolved: 2026-05-31
 - Area: plan-issue (renderer / run-state controller)
 - Severity: high
-- Upstream issue: sympoies/nils-cli#700
+- Upstream issue: sympoies/nils-cli#700 (closed)
+
+## Resolution
+
+Fixed in **nils-cli v0.31.2** and consumed by runtime-kit:
+
+- Part A — `tracking checkpoint` derives `current` / `next_action` /
+  `target_scope` from the durable ledger + authored scope
+  (sympoies/nils-cli#702).
+- Part B — the visible Execution State header is re-rendered from that
+  payload on the checkpoint path; `record open` / `record post` keep the
+  authored header (sympoies/nils-cli#703).
+- Released as `v0.31.2`; runtime-kit surface pin bumped to `v0.31.2`
+  (graysurf/agent-runtime-kit#205) and the spec OQ#1 updated
+  (graysurf/agent-runtime-kit#206).
+
+Verification: the shipped sympoies/nils-cli#703 integration test exercises
+the real binary, and a smoke against the installed `plan-issue 0.31.2`
+brew binary passed all four agent-runtime-kit#202 guards live (dashboard
+`target_scope` = real scope, `current` = complete, `next_action` =
+closeout; state header shows no `ready-to-start` / `tbd` / `pending`; ledger
+preserved). The canonical agent-in-the-loop `scripts/test-plan-tracking`
+driver E2E was not run because the plan-tracking dispatch skills are not
+installed in this Claude home; re-run it there to confirm `assert closeout`
+end-to-end.
 
 ## Signal
 
@@ -122,11 +147,14 @@ run.
 
 ## Next Action
 
-Fix the `nils-cli` `plan-issue-cli` renderer/run-state controller to derive
-the dashboard and Execution State header fields (`target_scope`, `current`,
-`next_action`, and the visible header) from durable evidence (`## Task Ledger`
-+ plan scope + FSM phase) at render time, then update
-`comment-taxonomy.md` / `run-state-controller.md` Open Question #1 to match.
-Tracked upstream as sympoies/nils-cli#700. The acceptance test is the set of
-`#54` freshness guards already added to the plan-tracking test driver
-(graysurf/agent-runtime-kit#202).
+None — resolved in nils-cli v0.31.2 and archived. Optional: re-run the
+`scripts/test-plan-tracking` happy-path driver in a home with the
+plan-tracking dispatch skills installed to confirm `assert closeout`
+end-to-end.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/releases/tag/v0.31.2`
+
+## Archive
+
+- Archived: 2026-05-31
+- Reason: Completed entry archived out of the active error inbox.
