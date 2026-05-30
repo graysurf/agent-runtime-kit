@@ -24,12 +24,13 @@ Use the narrowest owner that can maintain the document.
 | --- | --- | --- |
 | `README.md` | Short repository orientation and stable entrypoints | Canonical |
 | `DEVELOPMENT.md` | Current setup, edit preflight, validation, and release boundaries | Canonical |
-| `docs/source/` | Repository-wide architecture, specs, source-of-truth references, and policies | Canonical until superseded |
+| `docs/source/` | Repository-wide, cross-cutting architecture, specs, source-of-truth references, and policies — not a single domain's feature definition (those live with the owning domain; see the `core/skills/<domain>/<shared-spec>/` row) | Canonical until superseded |
 | `docs/plans/<YYYY-MM-DD>-<slug>/` | L2 plan bundles that will be executed and archived: discussion/review source, plan, and execution state. New bundles use the date prefix; pre-v1 `docs/plans/<slug>/` folders remain valid (see Naming) | Coordination; `plan-archive` retires after execution unless promoted |
 | `docs/discussions/<YYYY-MM-DD>-<slug>.md` | Captured discussion / implementation-readiness specs that are not (yet) an executed-and-archived plan bundle — the `discussion-to-implementation-doc` default | Coordination; cleanup-eligible after the described work ships or is abandoned; promote to canon if authoritative |
 | `core/docs/` | Product-independent schemas, ADRs, contributor guides, and policy explainers used by runtime source | Canonical source content |
 | `core/policies/` | Portable agent/runtime policy consumed by product adapters | Canonical source content |
 | `core/skills/<domain>/<skill>/` | Skill-owned docs, examples, references, assets, and local helper notes | Domain-local |
+| `core/skills/<domain>/<shared-spec>/` | A spec or rule set referenced by several skills in one domain but owned by no single skill — a non-skill folder (no `SKILL.md`), so skill discovery and render ignore it. Example: `core/skills/dispatch/plan-issue-spec/` | Domain-local |
 | `targets/<product>/` | Product adapter docs, templates, link maps, and activation notes | Product-local |
 | `manifests/` | Machine-checkable runtime inventory; narrative belongs in adjacent source docs | Canonical data |
 | `tests/**` | Fixture-local documentation required to understand or validate a test fixture | Test-local |
