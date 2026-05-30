@@ -20,6 +20,7 @@ build/
 # Not needed at runtime.
 tests/
 docs/plans/
+.github/
 
 # Secrets / local overrides must never enter the build context.
 *.local.*

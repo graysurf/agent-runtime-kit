@@ -69,6 +69,13 @@ ARG GH_VERSION
 ARG YQ_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
+# OCI labels. `image.source` links the published GHCR package to this repo
+# (and shows it under the repo's Packages) for any build path; the CI publish
+# workflow also injects revision / created via docker/metadata-action.
+LABEL org.opencontainers.image.source="https://github.com/graysurf/agent-runtime-kit" \
+      org.opencontainers.image.title="agent-runtime-kit" \
+      org.opencontainers.image.description="Standalone Linux image for Codex CLI + Claude Code on the agent-runtime-kit surface"
+
 # OS deps + the cli-tools.yaml "core" profile, mapped to Debian packages.
 # python3 is required by the rendered hook scripts (*.py guardrails).
 RUN set -eux; \

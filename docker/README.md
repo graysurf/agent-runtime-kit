@@ -101,11 +101,24 @@ docker run --rm -it -e ANTHROPIC_API_KEY -e OPENAI_API_KEY agent-runtime-kit:dev
   surface into `~/.claude` and `~/.codex`, plus the `AGENT_HOME.md` policy
   symlinks (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`).
 
+## Publishing
+
+Released images are published to the GitHub Container Registry (GHCR) at
+`ghcr.io/graysurf/agent-runtime-kit` for `linux/amd64` + `linux/arm64`. Versions
+are CalVer (`vYYYY.MM.DD`); cutting a GitHub Release fires
+`.github/workflows/publish-image.yml`, which resolves the `nils-cli` pin,
+smoke-tests an `amd64` build, then pushes the multi-arch image tagged with the
+date and `latest`. See [`../RELEASING.md`](../RELEASING.md) for the full
+process and the one-time "make package public" step.
+
+```bash
+docker pull ghcr.io/graysurf/agent-runtime-kit:latest
+```
+
 ## Known gaps / review follow-ups
 
 These are deliberate v1 simplifications, to revisit after review:
 
-- Built and smoke-tested for the host arch only; no multi-arch manifest push.
 - macOS-only skills remain rendered but inert (their CLIs are absent); not yet
   pruned from the in-container surface.
 - Private skills are **not** baked in. The private-skill overlay
@@ -124,4 +137,6 @@ These are deliberate v1 simplifications, to revisit after review:
   ```
 
 - Auth is env/login/mount only; no helper for importing host credentials.
-- Not yet wired into CI; no automated image smoke gate.
+- The image is built + smoke-tested + published only on release (see
+  [Publishing](#publishing)); there is no per-PR image build gate yet, so a
+  change that breaks the Docker build is only caught at release time.
