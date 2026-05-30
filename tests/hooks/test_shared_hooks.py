@@ -62,6 +62,27 @@ def write_payload(path: str, content: str) -> dict[str, Any]:
     return {"tool_name": "Write", "tool_input": {"file_path": path, "content": content}}
 
 
+def codex_link_map_hook_body() -> str:
+    lines = (REPO_ROOT / "targets" / "codex" / "link-map.yaml").read_text(
+        encoding="utf-8"
+    ).splitlines()
+    in_codex_config = False
+    in_body = False
+    body: list[str] = []
+    for line in lines:
+        if line == "  - id: hooks.codex-config":
+            in_codex_config = True
+            continue
+        if in_codex_config and line == "    body_template: |-":
+            in_body = True
+            continue
+        if in_body:
+            if line.startswith("  - id: "):
+                break
+            body.append(line[6:] if line.startswith("      ") else line)
+    return "\n".join(body).rstrip() + "\n"
+
+
 class SharedHookTests(unittest.TestCase):
     def assert_blocked(self, decision: dict[str, object] | None, fragment: str) -> None:
         self.assertIsNotNone(decision)
@@ -383,6 +404,37 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_allowed(decision)
 
+    def test_finish_line_record_requires_real_validation_command_invocation(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(
+                tmp, ("bash scripts/ci/all.sh", "bash tests/hooks/run.sh")
+            )
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            fake_command = 'printf %s "bash scripts/ci/all.sh && bash tests/hooks/run.sh"'
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload(fake_command),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+
     def test_finish_line_gate_waiver_and_suppress_release(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
@@ -473,6 +525,12 @@ class SharedHookTests(unittest.TestCase):
         for script in expected_scripts:
             self.assertIn(f"hooks/{script}", codex_block)
             self.assertIn(f"hooks/{script}", claude_fragment)
+
+    def test_codex_hook_block_source_matches_install_body_template(self) -> None:
+        source_block = (REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml").read_text(
+            encoding="utf-8"
+        )
+        self.assertEqual(source_block, codex_link_map_hook_body())
 
 
 if __name__ == "__main__":

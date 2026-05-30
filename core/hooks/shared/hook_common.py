@@ -16,9 +16,11 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from collections.abc import Iterable, Mapping
+from pathlib import PurePosixPath
 from typing import Any
 
 ALLOW = 0
@@ -345,24 +347,159 @@ def command_ran_marker(marker_set: Mapping[str, str], index: int) -> str:
     return os.path.join(marker_set["dir"], f"{marker_set['stem']}.cmd{index}.ran")
 
 
+SHELL_SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
+
+
+def shell_tokens(command: str) -> list[str]:
+    try:
+        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        return list(lexer)
+    except ValueError:
+        return []
+
+
+def is_shell_separator(token: str) -> bool:
+    return token in SHELL_SEPARATOR_TOKENS or bool(token) and all(
+        char in ";&|()" for char in token
+    )
+
+
+def simple_commands(command: str) -> list[list[str]]:
+    commands: list[list[str]] = []
+    current: list[str] = []
+    for token in shell_tokens(command):
+        if is_shell_separator(token):
+            if current:
+                commands.append(current)
+            current = []
+            continue
+        current.append(token)
+    if current:
+        commands.append(current)
+    return commands
+
+
+ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
+
+
+def is_assignment(token: str) -> bool:
+    return bool(ASSIGNMENT_RE.match(token))
+
+
+def skip_env_prefix(tokens: list[str], index: int) -> int:
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return index + 1
+        if is_assignment(token):
+            index += 1
+            continue
+        if token in {"-i", "--ignore-environment", "-0", "--null"}:
+            index += 1
+            continue
+        if token in {"-u", "--unset"}:
+            index += 2
+            continue
+        if token.startswith("--unset="):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return index
+    return index
+
+
+def invocation_tokens(simple_command: list[str]) -> list[str]:
+    index = 0
+    while index < len(simple_command) and is_assignment(simple_command[index]):
+        index += 1
+    if index >= len(simple_command):
+        return []
+
+    command = PurePosixPath(simple_command[index]).name
+    if command == "env":
+        index = skip_env_prefix(simple_command, index + 1)
+    elif command == "time":
+        index += 1
+        while index < len(simple_command) and simple_command[index].startswith("-"):
+            index += 1
+    elif command in {"command", "exec"}:
+        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
+            return []
+        index += 1
+
+    if index >= len(simple_command):
+        return []
+
+    command = PurePosixPath(simple_command[index]).name
+    if command == "agent-run" and index + 1 < len(simple_command):
+        if simple_command[index + 1] == "exec":
+            for next_index in range(index + 2, len(simple_command)):
+                if simple_command[next_index] == "--":
+                    return simple_command[next_index + 1 :]
+            return simple_command[index + 2 :]
+
+    return simple_command[index:]
+
+
+def normalize_pathish(token: str) -> str:
+    normalized = token
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return normalized
+
+
+def token_matches_declared(actual: str, declared: str, *, command_position: bool) -> bool:
+    if actual == declared:
+        return True
+    if command_position and PurePosixPath(actual).name == declared:
+        return True
+    if "/" in declared:
+        expected = normalize_pathish(declared)
+        observed = normalize_pathish(actual)
+        return observed == expected or observed.endswith(f"/{expected}")
+    return False
+
+
+def invocation_matches_declared(actual_tokens: list[str], declared_tokens: list[str]) -> bool:
+    if len(actual_tokens) < len(declared_tokens):
+        return False
+    for index, declared in enumerate(declared_tokens):
+        if not token_matches_declared(
+            actual_tokens[index], declared, command_position=(index == 0)
+        ):
+            return False
+    return True
+
+
 def command_matches_validation(actual: str, declared: str) -> bool:
     """True when a Bash command invokes a declared validation command.
 
-    Matches the declared command's distinctive path-like tokens (so wrappers and
-    trailing flags still match, e.g. `agent-run exec -- bash scripts/ci/all.sh`),
-    falling back to a substring of the whole declared command.
+    The check is intentionally shell-segment based, not substring based. A
+    command that merely prints or mentions `bash scripts/ci/all.sh` must not
+    satisfy the finish-line gate. Known wrappers such as
+    `agent-run exec -- bash scripts/ci/all.sh` are unwrapped before matching.
     """
     if not actual or not declared:
         return False
-    declared = declared.strip()
-    distinctive = [
-        token
-        for token in declared.split()
-        if "/" in token or token.endswith((".sh", ".py", ".rs"))
+    declared_invocations = [
+        invocation_tokens(command) for command in simple_commands(declared.strip())
     ]
-    if distinctive:
-        return any(token in actual for token in distinctive)
-    return declared in actual
+    if not declared_invocations or any(not command for command in declared_invocations):
+        return False
+    actual_invocations = [
+        invocation_tokens(command) for command in simple_commands(actual) if command
+    ]
+    return all(
+        any(
+            invocation_matches_declared(actual_tokens, declared_tokens)
+            for actual_tokens in actual_invocations
+        )
+        for declared_tokens in declared_invocations
+    )
 
 
 def touch_marker(path: str) -> bool:
