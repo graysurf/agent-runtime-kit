@@ -118,9 +118,11 @@ lanes or subagents — independent PRs coordinated under one dispatch issue.
 
 ### L2 — Plan tracking issue
 
-- If a design needs freezing first, run `discussion-to-implementation-doc` to
-  produce the source doc, then author the plan bundle (`<slug>-plan.md` +
-  `<slug>-execution-state.md`).
+- Assemble the bundle in `docs/plans/<YYYY-MM-DD>-<slug>/`: its
+  `<slug>-discussion-source.md` is either written fresh by
+  `discussion-to-implementation-doc` or **promoted** from an existing
+  `docs/discussions/` capture (moved in and renamed, original retired); then
+  author `<slug>-plan.md` + `<slug>-execution-state.md`.
 - `create-plan-tracking-issue` → `execute-plan-tracking-issue`
   (state / session / validation checkpoints) → `deliver-plan-tracking-issue`
   (PR) → `plan-tracking-issue-closeout` → `plan-archive-migrate` to retire the

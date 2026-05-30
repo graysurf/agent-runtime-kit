@@ -99,6 +99,11 @@ Failure modes:
      `docs/plans/<YYYY-MM-DD>-<slug>/` bundle only for a document that will feed
      an executed-and-archived plan; promote into domain docs/runbooks (or
      `docs/source/`) only when the content is durable canon.
+   - Graduating a `docs/discussions/` capture to L2: when it later needs a
+     tracked plan, move it into a `docs/plans/<YYYY-MM-DD>-<slug>/` bundle as
+     `<slug>-discussion-source.md` (retire the `docs/discussions/` original),
+     author the `<slug>-plan.md` + `<slug>-execution-state.md`, then run
+     `create-plan-tracking-issue`. Promotion is a move, not a copy.
    - Do not use the document as a session prompt. If continuity is needed, write or reference this document first, then use
      `handoff-session-prompt`.
    - Do not use `review-evidence` as the primary artifact for this workflow. If review findings or validation records matter, attach or link
