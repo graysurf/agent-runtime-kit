@@ -6,6 +6,7 @@
 - First observed: 2026-05-30
 - Area: plan-issue (renderer / run-state controller)
 - Severity: high
+- Upstream issue: sympoies/nils-cli#700
 
 ## Signal
 
@@ -96,8 +97,10 @@ Affected surfaces:
   `plan-tracking-issue-closeout/SKILL.md.tera` — only if the chosen fix keeps
   header maintenance agent-owned.
 
-No direct upstream issue exists yet. Closest open upstream context:
-sympoies/nils-cli#696 (provider-neutral plan-tracking rework).
+Upstream tracking issue: sympoies/nils-cli#700 (carries the full repro,
+root cause, and proposed render-time derivation fix). Closest related
+upstream context: sympoies/nils-cli#696 (provider-neutral plan-tracking
+rework).
 
 ## Current Workaround
 
@@ -124,5 +127,6 @@ the dashboard and Execution State header fields (`target_scope`, `current`,
 `next_action`, and the visible header) from durable evidence (`## Task Ledger`
 + plan scope + FSM phase) at render time, then update
 `comment-taxonomy.md` / `run-state-controller.md` Open Question #1 to match.
-The acceptance test is the set of `#54` freshness guards already added to the
-plan-tracking test driver.
+Tracked upstream as sympoies/nils-cli#700. The acceptance test is the set of
+`#54` freshness guards already added to the plan-tracking test driver
+(graysurf/agent-runtime-kit#202).
