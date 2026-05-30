@@ -70,6 +70,22 @@
 - Keep precision-critical technical terms, standards, APIs, commands, and
   proper nouns in English when clearer.
 
+## Work Tier Levels
+
+- Classify every substantive work request into the lowest applicable tier and
+  use that tier's method; never run light work through a heavy tier. Tiers:
+  L0 direct / PR-only, L1 follow-up issue, L2 plan tracking issue, L3 dispatch
+  plan. PR delivery is the shared floor under every tier; an
+  implementation-readiness doc is an optional spec attached to any tier, not a
+  tier itself.
+- At the start of such work, state the tier and the recommended next step. When
+  the tier is L1+ (a durable provider artifact or heavier path) or the
+  classification is ambiguous, surface the level and next step as a decision and
+  wait; for an unambiguous L0, say so and proceed. Re-triage if the work
+  escalates mid-flight.
+- Full ladder, escalation judge, per-tier methods, and the proactive-triage
+  contract: `core/policies/work-tier-levels.md` (injected for `project-dev`).
+
 ## Delegation
 
 - Subagent delegation is opt-in. Use explicit user instruction or prompt modes
