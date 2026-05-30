@@ -17,9 +17,9 @@ Prereqs:
   `RECORD_OPEN_INITIAL` with no `run-state-stale` warning.
 - Run state precondition: `run-state.json` exists for this issue and
   reconciles against provider evidence.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -217,5 +217,5 @@ Cross-references:
   state.
 - Downstream: `plan-tracking-issue-closeout` consumes the close-ready
   audit and runs `record close`.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

@@ -17,9 +17,9 @@ Prereqs:
   PR is part of that gate.
 - Run state precondition: `run-state.json` is reconciled (FSM at
   `RECORD_READY_FOR_CLOSE`).
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -203,5 +203,5 @@ Does not own:
 Cross-references:
 
 - Upstream: `deliver-plan-tracking-issue` (the close-ready handoff).
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

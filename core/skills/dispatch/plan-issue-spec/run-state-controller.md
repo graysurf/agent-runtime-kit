@@ -1,14 +1,14 @@
-# Plan Tracking Issue Run-State Controller V1
+# Plan Tracking Issue Run-State Controller
 
 ## Status
 
 - Status: implemented; canonical design
 - Date: 2026-05-26
 - Depends on:
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-comment-taxonomy-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-workflow-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-cli-redesign-v1.md`
-  - `docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`
+  - `core/skills/dispatch/plan-issue-spec/comment-taxonomy.md`
+  - `core/skills/dispatch/plan-issue-spec/workflow.md`
+  - `core/skills/dispatch/plan-issue-spec/cli.md`
+  - `core/skills/dispatch/plan-issue-spec/skill-family.md`
 - Chosen direction: deterministic finite state machine plus typed local run
   state under the `plan-issue` runtime workspace.
 
@@ -409,7 +409,7 @@ Responsibilities:
 
 Runtime-kit skills should use the controller as follows. The complete skill
 inventory, rewrite rule, and per-skill boundaries are defined in
-`docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`.
+`core/skills/dispatch/plan-issue-spec/skill-family.md`.
 
 - `create-plan-tracking-issue`: keep using `record open`; optionally initialize
   run state immediately after issue creation.

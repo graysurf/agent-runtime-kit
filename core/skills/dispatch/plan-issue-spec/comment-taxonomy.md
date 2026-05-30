@@ -1,4 +1,4 @@
-# Plan Tracking Issue Comment Taxonomy V1
+# Plan Tracking Issue Comment Taxonomy
 
 ## Status
 
@@ -12,9 +12,9 @@
   - `core/skills/dispatch/plan-tracking-issue-closeout/SKILL.md.tera`
   - `sympoies/nils-cli:crates/plan-issue-cli`
 - Related controller spec:
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-run-state-controller-v1.md`
+  - `core/skills/dispatch/plan-issue-spec/run-state-controller.md`
 - Related skill family spec:
-  - `docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`
+  - `core/skills/dispatch/plan-issue-spec/skill-family.md`
 
 ## Purpose
 

@@ -20,9 +20,9 @@ Prereqs:
   `BRANCH`, `WORKTREE`, and `PLAN_BRANCH`. The dispatch bundle
   (`TASK_PROMPT_PATH`, `PLAN_SNAPSHOT_PATH`, `DISPATCH_RECORD_PATH`)
   is on hand.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -172,5 +172,5 @@ Cross-references:
 - Sibling helper: `create-dispatch-lane-pr` for the PR creation step.
 - Downstream: `review-dispatch-lane-pr` once the lane PR is ready for
   review.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

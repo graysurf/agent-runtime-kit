@@ -25,9 +25,9 @@ Prereqs:
   bundle was just revised and `record attach` is the right call).
 - Run state precondition: no `run-state.json` for this bundle yet — the
   skill may initialize one after a successful live open.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -177,5 +177,5 @@ Cross-references:
   `docs/discussions/` capture when the work graduates to L2.
 - Downstream: `execute-plan-tracking-issue` consumes the issue URL and
   optional `run-state.json` produced here.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

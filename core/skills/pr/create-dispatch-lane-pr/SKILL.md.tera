@@ -18,9 +18,9 @@ Prereqs:
 - Run state precondition: a dispatch `run-state.json` exists for the
   shared dispatch issue; the caller will record the PR ref via
   `tracking run update --linked-pr`.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -110,5 +110,5 @@ Cross-references:
   `deliver-dispatch-plan`) call this helper.
 - Downstream: the calling dispatch skill records the PR ref through
   `tracking run update --linked-pr`.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).
