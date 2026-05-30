@@ -86,20 +86,6 @@
 - Full ladder, escalation judge, per-tier methods, and the proactive-triage
   contract: `core/policies/work-tier-levels.md` (injected for `project-dev`).
 
-## Delegation
-
-- Subagent delegation is opt-in. Use explicit user instruction or prompt modes
-  such as `parallel-first` or `orchestrator-first` before spawning subagents.
-- `parallel-first` optimizes for safely parallelizable sidecar work.
-- `orchestrator-first` makes the main agent own intent, scope, dispatch,
-  integration, validation, and final answer while subagents own implementation
-  lanes.
-- Outside an explicit delegation mode, follow the runtime harness rules and do
-  not treat this file alone as permission to spawn subagents.
-- Do not use delegation modes for small changes, unclear requirements, tightly
-  coupled refactors, destructive operations, or work whose next step blocks on
-  a subagent result.
-
 ## Evidence, Memory, And External Facts
 
 - Use traceable citations when source material materially affects a
