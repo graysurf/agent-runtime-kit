@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/product-capabilities.schema.json",
   "title": "product-capabilities.yaml",
-  "description": "Per-product capability matrix. Records the differences between Codex and Claude that source authoring needs to know: nested skill support, plugin manifest schema reality, hooks model, config activation surfaces, runtime state boundaries, and the explicit field-level diff between `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. See docs/source/inventory-target-architecture.md `### Manifest Layer` and `### Codex Activation Surface (Reality Check)`.",
+  "description": "Per-product capability matrix. Records the differences between Codex and Claude that source authoring needs to know: nested skill support, plugin manifest schema reality, hooks model, config activation surfaces, runtime state boundaries, and the explicit field-level diff between `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "products"],

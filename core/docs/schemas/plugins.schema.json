@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/plugins.schema.json",
   "title": "plugins.yaml",
-  "description": "Plugin manifest. Each entry groups skills under a domain plugin with per-product manifest paths, dependencies, and install policy. See docs/source/inventory-target-architecture.md `## Manifest Layer`; Plan 03 populates the `plugins:` list — Plan 01 leaves it empty.",
+  "description": "Plugin manifest. Each entry groups skills under a domain plugin with per-product manifest paths, dependencies, and install policy. Plan 03 populates the `plugins:` list — Plan 01 leaves it empty.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "plugins"],

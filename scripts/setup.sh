@@ -5,7 +5,7 @@
 # Avoid associative arrays, mapfile, and `${var,,}` lowercasing.
 #
 # References:
-#   - docs/source/inventory-target-architecture.md `### Brew-First Bootstrap`
+#   - DEVELOPMENT.md (`## Setup`) — host bootstrap and brew-first install
 #   - manifests/cli-tools.yaml (third-party CLI catalog this script installs)
 
 set -euo pipefail

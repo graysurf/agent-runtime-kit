@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: proposed canonical design
+- Status: implemented; canonical design
 - Date: 2026-05-26
 - Owner surface: lightweight plan-tracking issue workflow
 - Primary consumers:

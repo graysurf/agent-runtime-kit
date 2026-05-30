@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: proposed canonical design
+- Status: implemented; canonical design
 - Date: 2026-05-26
 - Depends on:
   - `docs/source/plan-issue-redesign/plan-tracking-issue-comment-taxonomy-v1.md`

@@ -5,6 +5,12 @@
 # `agent-runtime render --target support-matrix`: 17 canonical surfaces, both
 # products present, typed acceptance entries, exactly one command/note per
 # entry, and exit-status-only success predicates.
+#
+# It also resolves every `source_manifest` provenance citation: each entry must
+# be `path` or `path#anchor` (the legacy `path:Lstart-Lend` line-number form is
+# rejected), the path must exist, and an `#anchor` must resolve to a Markdown
+# heading (`.md`) or a YAML key. This keeps surface provenance from silently
+# rotting into dead links the way line-number citations did.
 
 set -euo pipefail
 
@@ -46,6 +52,55 @@ STATE_VALUES = %w[
 def fail_with(message)
   warn "validate-surfaces-manifest: #{message}"
   exit 1
+end
+
+# GitHub-flavored Markdown heading slug: lowercase, drop characters that are
+# not alphanumeric / space / hyphen, then collapse whitespace runs to a single
+# hyphen. Used to resolve `path.md#anchor` source_manifest citations.
+def gfm_slug(text)
+  text.downcase.gsub(/[^a-z0-9 \-]/, "").strip.gsub(/\s+/, "-")
+end
+
+def markdown_heading_slugs(abs_path)
+  slugs = []
+  File.foreach(abs_path) do |line|
+    next unless (m = line.match(/^\#{1,6}\s+(\S.*?)\s*\z/))
+
+    slugs << gfm_slug(m[1])
+  end
+  slugs
+end
+
+def yaml_key?(abs_path, anchor)
+  File.foreach(abs_path).any? { |line| line =~ /^\s*#{Regexp.escape(anchor)}:/ }
+end
+
+# Resolve one `source_manifest` citation. Format is `path` or `path#anchor`;
+# the legacy `path:Lstart-Lend` line-number form is rejected so provenance
+# cannot silently rot when a cited file's line layout shifts. The path must
+# exist, and an `#anchor` must resolve to a Markdown heading (for `.md`) or a
+# YAML key (for everything else).
+def validate_manifest_entry!(entry, context, root)
+  fail_with("#{context}: source_manifest entry must be a string") unless entry.is_a?(String)
+  if entry =~ /:\d/
+    fail_with("#{context}: source_manifest entry #{entry.inspect} uses a line-number citation; cite `path` or `path#anchor` instead")
+  end
+
+  path, anchor = entry.split("#", 2)
+  fail_with("#{context}: source_manifest entry #{entry.inspect} has an empty path") if path.nil? || path.empty?
+
+  abs = File.join(root, path)
+  fail_with("#{context}: source_manifest path #{path.inspect} does not exist") unless File.exist?(abs)
+
+  return if anchor.nil? || anchor.empty?
+
+  if path.end_with?(".md")
+    unless markdown_heading_slugs(abs).include?(anchor)
+      fail_with("#{context}: source_manifest anchor ##{anchor} is not a heading in #{path}")
+    end
+  elsif !yaml_key?(abs, anchor)
+    fail_with("#{context}: source_manifest anchor ##{anchor} is not a key in #{path}")
+  end
 end
 
 def validate_acceptance!(entry, context)
@@ -131,6 +186,9 @@ begin
       end
       fail_with("#{context}: source_artifacts must be an array") unless details["source_artifacts"].is_a?(Array)
       fail_with("#{context}: source_manifest must be a non-empty array") unless details["source_manifest"].is_a?(Array) && !details["source_manifest"].empty?
+      details["source_manifest"].each_with_index do |entry, manifest_index|
+        validate_manifest_entry!(entry, "#{context}.source_manifest[#{manifest_index}]", root)
+      end
 
       acceptance = details["acceptance"]
       fail_with("#{context}: acceptance must be an array") unless acceptance.is_a?(Array)

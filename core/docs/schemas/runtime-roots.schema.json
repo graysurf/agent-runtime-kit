@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/runtime-roots.schema.json",
   "title": "runtime-roots.yaml",
-  "description": "Per-product runtime root resolution: command_root / config_path / state_home / plugin_root plus the version-floor ceremony fields (`min_version`, `recommended_version`, `min_version_effective_from`, `version_probe`) governed by Resolved Decision #7. See docs/source/inventory-target-architecture.md `### Runtime Root Model`. Plan 01 leaves version-pin fields as the literal placeholder `<TBD: pin during Phase 1>`; Plan 02 pins concrete values once a development-host snapshot is taken.",
+  "description": "Per-product runtime root resolution: command_root / config_path / state_home / plugin_root plus the version-floor ceremony fields (`min_version`, `recommended_version`, `min_version_effective_from`, `version_probe`) governed by the version-floor / Bump Ceremony in `.github/PULL_REQUEST_TEMPLATE/min-version-bump.md`. Plan 01 leaves version-pin fields as the literal placeholder `<TBD: pin during Phase 1>`; Plan 02 pins concrete values once a development-host snapshot is taken.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "products"],
