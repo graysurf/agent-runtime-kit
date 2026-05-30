@@ -13,6 +13,14 @@ Prereqs:
 - Profile: `tracking`.
 - CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
   `forge-cli` is not required by this skill.
+- Bundle precondition: a complete plan bundle already exists at
+  `docs/plans/<YYYY-MM-DD>-<slug>/` — `<slug>-plan.md`,
+  `<slug>-execution-state.md`, and a `<slug>-discussion-source.md` (or
+  `<slug>-review-source.md`). This skill opens a tracker from that bundle; it
+  does not assemble it. The `*-source.md` may have started as a
+  `docs/discussions/<YYYY-MM-DD>-<slug>.md` capture promoted into the bundle
+  (moved in and renamed, original retired) when the work graduated to L2 — see
+  `discussion-to-implementation-doc`.
 - Issue precondition: the tracking issue does not exist yet (or the
   bundle was just revised and `record attach` is the right call).
 - Run state precondition: no `run-state.json` for this bundle yet — the
@@ -24,7 +32,8 @@ Prereqs:
 Inputs:
 
 - `OWNER_REPO` — provider repository slug.
-- `PLAN_BUNDLE` — absolute path to the bundle directory.
+- `PLAN_BUNDLE` — absolute path to the assembled
+  `docs/plans/<YYYY-MM-DD>-<slug>/` bundle directory.
 - `PLAN` — path to `<slug>-plan.md` inside the bundle.
 - `SLUG`, `TITLE` — bundle slug for canonical-path checks and the issue
   title.
@@ -97,9 +106,13 @@ plan`) only when the target repo declares them.
 
 ## Workflow
 
-1. **Preflight** — confirm all three bundle files exist at canonical
-   paths, are committed and pushed, and `plan-tooling validate` is
-   green:
+1. **Preflight** — confirm the bundle is complete at canonical paths, is
+   committed and pushed, and `plan-tooling validate` is green. The
+   `*-source.md` must already be inside the bundle: if the work started as a
+   `docs/discussions/` capture, promote it first via
+   `discussion-to-implementation-doc` (move it in as
+   `<slug>-discussion-source.md`, retire the `docs/discussions/` original).
+   This skill never pulls a source from outside the bundle.
 
    ```bash
    test -f "$PLAN_BUNDLE/$SLUG-plan.md" \
@@ -159,6 +172,9 @@ Does not own:
 
 Cross-references:
 
+- Upstream: `discussion-to-implementation-doc` produces the bundle's
+  `*-source.md` — born in the bundle for L2, or promoted from a
+  `docs/discussions/` capture when the work graduates to L2.
 - Downstream: `execute-plan-tracking-issue` consumes the issue URL and
   optional `run-state.json` produced here.
 - Family rules: Plan Issue Skill Family Redesign V1, Shared Family

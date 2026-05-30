@@ -25,7 +25,8 @@ Use the narrowest owner that can maintain the document.
 | `README.md` | Short repository orientation and stable entrypoints | Canonical |
 | `DEVELOPMENT.md` | Current setup, edit preflight, validation, and release boundaries | Canonical |
 | `docs/source/` | Repository-wide architecture, specs, source-of-truth references, and policies | Canonical until superseded |
-| `docs/plans/<YYYY-MM-DD>-<slug>/` | Plan bundles: discussion source, plan, and execution state. New bundles use the date prefix; pre-v1 `docs/plans/<slug>/` folders remain valid (see Naming) | Coordination; cleanup-eligible after execution unless promoted |
+| `docs/plans/<YYYY-MM-DD>-<slug>/` | L2 plan bundles that will be executed and archived: discussion/review source, plan, and execution state. New bundles use the date prefix; pre-v1 `docs/plans/<slug>/` folders remain valid (see Naming) | Coordination; `plan-archive` retires after execution unless promoted |
+| `docs/discussions/<YYYY-MM-DD>-<slug>.md` | Captured discussion / implementation-readiness specs that are not (yet) an executed-and-archived plan bundle — the `discussion-to-implementation-doc` default | Coordination; cleanup-eligible after the described work ships or is abandoned; promote to canon if authoritative |
 | `core/docs/` | Product-independent schemas, ADRs, contributor guides, and policy explainers used by runtime source | Canonical source content |
 | `core/policies/` | Portable agent/runtime policy consumed by product adapters | Canonical source content |
 | `core/skills/<domain>/<skill>/` | Skill-owned docs, examples, references, assets, and local helper notes | Domain-local |
@@ -81,6 +82,10 @@ work unless the user explicitly asks for a cleanup pass.
   `<slug>-discussion-source.md`, `<slug>-plan.md`, and
   `<slug>-execution-state.md`. The file slug stays unchanged when the
   enclosing folder adopts a date prefix.
+- Discussion captures use `docs/discussions/<YYYY-MM-DD>-<slug>.md` — a single
+  dated file (no bundle, and no `-discussion-source` suffix, since there are no
+  plan siblings). The date prefix gives the same chronological ordering as plan
+  bundles. These files are not scanned by `plan-tooling` / `plan-archive`.
 - Root entrypoints may keep established uppercase names such as `README.md` and
   `DEVELOPMENT.md`.
 - Generated or fixture files may follow the naming required by the renderer,

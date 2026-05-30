@@ -53,9 +53,11 @@ Two things ride alongside the ladder and must not be mistaken for tiers:
   grounded in the diff with at least `## Summary` + `## Test plan`, produced by
   the active delivery skill / `agent-runtime pr-body render`.
 - **Implementation-readiness doc = an optional spec, not a tier.** A
-  `discussion-to-implementation-doc` artifact (under
-  `docs/plans/<YYYY-MM-DD>-<slug>/`) captures converged intent (scope,
-  acceptance criteria, validation plan). It can attach to *any* tier — linked in
+  `discussion-to-implementation-doc` artifact (default home
+  `docs/discussions/<YYYY-MM-DD>-<slug>.md`; inside the
+  `docs/plans/<YYYY-MM-DD>-<slug>/` bundle only when it feeds an L2 plan)
+  captures converged intent (scope, acceptance criteria, validation plan). It
+  can attach to *any* tier — linked in
   the PR body at L0, linked from the issue / `Read First` at L1/L2. It does not
   set the tier; the execution tier is chosen by the judge below when the work is
   picked up. A doc captured but not yet scheduled is simply tier-undecided
@@ -116,9 +118,11 @@ lanes or subagents — independent PRs coordinated under one dispatch issue.
 
 ### L2 — Plan tracking issue
 
-- If a design needs freezing first, run `discussion-to-implementation-doc` to
-  produce the source doc, then author the plan bundle (`<slug>-plan.md` +
-  `<slug>-execution-state.md`).
+- Assemble the bundle in `docs/plans/<YYYY-MM-DD>-<slug>/`: its
+  `<slug>-discussion-source.md` is either written fresh by
+  `discussion-to-implementation-doc` or **promoted** from an existing
+  `docs/discussions/` capture (moved in and renamed, original retired); then
+  author `<slug>-plan.md` + `<slug>-execution-state.md`.
 - `create-plan-tracking-issue` → `execute-plan-tracking-issue`
   (state / session / validation checkpoints) → `deliver-plan-tracking-issue`
   (PR) → `plan-tracking-issue-closeout` → `plan-archive-migrate` to retire the
@@ -134,11 +138,11 @@ lanes or subagents — independent PRs coordinated under one dispatch issue.
 
 ### Doc Lifecycle At L0 / L1
 
-L2 retires its bundle automatically (closeout + `plan-archive-migrate`). L0 and
-L1 have **no** automatic retirement step, so when a spec doc is executed at those
-tiers, close its loop by hand: link it from the PR or issue, mark it done, and
-retire or promote it per its retention intent. Otherwise `docs/plans/` fills with
-shipped-but-still-"to do" orphan source docs.
+L2 retires its bundle automatically (closeout + `plan-archive-migrate`). An L0/L1
+spec lives in `docs/discussions/` and has **no** automatic retirement step, so
+when it is executed, close its loop by hand: link it from the PR or issue, mark
+it done, and retire or promote it per its retention intent. Otherwise
+`docs/discussions/` fills with shipped-but-still-"to do" orphan source docs.
 
 ## Agent Behavior: Proactive Triage
 
