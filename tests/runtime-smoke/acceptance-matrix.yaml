@@ -34,9 +34,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: none
-    invocation: agent-docs resolve startup context in strict checklist mode
+    invocation: agent-docs preflight project-dev intent in strict mode
     expected_exit_code: 0
-    expected_artifacts: checklist output
+    expected_artifacts: preflight output
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

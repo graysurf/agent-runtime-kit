@@ -1,54 +1,79 @@
 ---
 name: agent-docs
 description:
-  Resolve, scaffold, and validate required agent documentation for home and project scopes through the nils-cli `agent-docs` command.
+  Audit repository doc health and resolve the per-intent document set and validation contract a repo declares in AGENT_DOCS.toml, through the nils-cli `agent-docs` command.
 ---
 
 # Agent Docs
 
 ## Contract
 
+`agent-docs` is a data-driven resolver and auditor: a repository declares its
+required documents and per-intent validation contract in `AGENT_DOCS.toml`, and
+the binary resolves and audits them. There are no hardcoded required documents.
+
+The agent does **not** run a per-task `agent-docs` preflight. Always-on policy
+is auto-loaded by the harness (the home prompt files), per-intent docs are
+hook-injected, and validation is enforced at the finish line. This skill covers
+the two non-agent-facing jobs plus catalog management.
+
 Prereqs:
 
-- `agent-docs` is installed from the released nils-cli package and available on `PATH`.
-- The caller knows the documentation home to use and passes it explicitly with `--docs-home`.
-- Project work happens from the target repository root unless `--project-path` is supplied.
+- `agent-docs` is installed from the released nils-cli package and on `PATH`.
+- docs-home is derived from the install symlink (`~/.claude/CLAUDE.md` /
+  `~/.codex/AGENTS.md`); pass `--docs-home` only to override it.
+- Project work runs from the target repository root unless `--project-path` is
+  supplied.
 
 Inputs:
 
-- Required context name such as `startup`, `project-dev`, `task-tools`, or `skill-dev`.
-- Optional baseline, scaffold, or completion request.
-- Optional project path and worktree fallback mode.
+- For `preflight`: an intent name declared by the catalog (for example
+  `project-dev`).
+- For `audit`: an optional `--target`.
+- For catalog management: `init` / `explain` / `list` / `remove` arguments.
 
 Outputs:
 
-- Checklist, text, or machine-readable evidence from `agent-docs`.
-- Clear missing-doc or degraded-mode detail when strict resolution fails.
+- `audit`: install-symlink wiring, declared-doc presence and content validity,
+  and catalog validity — for CI and the daily healthcheck.
+- `preflight --intent X --format json`: the resolved document set plus the
+  per-repo validation contract, in the versioned `agent-docs.preflight.v1`
+  shape that hooks inject and the finish-line gate enforces.
 
 Failure modes:
 
-- Required docs are missing under the selected docs home.
-- The current directory is not the intended project path.
-- Strict baseline checks fail and write/delivery work must stop until repaired or explicitly degraded.
+- Required docs are missing or invalid under the selected docs-home (strict
+  `preflight` / `audit` exits non-zero).
+- The install symlink is broken (`audit` reports a wiring problem).
+- The catalog is invalid.
 
 ## Entrypoint
 
-Use the released CLI directly. Prepend the required `--docs-home` flag with the current product's native docs home value; Codex renders that value as `$CODEX_HOME`, and Claude renders it as `$HOME/.claude`.
+Use the released CLI directly. docs-home is normally auto-derived from the
+install symlink; pass `--docs-home` only to override it.
 
 ```bash
-agent-docs resolve --context startup --strict --format checklist
-agent-docs resolve --context project-dev --strict --format checklist
-agent-docs baseline --check --target all --strict --format text
+agent-docs audit --target all --strict
+agent-docs preflight --intent project-dev --format json
+agent-docs explain --intent project-dev
+agent-docs list
 ```
 
 ## Workflow
 
-1. Resolve `startup` at the start of a new task or session.
-2. Resolve `project-dev` before repository edits, tests, commits, or delivery.
-3. Resolve `task-tools` before technical research or external verification.
-4. Resolve `skill-dev` before skill lifecycle work.
-5. If a strict hard gate fails, stop write actions and run the baseline check. Report the missing docs or degraded mode explicitly.
+1. `audit` checks repo health (symlink wiring, declared-doc presence/validity,
+   catalog validity); it is for CI and the daily healthcheck, not per task.
+2. `preflight --intent X --format json` resolves what THIS repo requires for an
+   intent plus its validation contract; the kit's hooks call it to inject the
+   short awareness cue and to enforce validation at the finish line.
+3. `init` / `explain` / `list` / `remove` manage a project-local catalog.
+4. There is no `startup` per-task step and no `resolve` / `baseline` /
+   `scaffold-*` / `add` / `contexts` commands — they were retired in the engine
+   redesign.
 
 ## Boundary
 
-`agent-docs` owns deterministic doc discovery, context resolution, baseline checks, and completion output. The skill body owns when to call it and how to interpret the result for the current workflow.
+`agent-docs` owns deterministic catalog parsing, `when` evaluation, content
+validation, intent resolution, and auditing. This skill body owns explaining
+the surface; the harness (auto-load plus hooks plus the finish-line gate) owns
+when policy and intent docs reach a session.
