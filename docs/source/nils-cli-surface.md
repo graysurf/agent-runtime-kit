@@ -1,21 +1,33 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-30 (refreshed for `v0.28.5`)
+- Snapshot date: 2026-05-30 (refreshed for `v0.28.6`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.28.5`
+- Active `git describe --tags` output: `v0.28.6`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.28.5`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.28.6`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `49f925b`
-  (`chore(release): bump cli versions to 0.28.5 (#656)`)
+- Head commit: `67cb08b`
+  (`chore(release): bump cli versions to 0.28.6 (#659)`)
 - Release:
-  [`v0.28.5`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.5),
+  [`v0.28.6`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.6),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.28.4` at `6335148` (`chore(release): bump cli versions to
+- Prior pin: `v0.28.5` at `49f925b` (`chore(release): bump cli versions to
+  0.28.5 (#656)`). `v0.28.6` is an additive patch bump with one consumed
+  surface: `agent-docs` now lets a project opt out of a non-`startup` built-in
+  requirement by declaring a matching `[[document]]` entry with
+  `required = false` for the built-in's own `(context, scope, path)` key in
+  its `AGENT_DOCS.toml`; the built-in is downgraded to optional in `resolve`
+  and `baseline --check` with `source = builtin-opt-out` (so it drops out of
+  `missing_required` while staying auditable). `startup` cannot be opted out
+  and a home catalog cannot opt an unrelated project out
+  ([#658](https://github.com/sympoies/nils-cli/pull/658)). No consumed surface
+  was retired or renamed; `required_clis[]` floors are unchanged because no
+  agent-runtime-kit consumer depends on the new surface yet. Further prior pin:
+  `v0.28.4` at `6335148` (`chore(release): bump cli versions to
   0.28.4 (#654)`). `v0.28.5` is an additive patch bump with one consumed
   surface: `plan-archive migrate` now reconciles an archived plan's
   `*-execution-state.md` `## Execution State` header to a terminal "archived"
@@ -122,7 +134,7 @@ Notes on derivation:
 
 | Crate                       | Binary                                                                                                              | Notes                                                                                                                                                                                                                                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight. As of `v0.18.0`, global scope inheritance is available from the released binary.                                                                                                  |
+| `agent-docs`                | `agent-docs`                                                                                                        | Doc resolver and baseline gate; consumed by `agent-doc-init` and CLAUDE.md preflight. As of `v0.18.0`, global scope inheritance is available from the released binary. As of `v0.28.6`, a project can opt out of a non-`startup` built-in requirement via a matching `required = false` `AGENT_DOCS.toml` entry (`source = builtin-opt-out`).                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
