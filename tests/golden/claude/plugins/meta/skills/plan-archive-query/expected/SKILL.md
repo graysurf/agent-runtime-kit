@@ -23,8 +23,11 @@ Inputs:
 - For reads: a single ref URL (`--ref`), aggregate filters
   (`--host` / `--org` / `--repo` / `--since`), or an archived-plan
   link (`--plan` / `--refs-from`).
-- For discovery: grep over `<archive-root>/catalog.json` when the
-  exact issue, PR, MR, or plan ref is unknown.
+- For discovery: `plan-archive catalog` (filter with `--grep`,
+  `--area`, or `--refs-to <url>`) when the exact issue, PR, MR, or plan
+  ref is unknown. This matches catalog metadata only; add `--deep` to
+  extend `--grep` into issue / PR / MR body and comment text, or use
+  `plan-archive search <term>` for hit-level body / comment matches.
 - For refresh: a single ref (`--ref`) or a repo batch
   (`--repo` [`--since`]).
 
@@ -51,6 +54,14 @@ Read the cache (default):
 plan-archive query --ref <issue-or-pr-or-mr-url> --format json
 plan-archive query --host <fqdn> [--org <o>] [--repo <r>] [--since <YYYY-MM-DD>] --format json
 plan-archive query --plan <archive-plan-path> --format json
+```
+
+Discover and full-text search:
+
+```bash
+plan-archive catalog [--grep <kw>] [--area <a>] [--refs-to <url>] --format json   # metadata
+plan-archive catalog --grep <kw> --deep --format json                             # + body/comments (record-level)
+plan-archive search <term> --format json                                          # body/comments (hit-level)
 ```
 
 Refresh a snapshot (writes + scrubs, never commits):
@@ -80,7 +91,13 @@ plan-archive refresh --repo <host/org/repo> [--since <YYYY-MM-DD>] --format json
 ## Boundary
 
 `plan-archive query` owns cache reads, cross-repo aggregation, and
-plan↔ref link traversal. `plan-archive refresh` owns the forge-cli
+plan↔ref link traversal. `plan-archive catalog` owns the derived
+record-level projection and its filters (`--grep` / `--area` /
+`--refs-to`, plus `--deep` to extend the grep into body / comment
+text); `plan-archive search` owns hit-level full-text matches (plan +
+ref + matched field + snippet). Use `catalog --deep` to find *which
+plans* mention a term and `search` to see *where* it appears.
+`plan-archive refresh` owns the forge-cli
 payload fetch, the scrubbing pass, and the append-only snapshot
 writes. The skill body owns the read-vs-refresh decision, surfacing
 `fetched_at`, and enforcing the scrub-log review gate before any
