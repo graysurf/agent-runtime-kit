@@ -48,8 +48,7 @@ Failure modes:
 - Concrete specialist findings remain unresolved and are not explicitly
   accepted by the owning delivery workflow.
 - Caller tries to use this workflow to merge, close, post provider comments, or
-  replace `deliver-github-pr`, `deliver-gitlab-mr`, or
-  `review-dispatch-lane-pr`.
+  replace `deliver-pr` or `review-dispatch-lane-pr`.
 
 ## Entrypoint
 
@@ -106,7 +105,7 @@ transitions, checks, merge/close calls, issue closeout, and repair execution.
   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`
 - Delivery review outcome schema:
   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`
-- GitHub delivery workflow:
-  `skills/pr/deliver-github-pr/SKILL.md`
+- PR/MR delivery workflow:
+  `skills/pr/deliver-pr/SKILL.md`
 - Dispatch PR review workflow:
   `skills/dispatch/review-dispatch-lane-pr/SKILL.md`

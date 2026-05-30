@@ -6,10 +6,9 @@ without making low-level close skills mandatory review orchestrators.
 
 ## Ownership
 
-- `deliver-github-pr` and `deliver-gitlab-mr` own this mandatory gate for
-  end-to-end delivery.
-- `close-github-pr` and `close-gitlab-mr` keep their optional user-requested
-  review gate for direct close or merge requests.
+- `deliver-pr` owns this mandatory gate for end-to-end delivery.
+- `close-pr` keeps its optional user-requested review gate for direct close or
+  merge requests.
 - `deliver-plan-tracking-issue` relies on this delivery gate for each PR, then adds
   issue-visible evidence, runtime-finding disposition, lifecycle completion, and
   closeout requirements.

@@ -271,9 +271,9 @@ class SharedHookTests(unittest.TestCase):
         self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
 
         for marker in (
-            "AGENT_RUNTIME_PR_SKILL=create-github-pr",
-            "AGENT_KIT_PR_SKILL=create-github-pr",
-            "CLAUDE_KIT_PR_SKILL=pr:create-github-pr",
+            "AGENT_RUNTIME_PR_SKILL=create-pr",
+            "AGENT_KIT_PR_SKILL=create-pr",
+            "CLAUDE_KIT_PR_SKILL=pr:create-pr",
         ):
             code, decision, stderr = run_hook(
                 "block-direct-pr-create.py",
@@ -308,7 +308,7 @@ class SharedHookTests(unittest.TestCase):
     def test_skill_usage_reminder_uses_catalog(self) -> None:
         code, decision, stderr = run_hook(
             "skill-usage-reminder.py",
-            {"prompt": "please run deliver-github-pr for this branch"},
+            {"prompt": "please run deliver-pr for this branch"},
             env={"AGENT_RUNTIME_PRODUCT": "codex"},
         )
         self.assertEqual(code, 0, stderr)
@@ -317,7 +317,7 @@ class SharedHookTests(unittest.TestCase):
         output = decision.get("hookSpecificOutput")
         self.assertIsInstance(output, dict)
         assert isinstance(output, dict)
-        self.assertIn("deliver-github-pr", str(output.get("additionalContext", "")))
+        self.assertIn("deliver-pr", str(output.get("additionalContext", "")))
 
     def _require_agent_docs(self) -> None:
         if shutil.which("agent-docs") is None:

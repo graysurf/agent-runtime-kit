@@ -169,7 +169,7 @@ Ten skill domains are currently rendered into Codex entries and Claude plugins:
 `browser` · `code-review` · `conversation` · `dispatch` · `evidence` ·
 `issue` · `media` · `meta` · `pr` · `reporting`
 
-Representative skills include `pr:deliver-github-pr`,
+Representative skills include `pr:deliver-pr`,
 `dispatch:deliver-plan-tracking-issue`, `evidence:test-first-evidence`,
 `issue:issue-triage`, `meta:semantic-commit`, `reporting:project-retro`, and
 `media:screen-record`.

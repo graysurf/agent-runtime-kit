@@ -32,7 +32,7 @@ machine-readable output.
 ### P5-S5-G1
 
 - Status: closed
-- Skills: `pr.close-github-pr`, `pr.deliver-github-pr`
+- Skills: `pr.close-pr`, `pr.deliver-pr`
 - Missing surface: `forge-cli pr checks` / `forge-cli pr wait-checks` needed a
   GitHub backend compatible with `gh 2.92.0` check JSON fields and
   pending-check nonzero stdout.
@@ -50,7 +50,7 @@ machine-readable output.
 - Status: open
 - Skills: `dispatch.deliver-plan-tracking-issue`,
   `dispatch.plan-tracking-issue-closeout`, `dispatch.dispatch-plan-closeout`,
-  `pr.deliver-github-pr`, and `pr.deliver-gitlab-mr`
+  and `pr.deliver-pr`
 - Missing surface: `plan-issue record close` should block tracking/dispatch
   closeout when no latest `role=session` lifecycle comment exists, reporting
   stable blocked code `session-missing`. A future pre-merge readiness surface

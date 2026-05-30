@@ -425,10 +425,9 @@ plan-issue tracking run update ...
 
 ## Related But Out Of Scope
 
-General PR delivery skills such as `deliver-github-pr`, `deliver-gitlab-mr`,
-`create-github-pr`, `create-gitlab-mr`, `close-github-pr`, and
-`close-gitlab-mr` are not plan issue skills. They may be called by a plan
-issue skill for PR lifecycle work, but they do not own plan issue lifecycle
+General PR/MR delivery skills such as `create-pr`, `deliver-pr`, and
+`close-pr` are not plan issue skills. They may be called by a plan
+issue skill for PR/MR lifecycle work, but they do not own plan issue lifecycle
 comments, dashboards, run state, or closeout gates.
 
 Evidence skills such as `review-evidence`, `test-first-evidence`, and

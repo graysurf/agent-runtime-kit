@@ -413,16 +413,10 @@ entries:
     destination: plugins/pr/skills
     recursive: true
 
-  - id: pr.create-github-pr.codex-skill-dir
+  - id: pr.create-pr.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/pr/skills/create-github-pr
-    destination: skills/pr/create-github-pr
-    recursive: false
-
-  - id: pr.create-gitlab-mr.codex-skill-dir
-    kind: symlinked-file
-    source: build/codex/plugins/pr/skills/create-gitlab-mr
-    destination: skills/pr/create-gitlab-mr
+    source: build/codex/plugins/pr/skills/create-pr
+    destination: skills/pr/create-pr
     recursive: false
 
   - id: pr.create-dispatch-lane-pr.codex-skill-dir
@@ -431,28 +425,16 @@ entries:
     destination: skills/pr/create-dispatch-lane-pr
     recursive: false
 
-  - id: pr.close-github-pr.codex-skill-dir
+  - id: pr.close-pr.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/pr/skills/close-github-pr
-    destination: skills/pr/close-github-pr
+    source: build/codex/plugins/pr/skills/close-pr
+    destination: skills/pr/close-pr
     recursive: false
 
-  - id: pr.close-gitlab-mr.codex-skill-dir
+  - id: pr.deliver-pr.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/pr/skills/close-gitlab-mr
-    destination: skills/pr/close-gitlab-mr
-    recursive: false
-
-  - id: pr.deliver-github-pr.codex-skill-dir
-    kind: symlinked-file
-    source: build/codex/plugins/pr/skills/deliver-github-pr
-    destination: skills/pr/deliver-github-pr
-    recursive: false
-
-  - id: pr.deliver-gitlab-mr.codex-skill-dir
-    kind: symlinked-file
-    source: build/codex/plugins/pr/skills/deliver-gitlab-mr
-    destination: skills/pr/deliver-gitlab-mr
+    source: build/codex/plugins/pr/skills/deliver-pr
+    destination: skills/pr/deliver-pr
     recursive: false
 
   - id: dispatch.plugin-manifest

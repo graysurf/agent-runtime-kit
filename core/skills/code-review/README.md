@@ -19,10 +19,8 @@ risk, or delivery policy requires it.
 | Caller skill | Review routing | Notes |
 | --- | --- | --- |
 | `discussion-to-implementation-doc` | Does not run review by default; records the expected review gate in the source document. | Routes later review guidance to `quick-pass`, `focused-lens`, `pre-merge-gate`, `follow-up`, or `specialists` based on scope. |
-| `close-github-pr` | Optional user-requested review chooses the lightest matching workflow. | Uses `quick-pass` for routine diffs, `focused-lens` for explicit lenses, `pre-merge-gate` for final delivery gates, and `specialists` only for broad or risky full-bundle review. |
-| `close-gitlab-mr` | Same as `close-github-pr`. | Close skills do not require `review-specialists` in their manifest because review is optional. |
-| `deliver-github-pr` | `code-review-pre-merge-gate`. | Mandatory before merge; the delivery workflow owns comments, fixes, checks, and merge. |
-| `deliver-gitlab-mr` | `code-review-pre-merge-gate`. | Same delivery gate as GitHub, with MR target branch as the review base. |
+| `close-pr` | Optional user-requested review chooses the lightest matching workflow. | Uses `quick-pass` for routine diffs, `focused-lens` for explicit lenses, `pre-merge-gate` for final delivery gates, and `specialists` only for broad or risky full-bundle review. Close skills do not require `review-specialists` in their manifest because review is optional. |
+| `deliver-pr` | `code-review-pre-merge-gate`. | Mandatory before merge; the delivery workflow owns comments, fixes, checks, and merge. Uses the PR base or MR target branch as the review base. |
 | `deliver-plan-tracking-issue` | `code-review-pre-merge-gate` for every PR. | Mandatory before merge, even for small diffs, because the plan-tracking workflow owns delivery readiness. |
 | `deliver-dispatch-plan` | `review-dispatch-lane-pr`, with supplemental `code-review-specialists` when risk warrants it. | Lane reviews stay in the dispatch lane review workflow; specialist review is read-only evidence. |
 | `review-dispatch-lane-pr` | Optional `code-review-specialists` for broad or high-risk lane PRs. | Records specialists as used or skipped in review evidence. |

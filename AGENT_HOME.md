@@ -147,6 +147,9 @@
   ticket id `ABC-123` becomes `feat/abc-123-<slug>`).
 - Draft an accurate 1-2 sentence summary grounded in the actual diff before
   opening; never derive title or body from `git log -1`.
+- PR/MR bodies come from the active delivery skill / `agent-runtime pr-body
+  render` (the canonical formatter; minimum `## Summary` + `## Test plan`). Do
+  not hand-write body scaffolding or copy its section table into this file.
 - Never force-push `main`.
 
 ## Plan Archive

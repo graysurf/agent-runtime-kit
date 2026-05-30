@@ -7,32 +7,20 @@
   },
   "skills": [
     {
-      "id": "create-github-pr",
-      "source": "core/skills/pr/create-github-pr"
-    },
-    {
-      "id": "create-gitlab-mr",
-      "source": "core/skills/pr/create-gitlab-mr"
+      "id": "create-pr",
+      "source": "core/skills/pr/create-pr"
     },
     {
       "id": "create-dispatch-lane-pr",
       "source": "core/skills/pr/create-dispatch-lane-pr"
     },
     {
-      "id": "close-github-pr",
-      "source": "core/skills/pr/close-github-pr"
+      "id": "close-pr",
+      "source": "core/skills/pr/close-pr"
     },
     {
-      "id": "close-gitlab-mr",
-      "source": "core/skills/pr/close-gitlab-mr"
-    },
-    {
-      "id": "deliver-github-pr",
-      "source": "core/skills/pr/deliver-github-pr"
-    },
-    {
-      "id": "deliver-gitlab-mr",
-      "source": "core/skills/pr/deliver-gitlab-mr"
+      "id": "deliver-pr",
+      "source": "core/skills/pr/deliver-pr"
     }
   ]
 }

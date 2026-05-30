@@ -127,13 +127,10 @@ plugins:
   - id: pr
     domain: pr
     contained_skills:
-      - pr.create-github-pr
-      - pr.create-gitlab-mr
+      - pr.create-pr
       - pr.create-dispatch-lane-pr
-      - pr.close-github-pr
-      - pr.close-gitlab-mr
-      - pr.deliver-github-pr
-      - pr.deliver-gitlab-mr
+      - pr.close-pr
+      - pr.deliver-pr
     product_manifests:
       codex: targets/codex/plugins/pr/.codex-plugin/plugin.json
       claude: targets/claude/plugins/pr/.claude-plugin/plugin.json

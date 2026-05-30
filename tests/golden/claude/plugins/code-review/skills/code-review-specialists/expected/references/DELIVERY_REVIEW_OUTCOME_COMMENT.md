@@ -10,8 +10,7 @@ Disposition vocabulary and reason/evidence rules are canonical in
 
 ## Ownership
 
-- `deliver-github-pr` posts the outcome on the PR before merging.
-- `deliver-gitlab-mr` posts the outcome on the MR before merging.
+- `deliver-pr` posts the outcome on the PR/MR before merging.
 - `deliver-plan-tracking-issue` records the PR/MR outcome comment URL in
   issue-hosted session or validation evidence instead of duplicating the full
   report.

@@ -48,52 +48,28 @@
     "record_when": "The workflow classifies previous findings after repairs or records disposition evidence."
   },
   {
-    "skill": "create-github-pr",
+    "skill": "create-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["create-github-pr", "create github pr", "open github pr"],
-    "reason": "GitHub PR creation is provider-side delivery state.",
-    "record_when": "The workflow creates or materially prepares a GitHub pull request."
+    "aliases": ["create-pr", "create pr", "open pr", "create github pr", "open github pr", "create gitlab mr", "open gitlab mr"],
+    "reason": "PR/MR creation is provider-side delivery state.",
+    "record_when": "The workflow creates or materially prepares a GitHub pull request or GitLab merge request."
   },
   {
-    "skill": "deliver-github-pr",
+    "skill": "deliver-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["deliver-github-pr", "deliver github pr"],
-    "reason": "GitHub PR delivery spans validation, checks, provider state, and merge handling.",
-    "record_when": "The workflow creates, updates, watches, readies, merges, or closes a GitHub pull request."
+    "aliases": ["deliver-pr", "deliver pr", "deliver github pr", "deliver gitlab mr"],
+    "reason": "PR/MR delivery spans validation, checks/pipelines, provider state, and merge handling.",
+    "record_when": "The workflow creates, updates, watches, readies, merges, or closes a GitHub pull request or GitLab merge request."
   },
   {
-    "skill": "close-github-pr",
+    "skill": "close-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["close-github-pr", "close github pr", "merge github pr"],
-    "reason": "GitHub PR close/merge changes provider-side delivery state.",
-    "record_when": "The workflow marks ready, merges, closes, or cleans up a GitHub pull request."
-  },
-  {
-    "skill": "create-gitlab-mr",
-    "tier": "default",
-    "match_mode": "action_or_explicit",
-    "aliases": ["create-gitlab-mr", "create gitlab mr", "open gitlab mr"],
-    "reason": "GitLab MR creation is provider-side delivery state.",
-    "record_when": "The workflow creates or materially prepares a GitLab merge request."
-  },
-  {
-    "skill": "deliver-gitlab-mr",
-    "tier": "default",
-    "match_mode": "action_or_explicit",
-    "aliases": ["deliver-gitlab-mr", "deliver gitlab mr"],
-    "reason": "GitLab MR delivery spans validation, pipelines, provider state, and merge handling.",
-    "record_when": "The workflow creates, updates, watches, readies, merges, or closes a GitLab merge request."
-  },
-  {
-    "skill": "close-gitlab-mr",
-    "tier": "default",
-    "match_mode": "action_or_explicit",
-    "aliases": ["close-gitlab-mr", "close gitlab mr", "merge gitlab mr"],
-    "reason": "GitLab MR close/merge changes provider-side delivery state.",
-    "record_when": "The workflow marks ready, merges, closes, or cleans up a GitLab merge request."
+    "aliases": ["close-pr", "close pr", "merge pr", "close github pr", "merge github pr", "close gitlab mr", "merge gitlab mr"],
+    "reason": "PR/MR close/merge changes provider-side delivery state.",
+    "record_when": "The workflow marks ready, merges, closes, or cleans up a GitHub pull request or GitLab merge request."
   },
   {
     "skill": "create-dispatch-lane-pr",

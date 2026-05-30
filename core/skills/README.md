@@ -119,12 +119,9 @@ Routing guidance for the skill family lives in
 
 | Series | Skill | Purpose |
 | --- | --- | --- |
-| GitHub PR lifecycle | [create-github-pr](./pr/create-github-pr/) | Creates a GitHub pull request through the released `forge-cli pr create` surface. |
-| GitHub PR lifecycle | [close-github-pr](./pr/close-github-pr/) | Closes or merges GitHub pull requests through released `forge-cli pr` lifecycle surfaces. |
-| GitHub PR lifecycle | [deliver-github-pr](./pr/deliver-github-pr/) | Delivers GitHub pull requests end to end through the released `forge-cli pr deliver` macro. |
-| GitLab MR lifecycle | [create-gitlab-mr](./pr/create-gitlab-mr/) | Creates a GitLab merge request through the released `forge-cli pr create` surface. |
-| GitLab MR lifecycle | [close-gitlab-mr](./pr/close-gitlab-mr/) | Closes or merges GitLab merge requests through released `forge-cli pr` lifecycle surfaces. |
-| GitLab MR lifecycle | [deliver-gitlab-mr](./pr/deliver-gitlab-mr/) | Delivers GitLab merge requests end to end through the released `forge-cli pr deliver` macro. |
+| PR/MR lifecycle | [create-pr](./pr/create-pr/) | Creates a GitHub pull request or GitLab merge request through the released `forge-cli pr create` surface. |
+| PR/MR lifecycle | [close-pr](./pr/close-pr/) | Closes or merges GitHub pull requests or GitLab merge requests through released `forge-cli pr` lifecycle surfaces. |
+| PR/MR lifecycle | [deliver-pr](./pr/deliver-pr/) | Delivers GitHub pull requests or GitLab merge requests end to end through the released `forge-cli pr deliver` macro. |
 | Dispatch-lane PR | [create-dispatch-lane-pr](./pr/create-dispatch-lane-pr/) | Creates a GitHub dispatch-lane pull request after a plan issue assigns the lane. |
 
 ## Reporting

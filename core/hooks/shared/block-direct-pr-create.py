@@ -21,18 +21,18 @@ from hook_common import ALLOW, command_from, emit_block, read_payload
 
 _BUILTIN_PR_SKILLS: frozenset[str] = frozenset(
     {
-        "create-github-pr",
+        "create-pr",
         "create-dispatch-lane-pr",
         "pr:create-feature-pr",
         "pr:create-bug-pr",
-        "pr:create-github-pr",
+        "pr:create-pr",
         "pr:create-dispatch-lane-pr",
     }
 )
 _BUILTIN_MR_SKILLS: frozenset[str] = frozenset(
     {
-        "create-gitlab-mr",
-        "pr:create-gitlab-mr",
+        "create-pr",
+        "pr:create-pr",
     }
 )
 
