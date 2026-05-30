@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -318,6 +319,131 @@ class SharedHookTests(unittest.TestCase):
         assert isinstance(output, dict)
         self.assertIn("deliver-github-pr", str(output.get("additionalContext", "")))
 
+    def _require_agent_docs(self) -> None:
+        if shutil.which("agent-docs") is None:
+            self.skipTest("agent-docs not on PATH")
+
+    @staticmethod
+    def _init_contract_repo(
+        tmp: str, commands: tuple[str, ...] = ("bash scripts/ci/all.sh",)
+    ) -> Path:
+        repo = Path(tmp)
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+        rendered = ", ".join(f'"{command}"' for command in commands)
+        (repo / "AGENT_DOCS.toml").write_text(
+            '[[validation]]\ncontext = "project-dev"\n'
+            f"commands = [{rendered}]\n"
+            'marker = ".cache/agent-validation/project-dev.ok"\n',
+            encoding="utf-8",
+        )
+        return repo
+
+    def test_finish_line_gate_blocks_unvalidated_edit_then_releases(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            # No edits yet: the gate allows.
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
+            # A code edit marks the repo dirty.
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            # The gate now blocks, naming the outstanding validation command.
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+
+            # Running the declared validation records the run.
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload("bash scripts/ci/all.sh"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            # The gate releases now that validation ran after the edit.
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
+    def test_finish_line_gate_waiver_and_suppress_release(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            base_env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+            run_hook(
+                "finish-line-record.py",
+                {"tool_name": "Edit", "tool_input": {"file_path": "src/lib.rs"}},
+                cwd=repo,
+                env=base_env,
+            )
+
+            _, decision, _ = run_hook("stop-finish-line-gate.py", {}, cwd=repo, env=base_env)
+            self.assert_blocked(decision, "validation")
+
+            _, decision, _ = run_hook(
+                "stop-finish-line-gate.py",
+                {},
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_VALIDATION_WAIVER": "deliberate skip"},
+            )
+            self.assert_allowed(decision)
+
+            _, decision, _ = run_hook(
+                "stop-finish-line-gate.py",
+                {},
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_SUPPRESS_FINISH_GATE": "1"},
+            )
+            self.assert_allowed(decision)
+
+    def test_finish_line_record_ignores_markdown_only_edits(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+            run_hook(
+                "finish-line-record.py",
+                write_payload("docs/note.md", "# note\n"),
+                cwd=repo,
+                env=env,
+            )
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
+    def test_finish_line_gate_noops_without_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+            )
+            code, decision, stderr = run_hook("stop-finish-line-gate.py", {}, cwd=repo)
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
     def test_target_hook_fragments_reference_installed_shared_scripts(self) -> None:
         expected_scripts = {
             "agent-scope-lock-guard.py",
@@ -325,11 +451,13 @@ class SharedHookTests(unittest.TestCase):
             "block-direct-pr-create.py",
             "block-direct-python.py",
             "block-project-memory-write.py",
+            "finish-line-record.py",
             "mcp-secret-scan.py",
             "portable-paths-scan.py",
             "semantic-commit-body-gate.py",
             "session-start-healthcheck.sh",
             "skill-usage-reminder.py",
+            "stop-finish-line-gate.py",
             "stop-pre-pr-reminder.sh",
             "user-prompt-agent-docs.sh",
         }

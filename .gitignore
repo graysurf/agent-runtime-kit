@@ -13,6 +13,7 @@ auth.json
 **/sessions/
 **/history/
 **/cache/
+.cache/
 .private/
 .claude/
 backup-*.zip

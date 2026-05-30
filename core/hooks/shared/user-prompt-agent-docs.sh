@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 #
-# UserPromptSubmit hook: inject a lightweight agent-docs preflight reminder
-# when a prompt looks like implementation work inside a repo with AGENTS.md.
+# UserPromptSubmit hook: inject a short, language-agnostic agent-docs awareness
+# cue for repos that declare a project-dev intent in AGENT_DOCS.toml.
+#
+# There is no English-keyword gating: the cue is driven by what the repo
+# declares (resolved via `agent-docs preflight --intent`), so a non-English
+# prompt in a policy repo still gets the cue. It fires at most once per session
+# per repo (falling back to once per day) so it is a start-of-task nudge, not a
+# per-prompt reminder.
 #
 set -uo pipefail
 
@@ -12,73 +18,80 @@ if [[ "${AGENT_RUNTIME_SUPPRESS_PREFLIGHT:-0}" == "1" ||
 fi
 
 command -v git >/dev/null 2>&1 || exit 0
+command -v agent-docs >/dev/null 2>&1 || exit 0
 python_bin="$(command -v python3 || true)"
 [[ -z "$python_bin" ]] && exit 0
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -z "$repo_root" ]] && exit 0
-[[ -f "$repo_root/AGENTS.md" ]] || exit 0
+[[ -f "$repo_root/AGENT_DOCS.toml" ]] || exit 0
 
 payload="$(cat)"
-prompt="$(
+
+# Dedupe: at most one cue per session per repo (fall back to per-day when no
+# session id is present), so the cue stays a start-of-task nudge.
+session_id="$(
   "$python_bin" -c '
-import json
-import sys
-
+import json, sys
 try:
-    payload = json.load(sys.stdin)
+    p = json.load(sys.stdin)
 except Exception:
-    payload = {}
-
-for key in ("prompt", "user_prompt", "message", "input"):
-    value = payload.get(key) if isinstance(payload, dict) else None
-    if isinstance(value, str):
-        print(value)
+    p = {}
+for k in ("session_id", "sessionId", "session", "conversation_id"):
+    v = p.get(k) if isinstance(p, dict) else None
+    if isinstance(v, str) and v:
+        print(v)
         break
 ' <<<"$payload" 2>/dev/null || true
 )"
-[[ -z "$prompt" ]] && exit 0
-
-lc_prompt="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
-case "$lc_prompt" in
-  *'agent-docs'*) exit 0 ;;
-esac
-
-matched=0
-wb_keywords='implement|implementing|refactor|refactoring|rewrite|rewriting'
-wb_keywords+='|scaffold|scaffolding|integrate|integrating'
-wb_keywords+='|migrate|migration|migrating|optimize|optimise|optimizing|optimising'
-if printf '%s' "$lc_prompt" | grep -qwE "$wb_keywords"; then
-  matched=1
-fi
-
-if [[ "$matched" -eq 0 ]]; then
-  for phrase in \
-    'add a test' 'add the test' 'add tests' 'add new test' 'add more test' \
-    'write a test' 'write the test' 'write tests' 'write new test' \
-    'build a ' 'build an ' 'build the ' \
-    'create a ' 'create an ' 'create the ' \
-    'add a feature' 'add the feature' 'add new feature' \
-    'fix the bug' 'fix this bug' 'fix a bug' \
-    'hook up ' 'wire up '; do
-    case "$lc_prompt" in
-      *"$phrase"*)
-        matched=1
-        break
-        ;;
-    esac
-  done
-fi
-
-[[ "$matched" -eq 0 ]] && exit 0
-
 product="${AGENT_RUNTIME_PRODUCT:-agent-runtime}"
+repo_hash="$(printf '%s' "$repo_root" | cksum 2>/dev/null | awk '{print $1}' || true)"
+key="${session_id:-$(date +%Y%m%d)}"
+stamp_dir="$HOME/.cache/agent-runtime-kit"
+stamp="$stamp_dir/preflight-cue-${product}-${repo_hash}-${key}.stamp"
+[[ -f "$stamp" ]] && exit 0
+
 docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
-[[ -z "$docs_home" ]] && exit 0
-reminder="[agent-runtime-kit:${product}] This repo has AGENTS.md. Before implementation edits, run the agent-docs preflight:
-  agent-docs --docs-home \"${docs_home}\" resolve --context startup --strict --format checklist
-  agent-docs --docs-home \"${docs_home}\" resolve --context project-dev --strict --format checklist
-Proceed with writes only when required docs report status=present."
+dh_args=()
+[[ -n "$docs_home" ]] && dh_args=(--docs-home "$docs_home")
+
+preflight_json="$(
+  agent-docs "${dh_args[@]}" --project-path "$repo_root" \
+    preflight --intent project-dev --format json 2>/dev/null || true
+)"
+[[ -z "$preflight_json" ]] && exit 0
+
+cue="$(
+  CTX_JSON="$preflight_json" "$python_bin" -c '
+import json, os
+try:
+    d = json.loads(os.environ["CTX_JSON"])
+except Exception:
+    raise SystemExit(0)
+docs = [x for x in d.get("documents", []) if x.get("required")]
+val = d.get("validation") or {}
+cmds = val.get("commands") or []
+if not docs and not cmds:
+    raise SystemExit(0)
+lines = []
+if docs:
+    names = ", ".join(os.path.basename(x.get("path", "")) for x in docs[:6])
+    lines.append(
+        f"Required project-dev docs ({len(docs)}): {names}. Read them before writing."
+    )
+if cmds:
+    lines.append(
+        "Before declaring this task done, run the declared validation: "
+        + " && ".join(cmds)
+        + " (the finish-line gate enforces this; state a waiver to override)."
+    )
+print("\n".join(lines))
+' 2>/dev/null || true
+)"
+[[ -z "$cue" ]] && exit 0
+
+reminder="[agent-runtime-kit:${product}] This repo declares an agent-docs project-dev contract.
+${cue}"
 
 CTX="$reminder" "$python_bin" -c '
 import json
@@ -91,3 +104,6 @@ print(json.dumps({
     }
 }))
 '
+
+mkdir -p "$stamp_dir"
+: >"$stamp"
