@@ -232,6 +232,12 @@ Execution State is the canonical progress comment. It must be generated from
 the canonical `<slug>-execution-state.md` file through
 `record post --kind state --execution-state-file`.
 
+On the `tracking checkpoint` path, the visible header (`Status` / `Target
+scope` / `Current task` / `Next task`) is re-rendered from the derived payload
+(nils-cli v0.31.2+), while the `## Task Ledger` and any other authored sections
+are taken from the file; `record open` / `record post` emit the authored header
+verbatim. See run-state-controller Open Question #1.
+
 Non-final progress state:
 
 ```markdown
