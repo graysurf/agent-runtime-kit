@@ -3,8 +3,14 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress — Sprints 1-2 delivered (host on nils-cli v0.30.0, pin
-  aligned, catalog + surface prose adopted); Sprint 3-4 hooks/gates remain.
+- Status: in-progress — Sprints 1-2 delivered; Sprint 3 hooks (3.1/3.3) and the
+  blocking finish-line gate (3.2 Claude + 4.1 Codex) implemented on
+  `feat/agent-docs-redesign` (commit a6f6242), validated locally
+  (`tests/hooks/run.sh` 24 tests, `scripts/ci/all.sh` positions 1-13 OK). The
+  engine dependency shipped as nils-cli **v0.30.1** (#685 doc-scope + #686
+  validation-scope leak fixes; release in progress). Task 4.2 — pin bump to
+  v0.30.1 (staged), final CI after the host brew-upgrade, and PR delivery —
+  remains.
 - Target scope: kit-scoped rollout in `graysurf/agent-runtime-kit`. The
   `agent-docs` engine redesign is an upstream dependency in
   `sympoies/nils-cli` (separate PR/release/tap), not edited here. Sprint 1
@@ -14,10 +20,11 @@
   Sprint 2 (catalog + command-surface adoption) → Sprint 3 (Claude
   enforcement hooks) → Sprint 4 (Codex finish-line enforcement + delivery),
   serial.
-- Current task: Sprint 3 (Claude enforcement hooks).
-- Next task: Task 3.1 — replace the keyword reminder in
-  `user-prompt-agent-docs.sh` with language-agnostic `preflight --intent`
-  injection.
+- Current task: Task 4.2 — pin bump to nils-cli v0.30.1, final validation after
+  the host Homebrew upgrade, and PR delivery.
+- Next task: run `scripts/ci/all.sh` (version-alignment doctor needs host ==
+  pinned v0.30.1) once `brew upgrade` lands, then deliver PR-C and hand off to
+  closeout.
 - Last updated: 2026-05-30
 - Branch/commit/PR: `feat/agent-docs-redesign` (isolated worktree off
   `origin/main`; PR target `graysurf/agent-runtime-kit` main).
@@ -66,10 +73,10 @@
 | 2.1 | done | Bump `required_clis`; author kit default catalog | Delivered in PR #184 (1be879a) on kit main: pinned nils-cli v0.30.0 (pin.yaml + skills.yaml floor + surface.md), authored kit catalog (DEVELOPMENT.md project-dev + when code-marker predicate + project-dev [[validation]] contract). Validated: agent-docs audit + preflight --intent project-dev (docs present/valid, contract emitted), version-alignment doctor 6/6 ok, scripts/ci/all.sh positions 1-13 OK. | `agent-runtime-kit`. Depends on nils-cli engine release. Data-driven catalog; no hardcoded builtins. |
 | 2.2 | done | Make `project-dev` `when`-conditional; confirm pure-docs auto-skip | Delivered in PR #184 (1be879a): DEVELOPMENT.md required via when="path-exists:Cargo.toml // package.json // src/** // scripts/ci/all.sh"; preflight against the kit (has scripts/ci/all.sh) requires it, a docs-only checkout auto-skips with no opt-out. Verified by agent-docs preflight --intent project-dev (when_satisfied=true). | `agent-runtime-kit`. Depends on 2.1. `path-exists` predicate; docs-only fixture needs no opt-out. |
 | 2.3 | done | Rewrite preflight prose; retire `startup` per-task | Preflight prose rewritten to the audit/preflight surface with the startup per-task step retired: AGENT_HOME.md Required Preflight, DEVELOPMENT.md, README.md, docs-placement-retention-policy-v1.md, inventory-target-architecture.md, and the agent-docs SKILL (PR #184) plus heuristic-session-closeout SKILL (goldens refreshed). The hook command rework (user-prompt + healthcheck) is delivered under tasks 3.1/3.3. | `agent-runtime-kit`. Depends on 2.1. `AGENT_HOME.md`, `DEVELOPMENT.md`, `agent-docs` SKILL tera, hooks. |
-| 3.1 | pending | Replace keyword reminder with language-agnostic injection | tbd | `agent-runtime-kit`. Depends on nils-cli release (`preflight --intent`). No keyword gating. |
-| 3.2 | pending | Claude finish-line Stop-hook validation gate | tbd | `agent-runtime-kit`. Depends on 3.1. Block stop on unrun validation; waiver releases; define "evidence ran" marker. |
-| 3.3 | pending | Rework SessionStart healthcheck around `audit` | tbd | `agent-runtime-kit`. Depends on nils-cli release (`audit`). Wiring + content checks. |
-| 4.1 | pending | Codex non-bypassable finish-line gate ([D12]) | tbd | `agent-runtime-kit`. Depends on 3.2. Stop-equivalent or commit/delivery choke point; no skippable path. |
+| 3.1 | done | Replace keyword reminder with language-agnostic injection | Implemented on feat/agent-docs-redesign (commit a6f6242), validated by bash tests/hooks/run.sh (24 tests) + bash scripts/ci/all.sh (positions 1-13 OK). Depends on engine v0.30.1 (nils-cli #685 doc-scope + #686 validation-scope fixes). | `agent-runtime-kit`. Depends on nils-cli release (`preflight --intent`). No keyword gating. |
+| 3.2 | done | Claude finish-line Stop-hook validation gate | Blocking finish-line Stop gate (stop-finish-line-gate.py) + PreToolUse recorder (finish-line-record.py) wired into Claude settings; per-command markers + waiver/suppress envs. Implemented on feat/agent-docs-redesign (commit a6f6242), validated by bash tests/hooks/run.sh (24 tests) + bash scripts/ci/all.sh (positions 1-13 OK). Depends on engine v0.30.1 (nils-cli #685 doc-scope + #686 validation-scope fixes). | `agent-runtime-kit`. Depends on 3.1. Block stop on unrun validation; waiver releases; define "evidence ran" marker. |
+| 3.3 | done | Rework SessionStart healthcheck around `audit` | Implemented on feat/agent-docs-redesign (commit a6f6242), validated by bash tests/hooks/run.sh (24 tests) + bash scripts/ci/all.sh (positions 1-13 OK). Depends on engine v0.30.1 (nils-cli #685 doc-scope + #686 validation-scope fixes). | `agent-runtime-kit`. Depends on nils-cli release (`audit`). Wiring + content checks. |
+| 4.1 | done | Codex non-bypassable finish-line gate ([D12]) | Same shared Stop gate + recorder wired into Codex config.block.toml (PreToolUse Bash + Write/Edit/NotebookEdit/apply_patch, Stop); mechanism-flexible, non-skippable per [D12]. Implemented on feat/agent-docs-redesign (commit a6f6242), validated by bash tests/hooks/run.sh (24 tests) + bash scripts/ci/all.sh (positions 1-13 OK). Depends on engine v0.30.1 (nils-cli #685 doc-scope + #686 validation-scope fixes). | `agent-runtime-kit`. Depends on 3.2. Stop-equivalent or commit/delivery choke point; no skippable path. |
 | 4.2 | pending | Full validation, commit, and delivery | tbd | `agent-runtime-kit`. Depends on 4.1. `scripts/ci/all.sh` + `tests/hooks/run.sh`; `semantic-commit`; `forge-cli pr deliver`. |
 
 ## Session Log

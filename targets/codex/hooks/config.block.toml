@@ -26,6 +26,12 @@ command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-pr-creat
 timeout = 10
 statusMessage = "agent-runtime-kit: Block direct PR/MR creation"
 
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/finish-line-record.py\""
+timeout = 20
+statusMessage = "agent-runtime-kit: Record agent-docs validation runs"
+
 [[hooks.PreToolUse]]
 matcher = "Write|Edit|NotebookEdit|apply_patch"
 
@@ -52,6 +58,12 @@ type = "command"
 command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/agent-scope-lock-guard.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Validate active scope lock"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/finish-line-record.py\""
+timeout = 20
+statusMessage = "agent-runtime-kit: Record agent-docs code edits"
 
 [[hooks.UserPromptSubmit]]
 matcher = ""
@@ -91,3 +103,9 @@ type = "command"
 command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/agent-scope-lock-guard.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Report scope lock violations"
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/stop-finish-line-gate.py\""
+timeout = 20
+statusMessage = "agent-runtime-kit: Enforce agent-docs validation gate"

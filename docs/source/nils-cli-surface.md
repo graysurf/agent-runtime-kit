@@ -1,21 +1,29 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-30 (refreshed for `v0.30.0`)
+- Snapshot date: 2026-05-30 (refreshed for `v0.30.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.30.0`
+- Active `git describe --tags` output: `v0.30.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.30.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.30.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `23af09a`
-  (`chore(release): bump cli versions to 0.30.0 (#674)`)
+- Head commit: `bc3b98a`
+  (`chore(release): bump cli versions to 0.30.1 (#687)`)
 - Release:
-  [`v0.30.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.30.0),
+  [`v0.30.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.30.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- `v0.30.0` is a **breaking** bump: the `agent-docs` engine was redesigned to be
+- `v0.30.1` is a **patch** over the `v0.30.0` `agent-docs` redesign: a docs-home
+  catalog's `scope = "project"` documents and its (scopeless, repo-local)
+  `[[validation]]` contracts are now scoped to the declaring repository — they
+  no longer leak into unrelated projects' `preflight` / `audit` / `explain`
+  ([#685](https://github.com/sympoies/nils-cli/pull/685),
+  [#686](https://github.com/sympoies/nils-cli/pull/686)). The finish-line
+  validation gate in agent-runtime-kit#181 depends on this scoping, so the
+  `agent-docs` `required_clis` floor moves to `0.30.1`.
+- `v0.30.0` was a **breaking** bump: the `agent-docs` engine was redesigned to be
   fully data-driven. It retires the `resolve` / `baseline` / `scaffold-*` /
   `add` / `contexts` commands and the `startup` per-task context, and removes
   all hardcoded builtin requirements; required docs plus the per-repo validation
@@ -23,8 +31,7 @@
   with real `when` predicates and content validation). The new surface is
   `audit` / `preflight --intent X` (versioned `agent-docs.preflight.v1` JSON) /
   `init` / `explain` / `list` / `remove`, with docs-home derived from the
-  install symlink. This is the surface adopted in agent-runtime-kit#181; the
-  `agent-docs` `required_clis` floor moves to `0.30.0`
+  install symlink. This is the surface adopted in agent-runtime-kit#181
   ([#671](https://github.com/sympoies/nils-cli/pull/671),
   [#674](https://github.com/sympoies/nils-cli/pull/674)).
 - Prior pin: `v0.29.0` at `0f757df` (`chore(release): bump cli versions to
@@ -166,7 +173,7 @@ Notes on derivation:
 
 | Crate                       | Binary                                                                                                              | Notes                                                                                                                                                                                                                                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agent-docs`                | `agent-docs`                                                                                                        | Data-driven required-doc resolver and auditor; no hardcoded builtins. As of `v0.30.0` the surface is `audit` (repo health: install-symlink wiring + declared-doc presence/validity + catalog validity), `preflight --intent X` (resolve the doc set plus the per-repo validation contract as versioned `agent-docs.preflight.v1` JSON for hooks to inject and enforce), and `init` / `explain` / `list` / `remove`. Policy is declared in `AGENT_DOCS.toml` (`[[document]]` + `[[validation]]`, `when` predicates, content validation); docs-home is derived from the install symlink. The `resolve` / `baseline` / `scaffold-*` / `add` / `contexts` commands and the `startup` per-task context were retired in the redesign.                                                                                                  |
+| `agent-docs`                | `agent-docs`                                                                                                        | Data-driven required-doc resolver and auditor; no hardcoded builtins. As of `v0.30.0` the surface is `audit` (repo health: install-symlink wiring + declared-doc presence/validity + catalog validity), `preflight --intent X` (resolve the doc set plus the per-repo validation contract as versioned `agent-docs.preflight.v1` JSON for hooks to inject and enforce), and `init` / `explain` / `list` / `remove`. Policy is declared in `AGENT_DOCS.toml` (`[[document]]` + `[[validation]]`, `when` predicates, content validation); docs-home is derived from the install symlink. As of `v0.30.1`, a docs-home catalog's `scope = "project"` documents and its `[[validation]]` contracts are scoped to the declaring repository, so they never leak into unrelated projects. The `resolve` / `baseline` / `scaffold-*` / `add` / `contexts` commands and the `startup` per-task context were retired in the redesign.                                                                                                  |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |

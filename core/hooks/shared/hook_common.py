@@ -12,8 +12,11 @@ stays in `targets/<product>/`.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
 from collections.abc import Iterable, Mapping
 from typing import Any
@@ -221,3 +224,154 @@ def read_message_file(command: str, *, max_bytes: int = 65536) -> str | None:
         except OSError:
             continue
     return None
+
+
+# --- agent-docs finish-line validation gate helpers ---------------------------
+#
+# Shared by the PreToolUse recorder (finish-line-record.py) and the Stop gate
+# (stop-finish-line-gate.py). The recorder writes evidence markers under a
+# repo's project-dev validation marker directory; the gate reads them to decide
+# whether the declared validation has run since code was last edited.
+
+
+def git_toplevel(cwd: str | None = None) -> str | None:
+    """Return the git work-tree root for `cwd` (or the process cwd), else None."""
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            check=False,
+        )
+    except (OSError, ValueError):
+        return None
+    if completed.returncode != 0:
+        return None
+    top = completed.stdout.strip()
+    return top or None
+
+
+def _runtime_cache_dir() -> str:
+    return os.path.join(os.path.expanduser("~"), ".cache", "agent-runtime-kit")
+
+
+def _resolve_project_dev_contract(repo_root: str) -> dict[str, Any] | None:
+    """Resolve a repo's project-dev validation contract via `agent-docs`."""
+    docs_home = os.environ.get("AGENT_RUNTIME_DOCS_HOME") or os.environ.get("AGENT_DOCS_HOME")
+    args = ["agent-docs"]
+    if docs_home:
+        args += ["--docs-home", docs_home]
+    args += ["--project-path", repo_root, "explain", "--intent", "project-dev", "--format", "json"]
+    try:
+        completed = subprocess.run(
+            args, capture_output=True, text=True, check=False, timeout=15
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return None
+    try:
+        data = json.loads(completed.stdout)
+    except Exception:
+        return None
+    validation = data.get("validation") if isinstance(data, dict) else None
+    if not isinstance(validation, dict) or not validation.get("declared"):
+        return None
+    commands = [
+        command
+        for command in (validation.get("commands") or [])
+        if isinstance(command, str) and command.strip()
+    ]
+    if not commands:
+        return None
+    marker = validation.get("marker")
+    if not isinstance(marker, str) or not marker.strip():
+        marker = ".cache/agent-validation/project-dev.ok"
+    return {"commands": commands, "marker": marker.strip()}
+
+
+def project_dev_validation_contract(repo_root: str) -> dict[str, Any] | None:
+    """The repo's project-dev validation contract, or None when none applies.
+
+    Returns ``{"commands": [...], "marker": "..."}`` when the repo declares an
+    ``AGENT_DOCS.toml`` whose project-dev intent has a validation contract with
+    at least one command. The agent-docs result is cached per repo, keyed on the
+    catalog's mtime, so the recorder can run on every tool call cheaply.
+    """
+    catalog = os.path.join(repo_root, "AGENT_DOCS.toml")
+    if not os.path.isfile(catalog):
+        return None
+    try:
+        catalog_mtime = os.path.getmtime(catalog)
+    except OSError:
+        catalog_mtime = 0.0
+
+    digest = hashlib.sha1(repo_root.encode("utf-8")).hexdigest()[:16]
+    cache_path = os.path.join(_runtime_cache_dir(), f"contract-{digest}.json")
+    try:
+        with open(cache_path, encoding="utf-8") as handle:
+            cached = json.load(handle)
+        if isinstance(cached, dict) and cached.get("catalog_mtime") == catalog_mtime:
+            return cached.get("contract")
+    except (OSError, ValueError):
+        pass
+
+    contract = _resolve_project_dev_contract(repo_root)
+    try:
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        with open(cache_path, "w", encoding="utf-8") as handle:
+            json.dump({"catalog_mtime": catalog_mtime, "contract": contract}, handle)
+    except OSError:
+        pass
+    return contract
+
+
+def validation_marker_set(repo_root: str, marker: str) -> dict[str, str]:
+    """Derive the marker file paths for a repo from the contract `marker`."""
+    rel = marker.strip().lstrip("/")
+    rel_dir = os.path.dirname(rel) or "."
+    stem = os.path.splitext(os.path.basename(rel))[0] or "project-dev"
+    abs_dir = os.path.join(repo_root, rel_dir)
+    return {
+        "dir": abs_dir,
+        "ok": os.path.join(repo_root, rel),
+        "dirty": os.path.join(abs_dir, f"{stem}.dirty"),
+        "stem": stem,
+    }
+
+
+def command_ran_marker(marker_set: Mapping[str, str], index: int) -> str:
+    return os.path.join(marker_set["dir"], f"{marker_set['stem']}.cmd{index}.ran")
+
+
+def command_matches_validation(actual: str, declared: str) -> bool:
+    """True when a Bash command invokes a declared validation command.
+
+    Matches the declared command's distinctive path-like tokens (so wrappers and
+    trailing flags still match, e.g. `agent-run exec -- bash scripts/ci/all.sh`),
+    falling back to a substring of the whole declared command.
+    """
+    if not actual or not declared:
+        return False
+    declared = declared.strip()
+    distinctive = [
+        token
+        for token in declared.split()
+        if "/" in token or token.endswith((".sh", ".py", ".rs"))
+    ]
+    if distinctive:
+        return any(token in actual for token in distinctive)
+    return declared in actual
+
+
+def touch_marker(path: str) -> bool:
+    """Create/refresh an empty marker file; return False on failure."""
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8"):
+            pass
+        os.utime(path, None)
+        return True
+    except OSError:
+        return False
