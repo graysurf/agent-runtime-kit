@@ -161,9 +161,11 @@
 - Consult it only before opening a new plan, or when diagnosing a suspected
   recurring or previously resolved problem — not as a per-task or background
   step.
-- Discover with `grep` over `<archive-root>/catalog.json` when the exact ref is
-  unknown; fetch with `plan-archive query --ref`, `--plan`, or `--repo` once a
-  candidate is known.
+- Discover with `plan-archive catalog` (`--grep` keyword, `--area`, or
+  `--refs-to <url>` for ref→plan reverse lookup) when the exact ref is unknown
+  — this matches catalog metadata only, not issue/PR bodies; grep
+  `_index/**.json` directly for body/comment text. Fetch a known candidate with
+  `plan-archive query --ref`, `--plan`, or `--repo`.
 - Check each result's `fetched_at` before relying on it; refresh on demand.
 
 ## Session Closeout
