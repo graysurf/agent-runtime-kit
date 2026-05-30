@@ -43,6 +43,12 @@ limit). Agents iterate two or three times before discovering the workaround
   a bullet describes a CLI flag; `--auto-fix` did not rescue it (it cannot
   capitalize a flag). Confirms the gap recurs across session families (now also
   PR-delivery commits).
+- Partial upstream documentation fix (2026-05-27): sympoies/nils-cli#576
+  (merged) added the body-format rule to `crates/semantic-commit/README.md` —
+  body bullets must start with `- ` plus an uppercase ASCII letter, or use a
+  two-space continuation line. This satisfies the README portion of criterion
+  (b), but the runtime-facing `meta/semantic-commit` SKILL.md and `AGENT_HOME.md`
+  Commit Rules still do not surface the rule, so the entry stays open.
 
 ## Impact
 
@@ -82,6 +88,8 @@ implements (a) or the doc change that implements (b).
 
 ## Next Action
 
-Open an upstream nils-cli issue requesting either (a) relaxation of the rule
-for backtick / common-identifier openings, or (b) explicit documentation of the
-rule + recommended rewording pattern. Reference this entry from the issue.
+Update the runtime-facing documentation surfaces (`meta/semantic-commit`
+SKILL.md "Acceptance criteria" and `AGENT_HOME.md` Commit Rules), or relax the
+validator to accept backticked identifiers / common lowercase CLI tokens. Keep
+this entry open until the agent-facing surfaces teach the rule without trial and
+error. README portion already covered by sympoies/nils-cli#576.
