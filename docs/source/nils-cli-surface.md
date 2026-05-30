@@ -1,22 +1,32 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-30 (refreshed for `v0.29.0`)
+- Snapshot date: 2026-05-30 (refreshed for `v0.29.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.29.0`
+- Active `git describe --tags` output: `v0.29.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.29.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.29.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `0f757df`
-  (`chore(release): bump cli versions to 0.29.0 (#661)`)
+- Head commit: `9681bb8`
+  (`docs(plans): align orphan-skip bundle tables for rumdl MD060 (#670)`; the
+  `v0.29.1` tag was re-pointed here after the `0.29.1` bump #669)
 - Release:
-  [`v0.29.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.29.0),
+  [`v0.29.1`](https://github.com/sympoies/nils-cli/releases/tag/v0.29.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.28.6` at `67cb08b` (`chore(release): bump cli versions to
-  0.28.6 (#659)`). `v0.29.0` is a minor bump with one consumed-surface change:
+- Prior pin: `v0.29.0` at `0f757df` (`chore(release): bump cli versions to
+  0.29.0 (#661)`). `v0.29.1` is a patch bump hardening the same
+  `git-cli branch cleanup --squash` path: branches with no merge-base against
+  base (unrelated / orphan history) are now skipped instead of aborting the
+  whole sweep, so a repo with orphan fixture branches can be cleaned
+  ([#668](https://github.com/sympoies/nils-cli/pull/668)). No consumed flag or
+  JSON envelope changed; `required_clis[]` floors are unchanged. The `v0.29.1`
+  tag sits on `9681bb8`: the `0.29.1` bump (#669) was re-tagged after a docs
+  table-alignment fix (#670). Further prior pin: `v0.28.6` at `67cb08b`
+  (`chore(release): bump cli versions to 0.28.6 (#659)`). `v0.29.0` is a minor
+  bump with one consumed-surface change:
   `git-cli branch cleanup --squash` (and `--remove-worktrees`, which only acts
   on detected branches) now detects multi-commit provider squash-merges by
   synthesizing the branch's diff as a single commit on its merge-base and
