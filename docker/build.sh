@@ -9,7 +9,7 @@
 #
 # Examples:
 #   docker/build.sh                          # -> agent-runtime-kit:dev
-#   docker/build.sh -t agent-runtime-kit:0.28.1
+#   docker/build.sh -t agent-runtime-kit:0.30.1
 #   docker/build.sh -n                       # print the resolved command only
 #   docker/build.sh -- --platform linux/amd64 --no-cache
 #

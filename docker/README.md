@@ -35,7 +35,7 @@ image always matches the repo's authoritative pin gate:
 
 ```bash
 docker/build.sh                      # -> agent-runtime-kit:dev
-docker/build.sh -t myimage:tag       # custom tag
+docker/build.sh -t agent-runtime-kit:0.30.1   # custom tag
 docker/build.sh -n                   # dry-run: print the resolved command
 docker/build.sh -- --no-cache        # pass extra flags to `docker build`
 ```
@@ -108,5 +108,20 @@ These are deliberate v1 simplifications, to revisit after review:
 - Built and smoke-tested for the host arch only; no multi-arch manifest push.
 - macOS-only skills remain rendered but inert (their CLIs are absent); not yet
   pruned from the in-container surface.
+- Private skills are **not** baked in. The private-skill overlay
+  (`scripts/sync-private-skills.sh`, sourced from `$AGENT_PRIVATE_SKILLS_HOME`)
+  lives outside the build context and is intentionally excluded — these skills
+  are personal and machine-local, so baking them into a shareable image would
+  be wrong. To use them in a container, mount the private source tree and run
+  the overlay at runtime (the script is a no-op when its source is absent):
+
+  ```bash
+  docker run --rm -it \
+    -v "$AGENT_PRIVATE_SKILLS_HOME:/opt/private-skills:ro" \
+    -e AGENT_PRIVATE_SKILLS_HOME=/opt/private-skills \
+    agent-runtime-kit:dev \
+    bash -lc '$AGENT_KIT_SRC/scripts/sync-private-skills.sh --apply; exec bash'
+  ```
+
 - Auth is env/login/mount only; no helper for importing host credentials.
 - Not yet wired into CI; no automated image smoke gate.
