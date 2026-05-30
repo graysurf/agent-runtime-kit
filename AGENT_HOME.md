@@ -19,25 +19,29 @@
 
 ## Required Preflight
 
-- `agent-docs` is mandatory before implementation, external lookup, skill
-  lifecycle work, edits, tests, commits, or delivery.
-- Resolve docs from the active `agent-runtime-kit` checkout. Export
-  `AGENT_DOCS_HOME=/path/to/agent-runtime-kit` (or pass `--docs-home`) before
-  preflight; the catalog lives here, not in retired `$HOME/.config/agent-kit`.
-- Do not use `$HOME/.agents` or `$AGENT_HOME` as docs-home. `$AGENT_HOME` is
-  for `agent-out` runtime artifacts, and `$HOME/.agents` is retired.
-- Always run `startup`, then add one strict context for the active intent:
-  - repo edits, tests, commits, or delivery: `project-dev`
-  - technical research or external verification: `task-tools`
-  - skill lifecycle work: `skill-dev`
-- Resolve every required context in strict checklist mode:
-  `agent-docs resolve --context <context> --strict --format checklist`
-- If any required doc is missing or strict resolve fails, stop write actions
-  and run `agent-docs baseline --check --target all --strict --format text`.
-- Proceed with edits/tests/commits only when required docs are
-  `status=present`.
-- New repository bootstrap: run `agent-doc-init`, then rerun the baseline
-  check.
+- `agent-docs` is no longer a manual per-task step. Required-doc and validation
+  policy is data each repository declares in its `AGENT_DOCS.toml` catalog
+  (`[[document]]` + `[[validation]]`); the harness delivers it:
+  - Always-on home policy is auto-loaded (this file).
+  - Per-intent docs (for example `project-dev`, `task-tools`) are injected by
+    the UserPromptSubmit hook via `agent-docs preflight --intent <intent>`;
+    read them before writing.
+  - Repo health — install-symlink wiring, declared-doc presence and validity,
+    and catalog validity — is checked by `agent-docs audit` in CI and the daily
+    SessionStart healthcheck.
+- Before declaring a code-editing task done, run the validation the active
+  intent declares (surfaced in the injected preflight). The finish-line gate
+  blocks a stop when code was edited but the declared validation did not run;
+  state an explicit waiver to release it.
+- Inspect a repo's requirements on demand with `agent-docs preflight --intent
+  <intent>` or `agent-docs explain --intent <intent>`; manage a project-local
+  catalog with `agent-docs init` / `list` / `remove`.
+- docs-home is derived from the install symlink (`~/.claude/CLAUDE.md` /
+  `~/.codex/AGENTS.md`); pass `--docs-home` only to override it. Do not use
+  `$HOME/.agents` or `$AGENT_HOME` as docs-home (`$AGENT_HOME` is for
+  `agent-out` runtime artifacts; `$HOME/.agents` is retired).
+- The `resolve` / `baseline` / `scaffold-*` / `add` / `contexts` commands and
+  the `startup` per-task context were retired in the engine redesign.
 
 ## Work Mode
 
@@ -45,7 +49,8 @@
 - Prompt templates and skills are steering aids, not mandatory entrypoints
   unless explicitly invoked.
 - For explicit implementation, maintenance, validation, or delivery requests:
-  run required preflight, then execute instead of prolonging planning.
+  honor the Required Preflight policy, then execute instead of prolonging
+  planning.
 - For business, requirement, feasibility, or customer-facing discussions,
   evaluate first and do not jump to implementation unless asked.
 - Treat user-provided or customer-provided material as input to assess, not as

@@ -862,11 +862,11 @@ $HOME/.claude/skills/topic-radar/scripts/topic-radar.sh \
 
 The same rule applies to policy references:
 
-- Core source says "resolve the startup docs for this product".
+- Core source says "audit the docs home for this product".
 - Codex target renders
-  `agent-docs --docs-home "$CODEX_HOME" resolve --context startup ...`.
+  `agent-docs --docs-home "$CODEX_HOME" audit --target all ...`.
 - Claude target renders
-  `agent-docs --docs-home "$HOME/.claude" resolve --context startup ...`.
+  `agent-docs --docs-home "$HOME/.claude" audit --target all ...`.
 
 Render output never contains `$AGENT_HOME`. Drift audit treats any leak as a
 blocking error.
