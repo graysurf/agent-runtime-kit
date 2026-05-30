@@ -67,7 +67,7 @@ skills:
         name: agent-docs
         render_to: plugins/meta/skills/agent-docs/SKILL.md
     required_clis:
-      agent-docs: ">=0.30.0"
+      agent-docs: ">=0.30.1"
     state_out_mode: runtime
 
   - id: meta.agent-out
