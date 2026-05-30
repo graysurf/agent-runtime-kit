@@ -1,13 +1,13 @@
-# Plan Tracking Issue Workflow V1
+# Plan Tracking Issue Workflow
 
 ## Status
 
 - Status: implemented; canonical design
 - Date: 2026-05-26
 - Depends on:
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-comment-taxonomy-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-run-state-controller-v1.md`
-  - `docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`
+  - `core/skills/dispatch/plan-issue-spec/comment-taxonomy.md`
+  - `core/skills/dispatch/plan-issue-spec/run-state-controller.md`
+  - `core/skills/dispatch/plan-issue-spec/skill-family.md`
 - Scope: lightweight plan-tracking issues with `profile=tracking`
 
 ## Purpose

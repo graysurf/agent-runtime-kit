@@ -1,4 +1,4 @@
-# Plan Issue Skill Family Redesign V1
+# Plan Issue Skill Family Spec
 
 ## Status
 
@@ -6,10 +6,10 @@
   Shared Family Rules referenced by the shipped dispatch / pr skills)
 - Date: 2026-05-26
 - Depends on:
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-comment-taxonomy-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-workflow-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-run-state-controller-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-cli-redesign-v1.md`
+  - `core/skills/dispatch/plan-issue-spec/comment-taxonomy.md`
+  - `core/skills/dispatch/plan-issue-spec/workflow.md`
+  - `core/skills/dispatch/plan-issue-spec/run-state-controller.md`
+  - `core/skills/dispatch/plan-issue-spec/cli.md`
 - Owning implementation repos:
   - `sympoies/nils-cli`
   - `graysurf/agent-runtime-kit`
@@ -463,7 +463,7 @@ Required content slotting per skill:
     codes the skill must propagate (`run-state-stale`,
     `RECORD_BLOCKED`, `visible-completeness-failed`,
     role-specific codes from
-    [`plan-tracking-issue-comment-taxonomy-v1.md`](plan-tracking-issue-comment-taxonomy-v1.md)),
+    [`comment-taxonomy.md`](comment-taxonomy.md)),
     and the scope-leak refusals.
 - `## Entrypoint` → the three to six bash invocations the skill actually
   makes. Each envelope-consuming call ends with `--format json`.

@@ -1,14 +1,14 @@
-# Plan Tracking Issue CLI Redesign V1
+# Plan Tracking Issue CLI Spec
 
 ## Status
 
 - Status: implemented; canonical plan-issue CLI spec
 - Date: 2026-05-26
 - Depends on:
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-comment-taxonomy-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-workflow-v1.md`
-  - `docs/source/plan-issue-redesign/plan-tracking-issue-run-state-controller-v1.md`
-  - `docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`
+  - `core/skills/dispatch/plan-issue-spec/comment-taxonomy.md`
+  - `core/skills/dispatch/plan-issue-spec/workflow.md`
+  - `core/skills/dispatch/plan-issue-spec/run-state-controller.md`
+  - `core/skills/dispatch/plan-issue-spec/skill-family.md`
 - Owning implementation repos:
   - `sympoies/nils-cli`
   - `graysurf/agent-runtime-kit`
@@ -291,7 +291,7 @@ Acceptance:
 ### Workstream 4: Run-State Controller
 
 Add the controller specified in
-`docs/source/plan-issue-redesign/plan-tracking-issue-run-state-controller-v1.md`.
+`core/skills/dispatch/plan-issue-spec/run-state-controller.md`.
 
 Expected behavior:
 
@@ -432,7 +432,7 @@ Acceptance:
 ### Workstream 1: Skill Contract Simplification
 
 Rewrite the plan issue skill family from
-`docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md` after
+`core/skills/dispatch/plan-issue-spec/skill-family.md` after
 the required CLI surfaces exist locally. The rewrite should replace the current
 skill bodies instead of incrementally patching old prompt text.
 
@@ -528,7 +528,7 @@ Acceptance:
 10. Build a local `nils-cli` binary from the implementation branch.
 11. Validate the local binary output against these design documents.
 12. Rewrite runtime-kit plan issue skill sources from
-    `docs/source/plan-issue-redesign/plan-issue-skill-family-redesign-v1.md`.
+    `core/skills/dispatch/plan-issue-spec/skill-family.md`.
 13. Add runtime smoke assertions for visible comments and stale run-state
     reconciliation.
 14. Render products and refresh goldens using the local binary for focused

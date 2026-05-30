@@ -20,9 +20,9 @@ Prereqs:
   override authority).
 - Run state precondition: `tracking status --profile dispatch
   --expect-visible` is clean before recording review status.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -126,5 +126,5 @@ Cross-references:
 - Downstream: back to `execute-dispatch-lane` on
   `request-changes`; otherwise on to `dispatch-plan-closeout` once
   all lanes are clean.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

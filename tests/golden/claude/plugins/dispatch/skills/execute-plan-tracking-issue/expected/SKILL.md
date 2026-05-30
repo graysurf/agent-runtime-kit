@@ -17,9 +17,9 @@ Prereqs:
 - Run state precondition: a `run-state.json` exists for this issue (or
   the skill must defer to `create-plan-tracking-issue` /
   `tracking run init` first).
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -183,5 +183,5 @@ Cross-references:
 - Downstream: `deliver-plan-tracking-issue` takes over when the
   selected scope is ready to be carried through PR delivery and
   close-readiness.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

@@ -18,9 +18,9 @@ Prereqs:
   blocker findings, and the dispatch dashboard must name every lane.
 - Run state precondition: the dispatch `run-state.json` is reconciled
   and at `RECORD_READY_FOR_CLOSE`.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -143,5 +143,5 @@ Cross-references:
 
 - Upstream: `deliver-dispatch-plan` (the close-ready handoff after
   every lane finishes).
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).

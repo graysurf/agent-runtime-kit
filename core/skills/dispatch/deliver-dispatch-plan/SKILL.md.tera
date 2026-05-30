@@ -16,9 +16,9 @@ Prereqs:
   and is being resumed by the same orchestrator.
 - Run state precondition: `run-state.json` for the dispatch issue is
   either uninitialized (skill bootstraps it) or reconciled.
-- Shared family rules from the Plan Issue Skill Family Redesign V1
+- Shared family rules from the Plan Issue Skill Family
   spec apply (see the Shared Family Rules section in
-  docs/source/plan-issue-redesign/).
+  core/skills/dispatch/plan-issue-spec/).
 
 Inputs:
 
@@ -172,5 +172,5 @@ Cross-references:
   `create-dispatch-lane-pr` (PR creation),
   `review-dispatch-lane-pr` (review evidence).
 - Downstream closeout: `dispatch-plan-closeout`.
-- Family rules: Plan Issue Skill Family Redesign V1, Shared Family
-  Rules section (under docs/source/plan-issue-redesign/).
+- Family rules: Plan Issue Skill Family, Shared Family
+  Rules section (under core/skills/dispatch/plan-issue-spec/).
