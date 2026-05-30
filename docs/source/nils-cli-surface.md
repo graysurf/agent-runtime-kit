@@ -1,22 +1,33 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-30 (refreshed for `v0.28.6`)
+- Snapshot date: 2026-05-30 (refreshed for `v0.29.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.28.6`
+- Active `git describe --tags` output: `v0.29.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.28.6`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.29.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `67cb08b`
-  (`chore(release): bump cli versions to 0.28.6 (#659)`)
+- Head commit: `0f757df`
+  (`chore(release): bump cli versions to 0.29.0 (#661)`)
 - Release:
-  [`v0.28.6`](https://github.com/sympoies/nils-cli/releases/tag/v0.28.6),
+  [`v0.29.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.29.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- Prior pin: `v0.28.5` at `49f925b` (`chore(release): bump cli versions to
-  0.28.5 (#656)`). `v0.28.6` is an additive patch bump with one consumed
+- Prior pin: `v0.28.6` at `67cb08b` (`chore(release): bump cli versions to
+  0.28.6 (#659)`). `v0.29.0` is a minor bump with one consumed-surface change:
+  `git-cli branch cleanup --squash` (and `--remove-worktrees`, which only acts
+  on detected branches) now detects multi-commit provider squash-merges by
+  synthesizing the branch's diff as a single commit on its merge-base and
+  patch-comparing against base, where a per-commit `git cherry` previously
+  missed them
+  ([#660](https://github.com/sympoies/nils-cli/pull/660)). No consumed surface
+  was retired or renamed and no flags or JSON envelopes changed;
+  `required_clis[]` floors are unchanged because no agent-runtime-kit consumer
+  depends on the new behavior. Further prior pin: `v0.28.5` at `49f925b`
+  (`chore(release): bump cli versions to 0.28.5 (#656)`). `v0.28.6` is an
+  additive patch bump with one consumed
   surface: `agent-docs` now lets a project opt out of a non-`startup` built-in
   requirement by declaring a matching `[[document]]` entry with
   `required = false` for the built-in's own `(context, scope, path)` key in
