@@ -502,9 +502,18 @@ Runtime-kit tests:
 
 1. Should `tracking checkpoint` edit the canonical execution-state Markdown?
 
-   Recommendation: no for v1. Require the agent to keep the file accurate.
-   The CLI may read it, validate it, and derive payloads, but it should not
-   become a Markdown editor until a separate structured writer contract exists.
+   Resolved (nils-cli v0.31.2, sympoies/nils-cli#703): the CLI still does not
+   *edit the file*, but `tracking checkpoint` now re-renders the visible
+   Execution State comment header (`Status` / `Target scope` / `Current task` /
+   `Next task`) from the derived payload instead of echoing the file's header
+   verbatim, while preserving the `## Task Ledger` and any other authored
+   sections from the file. `record open` / `record post` still emit the
+   authored header verbatim. This fixes the dashboard / state-comment staleness
+   where a completed plan kept its pre-flight header
+   (`Status: ready-to-start`, `Tracking issue: tbd`, `… snapshot: pending`) —
+   graysurf/plan-tracking-testbed#54. Deriving payloads, and now the comment
+   header, is in scope; a structured *writer* that mutates the canonical
+   Markdown file remains out of scope.
 
 2. Should `tracking run update` accept arbitrary extra fields?
 
