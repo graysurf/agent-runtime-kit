@@ -144,11 +144,32 @@
   opening; never derive title or body from `git log -1`.
 - Never force-push `main`.
 
+## Plan Archive
+
+- The agent-plan-archive stores past plans, issues, PRs, and MRs for recurring
+  implementation context.
+- Consult it only before opening a new plan, or when diagnosing a suspected
+  recurring or previously resolved problem — not as a per-task or background
+  step.
+- Discover with `grep` over `<archive-root>/catalog.json` when the exact ref is
+  unknown; fetch with `plan-archive query --ref`, `--plan`, or `--repo` once a
+  candidate is known.
+- Check each result's `fetched_at` before relying on it; refresh on demand.
+
 ## Session Closeout
 
-`core/policies/heuristic-system/HEURISTIC_SYSTEM.md` is the detailed routing
-policy for turning workflow failures and repeated lessons into durable
-knowledge; the startup preflight surfaces its routing summary via the
-`agent-docs` global pointer. After the session goal is achieved, run
-`$heuristic-session-closeout` to review available evidence and preserve
-warranted retained records on `main`.
+`core/policies/heuristic-system/HEURISTIC_SYSTEM.md` is the full routing policy
+for turning workflow failures and repeated lessons into durable knowledge.
+
+- Same-turn transient fixes need no retained record; mention them in the reply.
+- Important unresolved workflow gaps or suspected nils-cli / primitive bugs go
+  through `heuristic-inbox`, with version, minimal repro, upstream issue link
+  when found, and the current workaround.
+- Reproducible product bugs get a focused test or script fix. Repeated
+  cross-skill lessons belong in operation records; stable policy belongs in
+  `AGENT_HOME.md`, project policy files, or the relevant skill `SKILL.md`.
+- Active inbox entries live under
+  `core/policies/heuristic-system/error-inbox/`; archive promoted or `wontfix`
+  entries via `heuristic-inbox`, never by deleting them in place.
+- After the session goal is achieved, run `$heuristic-session-closeout` to
+  review available evidence and preserve warranted retained records on `main`.

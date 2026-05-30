@@ -3,7 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: ready-to-start; tracking issue not yet opened.
+- Status: in-progress — Sprint 1 (global-cue migration) delivered; Sprints 2-4
+  unblocked by the nils-cli v0.30.0 engine release.
 - Target scope: kit-scoped rollout in `graysurf/agent-runtime-kit`. The
   `agent-docs` engine redesign is an upstream dependency in
   `sympoies/nils-cli` (separate PR/release/tap), not edited here. Sprint 1
@@ -13,15 +14,15 @@
   Sprint 2 (catalog + command-surface adoption) → Sprint 3 (Claude
   enforcement hooks) → Sprint 4 (Codex finish-line enforcement + delivery),
   serial.
-- Current task: none (tracking issue not yet opened).
-- Next task: Task 1.1 — inline the global cues into `AGENT_HOME.md`.
+- Current task: Sprint 2 prep (catalog + command-surface adoption).
+- Next task: Task 2.1 — bump `required_clis` to v0.30.0 and author the kit
+  default catalog (in the tight window with the host brew upgrade).
 - Last updated: 2026-05-30
-- Branch/commit/PR: tbd (PR target: `graysurf/agent-runtime-kit` main;
-  suggested branch prefix `feat/agent-docs-redesign`).
+- Branch/commit/PR: `feat/agent-docs-redesign` (isolated worktree off
+  `origin/main`; PR target `graysurf/agent-runtime-kit` main).
 - Source document: docs/plans/2026-05-30-agent-docs-redesign/2026-05-30-agent-docs-redesign-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: tbd (to be opened by `create-plan-tracking-issue` against
-  `graysurf/agent-runtime-kit`)
+- Tracking issue: graysurf/agent-runtime-kit#181
 - Source snapshot: pending — posted by `create-plan-tracking-issue` at issue
   open
 - Plan snapshot: pending — posted by `create-plan-tracking-issue` at issue
@@ -59,8 +60,8 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | pending | Inline the global cues into `AGENT_HOME.md` | tbd | `agent-runtime-kit`. Engine-independent. Heuristic summary into `## Session Closeout`; new `## Plan Archive` block. |
-| 1.2 | pending | Remove startup catalog entries; retire pointer files | tbd | `agent-runtime-kit`. Depends on 1.1 (move first, then delete). Keep `HEURISTIC_SYSTEM.md`. |
+| 1.1 | done | Inline the global cues into `AGENT_HOME.md` | Sprint 1 on feat/agent-docs-redesign: cues inlined into AGENT_HOME.md (Session Closeout + new Plan Archive block); two startup/global entries removed from AGENT_DOCS.toml; pointer docs retired. Validated: rumdl AGENT_HOME.md clean, both home symlinks resolve to AGENT_HOME.md, catalog resolves (startup 2/2, project-dev 5/5). | `agent-runtime-kit`. Engine-independent. Heuristic summary into `## Session Closeout`; new `## Plan Archive` block. |
+| 1.2 | done | Remove startup catalog entries; retire pointer files | Sprint 1 on feat/agent-docs-redesign: cues inlined into AGENT_HOME.md (Session Closeout + new Plan Archive block); two startup/global entries removed from AGENT_DOCS.toml; pointer docs retired. Validated: rumdl AGENT_HOME.md clean, both home symlinks resolve to AGENT_HOME.md, catalog resolves (startup 2/2, project-dev 5/5). | `agent-runtime-kit`. Depends on 1.1 (move first, then delete). Keep `HEURISTIC_SYSTEM.md`. |
 | 2.1 | pending | Bump `required_clis`; author kit default catalog | tbd | `agent-runtime-kit`. Depends on nils-cli engine release. Data-driven catalog; no hardcoded builtins. |
 | 2.2 | pending | Make `project-dev` `when`-conditional; confirm pure-docs auto-skip | tbd | `agent-runtime-kit`. Depends on 2.1. `path-exists` predicate; docs-only fixture needs no opt-out. |
 | 2.3 | pending | Rewrite preflight prose; retire `startup` per-task | tbd | `agent-runtime-kit`. Depends on 2.1. `AGENT_HOME.md`, `DEVELOPMENT.md`, `agent-docs` SKILL tera, hooks. |
