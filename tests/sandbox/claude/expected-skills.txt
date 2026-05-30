@@ -53,13 +53,10 @@ meta.semantic-commit
 meta.setup-project
 meta.sync-runtime-skills
 meta.worktree-triage
-pr.close-github-pr
-pr.close-gitlab-mr
+pr.close-pr
 pr.create-dispatch-lane-pr
-pr.create-github-pr
-pr.create-gitlab-mr
-pr.deliver-github-pr
-pr.deliver-gitlab-mr
+pr.create-pr
+pr.deliver-pr
 reporting.daily-brief
 reporting.project-retro
 reporting.topic-radar

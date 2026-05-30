@@ -324,11 +324,11 @@ run_deliver_github_probe() {
   grep -q '"maintainability"' "$review_out"
   grep -q '"testing"' "$review_out"
   grep -q 'lifecycle readiness is also a pre-merge gate' \
-    "$REPO_ROOT/core/skills/pr/deliver-github-pr/SKILL.md.tera"
+    "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
   grep -q 'plan-issue --format json record audit' \
-    "$REPO_ROOT/core/skills/pr/deliver-github-pr/SKILL.md.tera"
+    "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
   grep -q 'role=session' \
-    "$REPO_ROOT/core/skills/pr/deliver-github-pr/SKILL.md.tera"
+    "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
 }
 
 run_deliver_gitlab_probe() {
@@ -370,20 +370,41 @@ run_deliver_gitlab_probe() {
   grep -q '"maintainability"' "$review_out"
   grep -q '"testing"' "$review_out"
   grep -q 'lifecycle readiness is also a pre-merge gate' \
-    "$REPO_ROOT/core/skills/pr/deliver-gitlab-mr/SKILL.md.tera"
+    "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
   grep -q 'plan-issue --format json record audit' \
-    "$REPO_ROOT/core/skills/pr/deliver-gitlab-mr/SKILL.md.tera"
+    "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
   grep -q 'role=session' \
-    "$REPO_ROOT/core/skills/pr/deliver-gitlab-mr/SKILL.md.tera"
+    "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
+}
+
+# The provider-neutral create-pr/close-pr/deliver-pr skills cover both
+# providers, so each case exercises the GitHub and GitLab probe and fails if
+# either provider regresses.
+run_create_pr_probe() {
+  local rc=0
+  run_create_github_probe || rc=1
+  run_create_gitlab_probe || rc=1
+  return "$rc"
+}
+
+run_close_pr_probe() {
+  local rc=0
+  run_close_github_probe || rc=1
+  run_close_gitlab_probe || rc=1
+  return "$rc"
+}
+
+run_deliver_pr_probe() {
+  local rc=0
+  run_deliver_github_probe || rc=1
+  run_deliver_gitlab_probe || rc=1
+  return "$rc"
 }
 
 failures=0
-record_case "pr.create-github-pr" "forge-cli GitHub pr create dry-run passed" run_create_github_probe || failures=1
-record_case "pr.create-gitlab-mr" "forge-cli GitLab pr create dry-run passed" run_create_gitlab_probe || failures=1
+record_case "pr.create-pr" "forge-cli GitHub+GitLab pr create dry-run passed" run_create_pr_probe || failures=1
 record_case "pr.create-dispatch-lane-pr" "forge-cli dispatch lane pr create dry-run passed" run_create_dispatch_lane_probe || failures=1
-record_case "pr.close-github-pr" "forge-cli GitHub close dry-runs and optional specialist scope passed" run_close_github_probe || failures=1
-record_case "pr.close-gitlab-mr" "forge-cli GitLab close dry-runs and optional specialist scope passed" run_close_gitlab_probe || failures=1
-record_case "pr.deliver-github-pr" "forge-cli GitHub delivery macro and mandatory specialist scope passed" run_deliver_github_probe || failures=1
-record_case "pr.deliver-gitlab-mr" "forge-cli GitLab delivery macro and mandatory specialist scope passed" run_deliver_gitlab_probe || failures=1
+record_case "pr.close-pr" "forge-cli GitHub+GitLab close dry-runs and optional specialist scope passed" run_close_pr_probe || failures=1
+record_case "pr.deliver-pr" "forge-cli GitHub+GitLab delivery macro and mandatory specialist scope passed" run_deliver_pr_probe || failures=1
 
 exit "$failures"

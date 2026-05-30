@@ -612,27 +612,14 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: pr.create-github-pr.shared-cli.deterministic
+  - id: pr.create-pr.shared-cli.deterministic
     product: shared-cli
     domain: pr
-    skill_id: pr.create-github-pr
+    skill_id: pr.create-pr
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr create dry-run validates body, branch, and taxonomy labels
-    expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider command with selected labels
-    cleanup: temp-output-only
-    expected_disposition: pass
-    skip_policy: none
-  - id: pr.create-gitlab-mr.shared-cli.deterministic
-    product: shared-cli
-    domain: pr
-    skill_id: pr.create-gitlab-mr
-    mode: deterministic
-    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli gitlab pr create dry-run validates body, branch, and taxonomy labels
+    invocation: forge-cli github/gitlab pr create dry-run validates body, branch, and taxonomy labels
     expected_exit_code: 0
     expected_artifacts: forge-cli dry-run provider command with selected labels
     cleanup: temp-output-only
@@ -651,53 +638,27 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: pr.close-github-pr.shared-cli.deterministic
+  - id: pr.close-pr.shared-cli.deterministic
     product: shared-cli
     domain: pr
-    skill_id: pr.close-github-pr
+    skill_id: pr.close-pr
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: none
-    invocation: forge-cli github pr checks ready merge close dry-run surfaces plus optional review-specialists scope
+    invocation: forge-cli github/gitlab pr checks ready merge close dry-run surfaces plus optional review-specialists scope
     expected_exit_code: 0
     expected_artifacts: forge-cli dry-run provider commands and specialist scope JSON
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: pr.close-gitlab-mr.shared-cli.deterministic
+  - id: pr.deliver-pr.shared-cli.deterministic
     product: shared-cli
     domain: pr
-    skill_id: pr.close-gitlab-mr
-    mode: deterministic
-    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: none
-    invocation: forge-cli gitlab pr checks ready merge close dry-run surfaces plus optional review-specialists scope
-    expected_exit_code: 0
-    expected_artifacts: forge-cli dry-run provider commands and specialist scope JSON
-    cleanup: temp-output-only
-    expected_disposition: pass
-    skip_policy: none
-  - id: pr.deliver-github-pr.shared-cli.deterministic
-    product: shared-cli
-    domain: pr
-    skill_id: pr.deliver-github-pr
+    skill_id: pr.deliver-pr
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli github pr deliver dry-run with taxonomy labels plus mandatory review-specialists scope
-    expected_exit_code: 0
-    expected_artifacts: forge-cli deliver dry-run provider command with selected labels and specialist scope JSON
-    cleanup: temp-output-only
-    expected_disposition: pass
-    skip_policy: none
-  - id: pr.deliver-gitlab-mr.shared-cli.deterministic
-    product: shared-cli
-    domain: pr
-    skill_id: pr.deliver-gitlab-mr
-    mode: deterministic
-    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: create temp git workspace with pushed upstream branch metadata
-    invocation: forge-cli gitlab pr deliver dry-run with taxonomy labels plus mandatory review-specialists scope
+    invocation: forge-cli github/gitlab pr deliver dry-run with taxonomy labels plus mandatory review-specialists scope
     expected_exit_code: 0
     expected_artifacts: forge-cli deliver dry-run provider command with selected labels and specialist scope JSON
     cleanup: temp-output-only

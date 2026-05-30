@@ -104,7 +104,7 @@ $CODEX_HOME/plugins/meta/skills/worktree-triage/scripts/worktree-triage.sh --rep
      not merge it.
    - `likely_superseded: false` (real additions) means genuine unmerged
      work. On confirmation, open a **draft** PR for human review via the
-     `create-github-pr` / `deliver-github-pr` workflow (forge-cli). Never
+     `create-pr` / `deliver-pr` workflow (forge-cli). Never
      auto-merge.
 5. **Stop at the human gate.** The skill never removes a worktree, deletes
    a branch, closes a PR, or opens a PR without explicit per-item
@@ -123,9 +123,9 @@ unique commits without confirmation, and never merges.
 
 ## Related Skills
 
-- `create-github-pr` / `deliver-github-pr` — open the draft PR a genuine
+- `create-pr` / `deliver-pr` — open the draft PR a genuine
   `rescue-candidate` is handed off to. Triage never merges.
-- `close-github-pr` — close the PR of a `rescue-candidate` confirmed to be
+- `close-pr` — close the PR of a `rescue-candidate` confirmed to be
   already-on-base (superseded).
 - `sync-runtime-skills` — its apply path refuses linked-worktree source
   roots; this skill is the companion that cleans those worktrees up.

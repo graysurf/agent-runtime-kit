@@ -708,34 +708,19 @@ skills:
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
-  - id: pr.create-github-pr
+  - id: pr.create-pr
     domain: pr
-    source: core/skills/pr/create-github-pr
+    source: core/skills/pr/create-pr
     products:
       codex:
-        name: create-github-pr
-        render_to: plugins/pr/skills/create-github-pr/SKILL.md
+        name: create-pr
+        render_to: plugins/pr/skills/create-pr/SKILL.md
       claude:
-        name: create-github-pr
-        render_to: plugins/pr/skills/create-github-pr/SKILL.md
+        name: create-pr
+        render_to: plugins/pr/skills/create-pr/SKILL.md
     required_clis:
       agent-runtime: ">=0.19.0"
       forge-cli: ">=0.20.1"
-    state_out_mode: runtime
-
-  - id: pr.create-gitlab-mr
-    domain: pr
-    source: core/skills/pr/create-gitlab-mr
-    products:
-      codex:
-        name: create-gitlab-mr
-        render_to: plugins/pr/skills/create-gitlab-mr/SKILL.md
-      claude:
-        name: create-gitlab-mr
-        render_to: plugins/pr/skills/create-gitlab-mr/SKILL.md
-    required_clis:
-      forge-cli: ">=0.20.1"
-      agent-runtime: ">=0.19.0"
     state_out_mode: runtime
 
   - id: pr.create-dispatch-lane-pr
@@ -753,61 +738,30 @@ skills:
       plan-issue: ">=0.21.0"
     state_out_mode: runtime
 
-  - id: pr.close-github-pr
+  - id: pr.close-pr
     domain: pr
-    source: core/skills/pr/close-github-pr
+    source: core/skills/pr/close-pr
     products:
       codex:
-        name: close-github-pr
-        render_to: plugins/pr/skills/close-github-pr/SKILL.md
+        name: close-pr
+        render_to: plugins/pr/skills/close-pr/SKILL.md
       claude:
-        name: close-github-pr
-        render_to: plugins/pr/skills/close-github-pr/SKILL.md
+        name: close-pr
+        render_to: plugins/pr/skills/close-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
-  - id: pr.close-gitlab-mr
+  - id: pr.deliver-pr
     domain: pr
-    source: core/skills/pr/close-gitlab-mr
+    source: core/skills/pr/deliver-pr
     products:
       codex:
-        name: close-gitlab-mr
-        render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
+        name: deliver-pr
+        render_to: plugins/pr/skills/deliver-pr/SKILL.md
       claude:
-        name: close-gitlab-mr
-        render_to: plugins/pr/skills/close-gitlab-mr/SKILL.md
-    required_clis:
-      forge-cli: ">=0.20.1"
-    state_out_mode: runtime
-
-  - id: pr.deliver-github-pr
-    domain: pr
-    source: core/skills/pr/deliver-github-pr
-    products:
-      codex:
-        name: deliver-github-pr
-        render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
-      claude:
-        name: deliver-github-pr
-        render_to: plugins/pr/skills/deliver-github-pr/SKILL.md
-    required_clis:
-      forge-cli: ">=0.20.1"
-      agent-runtime: ">=0.19.0"
-      plan-issue: ">=0.21.0"
-      review-specialists: ">=0.17.1"
-    state_out_mode: runtime
-
-  - id: pr.deliver-gitlab-mr
-    domain: pr
-    source: core/skills/pr/deliver-gitlab-mr
-    products:
-      codex:
-        name: deliver-gitlab-mr
-        render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
-      claude:
-        name: deliver-gitlab-mr
-        render_to: plugins/pr/skills/deliver-gitlab-mr/SKILL.md
+        name: deliver-pr
+        render_to: plugins/pr/skills/deliver-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
       agent-runtime: ">=0.19.0"

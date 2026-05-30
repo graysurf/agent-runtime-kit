@@ -111,8 +111,8 @@ bash scripts/ci/all.sh                                 # Position 2 now aligned
 8. Run `scripts/ci/all.sh`. Position 2 must now report aligned; downstream
    render / drift / runtime-smoke positions catch any consumer the rewrite
    missed.
-9. Deliver one bump PR through the active GitHub PR workflow
-   (`pr:create-github-pr` / `pr:deliver-github-pr` / `forge-cli pr`), not raw
+9. Deliver one bump PR through the active PR workflow
+   (`pr:create-pr` / `pr:deliver-pr` / `forge-cli pr`), not raw
    `gh pr create`. Title it as a `chore` (pin + snapshot only) or `feat`
    (consumer surface rewrites included) per the actual diff.
 
@@ -134,7 +134,7 @@ and call it from here.
 
 - `meta:semantic-commit` — commit the bump with the staged-change boundary
   intact.
-- `pr:deliver-github-pr` — open and drive the single bump PR; this skill never
+- `pr:deliver-pr` — open and drive the single bump PR; this skill never
   calls raw `gh pr create`.
 - `meta:sync-runtime-skills` — after the host upgrade, refresh the live Codex
   and Claude skill surfaces so a local session sees the rewritten bodies.
