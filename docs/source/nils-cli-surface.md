@@ -1,20 +1,31 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-30 (refreshed for `v0.30.2`)
+- Snapshot date: 2026-05-31 (refreshed for `v0.31.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.30.2`
+- Active `git describe --tags` output: `v0.31.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.30.2`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.31.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `7515dad`
-  (`chore(release): bump cli versions to 0.30.2 (#692)`)
+- Head commit: `7a42080`
+  (`chore(release): bump cli versions to 0.31.0 (#695)`)
 - Release:
-  [`v0.30.2`](https://github.com/sympoies/nils-cli/releases/tag/v0.30.2),
+  [`v0.31.0`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.31.0` is a **minor** that ships `repo-retro report` **schema v2**
+  (`cli.repo-retro.report.v2` / `repo-retro.report.v2`): a deterministic
+  pre-digestion layer — `git.churnByClass` (source / tests / productDocs /
+  processArtifacts / other, reconciling to the summary total), `git.archival`
+  (net-deletion as the primary signal), and commit-frequency
+  `fileHotspots.topFiles` carrying `class` / `netDeleted` — plus a
+  `--path-class-config` override. The analysis layer now reads that class split
+  and never nominates a net-deleted file for review. The v1 envelope was
+  removed (breaking), so the `project-retro` consumer moves to v2 in lock-step;
+  no `required_clis[]` floor moves (`repo-retro` is not a floored binary)
+  ([#694](https://github.com/sympoies/nils-cli/pull/694)).
 - `v0.30.2` is a **patch** that extends the `plan-archive` body / full-text
   search surface: `catalog --deep` extends `--grep` to also match issue / PR /
   MR body and comment text (via each ref's latest snapshot), and a new
@@ -185,7 +196,7 @@ Notes on derivation:
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime-cli`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-skills` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
-| `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. |
+| `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. As of `v0.31.0`, `repo-retro report` emits schema v2 (`cli.repo-retro.report.v2` / `repo-retro.report.v2`): a deterministic pre-digestion layer (`git.churnByClass`, `git.archival`, commit-frequency `fileHotspots` with `class` / `netDeleted`) plus a `--path-class-config` override; the v1 envelope was removed (breaking). |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
 | `api-grpc`                  | `api-grpc`                                                                                                          | gRPC API testing CLI.                                                                                                                                                                                                                                                  |
 | `api-rest`                  | `api-rest`                                                                                                          | REST API testing CLI.                                                                                                                                                                                                                                                  |

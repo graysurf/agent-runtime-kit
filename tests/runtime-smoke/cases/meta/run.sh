@@ -303,7 +303,7 @@ run_repo_retro_probe() {
       --to 2026-05-02 \
       --format json
   ) >"$out" 2>&1
-  grep -q '"schema_version": "cli.repo-retro.report.v1"' "$out"
+  grep -q '"schema_version": "cli.repo-retro.report.v2"' "$out"
   grep -q '"ok": true' "$out"
 }
 
