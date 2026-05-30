@@ -6,8 +6,14 @@ template.
 
 This template is a reminder, not a required CI check. It is loud-by-design
 so reviewers can see at a glance whether the Bump Ceremony was followed.
-See Resolved Decision #7 in `docs/source/inventory-target-architecture.md`
-for the full ceremony.
+
+The version fields live in `manifests/runtime-roots.yaml`; the
+`version-alignment` gate that enforces them is in `DEVELOPMENT.md`
+(`## Validation`). The ceremony, captured by the sections below, is:
+latest-stable floor with no rolling support window — keep a
+`recommended_version` runway ahead of `min_version`, forward-pin
+`min_version_effective_from`, surface the upgrade path via
+`agent-runtime doctor --suggest-upgrade`, and fill in this template.
 -->
 
 ## Product version bump summary

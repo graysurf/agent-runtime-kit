@@ -1,8 +1,6 @@
 # Per-product capability matrix.
 #
 # Schema: ../core/docs/schemas/product-capabilities.schema.json
-# Architecture: docs/source/inventory-target-architecture.md
-#   `### Manifest Layer` and `### Codex Activation Surface (Reality Check)`
 #
 # This file is NOT empty in Plan 01: the capability matrix is settled
 # architecture. Plan 03 adds skill / plugin entries elsewhere; this file

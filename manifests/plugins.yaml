@@ -2,7 +2,6 @@
 # domain plugins follow in Plan 05.
 #
 # Schema: ../core/docs/schemas/plugins.schema.json
-# Architecture: docs/source/inventory-target-architecture.md `## Manifest Layer`
 #
 # Each entry MUST declare `id`, `domain`, `contained_skills`, and
 # `product_manifests`. Plugin `domain` cross-references skill `domain`

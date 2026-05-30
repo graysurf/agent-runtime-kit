@@ -2,7 +2,8 @@
 
 ## Status
 
-- Status: proposed canonical skill redesign
+- Status: implemented; canonical plan-issue skill family spec (the
+  Shared Family Rules referenced by the shipped dispatch / pr skills)
 - Date: 2026-05-26
 - Depends on:
   - `docs/source/plan-issue-redesign/plan-tracking-issue-comment-taxonomy-v1.md`

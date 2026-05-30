@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/skills.schema.json",
   "title": "skills.yaml",
-  "description": "Skill manifest. Each entry declares a canonical skill ID, source path, supported products, required nils-cli binaries with semver floors, optional aliases, and per-product path overrides. See docs/source/inventory-target-architecture.md `## Manifest Layer` for the spec; Plan 03 (`03-domain-migration-reporting-pilot`) populates the `skills:` list — Plan 01 leaves it empty.",
+  "description": "Skill manifest. Each entry declares a canonical skill ID, source path, supported products, required nils-cli binaries with semver floors, optional aliases, and per-product path overrides. Plan 03 (`03-domain-migration-reporting-pilot`) populates the `skills:` list — Plan 01 leaves it empty.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "skills"],

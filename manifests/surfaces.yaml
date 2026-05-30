@@ -1,12 +1,16 @@
 # SUPPORT_MATRIX surface registry.
 #
 # Schema: ../core/docs/schemas/surfaces.schema.json
-# Architecture: docs/source/inventory-target-architecture.md
+# Architecture: docs/source/harness-shape-codex.md, docs/source/harness-shape-claude.md
 # Plan: docs/plans/support-matrix-rendered/
 #
 # This manifest is the canonical row registry for the cross-product
 # SUPPORT_MATRIX view rendered by `agent-runtime render --target
 # support-matrix`.
+#
+# `source_manifest` provenance uses `path` or `path#anchor` (never line
+# numbers); `scripts/ci/validate-surfaces-manifest.sh` resolves each entry
+# so it cannot rot into a dead link.
 schema_version: 1
 
 render:
@@ -35,7 +39,8 @@ surfaces:
             success:
               exit_status: 0
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:540-544"
+          - "docs/source/harness-shape-codex.md#1-home-scope-prompt-agentsmd"
+          - AGENT_HOME.md
       claude:
         state: shipped
         mechanism: "symlink `$HOME/.claude/CLAUDE.md -> AGENT_HOME.md`"
@@ -51,7 +56,8 @@ surfaces:
             note: "live Claude session"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:222-235"
+          - "docs/source/harness-shape-claude.md#1-home-scope-prompt-claudemd"
+          - AGENT_HOME.md
 
   - id: project-prompt
     ordinal: 2
@@ -73,7 +79,8 @@ surfaces:
             note: "live Codex session in repo"
             descriptive_only: true
         source_manifest:
-          - "AGENTS.md:1-10"
+          - "docs/source/harness-shape-codex.md#2-project-scope-prompt-agentsmd"
+          - AGENTS.md
       claude:
         state: shipped
         mechanism: "repo working tree; `./CLAUDE.md` symlinks to `./AGENTS.md`"
@@ -89,7 +96,8 @@ surfaces:
             note: "live Claude session in repo"
             descriptive_only: true
         source_manifest:
-          - "AGENTS.md:1-10"
+          - "docs/source/harness-shape-claude.md#2-project-scope-prompt-claudemd"
+          - AGENTS.md
 
   - id: plugin-manifest
     ordinal: 3
@@ -110,8 +118,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/product-capabilities.yaml:23-30"
-          - "docs/source/inventory-target-architecture.md:562-571"
+          - "docs/source/harness-shape-codex.md#3-plugin-manifest-codex-pluginpluginjson"
+          - manifests/product-capabilities.yaml
       claude:
         state: shipped
         mechanism: "`plugin-manifest-copy` per plugin into `~/.claude/plugins/<p>/.claude-plugin/plugin.json`"
@@ -127,8 +135,9 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/product-capabilities.yaml:47-54"
-          - "targets/claude/link-map.yaml:15-18"
+          - "docs/source/harness-shape-claude.md#3-plugin-manifest-claude-pluginpluginjson"
+          - manifests/product-capabilities.yaml
+          - targets/claude/link-map.yaml
 
   - id: plugin-marketplace
     ordinal: 4
@@ -148,8 +157,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/product-capabilities.yaml:43"
-          - "docs/source/inventory-target-architecture.md:566-567"
+          - "docs/source/harness-shape-codex.md#4-plugin-marketplace-codex-pluginmarketplacejson"
+          - manifests/product-capabilities.yaml
       claude:
         state: shipped
         mechanism: "`plugin-manifest-copy` of root marketplace.json"
@@ -165,8 +174,9 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/product-capabilities.yaml:59-63"
-          - "targets/claude/link-map.yaml:130-133"
+          - "docs/source/harness-shape-claude.md#4-plugin-marketplace-claude-pluginmarketplacejson"
+          - manifests/product-capabilities.yaml
+          - targets/claude/link-map.yaml
 
   - id: plugin-scoped-skill-discovery
     ordinal: 5
@@ -186,7 +196,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:545-554, 569-584"
+          - "docs/source/harness-shape-codex.md#5-plugin-scoped-skills-pluginskillsskillskillmd"
       claude:
         state: shipped
         mechanism: "rendered to `build/claude/plugins/<p>/skills/<s>/`, then `symlinked-file` `recursive: true` per plugin"
@@ -202,8 +212,9 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/product-capabilities.yaml:62"
-          - "targets/claude/link-map.yaml:20-24"
+          - "docs/source/harness-shape-claude.md#5-plugin-scoped-skills-pluginskillsskillskillmd"
+          - manifests/product-capabilities.yaml
+          - targets/claude/link-map.yaml
 
   - id: slash-command-files
     ordinal: 6
@@ -223,7 +234,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:540-560"
+          - "docs/source/harness-shape-codex.md#6-slash-command-files-commandsnamemd-outside-skills"
       claude:
         state: shipped
         mechanism: "`symlinked-file` of `targets/claude/commands` directory into `~/.claude/commands`"
@@ -239,8 +250,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:228-230"
-          - "targets/claude/link-map.yaml:140-143"
+          - "docs/source/harness-shape-claude.md#6-slash-command-files-commandsnamemd-outside-skills"
+          - targets/claude/link-map.yaml
 
   - id: subagent-definitions
     ordinal: 7
@@ -260,11 +271,11 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "AGENT_HOME.md:68-80"
-          - "docs/source/inventory-target-architecture.md:226-228"
+          - "docs/source/harness-shape-codex.md#7-subagent-definitions-agentsnamemd"
+          - AGENT_HOME.md
       claude:
         state: not-shipped
-        mechanism: "arkit does not ship any `agents/<n>.md` source today"
+        mechanism: "runtime-kit does not ship any `agents/<n>.md` source today"
         source_artifacts: []
         min_product: "n/a"
         min_nils_cli: "n/a"
@@ -276,7 +287,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/harness-shape-claude.md row 7"
+          - "docs/source/harness-shape-claude.md#7-subagent-definitions-agentsnamemd"
 
   - id: hook-scripts
     ordinal: 8
@@ -297,7 +308,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "targets/codex/link-map.yaml:391-394"
+          - "docs/source/harness-shape-codex.md#8-hook-scripts-hooksname"
+          - targets/codex/link-map.yaml
       claude:
         state: partial
         mechanism: "`core/hooks/shared/` symlinked into `~/.claude/hooks`; `targets/claude/hooks/` adapter slot reserved but empty"
@@ -313,8 +325,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "targets/claude/link-map.yaml:125-128"
-          - "docs/source/inventory-target-architecture.md:1978-1981"
+          - "docs/source/harness-shape-claude.md#8-hook-scripts-hooksname"
+          - targets/claude/link-map.yaml
 
   - id: hook-settings-json
     ordinal: 9
@@ -334,7 +346,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:555-558"
+          - "docs/source/harness-shape-codex.md#9-hook-registration-settingsjson-hooks-block"
       claude:
         state: planned-not-shipped
         mechanism: "managed-block contract defined; no `settings.json.template` artifact in `targets/claude/` yet"
@@ -349,8 +361,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/runtime-roots.yaml:34"
-          - "docs/source/inventory-target-architecture.md:460, 1264-1278"
+          - "docs/source/harness-shape-claude.md#9-hook-registration-settingsjson-hooks-block"
+          - manifests/runtime-roots.yaml
 
   - id: output-styles
     ordinal: 10
@@ -370,10 +382,10 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:232"
+          - "docs/source/harness-shape-codex.md#10-output-styles-output-stylesnamemd"
       claude:
         state: not-shipped
-        mechanism: "arkit does not ship any `output-styles/<n>.md` source today"
+        mechanism: "runtime-kit does not ship any `output-styles/<n>.md` source today"
         source_artifacts: []
         min_product: "n/a"
         min_nils_cli: "n/a"
@@ -385,7 +397,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/harness-shape-claude.md row 10"
+          - "docs/source/harness-shape-claude.md#10-output-styles-output-stylesnamemd"
 
   - id: status-line
     ordinal: 11
@@ -405,10 +417,10 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:233"
+          - "docs/source/harness-shape-codex.md#11-status-line-statusline-in-settingsjson"
       claude:
         state: not-shipped
-        mechanism: "arkit does not template `statusLine`; same gap as the `settings.json` slot itself"
+        mechanism: "runtime-kit does not template `statusLine`; same gap as the `settings.json` slot itself"
         source_artifacts: []
         min_product: "n/a"
         min_nils_cli: "n/a"
@@ -420,7 +432,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/harness-shape-claude.md row 11"
+          - "docs/source/harness-shape-claude.md#11-status-line-statusline-in-settingsjson"
 
   - id: mcp-servers
     ordinal: 12
@@ -440,7 +452,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:1456-1464"
+          - "docs/source/harness-shape-codex.md#12-mcp-servers-per-user-mcp-config"
       claude:
         state: not-shipped
         mechanism: "same as codex; out-of-scope by design (secret boundary)"
@@ -455,7 +467,7 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:1456-1464"
+          - "docs/source/harness-shape-claude.md#12-mcp-servers-per-user-mcp-config"
 
   - id: heuristic-system
     ordinal: 13
@@ -476,7 +488,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:950-956"
+          - "docs/source/harness-shape-codex.md#13-heuristic-system-curated-retained-records"
+          - core/policies/heuristic-system/
       claude:
         state: shipped
         mechanism: "same shared policy root"
@@ -492,7 +505,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "docs/source/inventory-target-architecture.md:950-956"
+          - "docs/source/harness-shape-claude.md#13-heuristic-system-curated-retained-records"
+          - core/policies/heuristic-system/
 
   - id: runtime-state
     ordinal: 14
@@ -513,8 +527,9 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/runtime-roots.yaml:17-23"
-          - "manifests/product-capabilities.yaml:40-42"
+          - "docs/source/harness-shape-codex.md#14-runtime-state-statehome"
+          - manifests/runtime-roots.yaml
+          - manifests/product-capabilities.yaml
       claude:
         state: shipped
         mechanism: "`CLAUDE_KIT_STATE_HOME` env var + `agent-out` runtime allocator"
@@ -530,8 +545,9 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/runtime-roots.yaml:29-35"
-          - "manifests/product-capabilities.yaml:64-66"
+          - "docs/source/harness-shape-claude.md#14-runtime-state-statehome"
+          - manifests/runtime-roots.yaml
+          - manifests/product-capabilities.yaml
 
   - id: codex-local-skill-root
     ordinal: 15
@@ -552,7 +568,8 @@ surfaces:
             note: "`codex debug prompt-input` fresh session"
             descriptive_only: true
         source_manifest:
-          - "targets/codex/link-map.yaml:7-12, 28-44, 57-127, 343-389"
+          - "docs/source/harness-shape-codex.md#15-codex-local-skill-root-skillsdomainskillskillmd"
+          - targets/codex/link-map.yaml
           - manifests/skills.yaml
       claude:
         state: not-applicable
@@ -568,7 +585,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/product-capabilities.yaml:45-62"
+          - "docs/source/harness-shape-claude.md#5-plugin-scoped-skills-pluginskillsskillskillmd"
+          - manifests/product-capabilities.yaml
 
   - id: codex-hook-registration
     ordinal: 16
@@ -589,8 +607,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "targets/codex/link-map.yaml:396-401"
-          - "docs/source/inventory-target-architecture.md:1256-1270"
+          - "docs/source/harness-shape-codex.md#16-codex-hook-registration-configtoml-managed-block"
+          - targets/codex/link-map.yaml
       claude:
         state: not-applicable
         mechanism: "Claude uses `settings.json` block (surface 9) instead; the two are different upstream primitives"
@@ -605,7 +623,8 @@ surfaces:
             note: "—"
             descriptive_only: true
         source_manifest:
-          - "manifests/runtime-roots.yaml:17-38"
+          - "docs/source/harness-shape-claude.md#9-hook-registration-settingsjson-hooks-block"
+          - manifests/runtime-roots.yaml
 
   - id: prompt-mode-delegation-policy
     ordinal: 17
@@ -626,7 +645,8 @@ surfaces:
             note: "live Codex session"
             descriptive_only: true
         source_manifest:
-          - "AGENT_HOME.md:68-80"
+          - "docs/source/harness-shape-codex.md#17-prompt-mode-delegation-policy-agenthomemd"
+          - AGENT_HOME.md
       claude:
         state: shipped
         mechanism: "same shared home prompt, same policy text"
@@ -642,4 +662,5 @@ surfaces:
             note: "live Claude session"
             descriptive_only: true
         source_manifest:
-          - "AGENT_HOME.md:68-80"
+          - "docs/source/harness-shape-claude.md#1-home-scope-prompt-claudemd"
+          - AGENT_HOME.md

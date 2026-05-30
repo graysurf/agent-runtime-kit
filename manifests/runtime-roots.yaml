@@ -1,8 +1,7 @@
 # Per-product runtime root manifest.
 #
 # Schema: ../core/docs/schemas/runtime-roots.schema.json
-# Architecture: docs/source/inventory-target-architecture.md
-#   `### Runtime Root Model` and Resolved Decision #7
+# Version-floor / Bump Ceremony: .github/PULL_REQUEST_TEMPLATE/min-version-bump.md
 #
 # Version-pin fields (`min_version`, `recommended_version`,
 # `min_version_effective_from`) were Phase 1 placeholders, pinned to
