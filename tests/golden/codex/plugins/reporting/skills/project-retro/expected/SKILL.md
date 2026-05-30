@@ -33,8 +33,8 @@ Inputs:
 
 Outputs:
 
-- Concise retrospective in the user's language, synthesized from the `cli.repo-retro.report.v1` envelope and
-  `repo-retro.report.v1` result payload.
+- Concise retrospective in the user's language, synthesized from the `cli.repo-retro.report.v2` envelope and
+  `repo-retro.report.v2` result payload.
 - Top-level primary themes or through-lines that answer what the selected window was mainly about, synthesized from deterministic signals
   and clearly marked as inference when they go beyond direct CLI fields.
 - Traceable summary of repo identity, window metadata, commit type mix, authors, hotspots, validation signals, HEURISTIC_SYSTEM movement,
@@ -55,7 +55,7 @@ Failure modes:
 - The requested window is incomplete, invalid, or reversed.
 - Optional JSONL paths are missing, unreadable, or malformed beyond the CLI's accepted warning behavior.
 - History persistence is requested without both `--history-dir` and `--write`.
-- The JSON envelope is not `cli.repo-retro.report.v1` or the result schema is not `repo-retro.report.v1`.
+- The JSON envelope is not `cli.repo-retro.report.v2` or the result schema is not `repo-retro.report.v2`.
 
 ## Entrypoint
 
@@ -104,11 +104,14 @@ Then pass that explicit path with `--history-dir <dir> --write` only if the user
    - Do not call `git fetch`, GitHub, GitLab, personal context stores, or telemetry services for the first-pass report.
 
 4. Inspect the JSON envelope.
-   - Confirm `schema_version` is `cli.repo-retro.report.v1`.
-   - Confirm `result.schema` is `repo-retro.report.v1`.
-   - Use `result.window`, `result.git.summary`, `result.git.commitTypes`, `result.git.authors`, `result.git.fileHotspots`,
-     `result.git.testSignals`, `result.analysis`, `result.heuristicSystem`, `result.optionalInputs`, `result.warnings`, and
-     `result.sources.commands`.
+   - Confirm `schema_version` is `cli.repo-retro.report.v2`.
+   - Confirm `result.schema` is `repo-retro.report.v2`.
+   - Use `result.window`, `result.git.summary`, `result.git.commitTypes`, `result.git.authors`, `result.git.churnByClass`,
+     `result.git.archival`, `result.git.fileHotspots`, `result.git.testSignals`, `result.analysis`, `result.heuristicSystem`,
+     `result.optionalInputs`, `result.warnings`, and `result.sources.commands`.
+   - Lead the churn read with `result.git.churnByClass` (source / tests / productDocs / processArtifacts) rather than raw line totals, so
+     process-doc authoring and archival do not dominate; `result.git.fileHotspots.topFiles` is commit-frequency ranked and each entry carries
+     `class` / `netDeleted`. Treat `result.git.archival.netDeletedFiles` as removed/archived, not as review targets.
    - Treat `result.analysis.themes` as deterministic source signals, not as a substitute for the final user-facing primary theme synthesis.
    - Carry through warnings and source commands so the user can verify what was read.
 

@@ -73,7 +73,7 @@ run_project_retro_probe() {
     --to 2026-05-02 \
     --mode team \
     --format json >"$out_json"
-  grep -q '"schema_version": "cli.repo-retro.report.v1"' "$out_json"
+  grep -q '"schema_version": "cli.repo-retro.report.v2"' "$out_json"
   grep -q '"ok": true' "$out_json"
 }
 
