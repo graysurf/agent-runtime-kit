@@ -1,0 +1,186 @@
+# Work Tier Levels
+
+## Purpose
+
+This policy defines how to size the *tracking and delivery machinery* a unit of
+work gets, and how the agent should triage that choice proactively. It exists to
+make one decision fast and consistent: **for any work request, pick the lowest
+applicable tier and use that tier's method — never run light work through a
+heavy tier.**
+
+It is declared as a `project-dev` document in `AGENT_DOCS.toml` (global scope),
+so the harness injects it through the hook preflight when implementation work
+starts. `AGENT_HOME.md` carries the always-on short directive; this file is the
+full ladder, judge, methods, and behavior contract.
+
+## Principle
+
+Work has two independent axes. Do not collapse them:
+
+- **Delivery axis — the PR.** Almost any code change lands as a PR squash-merged
+  into `main`. The PR is the durable record of *what changed and why*. This axis
+  is a near-constant floor, not a tier.
+- **Tracking axis — the tier.** How much durable, cross-time tracking the
+  problem or plan needs: none, a follow-up issue, or a plan tracking issue. This
+  axis is what the tiers below measure.
+
+The tiers are ordered by overhead. Pick the lowest tier that satisfies the
+work's actual needs, and escalate only when a concrete trigger fires. Size alone
+is never a reason to escalate — *"state worth tracking"* is.
+
+## The Ladder
+
+| Tier | Name | Tracking artifact | Primary method |
+| --- | --- | --- | --- |
+| **L0** | Direct / PR-only | None (the PR is the record) | `semantic-commit` → `deliver-pr` |
+| **L1** | Follow-up issue | One provider issue + comment timeline | `issue-follow-up` |
+| **L2** | Plan tracking issue | Plan bundle + issue + lifecycle | `create-plan-tracking-issue` family |
+| **L3** | Dispatch plan | Shared dispatch issue + lanes | `deliver-dispatch-plan` |
+
+L3 is for one unit of work that must be split across multiple parallel lanes
+or subagents — a shipped, exercised path, not a placeholder. Reach for it when
+the work is too broad for one lane to hold; the user decides whether the scale
+warrants running it.
+
+## Cross-Cutting Concepts
+
+Two things ride alongside the ladder and must not be mistaken for tiers:
+
+- **PR = the delivery floor.** Whenever code changes, L0–L3 all deliver through
+  a PR. Because the merge is squash-into-`main`, the branch commits collapse to
+  one commit and the granular story (description, review, linked issue) survives
+  only on the PR page. So PR body quality *is* record quality: keep the body
+  grounded in the diff with at least `## Summary` + `## Test plan`, produced by
+  the active delivery skill / `agent-runtime pr-body render`.
+- **Implementation-readiness doc = an optional spec, not a tier.** A
+  `discussion-to-implementation-doc` artifact (under
+  `docs/plans/<YYYY-MM-DD>-<slug>/`) captures converged intent (scope,
+  acceptance criteria, validation plan). It can attach to *any* tier — linked in
+  the PR body at L0, linked from the issue / `Read First` at L1/L2. It does not
+  set the tier; the execution tier is chosen by the judge below when the work is
+  picked up. A doc captured but not yet scheduled is simply tier-undecided
+  backlog.
+
+## Escalation Judge
+
+Start at **L0**. Escalate only when a trigger below fires.
+
+**↑ L0 → L1** if any of:
+
+- The work will not be finished now / is deliberately deferred.
+- It needs a durable timeline beyond this chat — cross-session continuity or
+  visibility to others.
+- It needs investigation before the fix is known.
+- It is a blocker to record while routing around it.
+- It is a handoff to someone or something else.
+- It is a recurring loop that keeps needing a timeline.
+
+If none fire, stay at **L0** — the PR (or a one-off answer) is enough.
+
+**↑ L1 → L2** if, on top of an L1 trigger, any of:
+
+- The work is committed and multi-step, with a plan worth freezing (plan/reality
+  drift must be detectable).
+- It needs a state ledger tracked across sessions and resumable.
+- It needs a structured delivery + closeout lifecycle (multiple PRs, validation
+  gates, a close-ready audit).
+
+If none fire, stay at **L1**. A follow-up issue can graduate to L2 later, so when
+torn between L1 and L2, choose L1 first.
+
+**↑ L2 → L3** if the single unit of work must be split across multiple parallel
+lanes or subagents — independent PRs coordinated under one dispatch issue.
+
+## Methods By Tier
+
+### L0 — Direct / PR-only
+
+- Do the work, commit through `semantic-commit`, deliver through
+  `deliver-pr` (squash → `main`).
+- PR body: `## Summary` + `## Test plan`, grounded in the diff.
+- If a spec doc backs the work, link it in the PR body and close the doc's loop
+  per its retention intent (retire when cleanup-eligible, promote when durable).
+- No issue.
+
+### L1 — Follow-up issue
+
+- Use `issue-follow-up` (open mode): normalize the problem or objective into the
+  issue with `type::`, `area::`, and `state::` labels plus `workflow::follow-up`
+  (label mechanics owned by `forge-cli` / `forge-label-taxonomy.md`).
+- Maintain the timeline with one concise comment per meaningful step
+  (Checked / Result / Decision / Next). Do not let chat become the only source
+  of truth once the issue exists.
+- When implementing, deliver via the L0 PR path and link the PR to the issue;
+  record merge / close on the issue.
+- Graduate to L2 when the work becomes a committed, state-tracked plan.
+
+### L2 — Plan tracking issue
+
+- If a design needs freezing first, run `discussion-to-implementation-doc` to
+  produce the source doc, then author the plan bundle (`<slug>-plan.md` +
+  `<slug>-execution-state.md`).
+- `create-plan-tracking-issue` → `execute-plan-tracking-issue`
+  (state / session / validation checkpoints) → `deliver-plan-tracking-issue`
+  (PR) → `plan-tracking-issue-closeout` → `plan-archive-migrate` to retire the
+  bundle.
+
+### L3 — Dispatch plan
+
+- Use for one effort split across parallel lanes / subagents. Open the shared
+  dispatch issue with `deliver-dispatch-plan`, run each lane through
+  `execute-dispatch-lane`, review lane PRs with `review-dispatch-lane-pr`, and
+  close with `dispatch-plan-closeout`.
+- Same PR floor: each lane delivers its own PR; the dispatch issue is the spine.
+
+### Doc Lifecycle At L0 / L1
+
+L2 retires its bundle automatically (closeout + `plan-archive-migrate`). L0 and
+L1 have **no** automatic retirement step, so when a spec doc is executed at those
+tiers, close its loop by hand: link it from the PR or issue, mark it done, and
+retire or promote it per its retention intent. Otherwise `docs/plans/` fills with
+shipped-but-still-"to do" orphan source docs.
+
+## Agent Behavior: Proactive Triage
+
+At the start of a substantive work request — a code, docs, or config change, or
+a tracked task; not pure question-answering or open discussion — the agent
+should:
+
+1. **Classify.** Run the escalation judge and state the tier (L0–L3) in one line
+   with the trigger that set it (for example, "L1: needs root-cause
+   investigation before any fix").
+2. **Recommend the next step.** Name the concrete method for that tier (the
+   skill or command from Methods By Tier).
+3. **Surface at the escalation boundary.** When the tier is **L1+** (it
+   creates a durable provider artifact or commits to a heavier path) or the
+   classification is **ambiguous**, present the level and recommended next
+   step as a decision and wait for the user before creating the artifact. For
+   an **unambiguous L0**, say so and proceed — stopping to ask on trivial work
+   is itself over-tiering.
+4. **Re-triage on signal change.** If new evidence escalates the work mid-flight
+   (an L0 fix balloons into a multi-step effort), say so and re-surface the
+   decision.
+
+This behavior obeys the same principle it enforces: it adds ceremony only at the
+escalation boundary, never on routine L0 work.
+
+## Examples
+
+- Fix a typo, a clear bug, or add a flag — finished in one pass → **L0**.
+- A bug is found but other work comes first, or the root cause is unknown → **L1**.
+- "Refactor subsystem X" spanning several days and PRs with progress to
+  track → **L2**.
+- A broad migration across many independent modules, run as parallel lanes →
+  **L3**.
+- A doc recorded "do Y later" that is not yet scheduled → **capture (tier
+  undecided)**; classify when picked up, usually L0 or L1.
+
+## Relationship To Nearby Surfaces
+
+- `AGENT_HOME.md` carries the always-on short directive that triggers proactive
+  triage; this file is the full reference it points to.
+- `issue-follow-up`, the `create-plan-tracking-issue` family, and
+  `discussion-to-implementation-doc` are the per-tier methods; their `SKILL.md`
+  files own the mechanics.
+- `create-pr` / `deliver-pr` / `close-pr` own provider PR/MR delivery (the floor).
+- `forge-label-taxonomy.md` owns label selection for L1/L2 issues.

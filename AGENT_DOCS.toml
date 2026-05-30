@@ -32,6 +32,14 @@ required = true
 when = "path-exists:Cargo.toml || path-exists:package.json || path-exists:src/** || path-exists:scripts/ci/all.sh"
 notes = "Local validation and CI gate procedure; required only for code repos (auto-skipped in a docs-only checkout)"
 
+[[document]]
+context = "project-dev"
+scope = "global"
+path = "core/policies/work-tier-levels.md"
+required = true
+when = "always"
+notes = "Work-tier levels (L0-L3) and proactive triage: classify each work request into the lowest applicable tier, recommend the next step, and surface a decision at the L1+ escalation boundary. Global so any project-dev work inherits it when this checkout is the docs home."
+
 # Per-intent validation contract: what must run before declaring a project-dev
 # task done. Consumed by the finish-line gate via `preflight --intent
 # project-dev --format json`; the gate blocks a stop when code was edited but
