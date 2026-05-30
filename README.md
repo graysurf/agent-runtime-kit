@@ -86,13 +86,15 @@ behavior, and shared capabilities belong upstream in nils-cli.
 
 ## Local setup
 
-Clone or enter your local checkout, then point `agent-docs` at that checkout:
+Clone or enter your local checkout. docs-home is normally derived from the
+install symlink; to point `agent-docs` at this checkout explicitly, export
+`AGENT_DOCS_HOME` or pass `--docs-home`:
 
 ```bash
 cd /path/to/agent-runtime-kit
 export AGENT_DOCS_HOME="$PWD"
-agent-docs resolve --context startup --strict --format checklist
-agent-docs resolve --context project-dev --strict --format checklist
+agent-docs audit --target all --strict
+agent-docs preflight --intent project-dev --format json
 ```
 
 For persistent local shells, add a host-local path to `~/.zshenv`:
@@ -109,12 +111,14 @@ catalog. `$AGENT_HOME` is reserved for writable `agent-out` state.
 
 ## Development workflow
 
-Before implementation, tests, commits, delivery, or documentation edits, run
-the required `agent-docs` preflight from the repository root:
+`agent-docs` is not a manual per-task step: required-doc and validation policy
+is declared in `AGENT_DOCS.toml`, home policy is auto-loaded, per-intent docs are
+hook-injected, and validation is enforced at the finish line. To inspect or
+audit what this repo requires from the repository root:
 
 ```bash
-agent-docs resolve --context startup --strict --format checklist
-agent-docs resolve --context project-dev --strict --format checklist
+agent-docs preflight --intent project-dev --format json
+agent-docs audit --target all --strict
 ```
 
 Documentation changes also follow

@@ -89,9 +89,9 @@ git -C "$repo" push origin main
      work from this skill.
    - If meaningful task work remains, finish or report that blocker before
      running closeout.
-2. Run required preflight before writes:
-   - `agent-docs resolve --context startup --strict --format checklist`
-   - `agent-docs resolve --context project-dev --strict --format checklist`
+2. Heed the auto-loaded home policy and the hook-injected `project-dev`
+   preflight before writes; `agent-docs audit --target all --strict` surfaces
+   any repo-health problems.
 3. Gather only available, relevant evidence:
    - Review the conversation's concrete outcomes, repairs, failures, retries,
      validation results, and current diff.

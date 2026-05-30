@@ -25,15 +25,18 @@ agent-runtime --version
 plan-tooling --version
 ```
 
-Before repository edits, export `AGENT_DOCS_HOME` to this checkout and run
-the home-scope preflight (the CLI reads `AGENT_DOCS_HOME` from env when
-`--docs-home` is omitted):
+Required-doc policy is data this repo declares in `AGENT_DOCS.toml`; the harness
+delivers it (home policy auto-loaded, per-intent docs hook-injected, repo health
+checked by `agent-docs audit`), so there is no manual per-task preflight. To
+inspect what this repo requires, or to audit its health:
 
 ```bash
-export AGENT_DOCS_HOME="$PWD"
-agent-docs resolve --context startup --strict --format checklist
-agent-docs resolve --context project-dev --strict --format checklist
+agent-docs audit --target all --strict
+agent-docs preflight --intent project-dev --format json
 ```
+
+docs-home is derived from the install symlink; pass `--docs-home "$PWD"` to
+point at this checkout explicitly.
 
 ## Refreshing Runtime Skills
 
