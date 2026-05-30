@@ -6,9 +6,10 @@ A single-folder Docker setup that builds a Linux image where **Codex CLI** and
 
 Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/77>
 
-> Status: first working PoC. Scope is intentionally Linux-only and
-> host-independent — macOS-only surfaces (Alfred CLIs, `macos-agent`,
-> `screen-record`, `op-ssh-sign`) are out of scope.
+> Status: published to GHCR on release, with a multi-arch build + smoke-test
+> gate in the release workflow (see [Publishing](#publishing)). Scope is
+> intentionally Linux-only and host-independent — macOS-only surfaces (Alfred
+> CLIs, `macos-agent`, `screen-record`, `op-ssh-sign`) are out of scope.
 
 Everything Docker-related is contained in this folder. The build context is the
 repository root (the image bakes the source so the rendered `~/.claude` /
@@ -88,8 +89,9 @@ docker run --rm -it -e ANTHROPIC_API_KEY -e OPENAI_API_KEY agent-runtime-kit:dev
 
 ## What's inside
 
-- **Base**: `node:22-bookworm-slim` (Node ≥18 for both CLIs; glibc for their
-  native binaries).
+- **Base**: `node:22-trixie-slim` — Debian 13, glibc 2.41 (Node ≥18 for both
+  CLIs; glibc for their native binaries). Trixie, not bookworm: the `nils-cli`
+  release binaries require GLIBC ≥ 2.39, which bookworm's 2.36 cannot satisfy.
 - **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via `npm -g`.
 - **nils-cli**: prebuilt Linux release tarball (`agent-runtime`, `agent-docs`,
   `semantic-commit`, `forge-cli`, `plan-tooling`, `plan-issue`, … ~40 binaries),
