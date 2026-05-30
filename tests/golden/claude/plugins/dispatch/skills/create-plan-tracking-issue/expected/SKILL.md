@@ -115,7 +115,11 @@ plan`) only when the target repo declares them.
 2. **Scope decision** — confirm the dry-run preview is the expected
    open shape; obtain explicit user approval for live mutation.
 3. **Lifecycle checkpoint** — run `record open --profile tracking`
-   live with the chosen labels.
+   live with the chosen labels. `record open` is idempotent: re-running
+   for the same bundle resumes the existing tracker (matched by the
+   source snapshot identity — repo-relative path + last-commit SHA) and
+   attaches only the missing lifecycle comments instead of opening a
+   duplicate, so a partial open is safe to retry from the same cwd.
 4. **Optional run-state bootstrap** — run `tracking run init` so the
    next skill has a typed local run state.
 5. **Read-back** — confirm `source`, `plan`, and `state` markers via
