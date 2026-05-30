@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-25
 - Area: meta/pre-pr skill; runtime-kit dispatcher policy
 - Severity: medium
@@ -73,7 +73,12 @@ Closing this entry requires linking the upstream PR / commit that implements
 
 ## Next Action
 
-Open an upstream nils-cli (or `agent-runtime-kit`) issue describing the bare-
-repo gap and proposing options (a)–(c). Reference this entry. Pending that,
-sandbox owners should document the substituted gate inline so the policy gap
-is auditable.
+None. Resolved by graysurf/agent-runtime-kit#118: `meta/pre-pr` now gives a clear stop message and `setup-project` adoption path when the project-local script is missing.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/118`
+
+## Archive
+
+- Archived: 2026-05-30
+- Reason: Resolved by actionable missing-script guidance in the pre-pr skill (agent-runtime-kit#118).
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/118`

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-26
 - Area: Rust Cargo workspace features × `serde_json` JSON envelope key order
 - Severity: medium
@@ -99,11 +99,12 @@ contract / runbook update that documents the rule.
 
 ## Next Action
 
-Open a sympoies/nils-cli issue proposing a `serde-json-preserve-order`
-crate audit (the simplest implementation: parse each crate's
-`Cargo.toml`, grep `serde_json::Value` usage under `src/`, fail when
-both are present and the crate does not pin the feature). Reference
-this entry from the issue. Optionally pair the audit with a one-paragraph
-note in
-`docs/runbooks/new-cli-crate-development-standard.md` so new crates land
-with the feature pinned by default.
+None. Resolved by sympoies/nils-cli#553: markdown template runbook documents workspace feature unification and `preserve_order` pinning.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/553`
+
+## Archive
+
+- Archived: 2026-05-30
+- Reason: Resolved by documented preserve_order workspace-feature guidance (nils-cli#553).
+- Durable link: `https://github.com/sympoies/nils-cli/pull/553`

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-26
 - Area: Rust Cargo `--workspace --bins` × `[[bin]] required-features` × CI
   completion / coverage audits
@@ -104,11 +104,12 @@ the audit-script audit PR.
 
 ## Next Action
 
-Open a sympoies/nils-cli issue scoping a sweep of
-`scripts/ci/*.sh` for audits that build with
-`cargo build --workspace --bins` (or shell out to similar) and either
-patch them to `--all-features` or document the assumption explicitly.
-Pair with a one-paragraph note in
-`docs/runbooks/new-cli-crate-development-standard.md` about adding a
-new feature-gated bin (which audits to update). Reference this entry
-from the issue.
+None. Resolved by sympoies/nils-cli#553: completion audit now builds workspace bins with `--all-features` before checking `target/debug` binaries.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/553`
+
+## Archive
+
+- Archived: 2026-05-30
+- Reason: Resolved by feature-aware completion audit build (nils-cli#553).
+- Durable link: `https://github.com/sympoies/nils-cli/pull/553`

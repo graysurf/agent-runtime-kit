@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-27
 - Area: heuristic-inbox CLI; Heuristic System retention policy
 - Severity: low
@@ -64,6 +64,12 @@ Promote when sympoies/nils-cli#585 lands any one of:
 
 ## Next Action
 
-Track sympoies/nils-cli#585. No blocking work — the hand-authored workaround is
-sufficient for now; this entry exists so the friction is visible and the CLI
-fix is anchored to a concrete case.
+None. Resolved by sympoies/nils-cli#595: `heuristic-inbox new` now accepts `--from-evidence` and `--manual` source modes; verified live in heuristic-inbox 0.30.1.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/595`
+
+## Archive
+
+- Archived: 2026-05-30
+- Reason: Resolved by non-skill-usage source modes shipped in nils-cli#595 (live in heuristic-inbox 0.30.1).
+- Durable link: `https://github.com/sympoies/nils-cli/pull/595`
