@@ -169,6 +169,98 @@ check_state_body_not_synthesized_fallback() {
   fi
 }
 
+# ---- Dashboard / state freshness guards (#54) -------------------------
+#
+# graysurf/plan-tracking-testbed#54: on a clean happy-path run the Final
+# Dashboard still read `Target scope: in-progress`, `Current task: 1.1`,
+# `Next action:` (blank) after both tasks were done, and every rendered
+# Execution State body kept its pre-flight header verbatim
+# (`Status: ready-to-start`, `Tracking issue: tbd`, `… snapshot: pending`).
+# Root cause is in the nils-cli renderer/controller, not these skills: the
+# dashboard is derived from the latest state payload, but `tracking
+# checkpoint` fills target_scope with the phase word, never advances
+# current/next_action, and the visible state header is echoed verbatim from
+# the canonical execution-state.md (only its `## Task Ledger` rows are
+# patched by `plan-tooling ledger-update`). These guards encode the
+# correctness contract the renderer must satisfy; they are red until the CLI
+# derives these human-visible fields from durable evidence.
+
+# Lifecycle status/phase vocabulary that must never appear *as* a scope value.
+DASHBOARD_STATUS_WORDS='pending in-progress in_progress complete completed blocked ready-for-close ready_for_close done validating implementing'
+
+dashboard_field() {
+  # Echo the trimmed value of a `- <Field>:` line from the issue body.
+  local field="$1" body
+  body=$(jq -r '.body' "${snap_dir}/issue.json")
+  printf '%s\n' "${body}" |
+    grep -iE "^[-*]?[[:space:]]*${field}:" |
+    head -1 |
+    sed -E "s/^[-*]?[[:space:]]*${field}:[[:space:]]*//I" |
+    sed -E 's/[[:space:]]+$//'
+}
+
+check_dashboard_target_scope_fresh() {
+  local val val_lc
+  val="$(dashboard_field 'Target scope')"
+  if [ -z "${val}" ]; then
+    fail "dashboard: no 'Target scope' field found"
+    return
+  fi
+  val_lc=$(printf '%s' "${val}" | tr '[:upper:]' '[:lower:]')
+  # IFS-independent membership test against the space-padded word list.
+  case " ${DASHBOARD_STATUS_WORDS} " in
+    *" ${val_lc} "*)
+      fail "dashboard 'Target scope' is lifecycle status word '${val}' (stale derivation; #54) — expected plan scope text"
+      ;;
+    *)
+      pass "dashboard 'Target scope' is real scope text, not a status word"
+      ;;
+  esac
+}
+
+check_dashboard_current_task_fresh() {
+  # At closeout every ledger row is terminal, so a bare task id in
+  # 'Current task' means the field never advanced past the first selected
+  # task. A closed plan's dashboard must read a terminal value.
+  local val
+  val="$(dashboard_field 'Current task')"
+  if [ -z "${val}" ]; then
+    fail "dashboard: no 'Current task' field found"
+    return
+  fi
+  if printf '%s' "${val}" | grep -qE '^(Task[[:space:]]+)?[0-9]+(\.[0-9]+)*$'; then
+    fail "dashboard 'Current task' still names task '${val}' on a closed plan (never advanced to a terminal value; #54)"
+  else
+    pass "dashboard 'Current task' reads a terminal value (${val})"
+  fi
+}
+
+check_dashboard_next_action_present() {
+  local val
+  val="$(dashboard_field 'Next action')"
+  if [ -z "${val}" ]; then
+    fail "dashboard 'Next action' is empty on a closed plan (#54) — expected a terminal action (closeout / complete / none)"
+  else
+    pass "dashboard 'Next action' is populated (${val})"
+  fi
+}
+
+check_state_body_not_frozen_preflight() {
+  # The rendered Execution State body must not keep pre-flight placeholders
+  # once the issue is open/posted/closed: a frozen header is the #54 tell.
+  local bodies
+  bodies="$(state_bodies_blob)"
+  if grep -qiE 'Status:[[:space:]]*ready-to-start' "${bodies}"; then
+    fail "state body still says 'Status: ready-to-start' on an opened/closed issue (frozen header; #54)"
+  elif grep -qiE 'Tracking issue:[[:space:]]*tbd' "${bodies}"; then
+    fail "state body still says 'Tracking issue: tbd' after the issue was opened (frozen header; #54)"
+  elif grep -qiE 'snapshot:[[:space:]]*pending' "${bodies}"; then
+    fail "state body still marks a snapshot 'pending' after snapshots were posted (frozen header; #54)"
+  else
+    pass "state body header is not frozen at pre-flight placeholders"
+  fi
+}
+
 check_linked_pr_merged() {
   # Finding #16 (deliver scope): a deliver run must produce a *merged* PR
   # with a real merge SHA. The lifecycle markers alone do not prove the PR
@@ -308,6 +400,11 @@ case "${phase}" in
       check_state_body_contains_ledger_row "${tid}"
     done
     check_state_body_not_synthesized_fallback
+    # Tracking: the rendered state header must already reflect the open issue,
+    # not its pre-flight placeholders (#54).
+    if [ "${FIXTURE_PROFILE}" != "dispatch" ]; then
+      check_state_body_not_frozen_preflight
+    fi
     # Dispatch multi-lane proof: the initial state plus one lane-scoped
     # state / session / validation checkpoint per lane.
     if [ "${FIXTURE_PROFILE}" = "dispatch" ]; then
@@ -389,6 +486,15 @@ case "${phase}" in
       check_state_body_contains_ledger_row "${tid}"
     done
     check_state_body_not_synthesized_fallback
+    # Tracking Final Dashboard freshness (#54): on a closed plan the
+    # derived dashboard fields and the rendered state header must reflect
+    # completion, not the pre-flight authoring.
+    if [ "${FIXTURE_PROFILE}" != "dispatch" ]; then
+      check_dashboard_target_scope_fresh
+      check_dashboard_current_task_fresh
+      check_dashboard_next_action_present
+      check_state_body_not_frozen_preflight
+    fi
     ;;
   *)
     die "unknown phase: ${phase}"
