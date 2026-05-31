@@ -111,11 +111,23 @@ git -C "$repo" push origin main
    - Use an `operation-records/<slug>/RECORD.md` only when the lesson is
      repeated, cross-skill, audit-worthy, or proves retained evidence became a
      durable fix.
+   - Run a lightweight cluster-compression sweep, not only a this-session scan:
+     when several `promoted` or archived entries already share a root cause or
+     area, treat the cluster itself as an `operation-records/<slug>/RECORD.md`
+     candidate per the Compression Rule, even if this session created none of
+     them. Compress only resolved entries; reference still-open siblings as
+     evidence the class recurs rather than claiming them fixed. This is the
+     primary trigger that keeps the operation-records lane from going unused.
    - Archive entries only after they are `promoted` or `wontfix`, validated,
      and have no remaining next action.
 5. Write curated records through the narrow mechanism:
    - Prefer `heuristic-inbox new`, `set-status`, `ingest-evidence`, and
      `archive` for case mechanics.
+   - Pass an explicit `$root`-derived path (or `--inbox-dir
+     "$root/error-inbox"`) to every mutating `heuristic-inbox` call — `new`,
+     `set-status`, `ingest-evidence`, `archive`. Never rely on the current
+     working directory, or `archive` can write a stray cwd-relative
+     `./heuristic-system/` tree instead of the canonical root.
    - Keep retained prose compact: signal, evidence pointer, impact,
      workaround, promotion criteria, and next action.
    - Redact home paths to `<workspace>/...` or `$HOME/...` before retaining
