@@ -96,6 +96,9 @@
 - Do not present unsupported assumptions as facts.
 - For external, unstable, or time-sensitive claims, run `task-tools` preflight,
   prefer authoritative sources, and cite the evidence used.
+- External-fact workflow, source tags, and the CLI tool catalog:
+  `core/policies/external-facts.md` and `core/policies/cli-tools.md` (injected
+  for `task-tools`).
 - Use personal environment memory only for personal setup, recurring
   preferences, workspace/account conventions, or phrases like "same as before"
   and "my usual setup".

@@ -54,6 +54,29 @@ def run_hook(
     return completed.returncode, parse_stdout(completed.stdout), completed.stderr
 
 
+def run_shell_hook(
+    script_name: str,
+    payload: dict[str, Any],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> tuple[int, dict[str, object] | None, str]:
+    """Run a shell (bash) shared hook; mirrors run_hook for `.sh` hooks."""
+    full_env = dict(os.environ)
+    if env:
+        full_env.update(env)
+    completed = subprocess.run(
+        ["bash", str(HOOK_DIR / script_name)],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+        env=full_env,
+        check=False,
+    )
+    return completed.returncode, parse_stdout(completed.stdout), completed.stderr
+
+
 def command_payload(command: str, **tool_input: str) -> dict[str, Any]:
     return {"tool_name": "Bash", "tool_input": {"command": command, **tool_input}}
 
@@ -539,6 +562,51 @@ class SharedHookTests(unittest.TestCase):
             code, decision, stderr = run_hook("stop-finish-line-gate.py", {}, cwd=repo)
             self.assertEqual(code, 0, stderr)
             self.assert_allowed(decision)
+
+    def test_preflight_cue_covers_every_declared_intent(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            (repo / "core" / "policies").mkdir(parents=True)
+            (repo / "core" / "policies" / "ext.md").write_text(
+                "# Ext\n", encoding="utf-8"
+            )
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n\n'
+                '[[document]]\ncontext = "task-tools"\nscope = "project"\n'
+                'path = "core/policies/ext.md"\nrequired = true\nwhen = "always"\n\n'
+                '[[validation]]\ncontext = "project-dev"\n'
+                'commands = ["bash scripts/ci/all.sh"]\n'
+                'marker = ".cache/agent-validation/project-dev.ok"\n',
+                encoding="utf-8",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo), "HOME": str(home)}
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-docs.sh",
+                {"session_id": "cue-test", "prompt": "hello"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            assert decision is not None
+            hook_output = decision.get("hookSpecificOutput", {})
+            ctx = ""
+            if isinstance(hook_output, dict):
+                ctx = str(hook_output.get("additionalContext", ""))
+            # The project-dev intent still surfaces (doc + validation command).
+            self.assertIn("project-dev", ctx)
+            self.assertIn("DEV.md", ctx)
+            self.assertIn("scripts/ci/all.sh", ctx)
+            # The generalization: a declared non-project-dev intent surfaces too.
+            self.assertIn("task-tools", ctx)
+            self.assertIn("ext.md", ctx)
 
     def test_target_hook_fragments_reference_installed_shared_scripts(self) -> None:
         expected_scripts = {

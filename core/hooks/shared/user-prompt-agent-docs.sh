@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 #
 # UserPromptSubmit hook: inject a short, language-agnostic agent-docs awareness
-# cue for repos that declare a project-dev intent in AGENT_DOCS.toml.
+# cue for repos that declare intents in AGENT_DOCS.toml.
 #
-# There is no English-keyword gating: the cue is driven by what the repo
-# declares (resolved via `agent-docs preflight --intent`), so a non-English
-# prompt in a policy repo still gets the cue. It fires at most once per session
-# per repo (falling back to once per day) so it is a start-of-task nudge, not a
-# per-prompt reminder.
+# The cue covers EVERY declared intent (for example project-dev and task-tools),
+# enumerated from `agent-docs list` and resolved per intent via `agent-docs
+# preflight --intent`. There is no English-keyword gating: the cue is driven by
+# what the repo declares, so a non-English prompt in a policy repo still gets the
+# cue, and declaring a new intent in AGENT_DOCS.toml activates it automatically.
+# It fires at most once per session per repo (falling back to once per day) so it
+# is a start-of-task nudge, not a per-prompt reminder.
 #
 set -uo pipefail
 
@@ -55,42 +57,73 @@ docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
 dh_args=()
 [[ -n "$docs_home" ]] && dh_args=(--docs-home "$docs_home")
 
-preflight_json="$(
-  agent-docs "${dh_args[@]}" --project-path "$repo_root" \
-    preflight --intent project-dev --format json 2>/dev/null || true
-)"
-[[ -z "$preflight_json" ]] && exit 0
-
-cue="$(
-  CTX_JSON="$preflight_json" "$python_bin" -c '
-import json, os
+# Enumerate every declared intent, newest catalog wins. No hard-coded intent.
+intents="$(
+  agent-docs "${dh_args[@]}" --project-path "$repo_root" list --format json 2>/dev/null |
+    "$python_bin" -c '
+import json, sys
 try:
-    d = json.loads(os.environ["CTX_JSON"])
+    d = json.load(sys.stdin)
 except Exception:
     raise SystemExit(0)
-docs = [x for x in d.get("documents", []) if x.get("required")]
-val = d.get("validation") or {}
-cmds = val.get("commands") or []
-if not docs and not cmds:
-    raise SystemExit(0)
+for intent in d.get("intents", []):
+    if isinstance(intent, str) and intent:
+        print(intent)
+' 2>/dev/null || true
+)"
+[[ -z "$intents" ]] && exit 0
+
+# Resolve each intent's document set + validation contract (preflight honors the
+# per-document `when` conditions; `list` alone does not).
+preflights=()
+while IFS= read -r intent; do
+  [[ -z "$intent" ]] && continue
+  pf="$(
+    agent-docs "${dh_args[@]}" --project-path "$repo_root" \
+      preflight --intent "$intent" --format json 2>/dev/null || true
+  )"
+  [[ -z "$pf" ]] && continue
+  preflights+=("$pf")
+done <<<"$intents"
+[[ ${#preflights[@]} -eq 0 ]] && exit 0
+
+# Compose one cue across all intents: per-intent required docs, plus the union
+# of declared validation commands (the finish-line gate enforces those).
+cue="$(
+  "$python_bin" - "${preflights[@]}" <<'PY' 2>/dev/null || true
+import json, os, sys
 lines = []
-if docs:
-    names = ", ".join(os.path.basename(x.get("path", "")) for x in docs[:6])
-    lines.append(
-        f"Required project-dev docs ({len(docs)}): {names}. Read them before writing."
-    )
-if cmds:
+val_cmds = []
+for raw in sys.argv[1:]:
+    try:
+        d = json.loads(raw)
+    except Exception:
+        continue
+    intent = d.get("intent") or "?"
+    docs = [x for x in d.get("documents", []) if x.get("required")]
+    if docs:
+        names = ", ".join(os.path.basename(x.get("path", "")) for x in docs[:6])
+        lines.append(
+            f"Required {intent} docs ({len(docs)}): {names}. Read them before writing."
+        )
+    val = d.get("validation") or {}
+    for cmd in (val.get("commands") or []):
+        if cmd not in val_cmds:
+            val_cmds.append(cmd)
+if val_cmds:
     lines.append(
         "Before declaring this task done, run the declared validation: "
-        + " && ".join(cmds)
+        + " && ".join(val_cmds)
         + " (the finish-line gate enforces this; state a waiver to override)."
     )
+if not lines:
+    raise SystemExit(0)
 print("\n".join(lines))
-' 2>/dev/null || true
+PY
 )"
 [[ -z "$cue" ]] && exit 0
 
-reminder="[agent-runtime-kit:${product}] This repo declares an agent-docs project-dev contract.
+reminder="[agent-runtime-kit:${product}] This repo declares agent-docs intent contracts.
 ${cue}"
 
 CTX="$reminder" "$python_bin" -c '
