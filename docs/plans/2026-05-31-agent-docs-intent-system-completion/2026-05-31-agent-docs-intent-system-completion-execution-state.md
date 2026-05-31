@@ -3,8 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - Task 5.3 task-tools docs reclassification is complete;
-  Task 5.4 nils-cli primitive integration is next.
+- Status: in-progress - Task 5.4 nils-cli primitive integration is complete;
+  Task 6.1 runtime-kit pin bump and delivery is next.
 - Target scope: cross-repo completion of `graysurf/agent-runtime-kit#217`
   using Option C. nils-cli owns the declared-intent guard primitive and
   release; runtime-kit owns hook/catalog consumer changes, pin bump, and
@@ -13,9 +13,9 @@
   Step 3 nils-cli implementation PR -> Step 4 nils-cli release and tap update
   -> Step 5 runtime-kit consumer PR -> Step 6 runtime-kit pin bump and
   closeout.
-- Current task: Task 5.4 - integrate the new nils-cli primitive in runtime-kit.
-- Next task: Task 6.1 - bump runtime-kit nils-cli pin and deliver.
-- Last updated: 2026-05-31T13:11:01Z
+- Current task: Task 6.1 - bump runtime-kit nils-cli pin and deliver.
+- Next task: close the tracker after Task 6.1 delivery.
+- Last updated: 2026-05-31T13:21:55Z
 - Branch/commit/PR: `feat/agent-docs-intent-completion`; nils-cli PR
   https://github.com/sympoies/nils-cli/pull/719 merged as
   `ae51cec1831188082162bec56d3b966c6faa5295`; nils-cli release PR
@@ -28,6 +28,8 @@
   https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc
   and runtime-kit Task 5.3 commit
   https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0
+  and runtime-kit Task 5.4 commit
+  https://github.com/graysurf/agent-runtime-kit/commit/bc8c72fef6ca50e3b19e45ff2bdd4e4057828ab7
   are the implementation commits.
 - Source document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Plan document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
@@ -45,6 +47,8 @@
   https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc
 - Step 5.3 runtime-kit task-tools docs reclassification:
   https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0
+- Step 5.4 runtime-kit guarded intent integration:
+  https://github.com/graysurf/agent-runtime-kit/commit/bc8c72fef6ca50e3b19e45ff2bdd4e4057828ab7
 
 ## Validation Plan
 
@@ -75,7 +79,7 @@
 | 5.1 | done | Make finish-line validation intent-aware | https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035 | Finish-line recorder and stop gate now resolve every declared validation-bearing intent, record each contract independently, and block until each contract has run after code edits. |
 | 5.2 | done | Make required-doc cue truncation explicit | https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc | Required-doc cue now appends +N more when the rendered six-doc cap hides additional required docs. |
 | 5.3 | done | Reclassify `cli-tools.md` as optional for `task-tools` | https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0 | task-tools now keeps external-facts.md required while cli-tools.md remains available as optional auditable context. |
-| 5.4 | pending | Integrate the new nils-cli primitive in runtime-kit | tbd | Use fail-closed declared-intent checks where runtime-kit explicitly requests intents. |
+| 5.4 | done | Integrate the new nils-cli primitive in runtime-kit | https://github.com/graysurf/agent-runtime-kit/commit/bc8c72fef6ca50e3b19e45ff2bdd4e4057828ab7 | Runtime hooks now use guarded agent-docs preflight when supported, and UserPromptSubmit fails closed for undeclared requested intents. |
 | 6.1 | pending | Bump runtime-kit nils-cli pin and deliver | tbd | Use standard bump flow, run full validation, merge PR, and close the tracker. |
 
 ## Session Log
@@ -109,6 +113,12 @@
   `external-facts.md` required while `cli-tools.md` remains present as optional
   context. Home and external-facts policy wording now describes the CLI catalog
   as on-demand optional context instead of force-injected required context.
+- 2026-05-31: Task 5.4 completed. Runtime hooks now use guarded
+  `agent-docs preflight --require-declared-intent` when the installed surface
+  supports it, falling back for the pinned 0.31.5 surface until Task 6.1.
+  Regression coverage proves finish-line contract resolution uses guarded
+  preflight and UserPromptSubmit fails closed when a requested intent is
+  undeclared under the guard.
 
 ## Validation
 
@@ -153,6 +163,15 @@
 | `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after Task 5.3. | n/a |
 | `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash tests/hooks/run.sh` | pass | 30 shared hook tests passed after Task 5.3. | n/a |
 | `printf '{}' \| AGENT_RUNTIME_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit python3 core/hooks/shared/stop-finish-line-gate.py` | pass | Finish-line gate emitted no block after the declared project-dev validation commands ran for Task 5.3. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 scripts/dev/with-nils-version.sh release:v0.31.5 -- python3 -m unittest tests.hooks.test_shared_hooks.SharedHookTests.test_finish_line_uses_guarded_preflight_when_supported tests.hooks.test_shared_hooks.SharedHookTests.test_preflight_cue_fails_closed_for_undeclared_intent_when_guarded` | fail | Red tests confirmed finish-line still used `explain` and UserPromptSubmit still swallowed guarded preflight failure for an undeclared requested intent. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 scripts/dev/with-nils-version.sh release:v0.31.5 -- python3 -m unittest tests.hooks.test_shared_hooks.SharedHookTests.test_finish_line_uses_guarded_preflight_when_supported tests.hooks.test_shared_hooks.SharedHookTests.test_preflight_cue_fails_closed_for_undeclared_intent_when_guarded` | pass | Targeted guarded-intent hook regressions pass after switching to guarded preflight when supported. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 scripts/dev/with-nils-version.sh release:v0.31.5 -- python3 -m unittest tests.hooks.test_shared_hooks.SharedHookTests.test_preflight_cue_covers_every_declared_intent tests.hooks.test_shared_hooks.SharedHookTests.test_finish_line_gate_blocks_unvalidated_edit_then_releases tests.hooks.test_shared_hooks.SharedHookTests.test_finish_line_gate_enforces_every_declared_validation_intent` | pass | Existing project-dev/task-tools cue and finish-line paths continue to work under the pinned 0.31.5 surface. | n/a |
+| `agent-docs preflight --intent no-such-intent --require-declared-intent --format json` | pass | Host 0.31.6 guarded unknown intent returns JSON error code `undeclared-intent` and exits 65. | n/a |
+| `agent-docs preflight --intent project-dev --require-declared-intent --format json` | pass | Host 0.31.6 guarded `project-dev` resolves normally with `validation.declared=true`. | n/a |
+| `agent-docs preflight --intent task-tools --require-declared-intent --format json` | pass | Host 0.31.6 guarded `task-tools` resolves normally with `external-facts.md` required and `cli-tools.md` optional. | n/a |
+| `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash tests/hooks/run.sh` | pass | 32 shared hook tests passed after Task 5.4. | n/a |
+| `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after Task 5.4. | n/a |
+| `printf '{}' \| AGENT_RUNTIME_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit python3 core/hooks/shared/stop-finish-line-gate.py` | pass | Finish-line gate emitted no block after the declared project-dev validation commands ran for Task 5.4. | n/a |
 
 ## Notes
 
