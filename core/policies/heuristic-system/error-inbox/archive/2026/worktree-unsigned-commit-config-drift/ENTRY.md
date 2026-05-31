@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-27
 - Area: git signing policy; Codex/Claude agent worktree workflows; `commit.gpgsign`
 - Severity: medium
@@ -87,8 +87,12 @@ Promote when **any one** lands:
 
 ## Next Action
 
-Sprint 2 direct-worktree hook and AGENT_HOME policy reduce unmanaged worktree
-creation and forbid per-worktree identity/signing drift, but this case stays
-open until a worktree-config audit/hook or equivalent guard lands.
+None. Promotion criterion (c) is satisfied: nils-cli#712 landed the unified git-cli worktree surface plus a direct-git-worktree ban (core/hooks/shared/block-direct-git-worktree.py is live in this repo), which together with the require-signed-commits-main GitHub ruleset, the lefthook pre-push signed-commits gate, disabled extensions.worktreeConfig in both repos, and the AGENT_HOME per-worktree identity/signing policy prevents per-worktree drift from reaching main. The exact agent path that dropped signing (criterion a) was deprioritized and stays unidentified, but landing is now blocked regardless of root cause.
 
 Lifecycle link: `https://github.com/sympoies/nils-cli/issues/712`
+
+## Archive
+
+- Archived: 2026-06-01
+- Reason: Criterion (c) met: nils-cli#712 direct-worktree ban + signed-commits ruleset/pre-push + worktreeConfig disabled
+- Durable link: `https://github.com/sympoies/nils-cli/issues/712`

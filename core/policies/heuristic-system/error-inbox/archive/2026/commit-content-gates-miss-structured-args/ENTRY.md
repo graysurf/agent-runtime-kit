@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-28
 - Co-author gate fixed: 2026-05-28 (PR #140, squash 008a930)
 - Area: core/hooks/shared (semantic-commit message-content gates)
@@ -57,7 +57,9 @@ guardrail is bypassable through ordinary, documented flags.
 
 ## Next Action
 
-Extend `semantic-commit-body-gate.py` to scan `--message-file` and structured
-`--subject` / `--body-bullet` (reuse `hook_common.iter_flag_values` /
-`read_message_file`), with failing-first tests, then re-run
-`bash tests/hooks/run.sh`.
+None. Resolved: semantic-commit-body-gate.py now resolves subject/body from every message source semantic-commit accepts (--message/-m, --message-file, and the structured --type/--scope/--subject + --body-bullet form, reconstructing the conventional header for the trivial check), reusing hook_common.iter_flag_values / read_message_file; --trailer is intentionally excluded since a trailer is not an explanatory body. Failing-first coverage added in tests/hooks/test_shared_hooks.py (3 bypass repros went None->block). Delivered on branch feat/fix-body-gate-heuristic-closeout alongside this heuristic-inbox closeout sweep.
+
+## Archive
+
+- Archived: 2026-06-01
+- Reason: Body-gate half closed: semantic-commit-body-gate.py covers --message-file + structured --subject/--body-bullet with failing-first tests (co-author half was PR #140)
