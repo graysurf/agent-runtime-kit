@@ -192,6 +192,79 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "missing a body")
 
+    def test_blocks_nontrivial_body_gate_via_structured_subject_without_bullet(self) -> None:
+        # Bypass repro: a non-trivial commit carried via structured
+        # --type/--scope/--subject with no --body-bullet had no --message body
+        # for extract_message() to recover, so the gate fell through to ALLOW.
+        command = (
+            "semantic-commit commit --type fix --scope hooks --subject 'tighten gate'"
+        )
+        code, decision, stderr = run_hook(
+            "semantic-commit-body-gate.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "missing a body")
+
+    def test_blocks_nontrivial_body_gate_via_message_file_without_body(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            msg = Path(tmp) / "msg.txt"
+            msg.write_text("fix(agent): tighten hook parser\n", encoding="utf-8")
+            code, decision, stderr = run_hook(
+                "semantic-commit-body-gate.py",
+                command_payload(f"semantic-commit commit --message-file {msg}"),
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "missing a body")
+
+    def test_body_gate_trailer_does_not_count_as_body(self) -> None:
+        # A --trailer is metadata, not an explanatory body bullet; a non-trivial
+        # commit with only a trailer must still be blocked.
+        command = (
+            "semantic-commit commit --subject 'fix(hooks): tighten gate' "
+            "--trailer 'Reviewed-by: Jane Dev <jane@example.com>'"
+        )
+        code, decision, stderr = run_hook(
+            "semantic-commit-body-gate.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "missing a body")
+
+    def test_allows_body_gate_with_structured_body_bullet(self) -> None:
+        command = (
+            "semantic-commit commit --type fix --scope hooks "
+            "--subject 'tighten gate' --body-bullet 'covers structured args'"
+        )
+        code, decision, stderr = run_hook(
+            "semantic-commit-body-gate.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+    def test_allows_trivial_structured_type_without_body(self) -> None:
+        # --type chore is trivial; reconstructing the conventional header from
+        # the structured flags keeps the trivial allowance intact.
+        command = "semantic-commit commit --type chore --subject 'bump pinned surface'"
+        code, decision, stderr = run_hook(
+            "semantic-commit-body-gate.py",
+            command_payload(command),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+    def test_allows_body_gate_message_file_with_body(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            msg = Path(tmp) / "msg.txt"
+            msg.write_text("fix(agent): tighten parser\n\n- explain why\n", encoding="utf-8")
+            code, decision, stderr = run_hook(
+                "semantic-commit-body-gate.py",
+                command_payload(f"semantic-commit commit --message-file {msg}"),
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
     def test_blocks_claude_coauthor_trailer_in_heredoc(self) -> None:
         command = (
             "semantic-commit commit --message \"$(cat <<'MSG'\n"
