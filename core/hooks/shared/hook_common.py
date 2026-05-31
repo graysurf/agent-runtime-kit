@@ -231,9 +231,9 @@ def read_message_file(command: str, *, max_bytes: int = 65536) -> str | None:
 # --- agent-docs finish-line validation gate helpers ---------------------------
 #
 # Shared by the PreToolUse recorder (finish-line-record.py) and the Stop gate
-# (stop-finish-line-gate.py). The recorder writes evidence markers under a
-# repo's project-dev validation marker directory; the gate reads them to decide
-# whether the declared validation has run since code was last edited.
+# (stop-finish-line-gate.py). The recorder writes evidence markers under each
+# declared validation marker directory; the gate reads them to decide whether
+# every declared validation contract has run since code was last edited.
 
 
 def git_toplevel(cwd: str | None = None) -> str | None:
@@ -258,13 +258,23 @@ def _runtime_cache_dir() -> str:
     return os.path.join(os.path.expanduser("~"), ".cache", "agent-runtime-kit")
 
 
-def _resolve_project_dev_contract(repo_root: str) -> dict[str, Any] | None:
-    """Resolve a repo's project-dev validation contract via `agent-docs`."""
-    docs_home = os.environ.get("AGENT_RUNTIME_DOCS_HOME") or os.environ.get("AGENT_DOCS_HOME")
+def _docs_home() -> str | None:
+    docs_home = os.environ.get("AGENT_RUNTIME_DOCS_HOME") or os.environ.get(
+        "AGENT_DOCS_HOME"
+    )
+    return docs_home or None
+
+
+def _agent_docs_base_args(repo_root: str) -> list[str]:
+    docs_home = _docs_home()
     args = ["agent-docs"]
     if docs_home:
         args += ["--docs-home", docs_home]
-    args += ["--project-path", repo_root, "explain", "--intent", "project-dev", "--format", "json"]
+    args += ["--project-path", repo_root]
+    return args
+
+
+def _agent_docs_json(args: list[str]) -> dict[str, Any] | None:
     try:
         completed = subprocess.run(
             args, capture_output=True, text=True, check=False, timeout=15
@@ -277,6 +287,21 @@ def _resolve_project_dev_contract(repo_root: str) -> dict[str, Any] | None:
         data = json.loads(completed.stdout)
     except Exception:
         return None
+    return data if isinstance(data, dict) else None
+
+
+def _validation_marker_default(context: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", context.strip()).strip(".-")
+    if not safe:
+        safe = "validation"
+    return f".cache/agent-validation/{safe}.ok"
+
+
+def _contract_from_explain(
+    data: dict[str, Any] | None, intent: str
+) -> dict[str, Any] | None:
+    if not isinstance(data, dict):
+        return None
     validation = data.get("validation") if isinstance(data, dict) else None
     if not isinstance(validation, dict) or not validation.get("declared"):
         return None
@@ -287,23 +312,56 @@ def _resolve_project_dev_contract(repo_root: str) -> dict[str, Any] | None:
     ]
     if not commands:
         return None
+    context = validation.get("context") or data.get("intent") or intent
+    if not isinstance(context, str) or not context.strip():
+        context = intent
     marker = validation.get("marker")
     if not isinstance(marker, str) or not marker.strip():
-        marker = ".cache/agent-validation/project-dev.ok"
-    return {"commands": commands, "marker": marker.strip()}
+        marker = _validation_marker_default(context)
+    return {"context": context.strip(), "commands": commands, "marker": marker.strip()}
 
 
-def project_dev_validation_contract(repo_root: str) -> dict[str, Any] | None:
-    """The repo's project-dev validation contract, or None when none applies.
+def _declared_intents(repo_root: str) -> list[str]:
+    data = _agent_docs_json(
+        _agent_docs_base_args(repo_root) + ["list", "--format", "json"]
+    )
+    raw_intents = data.get("intents") if isinstance(data, dict) else None
+    intents: list[str] = []
+    if isinstance(raw_intents, list):
+        for intent in raw_intents:
+            if isinstance(intent, str) and intent.strip() and intent not in intents:
+                intents.append(intent.strip())
+    return intents or ["project-dev"]
 
-    Returns ``{"commands": [...], "marker": "..."}`` when the repo declares an
-    ``AGENT_DOCS.toml`` whose project-dev intent has a validation contract with
-    at least one command. The agent-docs result is cached per repo, keyed on the
-    catalog's mtime, so the recorder can run on every tool call cheaply.
+
+def _resolve_validation_contracts(repo_root: str) -> list[dict[str, Any]]:
+    """Resolve every declared validation contract via `agent-docs`."""
+    contracts: list[dict[str, Any]] = []
+    for intent in _declared_intents(repo_root):
+        data = _agent_docs_json(
+            _agent_docs_base_args(repo_root)
+            + ["explain", "--intent", intent, "--format", "json"]
+        )
+        contract = _contract_from_explain(data, intent)
+        if not contract:
+            continue
+        if any(existing.get("context") == contract["context"] for existing in contracts):
+            continue
+        contracts.append(contract)
+    return contracts
+
+
+def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
+    """The repo's declared validation contracts, or an empty list.
+
+    Returns one ``{"context": "...", "commands": [...], "marker": "..."}``
+    record per declared intent whose validation contract contains at least one
+    command. The agent-docs result is cached per repo and docs-home, keyed on
+    the catalog's mtime, so the recorder can run on every tool call cheaply.
     """
     catalog = os.path.join(repo_root, "AGENT_DOCS.toml")
     if not os.path.isfile(catalog):
-        return None
+        return []
     try:
         catalog_mtime = os.path.getmtime(catalog)
     except OSError:
@@ -311,22 +369,51 @@ def project_dev_validation_contract(repo_root: str) -> dict[str, Any] | None:
 
     digest = hashlib.sha1(repo_root.encode("utf-8")).hexdigest()[:16]
     cache_path = os.path.join(_runtime_cache_dir(), f"contract-{digest}.json")
+    docs_home = _docs_home()
     try:
         with open(cache_path, encoding="utf-8") as handle:
             cached = json.load(handle)
-        if isinstance(cached, dict) and cached.get("catalog_mtime") == catalog_mtime:
-            return cached.get("contract")
+        if (
+            isinstance(cached, dict)
+            and cached.get("catalog_mtime") == catalog_mtime
+            and cached.get("docs_home") == docs_home
+        ):
+            contracts = cached.get("contracts")
+            if isinstance(contracts, list):
+                return [
+                    contract
+                    for contract in contracts
+                    if isinstance(contract, dict)
+                    and isinstance(contract.get("context"), str)
+                    and isinstance(contract.get("commands"), list)
+                    and isinstance(contract.get("marker"), str)
+                ]
     except (OSError, ValueError):
         pass
 
-    contract = _resolve_project_dev_contract(repo_root)
+    contracts = _resolve_validation_contracts(repo_root)
     try:
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         with open(cache_path, "w", encoding="utf-8") as handle:
-            json.dump({"catalog_mtime": catalog_mtime, "contract": contract}, handle)
+            json.dump(
+                {
+                    "catalog_mtime": catalog_mtime,
+                    "docs_home": docs_home,
+                    "contracts": contracts,
+                },
+                handle,
+            )
     except OSError:
         pass
-    return contract
+    return contracts
+
+
+def project_dev_validation_contract(repo_root: str) -> dict[str, Any] | None:
+    """The repo's project-dev validation contract, or None when none applies."""
+    for contract in validation_contracts(repo_root):
+        if contract.get("context") == "project-dev":
+            return contract
+    return None
 
 
 def validation_marker_set(repo_root: str, marker: str) -> dict[str, str]:

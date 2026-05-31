@@ -502,6 +502,54 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "scripts/ci/all.sh")
 
+    def test_finish_line_gate_enforces_every_declared_validation_intent(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            with (repo / "AGENT_DOCS.toml").open("a", encoding="utf-8") as handle:
+                handle.write(
+                    '\n[[validation]]\ncontext = "task-tools"\n'
+                    'commands = ["bash scripts/task-tools.sh"]\n'
+                    'marker = ".cache/agent-validation/task-tools.ok"\n'
+                )
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload("bash scripts/ci/all.sh"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/task-tools.sh")
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload("bash scripts/task-tools.sh"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
     def test_finish_line_gate_waiver_and_suppress_release(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
