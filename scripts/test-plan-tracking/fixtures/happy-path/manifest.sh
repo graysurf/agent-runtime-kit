@@ -11,8 +11,12 @@ FIXTURE_BUNDLE_DIR="${FIXTURE_ROOT}/bundle"
 
 # Comma-separated label list (forge-labels.yaml entries) chosen for the
 # tracking issue. Matches create-plan-tracking-issue SKILL recommendation
-# plus the rollout `plan` label.
-FIXTURE_LABELS="type::chore,area::docs,state::needs-triage,workflow::plan,workflow::tracking,plan"
+# plus the rollout `plan` label. Carries at most one label per scope:
+# GitLab scoped labels are mutually exclusive per scope, so two `workflow::*`
+# values cannot coexist (it silently keeps the last). We keep the lifecycle
+# value `workflow::tracking` and drop `workflow::plan` so the set is valid on
+# both providers. See graysurf/plan-tracking-testbed#58.
+FIXTURE_LABELS="type::chore,area::docs,state::needs-triage,workflow::tracking,plan"
 
 # Expected lifecycle comment roles in order, used by assert.sh. The lightweight
 # happy-path has no deliver/PR, so its completion `review` is recorded at

@@ -5,6 +5,13 @@
 set -euo pipefail
 
 DRIVER_ROOT="${DRIVER_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# Testbed selection. Defaults to the GitHub testbed. To run against another
+# provider, point both at a checkout of that provider's testbed — e.g. a
+# self-hosted GitLab project:
+#   TESTBED_ROOT=$HOME/Project/graysurf/plan-tracking-testbed-gitlab \
+#   TESTBED_REPO=terrylin/plan-tracking-testbed-gitlab \
+#     bash scripts/test-plan-tracking/run.sh setup happy-path
+# The provider/host are detected from TESTBED_ROOT's git remote (see tb_forge).
 TESTBED_ROOT="${TESTBED_ROOT:-${HOME}/Project/graysurf/plan-tracking-testbed}"
 TESTBED_REPO="${TESTBED_REPO:-graysurf/plan-tracking-testbed}"
 STATE_DIR="${DRIVER_ROOT}/.state"
@@ -85,13 +92,27 @@ testbed_run() {
 # (snake_case fields, lowercase state) back into the gh-shaped JSON the
 # call sites historically consumed — so the phase logic in assert.sh /
 # teardown.sh / status.sh stays provider-agnostic and barely changes.
+#
+# Provider selection is implicit: point TESTBED_ROOT + TESTBED_REPO at any
+# provider's checkout (a GitHub clone or a self-hosted GitLab clone) and the
+# driver follows it. `tb_forge` runs forge-cli from inside TESTBED_ROOT so the
+# provider AND host are detected from the testbed's own git remote. We
+# deliberately do NOT pass `--provider`: forge-cli's forced-provider path pins
+# the host to the provider default (`gitlab.com`), which would miss a
+# self-hosted instance such as `gitlab.<corp>.com`. Detection from the remote
+# resolves both correctly. TESTBED_ROOT is the single source of truth (git
+# branch ops already run there via testbed_git), so TESTBED_REPO must name the
+# same project.
+tb_forge() {
+  (cd "${TESTBED_ROOT}" && forge-cli "$@")
+}
 
 # Echo the number of the newest issue whose title exactly matches $1, or
 # empty. forge-cli has no server-side title search, so filter the full
 # issue list client-side.
 tb_issue_find_by_title() {
   local title="$1"
-  forge-cli issue list --repo "${TESTBED_REPO}" --state all --format json |
+  tb_forge issue list --repo "${TESTBED_REPO}" --state all --format json |
     jq -r --arg t "${title}" \
       '[.data.items[] | select(.title == $t) | .number] | sort | reverse | .[0] // empty'
 }
@@ -104,7 +125,7 @@ tb_issue_snapshot() {
   local number="$1" out="$2"
   # --with-comments: forge-cli omits the comment stream otherwise (returns an
   # empty array), and the phase checks count role markers across comments.
-  forge-cli issue view "${number}" --repo "${TESTBED_REPO}" --with-comments --format json |
+  tb_forge issue view "${number}" --repo "${TESTBED_REPO}" --with-comments --format json |
     jq '.data | {
       number, title,
       state: (.state | ascii_upcase),
@@ -120,10 +141,10 @@ tb_issue_snapshot() {
 # `pr view` for state + merge_commit_sha.
 tb_pr_resolve_by_head() {
   local head="$1" number
-  number=$(forge-cli pr list --repo "${TESTBED_REPO}" --head "${head}" --state all --format json |
+  number=$(tb_forge pr list --repo "${TESTBED_REPO}" --head "${head}" --state all --format json |
     jq -r '[.data.items[].number] | sort | reverse | .[0] // empty')
   [ -z "${number}" ] && return 0
-  forge-cli pr view "${number}" --repo "${TESTBED_REPO}" --format json |
+  tb_forge pr view "${number}" --repo "${TESTBED_REPO}" --format json |
     jq '.data | {
       number,
       state: (.state | ascii_upcase),
@@ -134,7 +155,7 @@ tb_pr_resolve_by_head() {
 # Echo, one per line, the numbers of OPEN issues that do NOT carry the
 # durable `plan-issue-finding` label (those trackers must survive teardown).
 tb_open_issues_except_finding() {
-  forge-cli issue list --repo "${TESTBED_REPO}" --state open --format json |
+  tb_forge issue list --repo "${TESTBED_REPO}" --state open --format json |
     jq -r '.data.items[] | select((.labels | index("plan-issue-finding")) | not) | .number'
 }
 
@@ -143,9 +164,9 @@ tb_open_issues_except_finding() {
 tb_issue_close() {
   local number="$1" comment="${2:-}"
   if [ -n "${comment}" ]; then
-    forge-cli issue comment "${number}" --repo "${TESTBED_REPO}" --body "${comment}" >/dev/null
+    tb_forge issue comment "${number}" --repo "${TESTBED_REPO}" --body "${comment}" >/dev/null
   fi
-  forge-cli issue close "${number}" --repo "${TESTBED_REPO}" >/dev/null
+  tb_forge issue close "${number}" --repo "${TESTBED_REPO}" >/dev/null
 }
 
 # Echo, one per line, every remote branch name. git-native — no provider API.
