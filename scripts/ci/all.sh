@@ -51,6 +51,7 @@ banner 1 "plan-tooling validate + skill-governance audit"
 plan-tooling validate --format text --explain
 bash scripts/ci/skill-governance-audit.sh
 bash scripts/ci/skill-governance-audit.sh --fixture count-refresh
+bash scripts/ci/skill-governance-audit.sh --fixture codex-plugin
 bash scripts/ci/skill-governance-audit.sh --fixture create
 bash scripts/ci/skill-governance-audit.sh --fixture remove
 

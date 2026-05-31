@@ -11,7 +11,7 @@ SHAPE_PATHS=()
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh] [--shape-only [paths...]]
+Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh|codex-plugin] [--shape-only [paths...]]
 
 Checks:
   default                   Validate active repo source/manifests/plugins/reminders/counts.
@@ -22,6 +22,7 @@ Checks:
   --fixture create-project  Validate the create-project-skill fixture completeness.
   --fixture remove-project  Validate the remove-project-skill dry-run fixture coverage.
   --fixture count-refresh   Validate stale count detection and whitelist updates.
+  --fixture codex-plugin    Validate Codex plugin skill-list drift detection.
   --shape-only [paths...]   Lint H2 section shape on the given SKILL.md.tera paths
                             (fast pre-commit gate; consumes all remaining args).
 USAGE
@@ -39,7 +40,7 @@ while [ "$#" -gt 0 ]; do
       ;;
     --fixture)
       if [ "$#" -lt 2 ]; then
-        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh" >&2
+        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh|codex-plugin" >&2
         exit 2
       fi
       case "$2" in
@@ -48,6 +49,9 @@ while [ "$#" -gt 0 ]; do
           ;;
         count-refresh)
           MODE="count-refresh-fixture"
+          ;;
+        codex-plugin)
+          MODE="codex-plugin-fixture"
           ;;
         *)
           echo "skill-governance-audit: unsupported fixture: $2" >&2
@@ -345,6 +349,71 @@ def codex_link_skill_ids(root: Path) -> set[str]:
     return ids
 
 
+def codex_plugin_manifest_error(
+    plugin_id: str,
+    manifest_path: Path,
+    contained: list[object],
+    by_id: dict[str, dict[str, object]],
+) -> str | None:
+    try:
+        rel = manifest_path.relative_to(ROOT)
+    except ValueError:
+        rel = manifest_path
+
+    try:
+        payload = json.loads(read(manifest_path))
+    except json.JSONDecodeError as exc:
+        return f"plugin {plugin_id} codex manifest is not valid JSON: {rel}: {exc}"
+
+    actual_raw = payload.get("skills")
+    if not isinstance(actual_raw, list):
+        return f"plugin {plugin_id} codex manifest missing skills list: {rel}"
+
+    expected: list[dict[str, str]] = []
+    for raw_skill_id in contained:
+        skill_id = str(raw_skill_id)
+        entry = by_id.get(skill_id)
+        if entry is None:
+            return f"plugin {plugin_id} contains unknown skill {skill_id}"
+        products = entry.get("products")
+        if not isinstance(products, dict):
+            return f"{skill_id} products must be a mapping"
+        codex = products.get("codex")
+        if not isinstance(codex, dict):
+            return f"{skill_id} missing codex product declaration"
+        name = str(codex.get("name", ""))
+        source = str(entry.get("source", ""))
+        expected.append({"id": name, "source": source})
+
+    actual: list[dict[str, str]] = []
+    for index, item in enumerate(actual_raw):
+        if not isinstance(item, dict):
+            return f"plugin {plugin_id} codex manifest skills[{index}] must be an object"
+        skill_name = item.get("id")
+        source = item.get("source")
+        if not isinstance(skill_name, str) or not isinstance(source, str):
+            return f"plugin {plugin_id} codex manifest skills[{index}] needs string id/source"
+        actual.append({"id": skill_name, "source": source})
+
+    if actual != expected:
+        return (
+            f"plugin {plugin_id} codex manifest skills drift: {rel} "
+            f"expected={expected!r} actual={actual!r}"
+        )
+    return None
+
+
+def validate_codex_plugin_manifest(
+    plugin_id: str,
+    manifest_path: Path,
+    contained: list[object],
+    by_id: dict[str, dict[str, object]],
+) -> None:
+    error = codex_plugin_manifest_error(plugin_id, manifest_path, contained, by_id)
+    if error is not None:
+        fail(error)
+
+
 def parse_h2_sections(text: str) -> list[str]:
     headings: list[str] = []
     in_code_fence = False
@@ -443,11 +512,14 @@ def validate_repo() -> None:
         plugin_domains[plugin_id] = str(plugin["domain"])
         manifests = plugin["product_manifests"]
         assert isinstance(manifests, dict)
+        contained = plugin["contained_skills"]
+        assert isinstance(contained, list)
         for product, manifest in manifests.items():
             if not (ROOT / str(manifest)).is_file():
                 fail(f"plugin {plugin_id} missing {product} manifest: {manifest}")
-        contained = plugin["contained_skills"]
-        assert isinstance(contained, list)
+        codex_manifest = manifests.get("codex")
+        if codex_manifest is not None:
+            validate_codex_plugin_manifest(plugin_id, ROOT / str(codex_manifest), contained, by_id)
         for skill_id in contained:
             contained_counts[str(skill_id)] = contained_counts.get(str(skill_id), 0) + 1
 
@@ -716,6 +788,64 @@ def validate_count_refresh_fixture() -> None:
     )
 
 
+def validate_codex_plugin_fixture() -> None:
+    by_id = {
+        "meta.sync-runtime-surfaces": {
+            "source": "core/skills/meta/sync-runtime-surfaces",
+            "products": {
+                "codex": {
+                    "name": "sync-runtime-surfaces",
+                    "render_to": "plugins/meta/skills/sync-runtime-surfaces/SKILL.md",
+                },
+                "claude": {
+                    "name": "sync-runtime-surfaces",
+                    "render_to": "plugins/meta/skills/sync-runtime-surfaces/SKILL.md",
+                },
+            },
+        }
+    }
+    contained = ["meta.sync-runtime-surfaces"]
+    with tempfile.TemporaryDirectory(prefix="codex-plugin-skills-") as tmp:
+        manifest = Path(tmp) / "plugin.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "name": "meta",
+                    "version": "0.1.0",
+                    "skills": [
+                        {
+                            "id": "sync-runtime-skills",
+                            "source": "core/skills/meta/sync-runtime-skills",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        stale = codex_plugin_manifest_error("meta", manifest, contained, by_id)
+        if stale is None or "skills drift" not in stale:
+            fail("codex-plugin fixture did not detect stale id/source drift")
+
+        manifest.write_text(
+            json.dumps(
+                {
+                    "name": "meta",
+                    "version": "0.1.0",
+                    "skills": [
+                        {
+                            "id": "sync-runtime-surfaces",
+                            "source": "core/skills/meta/sync-runtime-surfaces",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        validate_codex_plugin_manifest("meta", manifest, contained, by_id)
+
+    print("skill-governance-audit: codex-plugin fixture OK stale_skill_detected=true")
+
+
 if MODE == "repo":
     validate_repo()
 elif MODE == "count-check":
@@ -738,6 +868,8 @@ elif MODE == "remove-project-fixture":
     validate_remove_project_fixture()
 elif MODE == "count-refresh-fixture":
     validate_count_refresh_fixture()
+elif MODE == "codex-plugin-fixture":
+    validate_codex_plugin_fixture()
 else:
     fail(f"unknown mode: {MODE}")
 PY
