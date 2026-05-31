@@ -777,7 +777,10 @@ run_tracking_closeout_gate_ledger_clean_probe() {
   cat >"$ledger_md" <<'MD'
 # Execution State: Demo
 
+## Execution State
+
 - Status: complete
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/1>
 
 ## Task Ledger
 

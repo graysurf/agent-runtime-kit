@@ -1,20 +1,28 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-01 (refreshed for `v1.0.0`)
+- Snapshot date: 2026-06-01 (refreshed for `v1.0.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.0`
+- Active `git describe --tags` output: `v1.0.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `fe0178f`
-  (`chore(release): bump cli versions to 1.0.0 (#736)`)
+- Head commit: `d5bdb10`
+  (`chore(release): bump cli versions to 1.0.1 (#744)`)
 - Release:
-  [`v1.0.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.0),
+  [`v1.0.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.1` adds the **execution-state synchronization** surface consumed by the
+  plan-tracking skills: `plan-issue record open` writes the tracking issue URL
+  into the bundle `*-execution-state.md`; `record close --bundle` writes the
+  terminal state back; `tracking checkpoint --live` reconciles and self-heals
+  the `Tracking issue` bullet while `tracking close-ready` gates it
+  (`execution-state-issue-missing` / `-mismatch`); and `plan-tooling
+  exec-state-sync` repairs existing bundles offline
+  ([#741](https://github.com/sympoies/nils-cli/pull/741)).
 - `v1.0.0` is the **major** naming-convention milestone: the workspace
   finalizes the `crate dir == binary base` / `package == nils-<dir>`
   convention and drops the `-cli` suffix from three crate directories.
