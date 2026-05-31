@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """PreToolUse recorder for the agent-docs finish-line validation gate.
 
-Writes evidence markers under a repo's project-dev validation marker directory
-so the Stop gate (stop-finish-line-gate.py) can tell whether the declared
-validation has run since code was last edited:
+Writes evidence markers under each declared validation marker directory so the
+Stop gate (stop-finish-line-gate.py) can tell whether every declared validation
+contract has run since code was last edited:
 
 - a `<stem>.dirty` marker, refreshed when a non-Markdown file under the repo is
   edited (Write/Edit/MultiEdit/NotebookEdit/apply_patch);
-- a `<stem>.cmd<i>.ran` marker per declared validation command, refreshed when a
-  Bash command invokes that command.
+- a `<stem>.cmd<i>.ran` marker per declared validation command in each
+  contract, refreshed when a Bash command invokes that command.
 
 The recorder NEVER blocks; it only writes markers. It no-ops outside a git repo,
-in a repo that declares no AGENT_DOCS.toml, or when the project-dev intent
-declares no validation contract. It runs on PreToolUse (not PostToolUse) so the
-same shared script works on both Claude and Codex.
+in a repo that declares no AGENT_DOCS.toml, or when no intent declares a
+validation contract. It runs on PreToolUse (not PostToolUse) so the same shared
+script works on both Claude and Codex.
 """
 
 from __future__ import annotations
@@ -33,9 +33,9 @@ from hook_common import (
     command_ran_marker,
     file_paths_from_payload,
     git_toplevel,
-    project_dev_validation_contract,
     read_payload,
     touch_marker,
+    validation_contracts,
     validation_marker_set,
 )
 
@@ -67,24 +67,27 @@ def main() -> int:
     repo_root = git_toplevel()
     if not repo_root:
         return ALLOW
-    contract = project_dev_validation_contract(repo_root)
-    if not contract:
+    contracts = validation_contracts(repo_root)
+    if not contracts:
         return ALLOW
 
-    markers = validation_marker_set(repo_root, contract["marker"])
     tool = tool_name(payload)
 
     if tool == "Bash":
         command = command_from(payload)
-        for index, declared in enumerate(contract["commands"]):
-            if command_matches_validation(command, declared):
-                touch_marker(command_ran_marker(markers, index))
+        for contract in contracts:
+            markers = validation_marker_set(repo_root, contract["marker"])
+            for index, declared in enumerate(contract["commands"]):
+                if command_matches_validation(command, declared):
+                    touch_marker(command_ran_marker(markers, index))
     elif tool in EDIT_TOOLS:
         for path in file_paths_from_payload(payload):
             if path.endswith(".md"):
                 continue
             if under_repo(path, repo_root):
-                touch_marker(markers["dirty"])
+                for contract in contracts:
+                    markers = validation_marker_set(repo_root, contract["marker"])
+                    touch_marker(markers["dirty"])
                 break
 
     return ALLOW

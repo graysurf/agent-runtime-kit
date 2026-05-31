@@ -20,7 +20,7 @@ schema_version: 1
 
 nils_cli:
   # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
-  pinned_tag: "v0.31.5"
+  pinned_tag: "v0.31.6"
 
 # Optional per-binary floors for the downstream-consumed CLIs. nils-cli
 # ships every crate in lock-step, so the exact `pinned_tag` above is the
@@ -37,7 +37,7 @@ required_clis:
     min: "0.20.1"
   - bin: plan-archive     # discover / migrate / refresh / query
     min: "0.25.5"
-  - bin: agent-docs       # data-driven catalog + repo-scoped docs/validation (redesign)
-    min: "0.30.1"
+  - bin: agent-docs       # data-driven catalog + declared-intent preflight guard
+    min: "0.31.6"
   - bin: git-cli          # managed worktree add/list/remove/prune surface
     min: "0.31.5"
