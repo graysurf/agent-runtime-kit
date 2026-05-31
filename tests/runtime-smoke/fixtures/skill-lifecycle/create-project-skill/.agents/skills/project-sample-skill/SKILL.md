@@ -1,5 +1,5 @@
 ---
-name: sample-project-skill
+name: project-sample-skill
 description:
   Fixture project-local skill used to prove create-project-skill governance
   coverage.
@@ -27,7 +27,7 @@ Failure modes:
 
 ## Scripts
 
-- `.agents/skills/sample-project-skill/scripts/sample-project-skill.sh`
+- `.agents/skills/project-sample-skill/scripts/project-sample-skill.sh`
 
 ## Workflow
 

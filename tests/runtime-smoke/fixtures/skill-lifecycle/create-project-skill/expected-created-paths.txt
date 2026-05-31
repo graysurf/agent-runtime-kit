@@ -1,5 +1,5 @@
-.agents/skills/sample-project-skill/SKILL.md
-.agents/skills/sample-project-skill/scripts/sample-project-skill.sh
-.agents/scripts/sample-project-skill.sh
+.agents/skills/project-sample-skill/SKILL.md
+.agents/skills/project-sample-skill/scripts/project-sample-skill.sh
+.agents/scripts/project-sample-skill.sh
 .claude/skills
 .gitignore

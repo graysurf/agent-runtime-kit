@@ -45,7 +45,7 @@ is_skill_name() {
       ;;
   esac
   case "$1" in
-    *-*)
+    project-?* | private-?*)
       return 0
       ;;
     *)
@@ -314,7 +314,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -n "$name" ] && ! is_skill_name "$name"; then
-  usage_error "skill name must be lowercase kebab-case with at least one hyphen"
+  usage_error "skill name must be lowercase kebab-case and start with 'project-' or 'private-'"
 fi
 if [ -n "$wrapper_name" ] && ! is_command_name "$wrapper_name"; then
   usage_error "wrapper name must be lowercase kebab-case text"

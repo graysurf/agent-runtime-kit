@@ -14,7 +14,9 @@ Prereqs:
 - Run inside the target consuming project's git work tree.
 - The request is for a project-local skill, not a repo-owned runtime-kit managed
   skill. Use `create-skill` for `agent-runtime-kit` managed skills.
-- The caller has supplied or accepted a lowercase hyphenated skill name.
+- The caller has supplied or accepted a lowercase hyphenated skill name that
+  starts with `project-` (project-local skills) or `private-` (skills under the
+  private overlay home, `$AGENT_PRIVATE_SKILLS_HOME`).
 - Existing files are never overwritten without explicit user approval.
 - Claude-only creation is unsupported. Claude exposure is a bridge to the
   canonical `.agents/skills` source tree, not a second source location.
@@ -49,8 +51,8 @@ Outputs:
 Failure modes:
 
 - The current directory is not inside a git work tree.
-- The skill name is malformed, ambiguous, or collides with an existing
-  `.agents/skills/<skill>` path.
+- The skill name is malformed (does not match `^(project|private)-[a-z0-9-]+`),
+  ambiguous, or collides with an existing `.agents/skills/<skill>` path.
 - A requested wrapper path already exists and replacement was not approved.
 - `--target claude`, `--claude-only`, or removed `--link-only` is requested.
 - `--bridge-only` is requested without an existing `.agents/skills` tree.
@@ -92,7 +94,9 @@ $CODEX_HOME/plugins/meta/skills/create-project-skill/scripts/create-project-skil
 1. Resolve the target project root with `git rev-parse --show-toplevel`.
 2. Confirm this is a project-local skill request. If the user wants a
    runtime-kit managed skill, switch to `create-skill`.
-3. Normalize and validate the skill name as lowercase hyphenated text.
+3. Normalize and validate the skill name as lowercase hyphenated text that
+   starts with `project-` (project-local) or `private-` (private overlay);
+   reject any other prefix.
 4. Inspect `.agents/skills/`, `.agents/scripts/`, `.claude/`, project
    `AGENTS.md` / `CLAUDE.md`, and nearby local skill conventions before
    editing.

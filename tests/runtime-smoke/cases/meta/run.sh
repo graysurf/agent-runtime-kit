@@ -225,16 +225,16 @@ run_create_project_helper_probe() {
 
   (
     cd "$default_root"
-    "$helper" sample-project-skill \
+    "$helper" project-sample-skill \
       --description "Sample project skill." \
       --with-script \
       --with-tests \
-      --with-wrapper sample-project-skill \
+      --with-wrapper project-sample-skill \
       >"$META_ARTIFACTS_DIR/create-project-default.txt" 2>&1
   )
-  test -f "$default_root/.agents/skills/sample-project-skill/SKILL.md"
-  test -x "$default_root/.agents/skills/sample-project-skill/scripts/sample-project-skill.sh"
-  test -x "$default_root/.agents/scripts/sample-project-skill.sh"
+  test -f "$default_root/.agents/skills/project-sample-skill/SKILL.md"
+  test -x "$default_root/.agents/skills/project-sample-skill/scripts/project-sample-skill.sh"
+  test -x "$default_root/.agents/scripts/project-sample-skill.sh"
   test -L "$default_root/.claude/skills"
   test "$(readlink "$default_root/.claude/skills")" = "../.agents/skills"
   grep -q '^\.claude/$' "$default_root/.gitignore"
@@ -242,29 +242,29 @@ run_create_project_helper_probe() {
 
   (
     cd "$codex_root"
-    "$helper" codex-only-skill \
+    "$helper" project-codex-only-skill \
       --description "Codex only skill." \
       --codex-only \
       >"$META_ARTIFACTS_DIR/create-project-codex.txt" 2>&1
   )
-  test -f "$codex_root/.agents/skills/codex-only-skill/SKILL.md"
+  test -f "$codex_root/.agents/skills/project-codex-only-skill/SKILL.md"
   test ! -e "$codex_root/.claude"
 
   (
     cd "$bridge_root"
-    "$helper" existing-bridge-skill \
+    "$helper" project-existing-bridge-skill \
       --description "Existing bridge skill." \
       --codex-only \
       --with-script \
       >"$META_ARTIFACTS_DIR/create-project-bridge-create.txt" 2>&1
-    "$helper" existing-bridge-skill \
+    "$helper" project-existing-bridge-skill \
       --bridge-only \
-      --with-wrapper existing-bridge-skill \
+      --with-wrapper project-existing-bridge-skill \
       >"$META_ARTIFACTS_DIR/create-project-bridge-only.txt" 2>&1
   )
   test -L "$bridge_root/.claude/skills"
   test "$(readlink "$bridge_root/.claude/skills")" = "../.agents/skills"
-  test -x "$bridge_root/.agents/scripts/existing-bridge-skill.sh"
+  test -x "$bridge_root/.agents/scripts/project-existing-bridge-skill.sh"
 
   mkdir -p "$bridge_no_name_root/.agents/skills"
   if (cd "$bridge_no_name_root" && "$helper" --bridge-only --with-wrapper missing-name >"$META_ARTIFACTS_DIR/create-project-reject-bridge-wrapper-no-name.txt" 2>&1); then
@@ -279,6 +279,9 @@ run_create_project_helper_probe() {
     return 1
   fi
   if (cd "$reject_root" && "$helper" --link-only >"$META_ARTIFACTS_DIR/create-project-reject-link-only.txt" 2>&1); then
+    return 1
+  fi
+  if (cd "$reject_root" && "$helper" unprefixed-skill --description "Unprefixed." >"$META_ARTIFACTS_DIR/create-project-reject-unprefixed.txt" 2>&1); then
     return 1
   fi
 }
