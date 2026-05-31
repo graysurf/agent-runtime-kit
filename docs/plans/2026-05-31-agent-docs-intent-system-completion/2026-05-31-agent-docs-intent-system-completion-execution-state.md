@@ -3,8 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - Step 3 nils-cli implementation PR is merged; Step 4
-  nils-cli release is next.
+- Status: in-progress - Step 4 nils-cli release is complete; Step 5
+  runtime-kit consumer changes are next.
 - Target scope: cross-repo completion of `graysurf/agent-runtime-kit#217`
   using Option C. nils-cli owns the declared-intent guard primitive and
   release; runtime-kit owns hook/catalog consumer changes, pin bump, and
@@ -13,12 +13,16 @@
   Step 3 nils-cli implementation PR -> Step 4 nils-cli release and tap update
   -> Step 5 runtime-kit consumer PR -> Step 6 runtime-kit pin bump and
   closeout.
-- Current task: Task 4.1 - release nils-cli and update the Homebrew tap.
-- Next task: Task 5.1 - make runtime-kit finish-line validation intent-aware.
-- Last updated: 2026-05-31T12:03:12Z
+- Current task: Task 5.1 - make runtime-kit finish-line validation
+  intent-aware.
+- Next task: Task 5.2 - make required-doc cue truncation explicit.
+- Last updated: 2026-05-31T12:36:01Z
 - Branch/commit/PR: `feat/agent-docs-intent-completion`; nils-cli PR
   https://github.com/sympoies/nils-cli/pull/719 merged as
-  `ae51cec1831188082162bec56d3b966c6faa5295`.
+  `ae51cec1831188082162bec56d3b966c6faa5295`; nils-cli release PR
+  https://github.com/sympoies/nils-cli/pull/720 merged as
+  `44275afb207bb28fd6ec582b3d68c923dc2c3483`; release tag
+  https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 is live.
 - Source document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Plan document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Direct source-doc execution waiver: not applicable
@@ -28,6 +32,7 @@
 - Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586543589
 - Step 2 design decision: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586571787
 - Step 3 nils-cli implementation PR: https://github.com/sympoies/nils-cli/pull/719
+- Step 4 nils-cli release: https://github.com/sympoies/nils-cli/releases/tag/v0.31.6
 
 ## Validation Plan
 
@@ -54,7 +59,7 @@
 | 1.1 | done | Create the plan bundle and open the tracker | https://github.com/graysurf/agent-runtime-kit/issues/219 | Tracker opened, source/plan/state snapshots posted, run state initialized, audit passed, and #217 linked back. |
 | 2.1 | done | Specify the declared-intent guard contract | https://github.com/graysurf/agent-runtime-kit/issues/219; https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586571787 | Contract specified: add opt-in `agent-docs preflight --require-declared-intent`; default unknown-intent behavior stays compatible; guarded unknown intents exit 65 with structured text/JSON errors. |
 | 3.1 | done | Implement the nils-cli declared-intent guard | sympoies/nils-cli branch feat/agent-docs-declared-intent; https://github.com/sympoies/nils-cli/pull/719 | Implemented `agent-docs preflight --require-declared-intent`; PR #719 passed local-fast and GitHub CI, then squash-merged as ae51cec1831188082162bec56d3b966c6faa5295. |
-| 4.1 | pending | Release nils-cli and update the Homebrew tap | tbd | Cut release, update tap, upgrade local host, verify versions. |
+| 4.1 | done | Release nils-cli and update the Homebrew tap | https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 | Released nils-cli v0.31.6 via PR #720, tag v0.31.6, GitHub Release assets, homebrew-tap workflow, and local Homebrew upgrade verification. |
 | 5.1 | pending | Make finish-line validation intent-aware | tbd | Enforce every declared validation contract, not only `project-dev`. |
 | 5.2 | pending | Make required-doc cue truncation explicit | tbd | Add visible overflow marker for required-doc lists above the display cap. |
 | 5.3 | pending | Reclassify `cli-tools.md` as optional for `task-tools` | tbd | Keep `external-facts.md` required; keep `cli-tools.md` auditable and optional. |
@@ -76,6 +81,9 @@
   guard, passed local-fast plus GitHub `test`, `test_macos`, `coverage`, and
   CodeQL checks, and squash-merged as
   `ae51cec1831188082162bec56d3b966c6faa5295`.
+- 2026-05-31: Task 4.1 completed. nils-cli v0.31.6 shipped through release
+  PR #720, tag `v0.31.6`, GitHub Release assets, the homebrew-tap workflow,
+  and a local Homebrew upgrade to `nils-cli 0.31.6`.
 
 ## Validation
 
@@ -93,6 +101,19 @@
 | `code-review-pre-merge-gate` | pass | Delivery review found no blocking issues across testing, maintainability, api-contract, security, performance, and red-team lenses. | `/Users/terry/.local/state/agent-runtime-kit/out/projects/sympoies__nils-cli/20260531-195500-agent-docs-declared-intent-delivery/review-outcome.md` |
 | `agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed after the Step 3 state update. | n/a |
 | `agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- bash tests/hooks/run.sh` | pass | 28 shared hook tests passed. | n/a |
+| `forge-cli pr view 720 --repo sympoies/nils-cli --format json` | pass | Release PR #720 merged as `44275afb207bb28fd6ec582b3d68c923dc2c3483`. | https://github.com/sympoies/nils-cli/pull/720 |
+| `gh -R sympoies/nils-cli run view 26712284161 --json status,conclusion,url` | pass | Source release workflow completed successfully. | https://github.com/sympoies/nils-cli/actions/runs/26712284161 |
+| `gh -R sympoies/nils-cli release view v0.31.6 --json tagName,url,assets` | pass | GitHub Release `v0.31.6` is live with 8 release assets. | https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 |
+| `agent-run exec --cwd /Users/terry/.local/state/agent-runtime-kit/out/projects/sympoies__nils-cli/20260531-201013-nils-cli-0-31-6-release/nils-cli-release -- ./.agents/scripts/release.sh --version 0.31.6 --from-tap --tap-dir /Users/terry/Project/sympoies/homebrew-tap` | pass | Tap workflow completed successfully and local Homebrew upgraded `nils-cli` from 0.31.5 to 0.31.6. | https://github.com/sympoies/homebrew-tap/actions/runs/26712603643 |
+| `agent-docs --version` | pass | Installed `agent-docs` reports `agent-docs 0.31.6 (v0.31.6, rustc 1.96.0 (ac68faa20 2026-05-25))`. | n/a |
+| `agent-runtime --version` | pass | Installed `agent-runtime` reports `agent-runtime 0.31.6 (v0.31.6, rustc 1.96.0 (ac68faa20 2026-05-25))`. | n/a |
+| `brew list --versions nils-cli` | pass | Homebrew reports `nils-cli 0.31.6`. | n/a |
+| `agent-docs preflight --intent no-such-intent --require-declared-intent --format json` | pass | Guarded unknown intents return JSON error code `undeclared-intent`, list available intents, and exit 65. | n/a |
+| `agent-docs preflight --intent project-dev --require-declared-intent --format json` | pass | Guarded declared `project-dev` resolves normally with `validation.declared=true` and 6 documents. | n/a |
+| `git diff --check` | pass | No whitespace errors after the Step 4 state update. | n/a |
+| `scripts/dev/with-nils-version.sh release:v0.31.5 -- agent-runtime --version` | pass | Scoped runtime-kit validation PATH resolves the pinned `agent-runtime 0.31.5` surface while the host is on 0.31.6. | n/a |
+| `agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- scripts/dev/with-nils-version.sh release:v0.31.5 -- bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after the Step 4 state update. | n/a |
+| `agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- scripts/dev/with-nils-version.sh release:v0.31.5 -- bash tests/hooks/run.sh` | pass | 28 shared hook tests passed under the pinned 0.31.5 surface after the Step 4 state update. | n/a |
 
 ## Notes
 
