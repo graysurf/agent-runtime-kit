@@ -136,5 +136,5 @@ and call it from here.
   intact.
 - `pr:deliver-pr` — open and drive the single bump PR; this skill never
   calls raw `gh pr create`.
-- `meta:sync-runtime-skills` — after the host upgrade, refresh the live Codex
+- `meta:sync-runtime-surfaces` — after the host upgrade, refresh the live Codex
   and Claude skill surfaces so a local session sees the rewritten bodies.

@@ -170,49 +170,49 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: meta.sync-runtime-skills.shared-cli.deterministic
+  - id: meta.sync-runtime-surfaces.shared-cli.deterministic
     product: shared-cli
     domain: meta
-    skill_id: meta.sync-runtime-skills
+    skill_id: meta.sync-runtime-surfaces
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: run from repo root with no-pull dry-run
-    invocation: sync-runtime-skills planned codex refresh without runtime mutation
+    invocation: sync-runtime-surfaces planned codex refresh without runtime mutation
     expected_exit_code: 0
     expected_artifacts: planned render install doctor and summary output
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: meta.sync-runtime-skills.shared-cli.worktree-guard
+  - id: meta.sync-runtime-surfaces.shared-cli.worktree-guard
     product: shared-cli
     domain: meta
-    skill_id: meta.sync-runtime-skills
+    skill_id: meta.sync-runtime-surfaces
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create linked git worktree from repo root
-    invocation: sync-runtime-skills apply with linked worktree source root
+    invocation: sync-runtime-surfaces apply with linked worktree source root
     expected_exit_code: nonzero
     expected_artifacts: refusal output naming durable primary checkout
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: meta.sync-runtime-skills.shared-cli.no-prune
+  - id: meta.sync-runtime-surfaces.shared-cli.no-prune
     product: shared-cli
     domain: meta
-    skill_id: meta.sync-runtime-skills
+    skill_id: meta.sync-runtime-surfaces
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: run from repo root with no-pull dry-run and no-prune
-    invocation: sync-runtime-skills planned codex refresh with prune skipped
+    invocation: sync-runtime-surfaces planned codex refresh with prune skipped
     expected_exit_code: 0
     expected_artifacts: skipped prune warning and summary output
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: meta.sync-runtime-skills.shared-cli.prune-fixture
+  - id: meta.sync-runtime-surfaces.shared-cli.prune-fixture
     product: shared-cli
     domain: meta
-    skill_id: meta.sync-runtime-skills
+    skill_id: meta.sync-runtime-surfaces
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp Codex and Claude live homes with stale owned and user-owned surfaces

@@ -34,7 +34,7 @@ plugins:
       - meta.create-project-skill
       - meta.remove-skill
       - meta.remove-project-skill
-      - meta.sync-runtime-skills
+      - meta.sync-runtime-surfaces
       - meta.pre-pr
       - meta.release
       - meta.repo-retro

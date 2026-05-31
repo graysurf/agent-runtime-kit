@@ -97,16 +97,16 @@ skills:
       agent-run: ">=0.20.0"
     state_out_mode: runtime
 
-  - id: meta.sync-runtime-skills
+  - id: meta.sync-runtime-surfaces
     domain: meta
-    source: core/skills/meta/sync-runtime-skills
+    source: core/skills/meta/sync-runtime-surfaces
     products:
       codex:
-        name: sync-runtime-skills
-        render_to: plugins/meta/skills/sync-runtime-skills/SKILL.md
+        name: sync-runtime-surfaces
+        render_to: plugins/meta/skills/sync-runtime-surfaces/SKILL.md
       claude:
-        name: sync-runtime-skills
-        render_to: plugins/meta/skills/sync-runtime-skills/SKILL.md
+        name: sync-runtime-surfaces
+        render_to: plugins/meta/skills/sync-runtime-surfaces/SKILL.md
     required_clis:
       agent-runtime: ">=0.22.4"
     state_out_mode: runtime

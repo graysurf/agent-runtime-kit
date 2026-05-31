@@ -27,7 +27,7 @@ human routing index for choosing the right meta skill without scanning every
 | [agent-docs](./agent-docs/) | Resolves, scaffolds, and validates required agent documentation for home and project scopes. |
 | [agent-out](./agent-out/) | Allocates canonical project-scoped output directories and audits workflow artifacts. |
 | [agent-scope-lock](./agent-scope-lock/) | Creates, reads, validates, and clears edit-scope locks through `agent-scope-lock`. |
-| [sync-runtime-skills](./sync-runtime-skills/) | Refreshes active runtime-kit skill surfaces into local Codex and Claude runtime homes. |
+| [sync-runtime-surfaces](./sync-runtime-surfaces/) | Refreshes active runtime-kit managed surfaces into local Codex and Claude runtime homes. |
 
 ## Repo Operation Dispatchers
 

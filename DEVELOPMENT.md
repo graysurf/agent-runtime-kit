@@ -38,14 +38,14 @@ agent-docs preflight --intent project-dev --format json
 docs-home is derived from the install symlink; pass `--docs-home "$PWD"` to
 point at this checkout explicitly.
 
-## Refreshing Runtime Skills
+## Refreshing Runtime Surfaces
 
-After a skill source change lands, use `scripts/sync-runtime-skills.sh` for the
-daily refresh path. It pulls the active checkout, renders Codex and Claude
-targets, installs the rendered surfaces into the runtime homes, and runs the
-skill-surface doctor probes; it is dry-run by default and writes only with
-`--apply`. Keep `scripts/setup.sh` for first-time host bootstrap and CLI tool
-installation.
+After managed runtime surface changes land, use
+`scripts/sync-runtime-surfaces.sh` for the daily refresh path. It pulls the
+active checkout, renders Codex and Claude targets, installs the rendered
+surfaces into the runtime homes, and runs the skill-surface doctor probes; it
+is dry-run by default and writes only with `--apply`. Keep `scripts/setup.sh`
+for first-time host bootstrap and CLI tool installation.
 
 ## Overlaying Private Skills
 
@@ -62,7 +62,7 @@ per-user global skill namespaces that Codex and Claude discover directly:
 - Codex: `$CODEX_HOME/skills/<name>` (default `$HOME/.codex/skills/<name>`)
 - Claude: `$HOME/.claude/skills/<name>`
 
-Unlike `sync-runtime-skills.sh`, this overlay does not render, install through
+Unlike `sync-runtime-surfaces.sh`, this overlay does not render, install through
 nils-cli, or touch any manifest — project-local `SKILL.md` is already the
 native format both products consume. The target namespaces do not collide with
 the runtime-kit managed surface (Codex domain dirs and Claude

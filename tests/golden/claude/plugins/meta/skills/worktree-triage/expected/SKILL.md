@@ -127,5 +127,5 @@ unique commits without confirmation, and never merges.
   `rescue-candidate` is handed off to. Triage never merges.
 - `close-pr` — close the PR of a `rescue-candidate` confirmed to be
   already-on-base (superseded).
-- `sync-runtime-skills` — its apply path refuses linked-worktree source
+- `sync-runtime-surfaces` — its apply path refuses linked-worktree source
   roots; this skill is the companion that cleans those worktrees up.
