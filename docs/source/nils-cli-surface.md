@@ -1,20 +1,33 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-31 (refreshed for `v0.31.6`)
+- Snapshot date: 2026-05-31 (refreshed for `v0.31.7`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.31.6`
+- Active `git describe --tags` output: `v0.31.7`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.31.6`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.31.7`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `44275af`
-  (`chore(release): bump cli versions to 0.31.6 (#720)`)
+- Head commit: `9ee0e58`
+  (`chore(release): bump cli versions to 0.31.7 (#724)`)
 - Release:
-  [`v0.31.6`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.6),
+  [`v0.31.7`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.7),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.31.7` is a **patch** that ships the `forge-cli search` surface —
+  `search issues` / `search prs` (GitHub full-text via `gh search`) and
+  `search refs-to <ref>` (cross-reference events via `gh api graphql`), all
+  GitHub-only behind the provider seam, single-repo scoped, with three
+  versioned envelopes (`cli.forge-cli.search.{issues,prs,refs-to}.v1`) — and
+  the `forge-cli activity` discovery surface from `v0.31.6`'s follow-up. Both
+  are additive: this repo's skills consume the unchanged `forge-cli`
+  `pr` / `issue` / `inbox` surfaces, so no `required_clis[]` floor moves. No
+  surface was retired or renamed
+  ([#721](https://github.com/sympoies/nils-cli/pull/721),
+  [#722](https://github.com/sympoies/nils-cli/pull/722),
+  [#723](https://github.com/sympoies/nils-cli/pull/723),
+  [#724](https://github.com/sympoies/nils-cli/pull/724)).
 - `v0.31.6` is a **patch** that adds an opt-in fail-closed `agent-docs
   preflight --require-declared-intent` guard for callers that already know the
   requested intent must be declared. Guarded undeclared intents return exit 65
@@ -263,7 +276,7 @@ Notes on derivation:
 | `api-websocket`             | `api-websocket`                                                                                                     | WebSocket API testing CLI.                                                                                                                                                                                                                                             |
 | `cli-template`              | `cli-template`                                                                                                      | Internal template/example crate. Marked `excluded` in `docs/specs/completion-coverage-matrix-v1.md`; manifests should not pin against it.                                                                                                                              |
 | `codex-cli`                 | `codex-cli`                                                                                                         | Codex runtime helper. Alias family `cx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
-| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. `v0.21.0` extends the `plan-issue record` surface with `--label` on `record open`, and `--add-label` / `--remove-label` on `record post` and `record close` so v3 lifecycle commands can apply taxonomy labels alongside issue creation, state transitions, and closeout. As of `v0.31.3`, `--provider` gains a `local` file-backed backend value plus a `--store-root` flag (and the `FORGE_CLI_LOCAL_STORE` env var) for offline rehearsal; the `github` / `gitlab` lifecycle surfaces are unchanged (additive). |
+| `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. `v0.21.0` extends the `plan-issue record` surface with `--label` on `record open`, and `--add-label` / `--remove-label` on `record post` and `record close` so v3 lifecycle commands can apply taxonomy labels alongside issue creation, state transitions, and closeout. As of `v0.31.3`, `--provider` gains a `local` file-backed backend value plus a `--store-root` flag (and the `FORGE_CLI_LOCAL_STORE` env var) for offline rehearsal; the `github` / `gitlab` lifecycle surfaces are unchanged (additive). As of `v0.31.7`, `forge-cli` gains a GitHub-only `activity` discovery surface (`activity commits` / `events` / `summary`) and a `search` surface (`search issues` / `search prs` full-text via `gh search`, plus `search refs-to` cross-reference via `gh api graphql`), both behind the provider seam — GitLab / Local return `provider_unsupported`. Additive; not yet consumed by this repo's skills, so no `required_clis[]` floor moves. |
 | `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
 | `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`. As of `v0.31.5`, this repo consumes `git-cli worktree add/list/remove/prune` for managed worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text and JSON output. |
