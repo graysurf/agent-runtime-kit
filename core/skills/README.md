@@ -15,8 +15,8 @@ human index for scanning the skill catalog by category and skill series.
 | `evidence` | 6 | Evidence records, impact scans, cross-checks |
 | `issue` | 3 | Issue triage, durable follow-up, plan-issue finding reports |
 | `media` | 2 | Image conversion, screen capture |
-| `meta` | 20 | Runtime primitives, script dispatchers, skill lifecycle, plan archive, heuristics |
-| `pr` | 7 | GitHub PRs, GitLab MRs, dispatch-lane PRs |
+| `meta` | 22 | Runtime primitives, operation dispatchers, skill lifecycle, plan archive, heuristics, repo maintenance |
+| `pr` | 4 | GitHub PRs, GitLab MRs, dispatch-lane PRs |
 | `reporting` | 3 | Topic radar, daily brief, project retrospective |
 
 ## Browser
@@ -92,28 +92,17 @@ Routing guidance for the skill family lives in
 
 ## Meta
 
-| Series | Skill | Purpose |
+The meta domain is large enough to need its own routing index. Detailed
+classification lives in [meta/README.md](./meta/README.md).
+
+| Series | Skills | Purpose |
 | --- | --- | --- |
-| Runtime primitives | [agent-docs](./meta/agent-docs/) | Resolves, scaffolds, and validates required agent documentation for home and project scopes. |
-| Runtime primitives | [agent-out](./meta/agent-out/) | Allocates canonical project-scoped output directories and audits workflow artifacts. |
-| Runtime primitives | [agent-scope-lock](./meta/agent-scope-lock/) | Creates, reads, validates, and clears edit-scope locks through `agent-scope-lock`. |
-| Runtime primitives | [sync-runtime-skills](./meta/sync-runtime-skills/) | Refreshes active runtime-kit skill surfaces into local Codex and Claude runtime homes. |
-| Repo script dispatchers | [bootstrap](./meta/bootstrap/) | Dispatches project bootstrap requests to a repository-owned `.agents/scripts/bootstrap.sh` implementation. |
-| Repo script dispatchers | [deploy](./meta/deploy/) | Dispatches deploy requests to a repository-owned `.agents/scripts/deploy.sh` implementation. |
-| Repo script dispatchers | [pre-pr](./meta/pre-pr/) | Dispatches pre-PR validation requests to a repository-owned `.agents/scripts/pre-pr.sh` implementation. |
-| Repo script dispatchers | [release](./meta/release/) | Dispatches release requests to a repository-owned `.agents/scripts/release.sh` implementation. |
-| Project setup | [setup-project](./meta/setup-project/) | Guides a repository into the `.agents/` conventions used by retained dispatcher skills. |
-| Skill lifecycle | [create-skill](./meta/create-skill/) | Adds a repo-owned runtime-kit skill with source, manifests, product render surfaces, acceptance coverage, and governance validation. |
-| Skill lifecycle | [remove-skill](./meta/remove-skill/) | Removes a repo-owned runtime-kit skill with dry-run-first reference audit and retained historical records. |
-| Project skill lifecycle | [create-project-skill](./meta/create-project-skill/) | Scaffolds a consuming-repo project-local skill under `.agents/skills` without mutating runtime-kit manifests. |
-| Project skill lifecycle | [remove-project-skill](./meta/remove-project-skill/) | Removes a consuming-repo project-local skill with dry-run-first inventory and explicit approval for cleanup. |
-| Heuristic system | [heuristic-inbox](./meta/heuristic-inbox/) | Manages curated heuristic-system inbox cases and operation records. |
-| Heuristic system | [heuristic-session-closeout](./meta/heuristic-session-closeout/) | Reviews session evidence for heuristic-system updates and writes retained records when warranted. |
-| Commit and retrospectives | [semantic-commit](./meta/semantic-commit/) | Commits staged changes with Semantic Commit format through `semantic-commit`. |
-| Commit and retrospectives | [repo-retro](./meta/repo-retro/) | Generates local repository retrospective data through `repo-retro`. |
-| Plan archive | [plan-archive-discover](./meta/plan-archive-discover/) | Read-only scan of a working repo's plan folders for archive candidates, handing selected folders to `plan-archive-migrate`. |
-| Plan archive | [plan-archive-migrate](./meta/plan-archive-migrate/) | Migrates a closed plan folder into the agent-plan-archive repository, dry-run first and apply only on explicit confirmation. |
-| Plan archive | [plan-archive-query](./meta/plan-archive-query/) | Reads and refreshes the agent-plan-archive work-history cache before opening new work or diagnosing recurring problems. |
+| Runtime primitives | [agent-docs](./meta/agent-docs/), [agent-out](./meta/agent-out/), [agent-scope-lock](./meta/agent-scope-lock/), [sync-runtime-skills](./meta/sync-runtime-skills/) | Required docs, output paths, edit scope locks, and runtime skill sync. |
+| Repo operation dispatchers | [bootstrap](./meta/bootstrap/), [deploy](./meta/deploy/), [pre-pr](./meta/pre-pr/), [release](./meta/release/), [setup-project](./meta/setup-project/) | Repo-owned `.agents/scripts/*` dispatch and project adoption. |
+| Skill lifecycle | [create-skill](./meta/create-skill/), [remove-skill](./meta/remove-skill/), [create-project-skill](./meta/create-project-skill/), [remove-project-skill](./meta/remove-project-skill/) | Managed runtime-kit skills and consuming-repo project-local skills. |
+| Plan archive | [plan-archive-query](./meta/plan-archive-query/), [plan-archive-discover](./meta/plan-archive-discover/), [plan-archive-migrate](./meta/plan-archive-migrate/) | Work-history lookup and completed plan migration. |
+| Heuristic system | [heuristic-inbox](./meta/heuristic-inbox/), [heuristic-session-closeout](./meta/heuristic-session-closeout/) | Curated workflow-gap records and session closeout retention. |
+| Delivery and repo maintenance | [semantic-commit](./meta/semantic-commit/), [worktree-triage](./meta/worktree-triage/), [nils-cli-bump](./meta/nils-cli-bump/), [repo-retro](./meta/repo-retro/) | Semantic commits, worktree cleanup, nils-cli pin bumps, and retrospectives. |
 
 ## PR And MR
 
