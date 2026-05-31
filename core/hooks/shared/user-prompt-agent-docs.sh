@@ -102,7 +102,11 @@ for raw in sys.argv[1:]:
     intent = d.get("intent") or "?"
     docs = [x for x in d.get("documents", []) if x.get("required")]
     if docs:
-        names = ", ".join(os.path.basename(x.get("path", "")) for x in docs[:6])
+        displayed = docs[:6]
+        names = ", ".join(os.path.basename(x.get("path", "")) for x in displayed)
+        hidden = len(docs) - len(displayed)
+        if hidden > 0:
+            names = names + f", +{hidden} more"
         lines.append(
             f"Required {intent} docs ({len(docs)}): {names}. Read them before writing."
         )

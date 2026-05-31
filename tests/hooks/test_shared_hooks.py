@@ -656,6 +656,45 @@ class SharedHookTests(unittest.TestCase):
             self.assertIn("task-tools", ctx)
             self.assertIn("ext.md", ctx)
 
+    def test_preflight_cue_marks_required_doc_overflow(self) -> None:
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            docs = repo / "docs"
+            docs.mkdir()
+            entries: list[str] = []
+            for index in range(1, 8):
+                path = docs / f"doc-{index}.md"
+                path.write_text(f"# Doc {index}\n", encoding="utf-8")
+                entries.append(
+                    '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                    f'path = "docs/doc-{index}.md"\n'
+                    'required = true\nwhen = "always"\n'
+                )
+            (repo / "AGENT_DOCS.toml").write_text("\n".join(entries), encoding="utf-8")
+            home = repo / "home"
+            home.mkdir()
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo), "HOME": str(home)}
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-docs.sh",
+                {"session_id": "cue-overflow-test", "prompt": "hello"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            assert decision is not None
+            hook_output = decision.get("hookSpecificOutput", {})
+            ctx = ""
+            if isinstance(hook_output, dict):
+                ctx = str(hook_output.get("additionalContext", ""))
+            self.assertIn("doc-1.md", ctx)
+            self.assertIn("doc-6.md", ctx)
+            self.assertNotIn("doc-7.md", ctx)
+            self.assertIn("+1 more", ctx)
+
     def test_target_hook_fragments_reference_installed_shared_scripts(self) -> None:
         expected_scripts = {
             "agent-scope-lock-guard.py",
