@@ -131,9 +131,8 @@
 
 ## Git, Commits, Issues, PRs, And MRs
 
-- Always use the `semantic-commit` (or `semantic-commit-autostage`) skill;
-  direct `git commit` is blocked by hook, and the body gate enforces 1-2
-  bullets on non-trivial commits.
+- Always use the `semantic-commit` skill; direct `git commit` is blocked by
+  hook, and the body gate enforces 1-2 bullets on non-trivial commits.
 - Pre-commit: follow `DEVELOPMENT.md` to run the relevant tests/checks before
   committing.
 - For agent-owned provider issues, PRs, and MRs, use the active workflow or

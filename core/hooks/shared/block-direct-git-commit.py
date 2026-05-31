@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """PreToolUse hook: block direct git commit invocations.
 
-Agents should use semantic-commit or semantic-commit-autostage so commit
-messages, validation, and dirty-tree handling stay auditable.
+Agents should use semantic-commit so commit messages, validation, and
+dirty-tree handling stay auditable.
 """
 
 from __future__ import annotations
@@ -17,10 +17,7 @@ sys.dont_write_bytecode = True
 
 from hook_common import ALLOW, command_from, emit_block, read_payload
 
-BLOCK_REASON = (
-    "Do not use git commit directly. Use semantic-commit or "
-    "semantic-commit-autostage instead."
-)
+BLOCK_REASON = "Do not use git commit directly. Use semantic-commit instead."
 
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
 SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
