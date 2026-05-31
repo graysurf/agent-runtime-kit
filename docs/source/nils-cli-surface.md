@@ -1,20 +1,28 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-31 (refreshed for `v0.31.5`)
+- Snapshot date: 2026-05-31 (refreshed for `v0.31.6`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.31.5`
+- Active `git describe --tags` output: `v0.31.6`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.31.5`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.31.6`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `1d4d4e4`
-  (`chore(release): bump cli versions to 0.31.5 (#718)`)
+- Head commit: `44275af`
+  (`chore(release): bump cli versions to 0.31.6 (#720)`)
 - Release:
-  [`v0.31.5`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.5),
+  [`v0.31.6`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.6),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.31.6` is a **patch** that adds `agent-docs preflight
+  --require-declared-intent`, making strict callers fail closed with a stable
+  `undeclared-intent` JSON error when a repo has an `AGENT_DOCS.toml` catalog
+  but the requested intent is not declared. This release is additive for the
+  currently merged runtime-kit consumers: no surface was retired or renamed,
+  and no `required_clis[]` floor moves in this bump
+  ([#719](https://github.com/sympoies/nils-cli/pull/719),
+  [#720](https://github.com/sympoies/nils-cli/pull/720)).
 - `v0.31.5` is a **patch** that publishes the Sprint 1 `git-cli worktree`
   surface: `git-cli worktree add/list/remove/prune` manages repo-scoped
   worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text
