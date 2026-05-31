@@ -3,8 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - Step 1 requested by the user; plan bundle is being
-  prepared for L2 tracking issue creation.
+- Status: in-progress - Step 2 design spike is complete; Step 3 nils-cli
+  implementation is next.
 - Target scope: cross-repo completion of `graysurf/agent-runtime-kit#217`
   using Option C. nils-cli owns the declared-intent guard primitive and
   release; runtime-kit owns hook/catalog consumer changes, pin bump, and
@@ -13,21 +13,20 @@
   Step 3 nils-cli implementation PR -> Step 4 nils-cli release and tap update
   -> Step 5 runtime-kit consumer PR -> Step 6 runtime-kit pin bump and
   closeout.
-- Current task: Task 1.1 - create the plan bundle, validate it, dry-run the
-  tracker open, and open the provider tracking issue if the preview matches.
-- Next task: Task 2.1 - specify the nils-cli declared-intent guard contract.
-- Last updated: 2026-05-31
+- Current task: Task 3.1 - implement the nils-cli declared-intent guard with
+  tests and docs.
+- Next task: Task 4.1 - release nils-cli and update the Homebrew tap after the
+  implementation PR merges.
+- Last updated: 2026-05-31T11:39:02Z
 - Branch/commit/PR: `feat/agent-docs-intent-completion`; no PR yet.
 - Source document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Plan document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
-- Source snapshot: pending - posted by `create-plan-tracking-issue` at issue
-  open
-- Plan snapshot: pending - posted by `create-plan-tracking-issue` at issue
-  open
-- Initial state snapshot: pending - posted by `create-plan-tracking-issue` at
-  issue open
+- Tracking issue: https://github.com/graysurf/agent-runtime-kit/issues/219
+- Source snapshot: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586543489
+- Plan snapshot: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586543533
+- Initial state snapshot: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586543589
+- Step 2 design decision: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586571787
 
 ## Validation Plan
 
@@ -51,8 +50,8 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | in-progress | Create the plan bundle and open the tracker | tbd | Freeze #217 and Option C into source/plan/state, validate, dry-run, live open, and initialize run state. |
-| 2.1 | pending | Specify the declared-intent guard contract | tbd | Decide nils-cli flag name, semantics, exit code, and JSON/text behavior. |
+| 1.1 | done | Create the plan bundle and open the tracker | https://github.com/graysurf/agent-runtime-kit/issues/219 | Tracker opened, source/plan/state snapshots posted, run state initialized, audit passed, and #217 linked back. |
+| 2.1 | done | Specify the declared-intent guard contract | https://github.com/graysurf/agent-runtime-kit/issues/219; https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586571787 | Contract specified: add opt-in `agent-docs preflight --require-declared-intent`; default unknown-intent behavior stays compatible; guarded unknown intents exit 65 with structured text/JSON errors. |
 | 3.1 | pending | Implement the nils-cli declared-intent guard | tbd | Add tests for mistyped intent failure and declared intent success. |
 | 4.1 | pending | Release nils-cli and update the Homebrew tap | tbd | Cut release, update tap, upgrade local host, verify versions. |
 | 5.1 | pending | Make finish-line validation intent-aware | tbd | Enforce every declared validation contract, not only `project-dev`. |
@@ -66,6 +65,12 @@
 - 2026-05-31: User selected Option C and asked to execute the six-step sequence
   in order, starting with Step 1. Plan bundle creation started in
   `graysurf/agent-runtime-kit`.
+- 2026-05-31: Task 1.1 completed. Tracking issue #219 is open with source,
+  plan, and state lifecycle records; #217 links forward to #219.
+- 2026-05-31: Task 2.1 completed. nils-cli design decision is to add
+  `agent-docs preflight --require-declared-intent` as an opt-in fail-closed
+  guard, preserving default unknown-intent compatibility and returning exit 65
+  with a structured JSON/text error only when the guard is requested.
 
 ## Validation
 
@@ -73,7 +78,11 @@
 | --- | --- | --- | --- |
 | `plan-tooling validate --file docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md --format text --explain` | pass | Plan bundle validates with 0 errors. | n/a |
 | `plan-issue record open --dry-run` | pass | Preview renders issue dashboard plus source, plan, and state lifecycle comments with the intended labels. | n/a |
-| `plan-issue record audit --expect-visible` | pending | To run after live issue open. | n/a |
+| `plan-issue record audit --expect-visible` | pass | Opened #219 has source, plan, and state lifecycle comments visible with no required markers missing. | `/Users/terry/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260531-192920-agent-docs-intent-system-completion/issue-219-audit.json` |
+| `cargo run -q -p nils-agent-docs -- preflight --intent no-such-intent` | pass | Current default text behavior exits 0 and resolves no documents / no validation contract. | n/a |
+| `cargo run -q -p nils-agent-docs -- preflight --intent no-such-intent --format json` | pass | Current default JSON behavior exits 0 with `documents=[]` and `validation.declared=false`. | n/a |
+| `cargo run -q -p nils-agent-docs -- list --format json` | pass | Current applicable intents include `project-dev` and `task-tools`. | n/a |
+| `cargo test -p nils-agent-docs preflight_unknown_intent_resolves_empty -- --nocapture` | pass | Existing compatibility test confirms unknown intents succeed by default today. | n/a |
 
 ## Notes
 
