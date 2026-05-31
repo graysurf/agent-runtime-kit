@@ -5,7 +5,8 @@
 This policy is the detail behind the `task-tools` intent: how to handle
 external, unstable, or time-sensitive claims, how to cite evidence, and which
 purpose-built tools to reach for. It pairs with `core/policies/cli-tools.md`
-(the cross-project CLI catalog), which the same intent also surfaces.
+(the cross-project CLI catalog), which is optional `task-tools` context
+available on demand.
 
 It is declared as a `task-tools` document in `AGENT_DOCS.toml` (global scope).
 The UserPromptSubmit cue names it once per session in repos that declare an
