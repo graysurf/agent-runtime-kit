@@ -5,9 +5,11 @@
 #
 # The cue covers EVERY declared intent (for example project-dev and task-tools),
 # enumerated from `agent-docs list` and resolved per intent via `agent-docs
-# preflight --intent`. There is no English-keyword gating: the cue is driven by
-# what the repo declares, so a non-English prompt in a policy repo still gets the
-# cue, and declaring a new intent in AGENT_DOCS.toml activates it automatically.
+# preflight --intent` (with the declared-intent guard when the installed
+# agent-docs supports it). There is no English-keyword gating: the cue is driven
+# by what the repo declares, so a non-English prompt in a policy repo still gets
+# the cue, and declaring a new intent in AGENT_DOCS.toml activates it
+# automatically.
 # It fires at most once per session per repo (falling back to once per day) so it
 # is a start-of-task nudge, not a per-prompt reminder.
 #
@@ -57,6 +59,12 @@ docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
 dh_args=()
 [[ -n "$docs_home" ]] && dh_args=(--docs-home "$docs_home")
 
+require_declared_args=()
+if agent-docs "${dh_args[@]}" --project-path "$repo_root" \
+  preflight --help 2>/dev/null | grep -q -- "--require-declared-intent"; then
+  require_declared_args=(--require-declared-intent)
+fi
+
 # Enumerate every declared intent, newest catalog wins. No hard-coded intent.
 intents="$(
   agent-docs "${dh_args[@]}" --project-path "$repo_root" list --format json 2>/dev/null |
@@ -80,8 +88,18 @@ while IFS= read -r intent; do
   [[ -z "$intent" ]] && continue
   pf="$(
     agent-docs "${dh_args[@]}" --project-path "$repo_root" \
-      preflight --intent "$intent" --format json 2>/dev/null || true
+      preflight --intent "$intent" "${require_declared_args[@]}" \
+      --format json 2>/dev/null
   )"
+  status=$?
+  if [[ $status -ne 0 ]]; then
+    if [[ ${#require_declared_args[@]} -gt 0 ]]; then
+      printf 'agent-runtime-kit: agent-docs preflight failed for declared intent %s (exit %s)\n' \
+        "$intent" "$status" >&2
+      exit 2
+    fi
+    continue
+  fi
   [[ -z "$pf" ]] && continue
   preflights+=("$pf")
 done <<<"$intents"

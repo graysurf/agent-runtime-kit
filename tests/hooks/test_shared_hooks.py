@@ -426,6 +426,12 @@ class SharedHookTests(unittest.TestCase):
         )
         return repo
 
+    @staticmethod
+    def _write_fake_agent_docs(bin_dir: Path, body: str) -> None:
+        script = bin_dir / "agent-docs"
+        script.write_text(body, encoding="utf-8")
+        script.chmod(0o755)
+
     def test_finish_line_gate_blocks_unvalidated_edit_then_releases(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
@@ -550,6 +556,58 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_allowed(decision)
 
+    def test_finish_line_uses_guarded_preflight_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            self._write_fake_agent_docs(
+                bin_dir,
+                """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\n' '{"intents":["project-dev"]}'
+  exit 0
+fi
+if [[ "$args" == *"explain"* ]]; then
+  echo "explain should not be used" >&2
+  exit 66
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  if [[ "$args" != *"--require-declared-intent"* ]]; then
+    echo "missing declared-intent guard" >&2
+    exit 64
+  fi
+  printf '%s\n' '{"intent":"project-dev","documents":[],"validation":{"context":"project-dev","declared":true,"commands":["bash scripts/ci/all.sh"],"marker":".cache/agent-validation/project-dev.ok"}}'
+  exit 0
+fi
+exit 65
+""",
+            )
+            env = {
+                "AGENT_RUNTIME_DOCS_HOME": str(repo),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+
     def test_finish_line_gate_waiver_and_suppress_release(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
@@ -655,6 +713,70 @@ class SharedHookTests(unittest.TestCase):
             # The generalization: a declared non-project-dev intent surfaces too.
             self.assertIn("task-tools", ctx)
             self.assertIn("ext.md", ctx)
+
+    def test_preflight_cue_fails_closed_for_undeclared_intent_when_guarded(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            self._write_fake_agent_docs(
+                bin_dir,
+                """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\n' '{"intents":["project-dev","project_dev"]}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  if [[ "$args" != *"--require-declared-intent"* ]]; then
+    echo "missing declared-intent guard" >&2
+    exit 64
+  fi
+  printf '%s\n' '{"intent":"project-dev","documents":[{"path":"DEV.md","required":true}],"validation":{"declared":false,"commands":[]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project_dev"* ]]; then
+  if [[ "$args" != *"--require-declared-intent"* ]]; then
+    echo "missing declared-intent guard" >&2
+    exit 64
+  fi
+  echo '{"ok":false,"error":{"code":"undeclared-intent"}}' >&2
+  exit 65
+fi
+exit 65
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "AGENT_RUNTIME_DOCS_HOME": str(repo),
+                "HOME": str(home),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-docs.sh",
+                {"session_id": "cue-guard-test", "prompt": "hello"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertNotEqual(code, 0)
+            self.assertIsNone(decision)
+            self.assertIn("project_dev", stderr)
 
     def test_preflight_cue_marks_required_doc_overflow(self) -> None:
         self._require_agent_docs()

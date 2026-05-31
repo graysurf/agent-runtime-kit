@@ -290,6 +290,23 @@ def _agent_docs_json(args: list[str]) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
+def _agent_docs_supports_declared_intent_guard(repo_root: str) -> bool:
+    try:
+        completed = subprocess.run(
+            _agent_docs_base_args(repo_root) + ["preflight", "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=15,
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
+    return (
+        completed.returncode == 0
+        and "--require-declared-intent" in completed.stdout
+    )
+
+
 def _validation_marker_default(context: str) -> str:
     safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", context.strip()).strip(".-")
     if not safe:
@@ -337,10 +354,22 @@ def _declared_intents(repo_root: str) -> list[str]:
 def _resolve_validation_contracts(repo_root: str) -> list[dict[str, Any]]:
     """Resolve every declared validation contract via `agent-docs`."""
     contracts: list[dict[str, Any]] = []
+    guard_args = (
+        ["--require-declared-intent"]
+        if _agent_docs_supports_declared_intent_guard(repo_root)
+        else []
+    )
     for intent in _declared_intents(repo_root):
         data = _agent_docs_json(
             _agent_docs_base_args(repo_root)
-            + ["explain", "--intent", intent, "--format", "json"]
+            + [
+                "preflight",
+                "--intent",
+                intent,
+                *guard_args,
+                "--format",
+                "json",
+            ]
         )
         contract = _contract_from_explain(data, intent)
         if not contract:
