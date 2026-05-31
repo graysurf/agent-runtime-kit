@@ -689,9 +689,9 @@ def validate_create_project_fixture() -> None:
     if not helper.is_file() or not os.access(helper, os.X_OK):
         fail("create-project helper missing or not executable")
     expected = [
-        ".agents/skills/sample-project-skill/SKILL.md",
-        ".agents/skills/sample-project-skill/scripts/sample-project-skill.sh",
-        ".agents/scripts/sample-project-skill.sh",
+        ".agents/skills/project-sample-skill/SKILL.md",
+        ".agents/skills/project-sample-skill/scripts/project-sample-skill.sh",
+        ".agents/scripts/project-sample-skill.sh",
         ".claude/skills",
         ".gitignore",
         "expected-created-paths.txt",
@@ -703,8 +703,8 @@ def validate_create_project_fixture() -> None:
                 fail("create-project fixture missing .claude/skills bridge")
         elif not path.is_file():
             fail(f"create-project fixture missing {rel}")
-    body = read(fixture / ".agents" / "skills" / "sample-project-skill" / "SKILL.md")
-    for needle in ("name: sample-project-skill", "## Contract", "## Workflow"):
+    body = read(fixture / ".agents" / "skills" / "project-sample-skill" / "SKILL.md")
+    for needle in ("name: project-sample-skill", "## Contract", "## Workflow"):
         if needle not in body:
             fail(f"create-project fixture SKILL.md missing {needle!r}")
     created = {
@@ -717,7 +717,7 @@ def validate_create_project_fixture() -> None:
             fail(f"create-project fixture expected-created-paths missing {rel}")
     if ".agents/scripts/pre-pr.sh" in created or (fixture / ".agents" / "scripts" / "pre-pr.sh").exists():
         fail("create-project fixture must not create pre-pr by default")
-    print("skill-governance-audit: create-project fixture OK skill=sample-project-skill")
+    print("skill-governance-audit: create-project fixture OK skill=project-sample-skill")
 
 
 def validate_remove_project_fixture() -> None:
