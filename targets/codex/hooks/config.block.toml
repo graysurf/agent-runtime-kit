@@ -10,6 +10,12 @@ statusMessage = "agent-runtime-kit: Block direct git commit"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
+command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-git-worktree.py\""
+timeout = 10
+statusMessage = "agent-runtime-kit: Block direct git worktree"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
 command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/semantic-commit-body-gate.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Require semantic-commit body"

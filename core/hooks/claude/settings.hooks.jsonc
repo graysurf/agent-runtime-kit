@@ -63,6 +63,11 @@
         },
         {
           "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-direct-git-worktree.py\"",
+          "statusMessage": "agent-runtime-kit: Block direct git worktree"
+        },
+        {
+          "type": "command",
           "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/semantic-commit-body-gate.py\"",
           "statusMessage": "agent-runtime-kit: Require semantic-commit body"
         },

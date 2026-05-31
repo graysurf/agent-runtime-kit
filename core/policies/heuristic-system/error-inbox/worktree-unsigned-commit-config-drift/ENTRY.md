@@ -87,11 +87,8 @@ Promote when **any one** lands:
 
 ## Next Action
 
-Future investigation (not blocking — ruleset + pre-push gate already catch
-landing): instrument which agent path produces the unsigned batch (Codex
-session env vs Claude worktree creation vs a programmatic/scripted commit).
-Candidate fixes to evaluate: an `AGENTS.md` clause forbidding per-worktree
-identity and any `--no-gpg-sign` fallback; a worktree-config drift audit
-(`git config --worktree --list` + shared-config scan) runnable standalone and
-as a `pre-push` job; and confirming agent runners export `HOME`/`XDG` so the
-global signing config is always visible inside worktrees.
+Sprint 2 direct-worktree hook and AGENT_HOME policy reduce unmanaged worktree
+creation and forbid per-worktree identity/signing drift, but this case stays
+open until a worktree-config audit/hook or equivalent guard lands.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/issues/712`
