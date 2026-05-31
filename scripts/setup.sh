@@ -44,7 +44,7 @@ from manifests/cli-tools.yaml, clones agent-runtime-kit into
 runtime homes via \`agent-runtime install --product <p>\`, and runs
 \`agent-runtime doctor\` for both products.
 
-For daily skill refreshes, see \`scripts/sync-runtime-skills.sh\`.
+For daily runtime surface refreshes, see \`scripts/sync-runtime-surfaces.sh\`.
 
 Options:
   --profile core|recommended|full

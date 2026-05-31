@@ -51,7 +51,7 @@ meta.remove-skill
 meta.repo-retro
 meta.semantic-commit
 meta.setup-project
-meta.sync-runtime-skills
+meta.sync-runtime-surfaces
 meta.worktree-triage
 pr.close-pr
 pr.create-dispatch-lane-pr

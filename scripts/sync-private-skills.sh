@@ -2,7 +2,7 @@
 # scripts/sync-private-skills.sh - overlay private project-local skills into
 # the live Codex and Claude runtime homes.
 #
-# This is a deliberately thin companion to sync-runtime-skills.sh. It does NOT
+# This is a deliberately thin companion to sync-runtime-surfaces.sh. It does NOT
 # render, install through nils-cli, or touch any runtime-kit manifest. It only
 # symlinks already-native project-local skills (the create-project-skill layout:
 # <home>/.agents/skills/<name>/SKILL.md) from a PRIVATE source tree into the
@@ -77,7 +77,7 @@ EOF
 }
 
 # -----------------------------------------------------------------------------
-# Logging helpers (mirrors sync-runtime-skills.sh house style)
+# Logging helpers (mirrors sync-runtime-surfaces.sh house style)
 # -----------------------------------------------------------------------------
 
 log() { printf '%s\n' "$*"; }

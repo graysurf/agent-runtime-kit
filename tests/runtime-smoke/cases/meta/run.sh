@@ -324,12 +324,12 @@ run_semantic_commit_probe() {
   ) >"$out" 2>&1
 }
 
-run_sync_runtime_skills_probe() {
-  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.dry-run.txt"
+run_sync_runtime_surfaces_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.dry-run.txt"
 
   (
     cd "$REPO_ROOT"
-    bash scripts/sync-runtime-skills.sh \
+    bash scripts/sync-runtime-surfaces.sh \
       --source-root "$REPO_ROOT" \
       --product codex \
       --no-pull
@@ -344,15 +344,15 @@ run_sync_runtime_skills_probe() {
   grep -q -- "--dry-run" "$out"
   grep -q "agent-runtime doctor" "$out"
   grep -q "codex debug prompt-input" "$out"
-  grep -q "summary: synced skills for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
+  grep -q "summary: synced surfaces for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
 }
 
-run_sync_runtime_skills_no_prune_probe() {
-  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.no-prune.txt"
+run_sync_runtime_surfaces_no_prune_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.no-prune.txt"
 
   (
     cd "$REPO_ROOT"
-    bash scripts/sync-runtime-skills.sh \
+    bash scripts/sync-runtime-surfaces.sh \
       --source-root "$REPO_ROOT" \
       --product codex \
       --no-pull \
@@ -360,19 +360,19 @@ run_sync_runtime_skills_no_prune_probe() {
   ) >"$out" 2>&1
 
   grep -q "prune skipped (--no-prune) for product=codex" "$out"
-  grep -q "summary: synced skills for codex; mode=dry-run; prune=skipped; doctor=planned" "$out"
+  grep -q "summary: synced surfaces for codex; mode=dry-run; prune=skipped; doctor=planned" "$out"
   ! grep -q "agent-runtime prune-stale" "$out"
 }
 
-run_sync_runtime_skills_worktree_guard_probe() {
-  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.worktree-guard.txt"
-  local worktree_root="$TMP_ROOT/workspaces/sync-runtime-skills-linked-worktree"
+run_sync_runtime_surfaces_worktree_guard_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.worktree-guard.txt"
+  local worktree_root="$TMP_ROOT/workspaces/sync-runtime-surfaces-linked-worktree"
   local status
 
   rm -rf "$worktree_root"
   git -C "$REPO_ROOT" worktree add --detach "$worktree_root" HEAD >"$out" 2>&1
   set +e
-  bash "$REPO_ROOT/scripts/sync-runtime-skills.sh" \
+  bash "$REPO_ROOT/scripts/sync-runtime-surfaces.sh" \
     --source-root "$worktree_root" \
     --apply \
     --product codex \
@@ -388,8 +388,8 @@ run_sync_runtime_skills_worktree_guard_probe() {
   grep -q "durable primary checkout" "$out"
 }
 
-run_sync_runtime_skills_prune_fixture_probe() {
-  local out="$META_ARTIFACTS_DIR/sync-runtime-skills.prune-fixture.txt"
+run_sync_runtime_surfaces_prune_fixture_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.prune-fixture.txt"
   local codex_home="$TMP_ROOT/sync-prune/codex-home"
   local claude_home="$TMP_ROOT/sync-prune/claude-home"
   local codex_stale="$codex_home/skills/meta/removed-skill"
@@ -680,9 +680,9 @@ record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe 
 record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe || failures=1
 record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe || failures=1
 record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe || failures=1
-record_case "meta.sync-runtime-skills" "sync-runtime-skills dry-run planned codex refresh without mutation" run_sync_runtime_skills_probe || failures=1
-record_case "meta.sync-runtime-skills" "sync-runtime-skills no-prune flag reports skipped prune" run_sync_runtime_skills_no_prune_probe || failures=1
-record_case "meta.sync-runtime-skills" "sync-runtime-skills apply refuses linked git worktree source roots" run_sync_runtime_skills_worktree_guard_probe || failures=1
-record_case "meta.sync-runtime-skills" "sync-runtime-skills prune fixture removes stale owned surfaces only" run_sync_runtime_skills_prune_fixture_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned codex refresh without mutation" run_sync_runtime_surfaces_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe || failures=1
 
 exit "$failures"

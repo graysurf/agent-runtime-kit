@@ -144,10 +144,10 @@ entries:
     destination: skills/meta/semantic-commit
     recursive: false
 
-  - id: meta.sync-runtime-skills.codex-skill-dir
+  - id: meta.sync-runtime-surfaces.codex-skill-dir
     kind: symlinked-file
-    source: build/codex/plugins/meta/skills/sync-runtime-skills
-    destination: skills/meta/sync-runtime-skills
+    source: build/codex/plugins/meta/skills/sync-runtime-surfaces
+    destination: skills/meta/sync-runtime-surfaces
     recursive: false
 
   - id: meta.setup-project.codex-skill-dir

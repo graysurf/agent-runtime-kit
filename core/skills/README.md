@@ -97,7 +97,7 @@ classification lives in [meta/README.md](./meta/README.md).
 
 | Series | Skills | Purpose |
 | --- | --- | --- |
-| Runtime primitives | [agent-docs](./meta/agent-docs/), [agent-out](./meta/agent-out/), [agent-scope-lock](./meta/agent-scope-lock/), [sync-runtime-skills](./meta/sync-runtime-skills/) | Required docs, output paths, edit scope locks, and runtime skill sync. |
+| Runtime primitives | [agent-docs](./meta/agent-docs/), [agent-out](./meta/agent-out/), [agent-scope-lock](./meta/agent-scope-lock/), [sync-runtime-surfaces](./meta/sync-runtime-surfaces/) | Required docs, output paths, edit scope locks, and runtime surface sync. |
 | Repo operation dispatchers | [bootstrap](./meta/bootstrap/), [deploy](./meta/deploy/), [pre-pr](./meta/pre-pr/), [release](./meta/release/), [setup-project](./meta/setup-project/) | Repo-owned `.agents/scripts/*` dispatch and project adoption. |
 | Skill lifecycle | [create-skill](./meta/create-skill/), [remove-skill](./meta/remove-skill/), [create-project-skill](./meta/create-project-skill/), [remove-project-skill](./meta/remove-project-skill/) | Managed runtime-kit skills and consuming-repo project-local skills. |
 | Plan archive | [plan-archive-query](./meta/plan-archive-query/), [plan-archive-discover](./meta/plan-archive-discover/), [plan-archive-migrate](./meta/plan-archive-migrate/) | Work-history lookup and completed plan migration. |
