@@ -321,7 +321,8 @@ can vary and are not treated as Sprint 1 blockers.
 Runtime smoke deterministic mode runs command-level probes inside temporary
 fixture workspaces and writes artifacts under the run artifact directory.
 Current deterministic coverage includes the `meta`, `media`, `browser`,
-`evidence`, `pr`, `dispatch`, and `reporting` domains.
+`conversation`, `evidence`, `issue`, `code-review`, `pr`, `dispatch`, and
+`reporting` domains.
 `screen-record` is host-sensitive: the deterministic media probe records a pass
 when `screen-record --preflight` succeeds and records `skip-host-capability`
 when the host capture prerequisites are unavailable.

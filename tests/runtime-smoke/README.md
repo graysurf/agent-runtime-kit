@@ -19,9 +19,9 @@ history, logs, caches, or product state.
   rendered plugin target back to the canonical `domain.skill` id.
 - `deterministic`: runs committed command-level probes for available domains.
   Current coverage includes `meta`, `media`, `browser`, `conversation`,
-  `evidence`, `pr`, and `reporting` domains. The `pr` domain includes
-  `forge-cli` dry-run probes for create, close, dispatch-lane create, and
-  delivery macro surfaces.
+  `evidence`, `issue`, `code-review`, `pr`, `dispatch`, and `reporting`
+  domains. The `pr` domain includes `forge-cli` dry-run probes for create,
+  close, dispatch-lane create, and delivery macro surfaces.
 - `product`: runs quarantined product CLI isolation probes, installs temporary
   product homes, and records representative prompt cases. Prompt execution is
   skipped by default unless isolated provider/auth execution is explicitly
@@ -43,7 +43,10 @@ bash tests/runtime-smoke/run.sh --mode deterministic --domain media
 bash tests/runtime-smoke/run.sh --mode deterministic --domain browser
 bash tests/runtime-smoke/run.sh --mode deterministic --domain conversation
 bash tests/runtime-smoke/run.sh --mode deterministic --domain evidence
+bash tests/runtime-smoke/run.sh --mode deterministic --domain issue
+bash tests/runtime-smoke/run.sh --mode deterministic --domain code-review
 bash tests/runtime-smoke/run.sh --mode deterministic --domain pr
+bash tests/runtime-smoke/run.sh --mode deterministic --domain dispatch
 bash tests/runtime-smoke/run.sh --mode deterministic --domain reporting
 bash tests/runtime-smoke/run.sh --mode product --product codex
 bash tests/runtime-smoke/run.sh --mode product --product claude

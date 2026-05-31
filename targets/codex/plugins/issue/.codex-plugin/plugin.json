@@ -1,7 +1,7 @@
 {
   "name": "issue",
   "version": "0.1.0",
-  "description": "Provider issue triage and follow-up workflows backed by forge-cli issue lifecycle commands.",
+  "description": "Provider issue triage, durable follow-up, and plan-issue finding reports backed by forge-cli issue lifecycle commands.",
   "author": {
     "name": "graysurf"
   },
@@ -13,6 +13,10 @@
     {
       "id": "issue-triage",
       "source": "core/skills/issue/issue-triage"
+    },
+    {
+      "id": "report-plan-issue-finding",
+      "source": "core/skills/issue/report-plan-issue-finding"
     }
   ]
 }

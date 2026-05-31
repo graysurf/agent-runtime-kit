@@ -1,7 +1,7 @@
 {
   "name": "meta",
   "version": "0.1.0",
-  "description": "Core workflow primitives for docs, output paths, project-local shims, skill lifecycle changes, scope locks, heuristic cases, retrospectives, and semantic commits.",
+  "description": "Runtime-kit maintenance skills for docs, output paths, project-local shims, skill lifecycle changes, scope locks, heuristic cases, plan archives, CLI pin bumps, worktree triage, retrospectives, and semantic commits.",
   "author": {
     "name": "graysurf"
   },
@@ -31,6 +31,10 @@
       "source": "core/skills/meta/heuristic-inbox"
     },
     {
+      "id": "heuristic-session-closeout",
+      "source": "core/skills/meta/heuristic-session-closeout"
+    },
+    {
       "id": "create-skill",
       "source": "core/skills/meta/create-skill"
     },
@@ -45,6 +49,10 @@
     {
       "id": "remove-project-skill",
       "source": "core/skills/meta/remove-project-skill"
+    },
+    {
+      "id": "sync-runtime-skills",
+      "source": "core/skills/meta/sync-runtime-skills"
     },
     {
       "id": "pre-pr",
@@ -65,6 +73,26 @@
     {
       "id": "setup-project",
       "source": "core/skills/meta/setup-project"
+    },
+    {
+      "id": "plan-archive-migrate",
+      "source": "core/skills/meta/plan-archive-migrate"
+    },
+    {
+      "id": "plan-archive-query",
+      "source": "core/skills/meta/plan-archive-query"
+    },
+    {
+      "id": "plan-archive-discover",
+      "source": "core/skills/meta/plan-archive-discover"
+    },
+    {
+      "id": "nils-cli-bump",
+      "source": "core/skills/meta/nils-cli-bump"
+    },
+    {
+      "id": "worktree-triage",
+      "source": "core/skills/meta/worktree-triage"
     }
   ]
 }
