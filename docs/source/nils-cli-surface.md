@@ -1,20 +1,32 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-05-31 (refreshed for `v0.31.7`)
+- Snapshot date: 2026-05-31 (refreshed for `v0.31.8`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v0.31.7`
+- Active `git describe --tags` output: `v0.31.8`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v0.31.7`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v0.31.8`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `9ee0e58`
-  (`chore(release): bump cli versions to 0.31.7 (#724)`)
+- Head commit: `5fd5b3a`
+  (`chore(release): bump cli versions to 0.31.8 (#726)`)
 - Release:
-  [`v0.31.7`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.7),
+  [`v0.31.8`](https://github.com/sympoies/nils-cli/releases/tag/v0.31.8),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v0.31.8` is a **patch** that adds the `plugin-manifest-skills` block-tier
+  drift class to `agent-runtime audit-drift`: for every Codex
+  `targets/codex/plugins/<domain>/.codex-plugin/plugin.json` whose domain has a
+  `plugins.yaml` plugin, the advertised `skills[]` entries must mirror that
+  plugin's `contained_skills` and each entry's `source` must match
+  `skills.yaml` and resolve to a directory on disk. This repo consumes
+  `agent-runtime audit-drift` in `scripts/ci/all.sh`; the class closes the gap
+  that let `#220`'s renamed-skill `plugin.json` entry ship green (this repo's
+  `#225`). Additive — no flag or envelope changed and no `required_clis[]`
+  floor moves
+  ([#725](https://github.com/sympoies/nils-cli/pull/725),
+  [#726](https://github.com/sympoies/nils-cli/pull/726)).
 - `v0.31.7` is a **patch** that ships the `forge-cli search` surface —
   `search issues` / `search prs` (GitHub full-text via `gh search`) and
   `search refs-to <ref>` (cross-reference events via `gh api graphql`), all
