@@ -68,12 +68,21 @@ and exists on disk, with a fixture proving a stale entry fails CI.
 
 ## Next Action
 
-None. Fixed by #226; #225 was closed.
+None. Fixed upstream in `sympoies/nils-cli` `v0.31.8`: `agent-runtime
+audit-drift` now runs a `plugin-manifest-skills` block-tier class that asserts
+every Codex `.codex-plugin/plugin.json` `skills[]` entry mirrors the matching
+plugin's `contained_skills` and matches `manifests/skills.yaml` `source` on
+disk, with integration coverage proving a #220-style dangling entry fails CI
+(the promotion criteria above are now met). The surface pin was bumped to
+`v0.31.8` (#229) and issue #225 was closed. (#226 only *recorded* this gap; the
+fix is nils-cli#725.)
 
-Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/226`
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/725`
 
 ## Archive
 
 - Archived: 2026-05-31
-- Reason: Fixed by #226 and issue #225 closed.
-- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/226`
+- Reason: Promoted and fixed upstream in nils-cli `v0.31.8` — the
+  `agent-runtime audit-drift` `plugin-manifest-skills` class
+  (sympoies/nils-cli#725), consumed here via pin bump #229; issue #225 closed.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/725`
