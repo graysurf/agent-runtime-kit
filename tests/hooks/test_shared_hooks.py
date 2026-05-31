@@ -101,6 +101,47 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "semantic-commit")
 
+    def test_blocks_direct_git_worktree_and_allows_git_cli(self) -> None:
+        blocked_commands = (
+            "git -C repo worktree add ../repo-topic",
+            "env GIT_OPTIONAL_LOCKS=0 git worktree remove ../repo-topic",
+            "git status && git worktree prune",
+            "command git worktree lock ../repo-topic",
+        )
+        for command in blocked_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-git-worktree.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "git-cli worktree")
+
+        allowed_commands = (
+            "git worktree list",
+            "git worktree --help",
+            "git-cli worktree list",
+            "git status",
+            "printf 'git worktree list\\n'",
+            "ALLOW_DIRECT_GIT_WORKTREE=1 git worktree add ../repo-topic",
+        )
+        for command in allowed_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-git-worktree.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
+        code, decision, stderr = run_hook(
+            "block-direct-git-worktree.py",
+            command_payload("git worktree add ../repo-topic"),
+            env={"AGENT_RUNTIME_ALLOW_DIRECT_GIT_WORKTREE": "1"},
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
     def test_python_hooks_do_not_write_bytecode_in_source_checkout(self) -> None:
         pycache = HOOK_DIR / "__pycache__"
         if pycache.exists():
@@ -500,6 +541,7 @@ class SharedHookTests(unittest.TestCase):
         expected_scripts = {
             "agent-scope-lock-guard.py",
             "block-direct-git-commit.py",
+            "block-direct-git-worktree.py",
             "block-direct-pr-create.py",
             "block-direct-python.py",
             "block-project-memory-write.py",

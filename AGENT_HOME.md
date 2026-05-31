@@ -133,6 +133,15 @@
 
 - Always use the `semantic-commit` skill; direct `git commit` is blocked by
   hook, and the body gate enforces 1-2 bullets on non-trivial commits.
+- Use `git-cli worktree` for agent worktree lifecycle. Direct mutating
+  `git worktree` commands are blocked by hook so paths, branch names, and
+  cleanup behavior follow the managed CLI contract.
+- Managed agent worktrees live under
+  `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>`; `agent-out` continues to
+  own `$AGENT_HOME/out/` for workflow artifacts.
+- Do not enable `extensions.worktreeConfig`, set per-worktree identity/signing
+  config, or use `--no-gpg-sign` for tracked work. If signing fails, stop and
+  report the blocker.
 - Pre-commit: follow `DEVELOPMENT.md` to run the relevant tests/checks before
   committing.
 - For agent-owned provider issues, PRs, and MRs, use the active workflow or
