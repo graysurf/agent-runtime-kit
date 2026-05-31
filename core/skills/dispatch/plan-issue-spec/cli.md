@@ -77,7 +77,7 @@ The current problem is UX and consistency:
 - Do not embed a LangGraph-style dynamic orchestration runtime in `nils-cli`
   core. External agent runners may use graph orchestration, but `nils-cli`
   should expose deterministic primitives.
-- Do not delete the whole `crates/plan-issue-cli` crate, rename the binaries,
+- Do not delete the whole `crates/plan-issue` crate, rename the binaries,
   or break released command compatibility before runtime-kit has migrated.
 
 ## Chosen Architecture
@@ -103,7 +103,7 @@ silently override newer issue evidence.
 ## Complete Rewrite Boundary
 
 The `nils-cli` implementation should be a complete rewrite of the plan issue
-workflow core inside the existing `plan-issue-cli` crate. It should not be a
+workflow core inside the existing `plan-issue` crate. It should not be a
 total crate deletion.
 
 Definition:
@@ -143,7 +143,7 @@ Rewrite:
 Recommended module boundary in `nils-cli`:
 
 ```text
-crates/plan-issue-cli/src/
+crates/plan-issue/src/
   lifecycle_vnext/
     mod.rs
     registry.rs
@@ -183,7 +183,7 @@ Expected behavior:
 
 Acceptance:
 
-- `cargo test -p nils-plan-issue-cli` can run with both old command paths and
+- `cargo test -p nils-plan-issue` can run with both old command paths and
   new vNext module tests present.
 - New module tests assert visible template shape without invoking live provider
   commands.
@@ -192,7 +192,7 @@ Acceptance:
 
 ### Workstream 1: Template Registry
 
-Add a small template registry inside `plan-issue-cli` for lifecycle roles.
+Add a small template registry inside `plan-issue` for lifecycle roles.
 
 Expected behavior:
 
@@ -331,7 +331,7 @@ plan-issue tracking status \
 plan-issue tracking run update \
   --run-state "$RUN_STATE" \
   --phase validating \
-  --validation-command "cargo test -p plan-issue-cli lifecycle_record" \
+  --validation-command "cargo test -p nils-plan-issue lifecycle_record" \
   --validation-status pass \
   --validation-evidence "$VALIDATION_LOG" \
   --format json
@@ -512,7 +512,7 @@ Acceptance:
 
 1. Land these design documents in runtime-kit.
 2. In `nils-cli`, create the vNext module boundary inside
-   `crates/plan-issue-cli` while preserving binaries, global envelope,
+   `crates/plan-issue` while preserving binaries, global envelope,
    provider abstraction, runtime layout, and old command compatibility.
 3. Implement the lifecycle template registry and visible completeness lint in
    the vNext core.

@@ -147,7 +147,7 @@ Minimum `run-state.json`:
     "overall": "pass",
     "commands": [
       {
-        "command": "cargo test -p plan-issue-cli lifecycle_record",
+        "command": "cargo test -p nils-plan-issue lifecycle_record",
         "status": "pass",
         "evidence": "artifacts/validation/lifecycle-record.txt"
       }
@@ -196,7 +196,7 @@ Recommended fields:
 ```json
 {"schema":"plan-issue.execution-event.v1","at":"2026-05-26T15:04:05Z","type":"run_started","run_id":"20260526-150405-issue-123","repo":"owner/repo","issue":123}
 {"schema":"plan-issue.execution-event.v1","at":"2026-05-26T15:10:00Z","type":"task_started","task":"1.2","branch":"feat/plan-issue-visible-lint"}
-{"schema":"plan-issue.execution-event.v1","at":"2026-05-26T15:15:00Z","type":"validation_recorded","command":"cargo test -p plan-issue-cli lifecycle_record","status":"pass","evidence":"artifacts/validation/lifecycle-record.txt"}
+{"schema":"plan-issue.execution-event.v1","at":"2026-05-26T15:15:00Z","type":"validation_recorded","command":"cargo test -p nils-plan-issue lifecycle_record","status":"pass","evidence":"artifacts/validation/lifecycle-record.txt"}
 {"schema":"plan-issue.execution-event.v1","at":"2026-05-26T15:18:00Z","type":"reconciled","fsm_state":"RECORD_OPEN_ACTIVE","missing":["validation","review"]}
 {"schema":"plan-issue.execution-event.v1","at":"2026-05-26T15:20:00Z","type":"checkpoint_posted","roles":["state","session","validation"],"dashboard_repaired":true}
 ```
@@ -320,7 +320,7 @@ Update local run state without posting provider comments.
 plan-issue tracking run update \
   --run-state "$RUN_STATE" \
   --phase validating \
-  --validation-command "cargo test -p plan-issue-cli lifecycle_record" \
+  --validation-command "cargo test -p nils-plan-issue lifecycle_record" \
   --validation-status pass \
   --validation-evidence "$VALIDATION_LOG" \
   --format json
@@ -478,7 +478,7 @@ Runtime-kit tests:
 ## Migration Plan
 
 1. Land docs in runtime-kit.
-2. Create the vNext controller modules inside `plan-issue-cli` while keeping
+2. Create the vNext controller modules inside `plan-issue` while keeping
    the existing crate, binaries, provider abstraction, runtime layout, and
    released command compatibility.
 3. Add run-state schema and parser to the vNext controller.

@@ -10,7 +10,7 @@
   - `core/skills/dispatch/execute-plan-tracking-issue/SKILL.md.tera`
   - `core/skills/dispatch/deliver-plan-tracking-issue/SKILL.md.tera`
   - `core/skills/dispatch/plan-tracking-issue-closeout/SKILL.md.tera`
-  - `sympoies/nils-cli:crates/plan-issue-cli`
+  - `sympoies/nils-cli:crates/plan-issue`
 - Related controller spec:
   - `core/skills/dispatch/plan-issue-spec/run-state-controller.md`
 - Related skill family spec:
@@ -36,9 +36,9 @@ comments carrying `plan-issue-record:v2` markers.
   `record close`.
 - [F2] `docs/source/nils-cli-surface.md` pins the consumed `plan-issue`
   lifecycle surface and names the canonical marker family.
-- [F3] `sympoies/nils-cli:crates/plan-issue-cli/src/commands/record.rs`
+- [F3] `sympoies/nils-cli:crates/plan-issue/src/commands/record.rs`
   defines the current record roles and `--task-ledger-display` modes.
-- [F4] `sympoies/nils-cli:crates/plan-issue-cli/src/lifecycle_record.rs`
+- [F4] `sympoies/nils-cli:crates/plan-issue/src/lifecycle_record.rs`
   defines the current headings, payload schema, visible renderers, and hidden
   payload carrier.
 - [I1] The redesign should preserve the current structured payload model while
@@ -343,7 +343,7 @@ table from the canonical execution-state `## Task Ledger` (every task known at
 post time), not just the current/selected task, and `tasks[].status` shares the
 ledger vocabulary (`pending|in-progress|done|deferred|blocked|waived`). The
 canonical payload schema is owned by `nils-cli`
-(`crates/plan-issue-cli/docs/specs/issue-backed-plan-record-contract-v2.md`);
+(`crates/plan-issue/docs/specs/issue-backed-plan-record-contract-v2.md`);
 this taxonomy mirrors it.
 
 Posting policy:

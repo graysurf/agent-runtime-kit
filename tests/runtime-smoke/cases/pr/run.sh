@@ -219,7 +219,7 @@ JSON
   grep -q '"provider":"github"' "$out"
   grep -q '"workflow::dispatch"' "$out"
   grep -q '"size::s"' "$out"
-  grep -q '"schema_version":"plan-issue-cli.record.post.v2"' "$post_out"
+  grep -q '"schema_version":"plan-issue.record.post.v2"' "$post_out"
   grep -q '<!-- plan-issue-record:v2 role=session profile=dispatch -->' "$post_out"
 }
 
