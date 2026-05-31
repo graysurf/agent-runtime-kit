@@ -246,18 +246,27 @@ check_dashboard_next_action_present() {
 }
 
 check_state_body_not_frozen_preflight() {
-  # The rendered Execution State body must not keep pre-flight placeholders
-  # once the issue is open/posted/closed: a frozen header is the #54 tell.
-  local bodies
-  bodies="$(state_bodies_blob)"
-  if grep -qiE 'Status:[[:space:]]*ready-to-start' "${bodies}"; then
-    fail "state body still says 'Status: ready-to-start' on an opened/closed issue (frozen header; #54)"
-  elif grep -qiE 'Tracking issue:[[:space:]]*tbd' "${bodies}"; then
-    fail "state body still says 'Tracking issue: tbd' after the issue was opened (frozen header; #54)"
-  elif grep -qiE 'snapshot:[[:space:]]*pending' "${bodies}"; then
-    fail "state body still marks a snapshot 'pending' after snapshots were posted (frozen header; #54)"
+  # Only the LATEST state comment must reflect live progress. The initial
+  # `record open` state comment legitimately preserves the authored pre-flight
+  # header — the CLI re-renders the header from the payload only on the
+  # `tracking checkpoint` path (nils-cli v0.31.2 / sympoies/nils-cli#703), not
+  # on `record open`/`record post`. Checking every state body false-positives
+  # on that initial snapshot; the #54 bug was that the *latest* checkpoint
+  # state stayed frozen, so only the latest body is the meaningful subject.
+  local latest="${snap_dir}/latest-state-body.md"
+  jq -r '
+    [ .comments[]
+      | select(.body | test("plan-issue-record:v[0-9]+ role=state"))
+      | .body ] | last // ""
+  ' "${snap_dir}/issue.json" >"${latest}"
+  if grep -qiE 'Status:[[:space:]]*ready-to-start' "${latest}"; then
+    fail "latest state body still says 'Status: ready-to-start' on an opened/closed issue (frozen header; #54)"
+  elif grep -qiE 'Tracking issue:[[:space:]]*tbd' "${latest}"; then
+    fail "latest state body still says 'Tracking issue: tbd' after the issue was opened (frozen header; #54)"
+  elif grep -qiE 'snapshot:[[:space:]]*pending' "${latest}"; then
+    fail "latest state body still marks a snapshot 'pending' after snapshots were posted (frozen header; #54)"
   else
-    pass "state body header is not frozen at pre-flight placeholders"
+    pass "latest state body header is not frozen at pre-flight placeholders"
   fi
 }
 
