@@ -107,6 +107,8 @@ class SharedHookTests(unittest.TestCase):
             "env GIT_OPTIONAL_LOCKS=0 git worktree remove ../repo-topic",
             "git status && git worktree prune",
             "command git worktree lock ../repo-topic",
+            "printf 'ALLOW_DIRECT_GIT_WORKTREE=1'; git worktree add ../repo-topic",
+            "ALLOW_DIRECT_GIT_WORKTREE=0 git worktree add ../repo-topic",
         )
         for command in blocked_commands:
             with self.subTest(command=command):
@@ -124,6 +126,7 @@ class SharedHookTests(unittest.TestCase):
             "git status",
             "printf 'git worktree list\\n'",
             "ALLOW_DIRECT_GIT_WORKTREE=1 git worktree add ../repo-topic",
+            "env ALLOW_DIRECT_GIT_WORKTREE=1 git worktree add ../repo-topic",
         )
         for command in allowed_commands:
             with self.subTest(command=command):

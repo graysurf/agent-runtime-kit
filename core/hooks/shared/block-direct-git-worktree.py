@@ -7,8 +7,8 @@ contracts, and cleanup behavior stay consistent across sessions.
 
 from __future__ import annotations
 
-import re
 import os
+import re
 import shlex
 import sys
 from pathlib import PurePosixPath
@@ -38,9 +38,7 @@ OVERRIDE_ENV_NAMES = (
     "ALLOW_DIRECT_GIT_WORKTREE",
     "AGENT_RUNTIME_ALLOW_DIRECT_GIT_WORKTREE",
 )
-OVERRIDE_RE = re.compile(
-    rf"(?:^|[\s;&|()])(?P<name>{'|'.join(OVERRIDE_ENV_NAMES)})=(?P<value>[^\s;&|()]+)"
-)
+TRUTHY_VALUES = {"1", "true", "yes"}
 GIT_OPTIONS_WITH_VALUE = {
     "-C",
     "-c",
@@ -183,28 +181,74 @@ def git_worktree_action(simple_command: list[str]) -> str | None:
     return None
 
 
-def override_enabled(command: str) -> bool:
+def env_override_enabled() -> bool:
     for name in OVERRIDE_ENV_NAMES:
-        if os.environ.get(name, "").lower() in {"1", "true", "yes"}:
-            return True
-    for match in OVERRIDE_RE.finditer(command):
-        if match.group("value").strip("\"'").lower() in {"1", "true", "yes"}:
+        if os.environ.get(name, "").lower() in TRUTHY_VALUES:
             return True
     return False
 
 
+def assignment_override_enabled(token: str) -> bool:
+    if not is_assignment(token):
+        return False
+    name, value = token.split("=", 1)
+    return name in OVERRIDE_ENV_NAMES and value.strip("\"'").lower() in TRUTHY_VALUES
+
+
+def simple_command_override_enabled(simple_command: list[str]) -> bool:
+    index = 0
+    while index < len(simple_command) and is_assignment(simple_command[index]):
+        if assignment_override_enabled(simple_command[index]):
+            return True
+        index += 1
+
+    if index >= len(simple_command) or basename(simple_command[index]) != "env":
+        return False
+
+    index += 1
+    while index < len(simple_command):
+        token = simple_command[index]
+        if token == "--":
+            return False
+        if is_assignment(token):
+            if assignment_override_enabled(token):
+                return True
+            index += 1
+            continue
+        if token in {"-i", "--ignore-environment", "-0", "--null"}:
+            index += 1
+            continue
+        if token in {"-u", "--unset"}:
+            index += 2
+            continue
+        if token.startswith("--unset="):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return False
+    return False
+
+
 def invokes_git_worktree(command: str) -> bool:
-    if override_enabled(command):
+    if env_override_enabled():
         return False
     simple_command: list[str] = []
     for token in shell_tokens(command):
         if is_separator(token):
-            if git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS:
+            if (
+                git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
+                and not simple_command_override_enabled(simple_command)
+            ):
                 return True
             simple_command = []
             continue
         simple_command.append(token)
-    return git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
+    return (
+        git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
+        and not simple_command_override_enabled(simple_command)
+    )
 
 
 def main() -> int:
