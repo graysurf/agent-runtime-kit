@@ -11,7 +11,8 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
+- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1` — the release that
+  writes the tracking issue URL into execution-state on open.
   `forge-cli` is not required by this skill.
 - Bundle precondition: a complete plan bundle already exists at
   `docs/plans/<YYYY-MM-DD>-<slug>/` — `<slug>-plan.md`,
@@ -59,6 +60,11 @@ Outputs:
   initial `state` lifecycle comments and opens the provider issue.
 - Optional `tracking run init` writes `run-state.json` and
   `events.jsonl` under the issue runtime root, recording `run_started`.
+- After a live open, `record open` writes the live tracking issue URL into the
+  bundle's `<slug>-execution-state.md` `- Tracking issue:` bullet (reported
+  under `execution_state_sync`) so the durable state matches run-state and
+  `plan-archive discover` can infer the provider ref offline. Commit the
+  patched bundle before continuing.
 - No PR / MR creation.
 
 Failure modes:

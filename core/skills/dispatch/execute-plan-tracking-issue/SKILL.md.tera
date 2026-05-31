@@ -11,7 +11,8 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
+- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1` — the release that
+  ships execution-state sync, the reconcile gate, and `exec-state-sync`.
 - Issue precondition: the tracking issue exists with at least `source`,
   `plan`, and an initial `state` lifecycle comment.
 - Run state precondition: a `run-state.json` exists for this issue (or
@@ -49,6 +50,10 @@ Outputs:
 - Dashboard repair through `tracking checkpoint --live
   --repair-dashboard` (or `record repair-dashboard` if a lower-level
   fix is needed).
+- `tracking checkpoint --live` also reconciles the durable `Tracking issue`
+  bullet in `<slug>-execution-state.md` against run-state: it self-heals a
+  missing or placeholder URL (derived offline from the repo slug) and reports
+  the action under `execution_state_reconcile`.
 
 Failure modes:
 
@@ -68,6 +73,11 @@ Failure modes:
   ledger-update --execution-state <path> --task '<id>' --status done
   --evidence <evidence>` for the offending row(s) before re-running
   the gate.
+- `execution-state-issue-missing` / `execution-state-issue-mismatch` (durable
+  execution-state reconcile): `tracking checkpoint --live` self-heals a missing
+  or placeholder `Tracking issue` URL and refuses only on a genuine issue
+  mismatch; `tracking close-ready` blocks (non-mutating) on either. Remediation:
+  `plan-tooling exec-state-sync --execution-state <path> --issue-url <url>`.
 - Scope-leak: rewriting `source` / `plan` snapshots, posting for
   purely local edits, or posting unchanged validation reruns.
 
