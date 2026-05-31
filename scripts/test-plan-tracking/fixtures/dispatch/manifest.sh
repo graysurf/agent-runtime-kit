@@ -37,7 +37,10 @@ FIXTURE_LANE_BRANCHES="feat/dispatch-flow-lane-1 feat/dispatch-flow-lane-2"
 
 # Comma-separated label list. Mirrors the deliver-dispatch-plan SKILL
 # recommendation: type::chore + workflow::dispatch (not workflow::tracking).
-FIXTURE_LABELS="type::chore,area::docs,state::needs-triage,workflow::plan,workflow::dispatch,plan"
+# At most one label per scope (GitLab scoped-label exclusivity): keep
+# `workflow::dispatch`, drop `workflow::plan`. See
+# graysurf/plan-tracking-testbed#58.
+FIXTURE_LABELS="type::chore,area::docs,state::needs-triage,workflow::dispatch,plan"
 
 # Expected lifecycle comment roles per phase, used by assert.sh. Lane
 # checkpoints add session + validation; lane reviews add review.

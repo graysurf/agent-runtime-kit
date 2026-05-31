@@ -23,8 +23,10 @@ FIXTURE_COMMIT_TYPE="feat"
 
 # Comma-separated label list. Mirrors the create-plan-tracking-issue
 # SKILL recommendation but swaps `type::chore` for `type::feature` to
-# reflect the deliver flow's PR-bearing intent.
-FIXTURE_LABELS="type::feature,area::docs,state::needs-triage,workflow::plan,workflow::tracking,plan"
+# reflect the deliver flow's PR-bearing intent. At most one label per scope
+# (GitLab scoped-label exclusivity): keep `workflow::tracking`, drop
+# `workflow::plan`. See graysurf/plan-tracking-testbed#58.
+FIXTURE_LABELS="type::feature,area::docs,state::needs-triage,workflow::tracking,plan"
 
 # Expected lifecycle comment roles per phase, used by assert.sh.
 FIXTURE_EXPECTED_ROLES_CREATE="source plan state"
