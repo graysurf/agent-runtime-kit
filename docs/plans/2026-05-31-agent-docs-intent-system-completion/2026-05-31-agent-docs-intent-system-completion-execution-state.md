@@ -3,8 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - Step 4 nils-cli release is complete; Step 5
-  runtime-kit consumer changes are next.
+- Status: in-progress - Task 5.1 runtime-kit finish-line validation is
+  complete; Task 5.2 required-doc cue truncation is next.
 - Target scope: cross-repo completion of `graysurf/agent-runtime-kit#217`
   using Option C. nils-cli owns the declared-intent guard primitive and
   release; runtime-kit owns hook/catalog consumer changes, pin bump, and
@@ -13,16 +13,19 @@
   Step 3 nils-cli implementation PR -> Step 4 nils-cli release and tap update
   -> Step 5 runtime-kit consumer PR -> Step 6 runtime-kit pin bump and
   closeout.
-- Current task: Task 5.1 - make runtime-kit finish-line validation
-  intent-aware.
-- Next task: Task 5.2 - make required-doc cue truncation explicit.
-- Last updated: 2026-05-31T12:36:01Z
+- Current task: Task 5.2 - make required-doc cue truncation explicit.
+- Next task: Task 5.3 - reclassify `cli-tools.md` as optional for
+  `task-tools`.
+- Last updated: 2026-05-31T12:49:59Z
 - Branch/commit/PR: `feat/agent-docs-intent-completion`; nils-cli PR
   https://github.com/sympoies/nils-cli/pull/719 merged as
   `ae51cec1831188082162bec56d3b966c6faa5295`; nils-cli release PR
   https://github.com/sympoies/nils-cli/pull/720 merged as
   `44275afb207bb28fd6ec582b3d68c923dc2c3483`; release tag
-  https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 is live.
+  https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 is live;
+  runtime-kit Task 5.1 commit
+  https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035
+  is the implementation commit.
 - Source document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Plan document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Direct source-doc execution waiver: not applicable
@@ -33,6 +36,8 @@
 - Step 2 design decision: https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586571787
 - Step 3 nils-cli implementation PR: https://github.com/sympoies/nils-cli/pull/719
 - Step 4 nils-cli release: https://github.com/sympoies/nils-cli/releases/tag/v0.31.6
+- Step 5.1 runtime-kit finish-line validation:
+  https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035
 
 ## Validation Plan
 
@@ -60,7 +65,7 @@
 | 2.1 | done | Specify the declared-intent guard contract | https://github.com/graysurf/agent-runtime-kit/issues/219; https://github.com/graysurf/agent-runtime-kit/issues/219#issuecomment-4586571787 | Contract specified: add opt-in `agent-docs preflight --require-declared-intent`; default unknown-intent behavior stays compatible; guarded unknown intents exit 65 with structured text/JSON errors. |
 | 3.1 | done | Implement the nils-cli declared-intent guard | sympoies/nils-cli branch feat/agent-docs-declared-intent; https://github.com/sympoies/nils-cli/pull/719 | Implemented `agent-docs preflight --require-declared-intent`; PR #719 passed local-fast and GitHub CI, then squash-merged as ae51cec1831188082162bec56d3b966c6faa5295. |
 | 4.1 | done | Release nils-cli and update the Homebrew tap | https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 | Released nils-cli v0.31.6 via PR #720, tag v0.31.6, GitHub Release assets, homebrew-tap workflow, and local Homebrew upgrade verification. |
-| 5.1 | pending | Make finish-line validation intent-aware | tbd | Enforce every declared validation contract, not only `project-dev`. |
+| 5.1 | done | Make finish-line validation intent-aware | https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035 | Finish-line recorder and stop gate now resolve every declared validation-bearing intent, record each contract independently, and block until each contract has run after code edits. |
 | 5.2 | pending | Make required-doc cue truncation explicit | tbd | Add visible overflow marker for required-doc lists above the display cap. |
 | 5.3 | pending | Reclassify `cli-tools.md` as optional for `task-tools` | tbd | Keep `external-facts.md` required; keep `cli-tools.md` auditable and optional. |
 | 5.4 | pending | Integrate the new nils-cli primitive in runtime-kit | tbd | Use fail-closed declared-intent checks where runtime-kit explicitly requests intents. |
@@ -84,6 +89,11 @@
 - 2026-05-31: Task 4.1 completed. nils-cli v0.31.6 shipped through release
   PR #720, tag `v0.31.6`, GitHub Release assets, the homebrew-tap workflow,
   and a local Homebrew upgrade to `nils-cli 0.31.6`.
+- 2026-05-31: Task 5.1 completed. The finish-line recorder and stop gate now
+  enumerate every declared validation-bearing intent, record markers per
+  contract, and block until each contract has run after code edits. Regression
+  coverage proves a repo with both `project-dev` and `task-tools` validation
+  requires both commands.
 
 ## Validation
 
@@ -114,6 +124,10 @@
 | `scripts/dev/with-nils-version.sh release:v0.31.5 -- agent-runtime --version` | pass | Scoped runtime-kit validation PATH resolves the pinned `agent-runtime 0.31.5` surface while the host is on 0.31.6. | n/a |
 | `agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- scripts/dev/with-nils-version.sh release:v0.31.5 -- bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after the Step 4 state update. | n/a |
 | `agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- scripts/dev/with-nils-version.sh release:v0.31.5 -- bash tests/hooks/run.sh` | pass | 28 shared hook tests passed under the pinned 0.31.5 surface after the Step 4 state update. | n/a |
+| `scripts/dev/with-nils-version.sh release:v0.31.5 -- python3 -m unittest tests.hooks.test_shared_hooks.SharedHookTests.test_finish_line_gate_enforces_every_declared_validation_intent` | fail | Red test confirmed the old finish-line gate released after `project-dev` validation and ignored the second validation-bearing intent. | n/a |
+| `scripts/dev/with-nils-version.sh release:v0.31.5 -- python3 -m unittest tests.hooks.test_shared_hooks.SharedHookTests.test_finish_line_gate_enforces_every_declared_validation_intent` | pass | Targeted regression test passes after resolving every declared validation-bearing intent. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 scripts/dev/with-nils-version.sh release:v0.31.5 -- bash tests/hooks/run.sh` | pass | 29 shared hook tests passed, including the new multi-intent finish-line regression. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 agent-run exec --cwd /Users/terry/Project/graysurf/agent-runtime-kit -- scripts/dev/with-nils-version.sh release:v0.31.5 -- bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after Task 5.1. | n/a |
 
 ## Notes
 
