@@ -15,9 +15,6 @@ Prereqs:
 
 - `agent-runtime-kit` is available as a local checkout with
   `scripts/sync-runtime-surfaces.sh`.
-- `scripts/sync-runtime-skills.sh` is only a compatibility wrapper for the old
-  command name; prefer the `sync-runtime-surfaces` entrypoint for new docs,
-  automation, and user-facing guidance.
 - Live `--apply` refreshes run from a durable primary checkout, not a linked
   git worktree or a Codex transient worktree under `$CODEX_HOME/worktrees`.
 - First-time host bootstrap has already been handled by `scripts/setup.sh`.
