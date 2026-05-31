@@ -11,7 +11,8 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`.
+- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1` — the release that
+  writes the terminal execution-state back at close.
 - Issue precondition: `tracking close-ready --profile tracking` returns
   `ready: true` and `blockers: []`. Required-check pass on every linked
   PR is part of that gate.
@@ -41,6 +42,12 @@ Outputs:
   `events.jsonl` accepts free-form notes.
 - `record close --profile tracking` posts the canonical `closeout`
   lifecycle comment and closes the provider issue.
+- Pass `record close --bundle <bundle>` so the close also writes the terminal
+  state back into the bundle's `<slug>-execution-state.md` (Status → terminal,
+  `Branch/commit/PR`, issue URL), reported under `execution_state_sync`. This
+  makes the in-repo file final immediately instead of transient-stale until
+  `plan-archive migrate`; the `## Task Ledger` rows are left to the per-task
+  `ledger-update` + `close-ready` gate. Commit the patched bundle.
 - No run-state mutation beyond the final `--note` event and marking
   the issue closed.
 
