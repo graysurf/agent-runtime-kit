@@ -3,8 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - Task 5.4 nils-cli primitive integration is complete;
-  Task 6.1 runtime-kit pin bump and delivery is next.
+- Status: complete - Option C is delivered across nils-cli and runtime-kit;
+  runtime-kit PR #222 merged and the tracker is ready for closeout.
 - Target scope: cross-repo completion of `graysurf/agent-runtime-kit#217`
   using Option C. nils-cli owns the declared-intent guard primitive and
   release; runtime-kit owns hook/catalog consumer changes, pin bump, and
@@ -13,10 +13,13 @@
   Step 3 nils-cli implementation PR -> Step 4 nils-cli release and tap update
   -> Step 5 runtime-kit consumer PR -> Step 6 runtime-kit pin bump and
   closeout.
-- Current task: Task 6.1 - bump runtime-kit nils-cli pin and deliver.
-- Next task: close the tracker after Task 6.1 delivery.
-- Last updated: 2026-05-31T13:21:55Z
-- Branch/commit/PR: `feat/agent-docs-intent-completion`; nils-cli PR
+- Current task: complete.
+- Next task: close the tracker.
+- Last updated: 2026-05-31T13:35:58Z
+- Branch/commit/PR: runtime-kit PR
+  https://github.com/graysurf/agent-runtime-kit/pull/222 merged as
+  `ad3a517df4182ee0585957abe251087bf9117c7f`; implementation branch
+  `feat/agent-docs-intent-completion`; nils-cli PR
   https://github.com/sympoies/nils-cli/pull/719 merged as
   `ae51cec1831188082162bec56d3b966c6faa5295`; nils-cli release PR
   https://github.com/sympoies/nils-cli/pull/720 merged as
@@ -30,6 +33,8 @@
   https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0
   and runtime-kit Task 5.4 commit
   https://github.com/graysurf/agent-runtime-kit/commit/bc8c72fef6ca50e3b19e45ff2bdd4e4057828ab7
+  and runtime-kit Task 6.1 commit
+  https://github.com/graysurf/agent-runtime-kit/commit/05541275e8e3e66162af993408545bb622a006d9
   are the implementation commits.
 - Source document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Plan document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
@@ -49,6 +54,8 @@
   https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0
 - Step 5.4 runtime-kit guarded intent integration:
   https://github.com/graysurf/agent-runtime-kit/commit/bc8c72fef6ca50e3b19e45ff2bdd4e4057828ab7
+- Step 6.1 runtime-kit pin bump and delivery:
+  https://github.com/graysurf/agent-runtime-kit/pull/222
 
 ## Validation Plan
 
@@ -80,7 +87,7 @@
 | 5.2 | done | Make required-doc cue truncation explicit | https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc | Required-doc cue now appends +N more when the rendered six-doc cap hides additional required docs. |
 | 5.3 | done | Reclassify `cli-tools.md` as optional for `task-tools` | https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0 | task-tools now keeps external-facts.md required while cli-tools.md remains available as optional auditable context. |
 | 5.4 | done | Integrate the new nils-cli primitive in runtime-kit | https://github.com/graysurf/agent-runtime-kit/commit/bc8c72fef6ca50e3b19e45ff2bdd4e4057828ab7 | Runtime hooks now use guarded agent-docs preflight when supported, and UserPromptSubmit fails closed for undeclared requested intents. |
-| 6.1 | pending | Bump runtime-kit nils-cli pin and deliver | tbd | Use standard bump flow, run full validation, merge PR, and close the tracker. |
+| 6.1 | done | Bump runtime-kit nils-cli pin and deliver | https://github.com/graysurf/agent-runtime-kit/pull/222; https://github.com/graysurf/agent-runtime-kit/commit/ad3a517df4182ee0585957abe251087bf9117c7f | runtime-kit pin bumped to nils-cli v0.31.6, PR #222 merged, and project-dev validation passed. |
 
 ## Session Log
 
@@ -119,6 +126,12 @@
   Regression coverage proves finish-line contract resolution uses guarded
   preflight and UserPromptSubmit fails closed when a requested intent is
   undeclared under the guard.
+- 2026-05-31: Task 6.1 completed. Runtime-kit bumped
+  `docs/source/nils-cli-pin.yaml` to `v0.31.6`, raised the `agent-docs`
+  consumed-surface floor to `0.31.6`, refreshed
+  `docs/source/nils-cli-surface.md`, passed the full project-dev validation
+  contract, and merged runtime-kit PR #222 as
+  `ad3a517df4182ee0585957abe251087bf9117c7f`.
 
 ## Validation
 
@@ -172,6 +185,10 @@
 | `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash tests/hooks/run.sh` | pass | 32 shared hook tests passed after Task 5.4. | n/a |
 | `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after Task 5.4. | n/a |
 | `printf '{}' \| AGENT_RUNTIME_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit python3 core/hooks/shared/stop-finish-line-gate.py` | pass | Finish-line gate emitted no block after the declared project-dev validation commands ran for Task 5.4. | n/a |
+| `agent-runtime doctor --class version-alignment --pin docs/source/nils-cli-pin.yaml --format text` | pass | Host `agent-runtime 0.31.6` matches `pinned_tag: v0.31.6`; `agent-docs` floor `0.31.6` and `git-cli` floor `0.31.5` are satisfied. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed after the nils-cli v0.31.6 pin bump. | n/a |
+| `PYTHONDONTWRITEBYTECODE=1 bash tests/hooks/run.sh` | pass | 32 shared hook tests passed after the nils-cli v0.31.6 pin bump. | n/a |
+| `forge-cli pr deliver --repo graysurf/agent-runtime-kit --kind feature --title "Complete agent-docs intent system" --head feat/agent-docs-intent-completion --base main` | pass | Runtime-kit PR #222 opened, required checks were successful, the PR was marked ready, and it squash-merged as `ad3a517df4182ee0585957abe251087bf9117c7f`. | https://github.com/graysurf/agent-runtime-kit/pull/222 |
 
 ## Notes
 
