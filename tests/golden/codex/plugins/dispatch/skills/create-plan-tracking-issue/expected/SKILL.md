@@ -42,6 +42,14 @@ Inputs:
   `workflow::tracking`. Projects that maintain a non-taxonomy rollout
   marker (e.g. a bare `plan` label) may add it as an extra
   `--label` — it is project-local, not part of the shared catalog.
+- **GitLab scoped-label exclusivity:** GitLab keeps only one label per
+  `key::` scope, so applying both `workflow::plan` and `workflow::tracking`
+  silently drops the first — no warning, and a later `assert create` fails
+  with `label missing: workflow::plan` (graysurf/plan-tracking-testbed#58).
+  On GitLab apply only the lifecycle value `workflow::tracking` and use a
+  bare `plan` label as the rollout marker. GitHub treats `::` labels as
+  independent names, so keep both there — the board's `Plan-tracking` lane
+  selects on `workflow::plan`.
 - Optional explicit source / plan / execution-state paths when bundle
   discovery is not enough.
 
@@ -71,6 +79,10 @@ Failure modes:
 ```bash
 plan-tooling validate --file "$PLAN" --format text --explain
 
+# The --label set below is the GitHub form (both workflow:: labels survive).
+# On GitLab, scoped labels are mutually exclusive per scope: pass only
+# workflow::tracking here plus a bare 'plan' label, or workflow::plan is
+# silently dropped (graysurf/plan-tracking-testbed#58).
 plan-issue --repo "$OWNER_REPO" --format json --dry-run record open \
   --profile tracking \
   --bundle "$PLAN_BUNDLE" \

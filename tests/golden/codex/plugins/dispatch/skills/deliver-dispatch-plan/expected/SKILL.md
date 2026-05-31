@@ -31,7 +31,11 @@ Inputs:
 - Dispatch labels from the shared taxonomy:
   `type::chore`, primary `area::*`, `state::needs-triage`,
   `workflow::plan`, `workflow::dispatch`, plus the rollout `plan`
-  label.
+  label. **GitLab scoped-label exclusivity:** GitLab keeps only one
+  label per `key::` scope, so `workflow::plan` + `workflow::dispatch`
+  silently collapses to the last one. On GitLab apply only
+  `workflow::dispatch` and rely on the bare `plan` rollout marker;
+  GitHub keeps both `workflow::*` labels (graysurf/plan-tracking-testbed#58).
 - Sprint / lane approval comment URLs, review evidence paths, and
   final integration PR ref.
 
@@ -83,6 +87,10 @@ Failure modes:
 ```bash
 plan-tooling validate --file "$PLAN" --format text --explain
 
+# The --label set below is the GitHub form (both workflow:: labels survive).
+# On GitLab, scoped labels are mutually exclusive per scope: drop
+# workflow::plan and keep workflow::dispatch + the bare 'plan' marker, or
+# workflow::plan is silently dropped (graysurf/plan-tracking-testbed#58).
 plan-issue --repo "$OWNER_REPO" --format json record open \
   --profile dispatch \
   --bundle "$PLAN_BUNDLE" \
