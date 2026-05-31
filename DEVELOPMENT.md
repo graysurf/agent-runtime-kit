@@ -174,12 +174,24 @@ AGENT_RUNTIME="$HOME/Project/sympoies/nils-cli/target/debug/agent-runtime"
 "$AGENT_RUNTIME" audit-drift
 ```
 
-When you need the repo gate to use the local debug binary, scope `PATH` to that
-one command:
+`scripts/dev/with-nils-version.sh` wraps this: it resolves a released, source,
+or local nils-cli surface, puts the full binary set on `PATH`, prints the
+resolved version, and runs your command — for reproducing against an older
+release, developing against an unreleased build, or both:
 
 ```bash
-PATH="$HOME/Project/sympoies/nils-cli/target/debug:$PATH" bash scripts/ci/all.sh
+scripts/dev/with-nils-version.sh local            -- agent-runtime render --product codex
+scripts/dev/with-nils-version.sh src:my-fix       -- bash tests/hooks/run.sh
+scripts/dev/with-nils-version.sh release:v0.30.0  -- agent-runtime audit-drift
 ```
+
+Mind the version-alignment gate: `scripts/ci/all.sh` Position 2 blocks on any
+host deviation from the pin and aborts the stack, so you **cannot** run the full
+gate against an off-pin binary. Run the content gates individually instead, and
+do not commit golden churn produced by an off-pin binary — the pin moves only
+through the `meta:nils-cli-bump` skill after the release ships. See
+`docs/source/nils-cli-version-workflows.md` for the full downgrade / coupled-dev
+/ bump workflows and the exact content-gate command list.
 
 Do not use `cargo install --path` as the default development loop. The
 Homebrew binary is the released consumer contract; local debug binaries are

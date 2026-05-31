@@ -40,6 +40,17 @@ required = true
 when = "always"
 notes = "Work-tier levels (L0-L3) and proactive triage: classify each work request into the lowest applicable tier, recommend the next step, and surface a decision at the L1+ escalation boundary. Global so any project-dev work inherits it when this checkout is the docs home."
 
+# Optional (required = false): available and auditable, but not force-injected
+# into every project-dev preflight. Relevant only when doing coupled nils-cli
+# work; DEVELOPMENT.md (always injected for this code repo) links to it.
+[[document]]
+context = "project-dev"
+scope = "project"
+path = "docs/source/nils-cli-version-workflows.md"
+required = false
+when = "always"
+notes = "Downgrade / coupled-dev / pin-bump workflows for running a non-pinned nils-cli surface (scripts/dev/with-nils-version.sh) without relaxing the version-alignment gate."
+
 # Per-intent validation contract: what must run before declaring a project-dev
 # task done. Consumed by the finish-line gate via `preflight --intent
 # project-dev --format json`; the gate blocks a stop when code was edited but
