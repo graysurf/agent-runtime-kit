@@ -19,14 +19,6 @@
 [[document]]
 context = "project-dev"
 scope = "project"
-path = "docs/source/docs-placement-retention-policy-v1.md"
-required = true
-when = "always"
-notes = "Docs placement and retention policy for docs/** and repository-root Markdown changes"
-
-[[document]]
-context = "project-dev"
-scope = "project"
 path = "DEVELOPMENT.md"
 required = true
 when = "path-exists:Cargo.toml || path-exists:package.json || path-exists:src/** || path-exists:scripts/ci/all.sh"
@@ -55,6 +47,14 @@ path = "core/policies/files-hooks-validation.md"
 required = true
 when = "always"
 notes = "Detailed output-artifact, hook source/sync, and validation-command mechanics behind the AGENT_HOME.md directives: agent-out run dirs, the runtime-kit state out tree, hook config location and sync, and agent-run exec. Global so any project-dev work inherits it when this checkout is the docs home."
+
+[[document]]
+context = "project-dev"
+scope = "project"
+path = "docs/source/docs-placement-retention-policy-v1.md"
+required = true
+when = "always"
+notes = "Docs placement and retention policy for docs/** and repository-root Markdown changes"
 
 # Optional (required = false): available and auditable, but not force-injected
 # into every project-dev preflight. Relevant only when doing coupled nils-cli
