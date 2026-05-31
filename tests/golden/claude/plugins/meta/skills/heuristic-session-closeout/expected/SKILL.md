@@ -3,7 +3,8 @@ name: heuristic-session-closeout
 description:
   Use when this session's goal has been achieved and the agent needs to review
   available session evidence for Heuristic System updates, write curated
-  retained records when warranted, and preserve them on `main`.
+  retained records when warranted, and deliver them to `main` through a
+  dedicated records branch and pull request.
 ---
 
 # Heuristic Session Closeout
@@ -16,7 +17,8 @@ Prereqs:
   research, review, or delivery work is intended.
 - `agent-docs` startup and project-dev preflight has passed before repository
   writes, commits, or pushes.
-- `heuristic-inbox`, `semantic-commit`, and `git` are available on `PATH`.
+- `heuristic-inbox`, `semantic-commit`, `git`, `git-cli`, and `forge-cli` are
+  available on `PATH`.
 - The shared Heuristic System root can be resolved from
   `AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT` or
   `core/policies/heuristic-system/` in the active `agent-runtime-kit` checkout.
@@ -36,50 +38,56 @@ Outputs:
   `core/policies/heuristic-system/operation-records/`, when retention is
   warranted.
 - Strict verification output for every changed retained record.
-- A semantic commit and push to `origin main` when the retained-record diff is
-  eligible.
-- A concise final summary naming what was retained, skipped, committed, pushed,
-  or blocked.
+- A dedicated records branch off `origin/main`, a semantic commit, and a docs
+  pull request that lands the records on `main` — never a commit on the current
+  feature branch and never a direct push to `main`.
+- A concise final summary naming what was retained, skipped, the records branch,
+  and the PR, or the exact blocker.
 
 Failure modes:
 
 - The goal is not actually achieved or more task work remains.
 - The Heuristic System root cannot be resolved.
-- Existing dirty or staged changes make the retained-record commit boundary
-  ambiguous.
+- `origin/main` cannot be fetched, so the records branch cannot be based on a
+  current `main`.
 - Candidate evidence is unredacted, unsafe, raw runtime state, or too broad to
   commit safely.
-- `heuristic-inbox verify --strict`, `semantic-commit`, or `git push` fails.
-- The branch is not `main`, `main` is not fast-forwardable to `origin/main`, or
-  pushing would require force or merge conflict resolution.
+- `heuristic-inbox verify --strict`, `git-cli worktree`, `semantic-commit`, the
+  records-branch push, or `forge-cli pr create` fails.
+- Stray files leave the records worktree dirty, which blocks `forge-cli pr
+  create`.
 
 ## Entrypoint
 
-Resolve the shared root, derive the owning checkout, and inspect the
-retained-record state:
+Resolve the shared root, derive the owning checkout, and refresh `origin/main`:
 
 ```bash
 root="${AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT:-$PWD/core/policies/heuristic-system}"
 repo="$(cd "$root/../../.." && pwd -P)"
 heuristic-inbox list --inbox-dir "$root/error-inbox" --include-archived --format json
-git -C "$repo" status --short --branch
 git -C "$repo" fetch origin main --prune
 ```
 
-Verify each changed retained record before staging it:
+Deliver on a dedicated records branch in an isolated worktree off `origin/main`
+— never on the current branch (which may be a feature branch) and never by
+pushing `main` directly (the primary `main` checkout may be busy with another
+session). Author, verify, and archive the records inside that worktree:
 
 ```bash
-heuristic-inbox verify "$root/error-inbox/<slug>" --strict --format json
-heuristic-inbox verify "$root/operation-records/<slug>" --strict --format json
+git-cli worktree add heuristic-records-<slug> --from origin/main   # resolve its path as $rw
+rroot="$rw/core/policies/heuristic-system"
+# Author / verify / archive records under $rroot (see Workflow). Pass an explicit
+# --inbox-dir "$rroot/error-inbox" to every mutating heuristic-inbox call.
+heuristic-inbox verify "$rroot/error-inbox/<slug>" --strict --format json
+heuristic-inbox verify "$rroot/operation-records/<slug>" --strict --format json
+git -C "$rw" add core/policies/heuristic-system
+semantic-commit commit --repo "$rw" --message "docs(heuristic): record session closeout findings"
+git -C "$rw" push -u origin <records-branch>
+forge-cli pr create --kind docs --title "docs(heuristic): ..." --body-file <body>
 ```
 
-Commit and push only the eligible retained-record diff:
-
-```bash
-git -C "$repo" add core/policies/heuristic-system
-semantic-commit commit --repo "$repo" --message "docs(heuristic): record session closeout findings"
-git -C "$repo" push origin main
-```
+The records reach `main` only when that PR merges, so a feature branch is never
+polluted and the records are never lost if the feature branch is abandoned.
 
 ## Workflow
 
@@ -138,26 +146,32 @@ git -C "$repo" push origin main
    - Run the smallest repo check that covers the touched surface; for
      retained-record-only edits, strict verification plus `git diff --check` is
      usually enough.
-7. Commit and push by default when eligible:
-   - Stage only `core/policies/heuristic-system/...` changes in the owning
-     `agent-runtime-kit` checkout and only when they are owned by this closeout.
-   - Do not include unrelated staged or unstaged changes.
-   - Commit only from `main` when it is cleanly based on `origin/main`; never
-     force-push.
-   - Use `semantic-commit`; do not call `git commit` directly.
-   - Push to `origin main` after commit so the retained record is not lost.
-   - If any gate blocks the commit or push, leave the record verified locally
-     and report the exact blocker.
+7. Deliver on a dedicated records branch — never the current branch, never a
+   direct push to `main`:
+   - Author, verify, and archive the records inside an isolated worktree created
+     off `origin/main` with `git-cli worktree add`, so the current branch and a
+     possibly-busy primary `main` checkout are never mutated. Running closeout
+     from inside a feature worktree must not commit records onto that feature
+     branch.
+   - Stage only `core/policies/heuristic-system/...`; keep the records worktree
+     free of stray files (a dirty worktree blocks `forge-cli pr create`).
+   - Commit with `semantic-commit` (never `git commit` directly); push the
+     records branch; open a docs PR with `forge-cli pr create --kind docs`.
+   - The records land on `main` only when that PR merges, so they are never
+     tangled into an unrelated feature branch and never lost if that branch is
+     abandoned.
+   - If verify, the push, or `forge-cli` blocks, leave the records verified in
+     the worktree and report the exact blocker and the worktree path.
 8. Final response:
    - Name every case created, updated, promoted, archived, or skipped.
-   - Include verification commands and commit/push SHA when completed.
+   - Include verification commands and the records branch / PR when completed.
    - If no durable record was warranted, say that explicitly and summarize the
      no-op rationale.
 
 ## Boundary
 
 This skill owns session-level Heuristic System closeout judgment, curated
-retention routing, and the default commit/push attempt for retained records. It
-does not replace `heuristic-inbox` case mechanics, `skill-usage` runtime
-evidence, project implementation workflows, PR/MR delivery, raw session-log
-archiving, or memory updates.
+retention routing, and the default delivery of retained records to `main`
+through a dedicated records branch and PR. It does not replace `heuristic-inbox`
+case mechanics, `skill-usage` runtime evidence, project implementation
+workflows, general PR/MR delivery, raw session-log archiving, or memory updates.
