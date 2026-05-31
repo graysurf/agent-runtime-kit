@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
 - Area: audit-drift; skill governance; Codex plugin metadata
 - Severity: low
@@ -68,6 +68,12 @@ and exists on disk, with a fixture proving a stale entry fails CI.
 
 ## Next Action
 
-Track the fix in #225. Decide whether the validation lands upstream in
-`agent-runtime audit-drift` or in the repo-owned governance audit, then add it
-with a failing fixture.
+None. Fixed by #226; #225 was closed.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/226`
+
+## Archive
+
+- Archived: 2026-05-31
+- Reason: Fixed by #226 and issue #225 closed.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/226`
