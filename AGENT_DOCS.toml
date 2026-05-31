@@ -40,6 +40,22 @@ required = true
 when = "always"
 notes = "Work-tier levels (L0-L3) and proactive triage: classify each work request into the lowest applicable tier, recommend the next step, and surface a decision at the L1+ escalation boundary. Global so any project-dev work inherits it when this checkout is the docs home."
 
+[[document]]
+context = "project-dev"
+scope = "global"
+path = "core/policies/git-delivery.md"
+required = true
+when = "always"
+notes = "Detailed Git/commit/delivery mechanics behind the AGENT_HOME.md hard gates: semantic-commit body gate, managed worktree paths, branch naming, label selection, and PR/MR body format. Global so any project-dev work inherits it when this checkout is the docs home."
+
+[[document]]
+context = "project-dev"
+scope = "global"
+path = "core/policies/files-hooks-validation.md"
+required = true
+when = "always"
+notes = "Detailed output-artifact, hook source/sync, and validation-command mechanics behind the AGENT_HOME.md directives: agent-out run dirs, the runtime-kit state out tree, hook config location and sync, and agent-run exec. Global so any project-dev work inherits it when this checkout is the docs home."
+
 # Optional (required = false): available and auditable, but not force-injected
 # into every project-dev preflight. Relevant only when doing coupled nils-cli
 # work; DEVELOPMENT.md (always injected for this code repo) links to it.

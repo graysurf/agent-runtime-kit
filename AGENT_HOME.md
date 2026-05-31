@@ -105,62 +105,35 @@
 
 - Follow the active project's conventions for deliverables and generated
   files.
-- For temporary/debug artifacts without a project-defined output path, create
-  a project run directory with `agent-out project --topic <topic> --mkdir`.
-- Debug/test artifacts without a project-defined path belong under
-  `${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/out/`,
-  not `/tmp`; reference that path in the reply.
-- Do not override established tool/workflow artifact contracts; use
-  `agent-out audit` before cleaning or enforcing the runtime-kit state
-  tree (`$AGENT_HOME/out/`, normally
-  `${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/out/`).
+- Keep temporary/debug artifacts out of `/tmp`: put them under the runtime-kit
+  state out tree (via `agent-out`) and reference that path in the reply.
 - Do not create durable discussion or decision artifacts unless asked,
   required by project rules, or clearly reusable.
 - Hooks may enforce mechanical guardrails, but hooks do not replace policy.
-- Hook source and managed config live under the active hook source checkout
-  plus the managed block in the tool's runtime config (Codex `config.toml`,
-  Claude `settings.json`).
-- Use the installed hook sync command to update the local runtime config;
-  do not track or symlink the whole runtime config file.
 - Prefer project-defined validation commands. If none exist, run the smallest
   meaningful checks and report what was or was not run.
-- When running project build, test, validation, or repository-owned script
-  commands, prefer `agent-run exec --cwd <repo> -- <command> ...` when
-  available so `.envrc` / `.env` handling is explicit in non-interactive agent
-  sessions. Do not run `direnv allow` automatically.
+- Artifact paths, `agent-out` usage, hook source / sync, and `agent-run exec`
+  mechanics: `core/policies/files-hooks-validation.md` (injected for
+  `project-dev`).
 
 ## Git, Commits, Issues, PRs, And MRs
 
 - Always use the `semantic-commit` skill; direct `git commit` is blocked by
-  hook, and the body gate enforces 1-2 bullets on non-trivial commits.
-- Use `git-cli worktree` for agent worktree lifecycle. Direct mutating
-  `git worktree` commands are blocked by hook so paths, branch names, and
-  cleanup behavior follow the managed CLI contract.
-- Managed agent worktrees live under
-  `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>`; `agent-out` continues to
-  own `$AGENT_HOME/out/` for workflow artifacts.
+  hook.
+- Use `git-cli worktree` for agent worktree lifecycle; direct mutating
+  `git worktree` commands are blocked by hook.
 - Do not enable `extensions.worktreeConfig`, set per-worktree identity/signing
   config, or use `--no-gpg-sign` for tracked work. If signing fails, stop and
   report the blocker.
+- For agent-owned provider issues, PRs, and MRs, use the active workflow or
+  `forge-cli` surface; direct `gh pr create` or `glab mr create` are blocked by
+  hook.
 - Pre-commit: follow `DEVELOPMENT.md` to run the relevant tests/checks before
   committing.
-- For agent-owned provider issues, PRs, and MRs, use the active workflow or
-  `forge-cli` surface instead of raw provider commands. Direct `gh pr create`
-  or `glab mr create` are blocked by hook; PR/MR delivery should go through
-  the active delivery skill.
-- Labels describe the record's type, area, state or size, and workflow for
-  triage and automation. When the active project provides
-  `manifests/forge-labels.yaml`, select labels from that catalog and follow
-  `core/policies/forge-label-taxonomy.md`; current CLI / skill surfaces handle
-  ensure, validation, and application details.
-- Branch: `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, 3-6 words;
-  ticket id `ABC-123` becomes `feat/abc-123-<slug>`).
-- Draft an accurate 1-2 sentence summary grounded in the actual diff before
-  opening; never derive title or body from `git log -1`.
-- PR/MR bodies come from the active delivery skill / `agent-runtime pr-body
-  render` (the canonical formatter; minimum `## Summary` + `## Test plan`). Do
-  not hand-write body scaffolding or copy its section table into this file.
 - Never force-push `main`.
+- Commit body gate, managed worktree paths, branch naming, label selection, and
+  PR/MR body format: `core/policies/git-delivery.md` (injected for
+  `project-dev`).
 
 ## Plan Archive
 
