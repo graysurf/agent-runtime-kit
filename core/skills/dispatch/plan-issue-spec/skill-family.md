@@ -32,7 +32,7 @@ and call the CLI surfaces.
 The implementation phase uses two different rewrite boundaries:
 
 - `nils-cli`: complete rewrite of the plan issue workflow core inside the
-  existing `crates/plan-issue-cli` crate.
+  existing `crates/plan-issue` crate.
 - runtime-kit: delete or replace the current plan issue skill bodies and
   rewrite them from these redesign documents.
 
@@ -490,7 +490,7 @@ Every skill must explicitly surface:
 
 The implementation order is intentionally CLI-first:
 
-1. Create the vNext core boundary inside `crates/plan-issue-cli` without
+1. Create the vNext core boundary inside `crates/plan-issue` without
    deleting the crate, binaries, provider abstraction, runtime layout, or
    released command compatibility.
 2. Implement `nils-cli` template registry and visible completeness lint in the

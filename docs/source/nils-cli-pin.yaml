@@ -20,7 +20,7 @@ schema_version: 1
 
 nils_cli:
   # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
-  pinned_tag: "v0.31.8"
+  pinned_tag: "v1.0.0"
 
 # Optional per-binary floors for the downstream-consumed CLIs. nils-cli
 # ships every crate in lock-step, so the exact `pinned_tag` above is the
@@ -30,7 +30,7 @@ nils_cli:
 # surface-introduction versions recorded in docs/source/nils-cli-surface.md.
 required_clis:
   - bin: plan-issue       # tracking controller + bundle-backed state checkpoint ledger
-    min: "0.31.4"
+    min: "1.0.0"
   - bin: plan-tooling     # ledger-update / ledger-sync --from-issue
     min: "0.25.7"
   - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces

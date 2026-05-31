@@ -341,8 +341,8 @@ build_tracking_record_fixture() {
     --task-ledger-display expanded \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
 
-  grep -q 'plan-issue-cli.record.repair.dashboard.v2' "$dashboard_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$state_out"
+  grep -q 'plan-issue.record.repair.dashboard.v2' "$dashboard_out"
+  grep -q 'plan-issue.record.post.v2' "$state_out"
   assert_state_comment_shape "$state_out"
   grep -q '## Task Ledger' "$state_out"
   grep -q 'Validate dispatch smoke' "$state_out"
@@ -389,9 +389,9 @@ build_dispatch_record_fixture() {
     --task-ledger-display expanded \
     --state-dir "$DISPATCH_STATE_DIR" >"$state_out" 2>&1
 
-  grep -q 'plan-issue-cli.record.repair.dashboard.v2' "$dashboard_out"
+  grep -q 'plan-issue.record.repair.dashboard.v2' "$dashboard_out"
   grep -q '"records"' "$split_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$state_out"
+  grep -q 'plan-issue.record.post.v2' "$state_out"
   assert_state_comment_shape "$state_out"
   grep -q '## Task Ledger' "$state_out"
   grep -q 'Validate dispatch smoke' "$state_out"
@@ -496,7 +496,7 @@ run_create_plan_tracking_issue_probe() {
     --format json \
     --state-dir "$DISPATCH_STATE_DIR" >"$audit_out" 2>&1
 
-  grep -q 'plan-issue-cli.record.open.v2' "$open_out"
+  grep -q 'plan-issue.record.open.v2' "$open_out"
   grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"profile":"tracking"' "$audit_out"
 }
@@ -517,7 +517,7 @@ run_tracking_issue_closeout_probe() {
     --format json \
     --state-dir "$DISPATCH_STATE_DIR" >"$close_out" 2>&1
 
-  grep -q 'plan-issue-cli.record.close.v2' "$close_out"
+  grep -q 'plan-issue.record.close.v2' "$close_out"
   grep -q '"mode":"fixture"' "$close_out"
   grep -q 'Final status' "$close_out"
   grep -q 'Merge SHA' "$close_out"
@@ -874,7 +874,7 @@ run_deliver_dispatch_plan_probe() {
   grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"records"' "$PLAN_TASK_SPEC_PATH"
   grep -q '"forced_specialists"' "$specialist_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$session_out"
+  grep -q 'plan-issue.record.post.v2' "$session_out"
   grep -q 'Execution Session' "$session_out"
 }
 
@@ -894,7 +894,7 @@ run_dispatch_issue_closeout_probe() {
     --format json \
     --state-dir "$DISPATCH_STATE_DIR" >"$close_out" 2>&1
 
-  grep -q 'plan-issue-cli.record.close.v2' "$close_out"
+  grep -q 'plan-issue.record.close.v2' "$close_out"
   grep -q '"mode":"fixture"' "$close_out"
   grep -q 'Final status' "$close_out"
   grep -q 'Merge SHA' "$close_out"
@@ -976,9 +976,9 @@ run_deliver_tracking_issue_probe() {
   grep -q '"maintainability"' "$specialist_out"
   grep -q '"testing"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.checks.v1"' "$checks_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$session_out"
+  grep -q 'plan-issue.record.post.v2' "$session_out"
   grep -q 'Execution Session' "$session_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$validation_out"
+  grep -q 'plan-issue.record.post.v2' "$validation_out"
   grep -q 'Overall: pass' "$validation_out"
   grep -q 'true' "$validation_out"
 }
@@ -1019,7 +1019,7 @@ run_dispatch_pr_review_probe() {
   grep -q '"schema_version": "cli.review-evidence.verify.v1"' "$verify_out"
   grep -q '"suggested_specialists"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.comment.v1"' "$comment_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$review_out"
+  grep -q 'plan-issue.record.post.v2' "$review_out"
   grep -q 'Decision: approve' "$review_out"
   grep -q 'testing, maintainability' "$review_out"
 }
@@ -1070,7 +1070,7 @@ run_dispatch_subagent_pr_probe() {
   grep -q '"schema_version":"cli.forge-cli.pr.create.v1"' "$create_out"
   grep -q '"workflow::dispatch"' "$create_out"
   grep -q '"size::s"' "$create_out"
-  grep -q 'plan-issue-cli.record.post.v2' "$session_out"
+  grep -q 'plan-issue.record.post.v2' "$session_out"
 }
 
 failures=0
