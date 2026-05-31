@@ -211,7 +211,7 @@
     "skill": "sync-runtime-surfaces",
     "tier": "default",
     "match_mode": "action_or_explicit",
-    "aliases": ["sync-runtime-surfaces", "sync runtime surfaces", "refresh runtime surfaces", "update runtime surfaces", "sync-runtime-skills", "sync runtime skills", "refresh runtime skills", "update runtime skills"],
+    "aliases": ["sync-runtime-surfaces", "sync runtime surfaces", "refresh runtime surfaces", "update runtime surfaces"],
     "reason": "Runtime surface refreshes can mutate live Codex or Claude homes and should keep validation evidence visible.",
     "record_when": "The workflow runs or materially prepares scripts/sync-runtime-surfaces.sh with --apply."
   },
