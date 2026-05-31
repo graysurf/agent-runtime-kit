@@ -36,6 +36,8 @@ way that was only detected at the downstream consumer's CI.
 
 ## Evidence
 
+- Raw record: not captured (post-mortem reconstructed from the upstream PR /
+  tag / downstream-PR trail below; the CI failure was the live signal).
 - nils-cli partial-bump PR: `sympoies/nils-cli#607` (squash `0c070f8`).
 - nils-cli lock-step catch-up PR: `sympoies/nils-cli#608` (squash `4d0d621`,
   released as `v0.25.8`).
@@ -95,5 +97,6 @@ spelunking through PR threads.
 
 ## Archive
 
-- Archived: pending (keep in active inbox until a future reader confirms
-  the promotion text is sufficient context; archive on the next sweep).
+- Archived: 2026-06-01
+- Reason: Gap closed: v0.25.8 lock-step catch-up + upstream workspace-version-lockstep audit; downstream probe restored (PR #149)
+- Durable link: `https://github.com/sympoies/nils-cli/pull/608`

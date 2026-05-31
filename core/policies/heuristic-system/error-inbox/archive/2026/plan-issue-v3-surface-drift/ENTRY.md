@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-24
 - Area: plan-issue record contract; dispatch and PR skills
 - Severity: high
@@ -80,8 +80,12 @@ validated, and linked from this entry.
 
 ## Next Action
 
-Write implementation handoff, deliver runtime-kit skill alignment, and either
-fix live `tracking close-ready --provider-repo --issue` reconciliation or
-update `plan-tracking-issue-closeout` guidance to call `record close --dry-run`
-as the live pre-close gate. Then remove retired transitional helpers from
-nils-cli.
+None. Kit-side v3 surface drift is resolved: tracking issue #93 closed, PR #233 migrated the kit to the plan-issue.* v1.0.0 contract, and the retired transitional helpers (render-dashboard / render-comment / closeout-gate / build-dispatch-ledger) now have 0 references in core/skills. The 'tracking close-ready RECORD_UNOPENED' reconciliation observation was tied to the retired v3 payload format and is NOT covered by this closure; re-verify against plan-issue v1.0.0 and file a focused nils-cli finding if it still reproduces.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/issues/93`
+
+## Archive
+
+- Archived: 2026-06-01
+- Reason: Kit-side v3 surface drift resolved (#93 closed, #233 plan-issue.* v1.0.0 migration, 0 retired-helper refs)
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/issues/93`

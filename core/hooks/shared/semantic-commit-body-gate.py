@@ -15,6 +15,8 @@ from hook_common import (
     emit_block,
     extract_message,
     is_semantic_commit_commit,
+    iter_flag_values,
+    read_message_file,
     read_payload,
 )
 
@@ -22,7 +24,8 @@ BLOCK_REASON_TEMPLATE = (
     "semantic-commit message is missing a body\n"
     "  subject: {subject}\n"
     "  rule: non-trivial commits need 1-2 bullets explaining why and scope\n"
-    "  fix: append `\\n\\n- <reason>` to --message, preferably with a HEREDOC\n"
+    "  fix: add a body — `\\n\\n- <reason>` via --message/--message-file,\n"
+    "       or pass `--body-bullet <reason>` (a --trailer does not count)\n"
     "  ref: the rendered semantic-commit skill under the active runtime home\n"
     "  escape hatch: add `[no-body]` in the subject if this is truly trivial"
 )
@@ -66,16 +69,46 @@ def is_trivial_subject(subject: str) -> bool:
     return any(keyword in subject_words for keyword in TRIVIAL_KEYWORDS)
 
 
+def resolve_subject_body(command: str) -> tuple[str, list[str]] | None:
+    """Recover (subject, non-empty body lines) from every message source a
+    `semantic-commit commit` accepts: `--message`/`-m`, `--message-file`, and
+    the structured `--type`/`--scope`/`--subject` + `--body-bullet` form.
+
+    Returns None when no message content parses, so the gate stays out of the
+    way of commands whose message it cannot see (e.g. an auto-generated body).
+    `--trailer` is intentionally excluded: a trailer is not an explanatory body.
+    """
+    message = extract_message(command)
+    if message is None:
+        message = read_message_file(command)
+    if message is not None:
+        return split_subject_body(message)
+
+    subjects = iter_flag_values(command, "--subject")
+    if not subjects:
+        return None
+    subject = subjects[0].strip()
+    types = iter_flag_values(command, "--type")
+    if types:
+        header = types[0].strip()
+        scopes = iter_flag_values(command, "--scope")
+        if scopes and scopes[0].strip():
+            header += f"({scopes[0].strip()})"
+        subject = f"{header}: {subject}"
+    body_lines = [line for line in iter_flag_values(command, "--body-bullet") if line.strip()]
+    return subject, body_lines
+
+
 def main() -> int:
     command = command_from(read_payload())
     if not command or not is_semantic_commit_commit(command):
         return ALLOW
 
-    message = extract_message(command)
-    if message is None:
+    resolved = resolve_subject_body(command)
+    if resolved is None:
         return ALLOW
 
-    subject, body_lines = split_subject_body(message)
+    subject, body_lines = resolved
     if not body_lines and not is_trivial_subject(subject):
         emit_block(BLOCK_REASON_TEMPLATE.format(subject=subject or "<unparsed>"))
     return ALLOW
