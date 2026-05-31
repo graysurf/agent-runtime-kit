@@ -3,8 +3,8 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - Task 5.2 required-doc cue truncation is complete;
-  Task 5.3 task-tools docs reclassification is next.
+- Status: in-progress - Task 5.3 task-tools docs reclassification is complete;
+  Task 5.4 nils-cli primitive integration is next.
 - Target scope: cross-repo completion of `graysurf/agent-runtime-kit#217`
   using Option C. nils-cli owns the declared-intent guard primitive and
   release; runtime-kit owns hook/catalog consumer changes, pin bump, and
@@ -13,10 +13,9 @@
   Step 3 nils-cli implementation PR -> Step 4 nils-cli release and tap update
   -> Step 5 runtime-kit consumer PR -> Step 6 runtime-kit pin bump and
   closeout.
-- Current task: Task 5.3 - reclassify `cli-tools.md` as optional for
-  `task-tools`.
-- Next task: Task 5.4 - integrate the new nils-cli primitive in runtime-kit.
-- Last updated: 2026-05-31T13:01:56Z
+- Current task: Task 5.4 - integrate the new nils-cli primitive in runtime-kit.
+- Next task: Task 6.1 - bump runtime-kit nils-cli pin and deliver.
+- Last updated: 2026-05-31T13:11:01Z
 - Branch/commit/PR: `feat/agent-docs-intent-completion`; nils-cli PR
   https://github.com/sympoies/nils-cli/pull/719 merged as
   `ae51cec1831188082162bec56d3b966c6faa5295`; nils-cli release PR
@@ -25,8 +24,10 @@
   https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 is live;
   runtime-kit Task 5.1 commit
   https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035
-  and runtime-kit Task 5.2 commit
+  runtime-kit Task 5.2 commit
   https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc
+  and runtime-kit Task 5.3 commit
+  https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0
   are the implementation commits.
 - Source document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
 - Plan document: docs/plans/2026-05-31-agent-docs-intent-system-completion/2026-05-31-agent-docs-intent-system-completion-plan.md
@@ -42,6 +43,8 @@
   https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035
 - Step 5.2 runtime-kit required-doc cue truncation:
   https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc
+- Step 5.3 runtime-kit task-tools docs reclassification:
+  https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0
 
 ## Validation Plan
 
@@ -71,7 +74,7 @@
 | 4.1 | done | Release nils-cli and update the Homebrew tap | https://github.com/sympoies/nils-cli/releases/tag/v0.31.6 | Released nils-cli v0.31.6 via PR #720, tag v0.31.6, GitHub Release assets, homebrew-tap workflow, and local Homebrew upgrade verification. |
 | 5.1 | done | Make finish-line validation intent-aware | https://github.com/graysurf/agent-runtime-kit/commit/1948e3ee53557427f35745b03917a84f96d23035 | Finish-line recorder and stop gate now resolve every declared validation-bearing intent, record each contract independently, and block until each contract has run after code edits. |
 | 5.2 | done | Make required-doc cue truncation explicit | https://github.com/graysurf/agent-runtime-kit/commit/f5bfce781506ccbf79e0ea8d2361aff5c91da7fc | Required-doc cue now appends +N more when the rendered six-doc cap hides additional required docs. |
-| 5.3 | pending | Reclassify `cli-tools.md` as optional for `task-tools` | tbd | Keep `external-facts.md` required; keep `cli-tools.md` auditable and optional. |
+| 5.3 | done | Reclassify `cli-tools.md` as optional for `task-tools` | https://github.com/graysurf/agent-runtime-kit/commit/8dcd3e1d4302121ce65b4a214e621772d42b05e0 | task-tools now keeps external-facts.md required while cli-tools.md remains available as optional auditable context. |
 | 5.4 | pending | Integrate the new nils-cli primitive in runtime-kit | tbd | Use fail-closed declared-intent checks where runtime-kit explicitly requests intents. |
 | 6.1 | pending | Bump runtime-kit nils-cli pin and deliver | tbd | Use standard bump flow, run full validation, merge PR, and close the tracker. |
 
@@ -102,6 +105,10 @@
   renders the first six required docs and appends `+N more` when additional
   required docs are hidden by the display cap. Regression coverage proves a
   seven-doc `project-dev` cue shows docs 1-6, hides doc 7, and marks `+1 more`.
+- 2026-05-31: Task 5.3 completed. The `task-tools` catalog keeps
+  `external-facts.md` required while `cli-tools.md` remains present as optional
+  context. Home and external-facts policy wording now describes the CLI catalog
+  as on-demand optional context instead of force-injected required context.
 
 ## Validation
 
@@ -141,6 +148,11 @@
 | `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after Task 5.2. | n/a |
 | `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash tests/hooks/run.sh` | pass | 30 shared hook tests passed, including the new required-doc overflow regression. | n/a |
 | `printf '{}' \| AGENT_RUNTIME_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit python3 core/hooks/shared/stop-finish-line-gate.py` | pass | Finish-line gate emitted no block after the declared project-dev validation commands ran. | n/a |
+| `scripts/dev/with-nils-version.sh release:v0.31.5 -- agent-docs preflight --intent task-tools --format json` | pass | `task-tools` now reports only `external-facts.md` as required and `cli-tools.md` as optional; summary `required_total=1`. | n/a |
+| `scripts/dev/with-nils-version.sh release:v0.31.5 -- agent-docs list --format json` | pass | The task-tools document list still includes `cli-tools.md` with `required=false`. | n/a |
+| `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash scripts/ci/all.sh` | pass | runtime-kit CI positions 1-13 passed under the pinned 0.31.5 surface after Task 5.3. | n/a |
+| `PINNED_BIN=/Users/terry/.local/state/agent-runtime-kit/out/nils-versions/v0.31.5/extract/nils-cli-v0.31.5-aarch64-apple-darwin/bin; PATH="$PINNED_BIN:$PATH" PYTHONDONTWRITEBYTECODE=1 bash tests/hooks/run.sh` | pass | 30 shared hook tests passed after Task 5.3. | n/a |
+| `printf '{}' \| AGENT_RUNTIME_DOCS_HOME=/Users/terry/Project/graysurf/agent-runtime-kit python3 core/hooks/shared/stop-finish-line-gate.py` | pass | Finish-line gate emitted no block after the declared project-dev validation commands ran for Task 5.3. | n/a |
 
 ## Notes
 
