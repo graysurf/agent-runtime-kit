@@ -82,11 +82,15 @@ Deliver the uncommitted records as a docs records-branch PR with
 `origin/<base>`, stages only the heuristic-system root (refusing
 `dirty-records-worktree` if anything else leaks in), commits via
 `semantic-commit`, pushes, and opens the PR — never the current branch, never a
-direct push to `main`:
+direct push to `main`. Always pass the fixed
+`docs(heuristic): record session closeout findings` title and the
+`--label workflow::heuristic-records` taxonomy label so every closeout records
+PR is identifiable by title and label (not just the `docs/<slug>` branch):
 
 ```bash
 deliver="$(heuristic-inbox deliver --root "$root" --kind docs \
   --title "docs(heuristic): record session closeout findings" \
+  --label workflow::heuristic-records \
   --format json)"
 pr_url="$(printf '%s' "$deliver" | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["pr_url"])')"
 pr="${pr_url##*/}"   # trailing PR number
@@ -168,12 +172,16 @@ abandoned feature branch.
      usually enough.
 7. Deliver and auto-land through `heuristic-inbox deliver` — never the current
    branch, never a direct push to `main`:
-   - Run `heuristic-inbox deliver --root "$root" --kind docs` once the records
-     are authored and `verify`-clean in the current checkout. The command owns
-     every mechanic the skill used to spell out in prose: it resolves the
-     canonical repo, fetches `origin/<base>`, creates an isolated worktree on a
-     `docs/<slug>` branch off `origin/<base>` (branch prefix derived from
-     `--kind`, so it cannot mismatch `forge-cli`), stages only the
+   - Run `heuristic-inbox deliver --root "$root" --kind docs --title
+     "docs(heuristic): record session closeout findings" --label
+     workflow::heuristic-records` once the records are authored and
+     `verify`-clean in the current checkout. The fixed title and the
+     `workflow::heuristic-records` label make every closeout records PR
+     identifiable by title and label, not just by the `docs/<slug>` branch. The
+     command owns every mechanic the skill used to spell out in prose: it
+     resolves the canonical repo, fetches `origin/<base>`, creates an isolated
+     worktree on a `docs/<slug>` branch off `origin/<base>` (branch prefix
+     derived from `--kind`, so it cannot mismatch `forge-cli`), stages only the
      heuristic-system root, refuses `dirty-records-worktree` if anything else
      leaks in, commits via `semantic-commit`, pushes, and opens the docs PR.
      Running closeout from inside a feature worktree therefore never commits
