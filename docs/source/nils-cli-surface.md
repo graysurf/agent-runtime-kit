@@ -1,20 +1,30 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-01 (refreshed for `v1.0.1`)
+- Snapshot date: 2026-06-01 (refreshed for `v1.0.2`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.1`
+- Active `git describe --tags` output: `v1.0.2`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.2`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `d5bdb10`
-  (`chore(release): bump cli versions to 1.0.1 (#744)`)
+- Head commit: `71357f0`
+  (`chore(release): bump cli versions to 1.0.2 (#746)`)
 - Release:
-  [`v1.0.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.1),
+  [`v1.0.2`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.2),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.2` adds the **`heuristic-inbox deliver`** subcommand: a cwd-independent
+  records-branch PR writeback for uncommitted heuristic-system records (fetch
+  `origin/<base>` → managed worktree on a `<prefix>/<slug>` branch matching
+  `--kind` → stage only the heuristic-system root → `semantic-commit` → push →
+  `forge-cli pr create`), returning `branch` / `pr_url` / `committed_paths` /
+  `worktree_path` in a `cli.heuristic-inbox.deliver.v1` envelope with `--dry-run`
+  plan rendering. This is the deterministic replacement for the
+  `heuristic-session-closeout` skill-prose writeback delivered in #237. Additive
+  and not yet consumed by this repo's skills, so no `required_clis[]` floor moves
+  ([#745](https://github.com/sympoies/nils-cli/pull/745)).
 - `v1.0.1` adds the **execution-state synchronization** surface consumed by the
   plan-tracking skills: `plan-issue record open` writes the tracking issue URL
   into the bundle `*-execution-state.md`; `record close --bundle` writes the
@@ -301,7 +311,7 @@ Notes on derivation:
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-surfaces` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
-| `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. As of `v0.31.0`, `repo-retro report` emits schema v2 (`cli.repo-retro.report.v2` / `repo-retro.report.v2`): a deterministic pre-digestion layer (`git.churnByClass`, `git.archival`, commit-frequency `fileHotspots` with `class` / `netDeleted`) plus a `--path-class-config` override; the v1 envelope was removed (breaking). As of `v0.31.3`, `repo-retro report` auto-discovers the heuristic-system root (`heuristic-system/` then `core/policies/heuristic-system/`) with a `--heuristic-root` override and summarizes nested `<slug>/ENTRY.md` inbox cases, so the `## HEURISTIC_SYSTEM` section reports `present` with real counts for `core/policies`-nested roots like this repo (additive). |
+| `agent-workflow-primitives` | `agent-run`, `browser-session`, `canary-check`, `docs-impact`, `heuristic-inbox`, `model-cross-check`, `review-evidence`, `review-specialists`, `repo-retro`, `skill-usage`, `test-first-evidence` | Multi-binary crate. Each binary is its own clap CLI; manifests should pin individual binary names, not the crate. As of `v0.20.0`, `agent-run exec` normalizes project command execution through explicit `.envrc` / `.env` decisions. As of `v0.31.0`, `repo-retro report` emits schema v2 (`cli.repo-retro.report.v2` / `repo-retro.report.v2`): a deterministic pre-digestion layer (`git.churnByClass`, `git.archival`, commit-frequency `fileHotspots` with `class` / `netDeleted`) plus a `--path-class-config` override; the v1 envelope was removed (breaking). As of `v0.31.3`, `repo-retro report` auto-discovers the heuristic-system root (`heuristic-system/` then `core/policies/heuristic-system/`) with a `--heuristic-root` override and summarizes nested `<slug>/ENTRY.md` inbox cases, so the `## HEURISTIC_SYSTEM` section reports `present` with real counts for `core/policies`-nested roots like this repo (additive). As of `v1.0.2`, `heuristic-inbox` gains a `deliver` subcommand: a cwd-independent records-branch PR writeback for uncommitted heuristic-system records (`--root` / `--kind` / `--base` / `--dry-run`, `cli.heuristic-inbox.deliver.v1` envelope with `branch` / `pr_url` / `committed_paths` / `worktree_path`), the deterministic replacement for the `heuristic-session-closeout` skill-prose writeback (#237). Additive; not yet consumed by this repo's skills, so no `required_clis[]` floor moves. |
 | `api-gql`                   | `api-gql`                                                                                                           | GraphQL API testing CLI.                                                                                                                                                                                                                                               |
 | `api-grpc`                  | `api-grpc`                                                                                                          | gRPC API testing CLI.                                                                                                                                                                                                                                                  |
 | `api-rest`                  | `api-rest`                                                                                                          | REST API testing CLI.                                                                                                                                                                                                                                                  |
