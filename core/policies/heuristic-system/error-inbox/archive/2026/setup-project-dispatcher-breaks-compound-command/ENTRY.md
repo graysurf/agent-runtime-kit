@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-02
 - Area: setup-project
 - Severity: medium
@@ -74,8 +74,12 @@ setup-project acceptance coverage. Link the fix PR/commit here when it lands.
 
 ## Next Action
 
-Route the fix to `agent-runtime-kit`
-(`core/skills/meta/setup-project/scripts/setup-project.sh`). No upstream issue
-found yet — open one or fold it into the next setup-project change. Deliver this
-entry to the shared records branch via `heuristic-inbox deliver` (or session
-closeout).
+None. Fixed in PR #249 (merge 2fc6aff): write_dispatcher now runs the configured command under set -euo pipefail instead of exec, so compound commands run every stage and any failure aborts; compound-command regression coverage added to the project-local and runtime-smoke meta probes.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/249`
+
+## Archive
+
+- Archived: 2026-06-02
+- Reason: Fixed in PR #249 (merge 2fc6aff): dispatcher runs commands under set -euo pipefail instead of exec; compound-command regression coverage added.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/249`
