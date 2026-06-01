@@ -475,11 +475,11 @@ surfaces:
     products:
       codex:
         state: shipped
-        mechanism: "shared policy root; consumed by `heuristic-inbox` binary with explicit `--inbox-dir`"
+        mechanism: "shared policy root; consumed by `heuristic-inbox` binary (`--inbox-dir` case mechanics + `deliver` records-branch PR writeback)"
         source_artifacts:
           - core/policies/heuristic-system/
         min_product: "0.130.0"
-        min_nils_cli: "v0.17.5"
+        min_nils_cli: "v1.0.2"
         acceptance:
           - kind: ci
             note: "gate 8 (runtime-smoke deterministic, meta domain)"
@@ -496,7 +496,7 @@ surfaces:
         source_artifacts:
           - core/policies/heuristic-system/
         min_product: "2.1.145"
-        min_nils_cli: "v0.17.5"
+        min_nils_cli: "v1.0.2"
         acceptance:
           - kind: ci
             note: "gate 8 (runtime-smoke deterministic, meta domain)"

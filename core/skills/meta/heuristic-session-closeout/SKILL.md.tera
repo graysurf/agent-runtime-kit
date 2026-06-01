@@ -3,8 +3,8 @@ name: heuristic-session-closeout
 description:
   Use when this session's goal has been achieved and the agent needs to review
   available session evidence for Heuristic System updates, write curated
-  retained records when warranted, and deliver them to `main` through a
-  dedicated records branch and pull request.
+  retained records when warranted, and land them on `main` through the
+  `heuristic-inbox deliver` records-branch PR (auto-merged).
 ---
 
 # Heuristic Session Closeout
@@ -17,8 +17,10 @@ Prereqs:
   research, review, or delivery work is intended.
 - `agent-docs` startup and project-dev preflight has passed before repository
   writes, commits, or pushes.
-- `heuristic-inbox`, `semantic-commit`, `git`, `git-cli`, and `forge-cli` are
-  available on `PATH`.
+- `heuristic-inbox` (nils-cli >= v1.0.2, which ships `heuristic-inbox deliver`)
+  and `forge-cli` are available on `PATH`. `deliver` drives `git`,
+  `semantic-commit`, and `forge-cli pr create` internally; the skill only adds
+  the auto-merge step.
 - The shared Heuristic System root can be resolved from
   `AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT` or
   `core/policies/heuristic-system/` in the active `agent-runtime-kit` checkout.
@@ -38,11 +40,11 @@ Outputs:
   `core/policies/heuristic-system/operation-records/`, when retention is
   warranted.
 - Strict verification output for every changed retained record.
-- A dedicated records branch off `origin/main`, a semantic commit, and a docs
-  pull request that lands the records on `main` — never a commit on the current
-  feature branch and never a direct push to `main`.
+- A `heuristic-inbox deliver` run that opens a docs records-branch PR off
+  `origin/main` (never a commit on the current feature branch and never a direct
+  push to `main`), followed by the auto-merge that lands the records on `main`.
 - A concise final summary naming what was retained, skipped, the records branch,
-  and the PR, or the exact blocker.
+  and the merged PR, or the exact blocker.
 
 Failure modes:
 
@@ -52,42 +54,60 @@ Failure modes:
   current `main`.
 - Candidate evidence is unredacted, unsafe, raw runtime state, or too broad to
   commit safely.
-- `heuristic-inbox verify --strict`, `git-cli worktree`, `semantic-commit`, the
-  records-branch push, or `forge-cli pr create` fails.
-- Stray files leave the records worktree dirty, which blocks `forge-cli pr
-  create`.
+- `heuristic-inbox verify --strict` fails, or `heuristic-inbox deliver` fails
+  (`nothing-to-deliver`, `dirty-records-worktree` when changes leak outside the
+  heuristic-system root, fetch / push / `forge-cli pr create` errors).
+- The auto-merge step (`forge-cli pr ready` / `pr wait-checks` / `pr merge`)
+  fails or required checks do not pass — leave the records PR open and report it.
 
 ## Entrypoint
 
-Resolve the shared root, derive the owning checkout, and refresh `origin/main`:
+Resolve the shared root and review existing cases. Author and verify the records
+in the current checkout under `$root` (see Workflow) — `heuristic-inbox deliver`
+owns the cwd-independent landing, so there is no manual worktree, commit, or push
+here:
 
 ```bash
 root="${AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT:-$PWD/core/policies/heuristic-system}"
-repo="$(cd "$root/../../.." && pwd -P)"
 heuristic-inbox list --inbox-dir "$root/error-inbox" --include-archived --format json
-git -C "$repo" fetch origin main --prune
+# Author / verify / archive records under $root (see Workflow). Pass an explicit
+# --inbox-dir "$root/error-inbox" to every mutating heuristic-inbox call.
+heuristic-inbox verify "$root/error-inbox/<slug>" --strict --format json
+heuristic-inbox verify "$root/operation-records/<slug>" --strict --format json
 ```
 
-Deliver on a dedicated records branch in an isolated worktree off `origin/main`
-— never on the current branch (which may be a feature branch) and never by
-pushing `main` directly (the primary `main` checkout may be busy with another
-session). Author, verify, and archive the records inside that worktree:
+Deliver the uncommitted records as a docs records-branch PR with
+`heuristic-inbox deliver`. It resolves the canonical repo, fetches
+`origin/<base>`, creates an isolated worktree on a `docs/<slug>` branch off
+`origin/<base>`, stages only the heuristic-system root (refusing
+`dirty-records-worktree` if anything else leaks in), commits via
+`semantic-commit`, pushes, and opens the PR — never the current branch, never a
+direct push to `main`:
 
 ```bash
-git-cli worktree add heuristic-records-<slug> --from origin/main   # resolve its path as $rw
-rroot="$rw/core/policies/heuristic-system"
-# Author / verify / archive records under $rroot (see Workflow). Pass an explicit
-# --inbox-dir "$rroot/error-inbox" to every mutating heuristic-inbox call.
-heuristic-inbox verify "$rroot/error-inbox/<slug>" --strict --format json
-heuristic-inbox verify "$rroot/operation-records/<slug>" --strict --format json
-git -C "$rw" add core/policies/heuristic-system
-semantic-commit commit --repo "$rw" --message "docs(heuristic): record session closeout findings"
-git -C "$rw" push -u origin <records-branch>
-forge-cli pr create --kind docs --title "docs(heuristic): ..." --body-file <body>
+deliver="$(heuristic-inbox deliver --root "$root" --kind docs \
+  --title "docs(heuristic): record session closeout findings" \
+  --format json)"
+pr_url="$(printf '%s' "$deliver" | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["pr_url"])')"
+pr="${pr_url##*/}"   # trailing PR number
 ```
 
-The records reach `main` only when that PR merges, so a feature branch is never
-polluted and the records are never lost if the feature branch is abandoned.
+Then auto-land the records PR (the merge policy this skill owns): promote it,
+wait for required checks, and squash-merge so the records reach `main`
+hands-off. Once merged, discard the now-redundant uncommitted copies in the
+current checkout so they never leak into an unrelated feature branch:
+
+```bash
+forge-cli pr ready "$pr"
+forge-cli pr wait-checks "$pr"
+forge-cli pr merge "$pr" --method squash
+git checkout -- core/policies/heuristic-system   # drop the source copies now on main
+```
+
+If `deliver` or any auto-merge step blocks, stop and report the exact blocker
+plus `pr_url` / branch / `worktree_path` from the `deliver` envelope; the records
+remain recoverable on the pushed branch (or the open PR) and are never lost on an
+abandoned feature branch.
 
 ## Workflow
 
@@ -146,32 +166,46 @@ polluted and the records are never lost if the feature branch is abandoned.
    - Run the smallest repo check that covers the touched surface; for
      retained-record-only edits, strict verification plus `git diff --check` is
      usually enough.
-7. Deliver on a dedicated records branch — never the current branch, never a
-   direct push to `main`:
-   - Author, verify, and archive the records inside an isolated worktree created
-     off `origin/main` with `git-cli worktree add`, so the current branch and a
-     possibly-busy primary `main` checkout are never mutated. Running closeout
-     from inside a feature worktree must not commit records onto that feature
-     branch.
-   - Stage only `core/policies/heuristic-system/...`; keep the records worktree
-     free of stray files (a dirty worktree blocks `forge-cli pr create`).
-   - Commit with `semantic-commit` (never `git commit` directly); push the
-     records branch; open a docs PR with `forge-cli pr create --kind docs`.
-   - The records land on `main` only when that PR merges, so they are never
-     tangled into an unrelated feature branch and never lost if that branch is
-     abandoned.
-   - If verify, the push, or `forge-cli` blocks, leave the records verified in
-     the worktree and report the exact blocker and the worktree path.
+7. Deliver and auto-land through `heuristic-inbox deliver` — never the current
+   branch, never a direct push to `main`:
+   - Run `heuristic-inbox deliver --root "$root" --kind docs` once the records
+     are authored and `verify`-clean in the current checkout. The command owns
+     every mechanic the skill used to spell out in prose: it resolves the
+     canonical repo, fetches `origin/<base>`, creates an isolated worktree on a
+     `docs/<slug>` branch off `origin/<base>` (branch prefix derived from
+     `--kind`, so it cannot mismatch `forge-cli`), stages only the
+     heuristic-system root, refuses `dirty-records-worktree` if anything else
+     leaks in, commits via `semantic-commit`, pushes, and opens the docs PR.
+     Running closeout from inside a feature worktree therefore never commits
+     records onto that feature branch.
+   - Parse the `cli.heuristic-inbox.deliver.v1` envelope for `pr_url` /
+     `branch` / `committed_paths` / `worktree_path`.
+   - Auto-land the records PR (the merge policy this skill owns): promote it to
+     ready, wait for required checks, and squash-merge —
+     `forge-cli pr ready <pr>` → `forge-cli pr wait-checks <pr>` →
+     `forge-cli pr merge <pr> --method squash`. The records reach `main`
+     hands-off, never tangled into an unrelated feature branch and never lost if
+     that branch is abandoned.
+   - After the merge, discard the now-redundant uncommitted record copies in the
+     current checkout (`git checkout -- core/policies/heuristic-system`) so they
+     never leak into an unrelated feature branch.
+   - If `deliver` or any auto-merge step blocks, stop and report the exact
+     blocker plus `pr_url` / `branch` / `worktree_path`; the records stay
+     recoverable on the pushed branch or the open PR.
 8. Final response:
    - Name every case created, updated, promoted, archived, or skipped.
-   - Include verification commands and the records branch / PR when completed.
+   - Include verification commands and the records branch / merged PR when
+     completed.
    - If no durable record was warranted, say that explicitly and summarize the
      no-op rationale.
 
 ## Boundary
 
 This skill owns session-level Heuristic System closeout judgment, curated
-retention routing, and the default delivery of retained records to `main`
-through a dedicated records branch and PR. It does not replace `heuristic-inbox`
-case mechanics, `skill-usage` runtime evidence, project implementation
-workflows, general PR/MR delivery, raw session-log archiving, or memory updates.
+retention routing, and the merge policy for landing retained records on `main`
+(auto-merge the `heuristic-inbox deliver` docs PR). It delegates the delivery
+mechanics — worktree, staging guard, commit, push, PR-open — to
+`heuristic-inbox deliver`, and does not re-encode them. It does not replace
+`heuristic-inbox` case mechanics, `skill-usage` runtime evidence, project
+implementation workflows, general PR/MR delivery, raw session-log archiving, or
+memory updates.
