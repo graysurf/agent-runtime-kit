@@ -17,10 +17,10 @@ Prereqs:
   research, review, or delivery work is intended.
 - `agent-docs` startup and project-dev preflight has passed before repository
   writes, commits, or pushes.
-- `heuristic-inbox` (nils-cli >= v1.0.2, which ships `heuristic-inbox deliver`)
-  and `forge-cli` are available on `PATH`. `deliver` drives `git`,
+- `heuristic-inbox` (nils-cli >= v1.0.3, which ships `heuristic-inbox deliver
+  --label`) and `forge-cli` are available on `PATH`. `deliver` drives `git`,
   `semantic-commit`, and `forge-cli pr create` internally; the skill only adds
-  the auto-merge step.
+  the label/title identification and the auto-merge step.
 - The shared Heuristic System root can be resolved from
   `AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT` or
   `core/policies/heuristic-system/` in the active `agent-runtime-kit` checkout.
@@ -42,7 +42,9 @@ Outputs:
 - Strict verification output for every changed retained record.
 - A `heuristic-inbox deliver` run that opens a docs records-branch PR off
   `origin/main` (never a commit on the current feature branch and never a direct
-  push to `main`), followed by the auto-merge that lands the records on `main`.
+  push to `main`) — titled `docs(heuristic): record session closeout findings`
+  and labeled `workflow::heuristic-records` for identification — followed by the
+  auto-merge that lands the records on `main`.
 - A concise final summary naming what was retained, skipped, the records branch,
   and the merged PR, or the exact blocker.
 
@@ -87,10 +89,16 @@ direct push to `main`:
 ```bash
 deliver="$(heuristic-inbox deliver --root "$root" --kind docs \
   --title "docs(heuristic): record session closeout findings" \
+  --label workflow::heuristic-records \
   --format json)"
 pr_url="$(printf '%s' "$deliver" | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["pr_url"])')"
 pr="${pr_url##*/}"   # trailing PR number
 ```
+
+The fixed `docs(heuristic): record session closeout findings` title and the
+`workflow::heuristic-records` label are the identification contract for every
+closeout records PR — filter the board / `gh pr list` by that label rather than
+by the `docs/heuristic-records-*` branch convention alone.
 
 Then auto-land the records PR (the merge policy this skill owns): promote it,
 wait for required checks, and squash-merge so the records reach `main`
@@ -168,16 +176,19 @@ abandoned feature branch.
      usually enough.
 7. Deliver and auto-land through `heuristic-inbox deliver` — never the current
    branch, never a direct push to `main`:
-   - Run `heuristic-inbox deliver --root "$root" --kind docs` once the records
-     are authored and `verify`-clean in the current checkout. The command owns
-     every mechanic the skill used to spell out in prose: it resolves the
-     canonical repo, fetches `origin/<base>`, creates an isolated worktree on a
-     `docs/<slug>` branch off `origin/<base>` (branch prefix derived from
-     `--kind`, so it cannot mismatch `forge-cli`), stages only the
-     heuristic-system root, refuses `dirty-records-worktree` if anything else
-     leaks in, commits via `semantic-commit`, pushes, and opens the docs PR.
-     Running closeout from inside a feature worktree therefore never commits
-     records onto that feature branch.
+   - Run `heuristic-inbox deliver --root "$root" --kind docs --title
+     "docs(heuristic): record session closeout findings" --label
+     workflow::heuristic-records` once the records are authored and
+     `verify`-clean in the current checkout. The command owns every mechanic the
+     skill used to spell out in prose: it resolves the canonical repo, fetches
+     `origin/<base>`, creates an isolated worktree on a `docs/<slug>` branch off
+     `origin/<base>` (branch prefix derived from `--kind`, so it cannot mismatch
+     `forge-cli`), stages only the heuristic-system root, refuses
+     `dirty-records-worktree` if anything else leaks in, commits via
+     `semantic-commit`, pushes, and opens the docs PR. The fixed title and
+     `workflow::heuristic-records` label are the identification contract for
+     closeout records PRs. Running closeout from inside a feature worktree
+     therefore never commits records onto that feature branch.
    - Parse the `cli.heuristic-inbox.deliver.v1` envelope for `pr_url` /
      `branch` / `committed_paths` / `worktree_path`.
    - Auto-land the records PR (the merge policy this skill owns): promote it to

@@ -41,5 +41,5 @@ required_clis:
     min: "0.31.6"
   - bin: git-cli          # managed worktree add/list/remove/prune surface
     min: "0.31.5"
-  - bin: heuristic-inbox  # deliver: records-branch PR writeback (closeout consumer)
-    min: "1.0.2"
+  - bin: heuristic-inbox  # deliver --label: records-branch PR writeback (closeout consumer)
+    min: "1.0.3"
