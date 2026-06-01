@@ -41,7 +41,13 @@ Failure modes:
 
 - No staged changes are present, unless `--message-only` or `--allow-empty` is
   intentionally used.
-- The message does not satisfy Semantic Commit format.
+- The message does not satisfy Semantic Commit format. This includes the
+  body-line rule: each body bullet must start with `- ` followed by an
+  uppercase ASCII letter, a trailer, or `  ` (two spaces) continuing the
+  previous bullet. A lowercase identifier, backticked token, or leading
+  `--flag` as the first body token is rejected (`commit body line N must start
+  with '- ' followed by uppercase letter, a trailer, or '  ' to continue the
+  previous bullet`).
 - Staged files include unrelated or out-of-scope changes.
 - `--expect-head` does not match the current `HEAD`.
 - `--require-clean` / `--no-unstaged` detects unstaged or untracked changes.
@@ -89,7 +95,11 @@ semantic-commit squash --target HEAD~1 --json
 7. Use structured message fields (`--type`, `--scope`, `--subject`,
    repeatable `--body-bullet`) when the agent is assembling a message from known
    parts; use `--trailer` and `--signoff` instead of hand-editing standard
-   trailer lines.
+   trailer lines. Open every body bullet with an uppercase ASCII letter:
+   `--auto-fix` capitalizes a lowercase first word, but a bullet that leads with
+   a `--flag` or a backticked identifier cannot be auto-capitalized — rephrase
+   to lead with a capitalized verb or noun (write `` - Keep `--now` as the
+   override `` rather than `- --now stays the override`).
 8. Use `semantic-commit commit --amend` for Semantic Commit amend flows:
    `--no-edit` reuses the current `HEAD` message, and `--message-only` updates
    only the message while rejecting staged content.

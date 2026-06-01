@@ -18,6 +18,12 @@ detail behind the one-line gates.
 
 - The `semantic-commit` body gate enforces 1-2 bullets on non-trivial commits;
   trivial commits may omit the body.
+- Each body bullet must start with `- ` and an uppercase ASCII letter, or a
+  two-space continuation line. A lowercase word, a backticked identifier, or a
+  leading double-dash flag is rejected as the opener; auto-fix capitalizes a
+  lowercase opening word but cannot rescue a flag or backtick start, so lead
+  with a capitalized verb or noun there. The semantic-commit SKILL.md carries
+  the exact flag examples and error string.
 - Draft an accurate 1-2 sentence summary grounded in the actual diff before
   committing or opening a record; never derive a title or body from
   `git log -1`.

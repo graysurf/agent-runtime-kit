@@ -2,8 +2,15 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-25
+- Promoted: 2026-06-02 — criterion (b) satisfied. The runtime-facing surfaces
+  now teach the body-line rule: `meta/semantic-commit` SKILL.md (Contract →
+  Failure modes, plus the structured-fields workflow step) and
+  `core/policies/git-delivery.md` "Commits" (the relocated home of the former
+  `AGENT_HOME.md` Commit Rules — `AGENT_HOME.md` was made concise and delegates
+  commit mechanics there). The README portion was already covered by
+  sympoies/nils-cli#576.
 - Area: nils-cli semantic-commit body validator
 - Severity: medium
 
@@ -46,9 +53,14 @@ limit). Agents iterate two or three times before discovering the workaround
 - Partial upstream documentation fix (2026-05-27): sympoies/nils-cli#576
   (merged) added the body-format rule to `crates/semantic-commit/README.md` —
   body bullets must start with `- ` plus an uppercase ASCII letter, or use a
-  two-space continuation line. This satisfies the README portion of criterion
-  (b), but the runtime-facing `meta/semantic-commit` SKILL.md and `AGENT_HOME.md`
-  Commit Rules still do not surface the rule, so the entry stays open.
+  two-space continuation line. This satisfied the README portion of criterion
+  (b).
+- Runtime-facing documentation fix (2026-06-02): `meta/semantic-commit`
+  SKILL.md and `core/policies/git-delivery.md` "Commits" now teach the rule, and
+  the v1.0.3 error string was re-confirmed to also name the trailer and
+  two-space continuation escapes. `--auto-fix` capitalizes a lowercase first
+  word but cannot rescue a leading `--flag` or backticked identifier (re-verified
+  on v1.0.3). Both runtime surfaces of criterion (b) are now covered.
 
 ## Impact
 
@@ -88,8 +100,14 @@ implements (a) or the doc change that implements (b).
 
 ## Next Action
 
-Update the runtime-facing documentation surfaces (`meta/semantic-commit`
-SKILL.md "Acceptance criteria" and `AGENT_HOME.md` Commit Rules), or relax the
-validator to accept backticked identifiers / common lowercase CLI tokens. Keep
-this entry open until the agent-facing surfaces teach the rule without trial and
-error. README portion already covered by sympoies/nils-cli#576.
+None — resolved via criterion (b). The runtime-facing surfaces
+(`meta/semantic-commit` SKILL.md and `core/policies/git-delivery.md` "Commits")
+now teach the body-line rule, and the README portion was covered by
+sympoies/nils-cli#576. Archiving with status `promoted`. A future validator
+relaxation (criterion (a)) would be tracked as a fresh nils-cli issue, not by
+reopening this entry.
+
+## Archive
+
+- Archived: 2026-06-02
+- Reason: Promoted: criterion (b) doc surfaces (SKILL.md + git-delivery.md) now teach the rule
