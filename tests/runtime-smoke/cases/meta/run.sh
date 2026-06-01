@@ -509,6 +509,46 @@ SH
   ) >"$out_dir/apply-pre-pr.txt" 2>&1
   grep -q "setup-project fixture validation:--fixture" "$out_dir/apply-pre-pr.txt"
   test -f "$apply_root/setup-project-validation.invoked"
+
+  # A compound --pre-pr-command (&&) must run every stage, not just the first,
+  # and a failing first stage must abort rather than report a green gate.
+  local compound="$TMP_ROOT/workspaces/setup-project-compound"
+  mkdir -p "$compound"
+  git -C "$compound" init -q
+  "$helper" \
+    --repo "$compound" \
+    --apply \
+    --pre-pr-command "echo stage-one >stage-one.ran && echo stage-two >stage-two.ran" \
+    >"$out_dir/compound-apply.txt" 2>&1
+  grep -q "setup-project: wrote .agents/scripts/pre-pr.sh" "$out_dir/compound-apply.txt"
+  if grep -Eq '^exec ' "$compound/.agents/scripts/pre-pr.sh"; then
+    echo "meta.setup-project: dispatcher exec-binds the first command of a compound gate" >&2
+    return 1
+  fi
+  (
+    cd "$compound"
+    ./.agents/scripts/pre-pr.sh
+  ) >"$out_dir/compound-run.txt" 2>&1
+  test -f "$compound/stage-one.ran"
+  test -f "$compound/stage-two.ran"
+
+  rm -rf "$compound"
+  mkdir -p "$compound"
+  git -C "$compound" init -q
+  "$helper" \
+    --repo "$compound" \
+    --apply \
+    --pre-pr-command "false && echo reached >tail.ran" \
+    >"$out_dir/compound-fail-apply.txt" 2>&1
+  set +e
+  (
+    cd "$compound"
+    ./.agents/scripts/pre-pr.sh
+  ) >"$out_dir/compound-fail-run.txt" 2>&1
+  status=$?
+  set -e
+  [ "$status" -ne 0 ]
+  test ! -e "$compound/tail.ran"
 }
 
 run_plan_archive_migrate_probe() {
