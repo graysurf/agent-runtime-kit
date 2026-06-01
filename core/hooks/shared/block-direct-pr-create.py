@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """PreToolUse hook: block direct GitHub PR and GitLab MR creation.
 
-Shared runtime-kit logic accepts the new neutral `AGENT_RUNTIME_PR_SKILL`
-marker plus legacy product markers from agent-kit and claude-kit. The value is
-still an exact-name allow-list, not a broad bypass.
+Shared runtime-kit logic accepts the neutral `AGENT_RUNTIME_PR_SKILL` marker.
+The value is still an exact-name allow-list, not a broad bypass.
 """
 
 from __future__ import annotations
@@ -38,14 +37,9 @@ _BUILTIN_MR_SKILLS: frozenset[str] = frozenset(
 
 
 def _overlay_path() -> Path:
-    for env_name in (
-        "AGENT_RUNTIME_PR_SKILLS_OVERLAY_FILE",
-        "AGENT_KIT_PR_SKILLS_OVERLAY_FILE",
-        "CLAUDE_KIT_PR_SKILLS_OVERLAY_FILE",
-    ):
-        env_override = os.environ.get(env_name)
-        if env_override:
-            return Path(env_override)
+    env_override = os.environ.get("AGENT_RUNTIME_PR_SKILLS_OVERLAY_FILE")
+    if env_override:
+        return Path(env_override)
     return Path(__file__).resolve().parent.parent / "private" / "pr-skills-overlay.txt"
 
 
@@ -65,24 +59,20 @@ def _load_overlay_skills() -> frozenset[str]:
 _OVERLAY_SKILLS = _load_overlay_skills()
 ALLOWED_PR_SKILLS: frozenset[str] = _BUILTIN_PR_SKILLS | _OVERLAY_SKILLS
 ALLOWED_MR_SKILLS: frozenset[str] = _BUILTIN_MR_SKILLS | _OVERLAY_SKILLS
-MARKER_ENV_NAMES = (
-    "AGENT_RUNTIME_PR_SKILL",
-    "AGENT_KIT_PR_SKILL",
-    "CLAUDE_KIT_PR_SKILL",
-)
+MARKER_ENV_NAMES = ("AGENT_RUNTIME_PR_SKILL",)
 
 BLOCK_REASON_PR = (
     "Do not run gh pr create directly. Open PRs through an audited PR workflow "
     "so the body follows the standard template and the call is traceable. "
     "Skill bypass: prefix the command with AGENT_RUNTIME_PR_SKILL=<exact "
-    "allowed skill name> or the product legacy marker."
+    "allowed skill name>."
 )
 
 BLOCK_REASON_MR = (
     "Do not create GitLab MRs directly. Use an audited MR workflow so the "
     "description, branch handling, and source-branch policy are reviewable. "
     "Skill bypass: prefix the command with AGENT_RUNTIME_PR_SKILL=<exact "
-    "allowed MR skill name> or the product legacy marker."
+    "allowed MR skill name>."
 )
 
 SKILL_MARKER_RE = re.compile(

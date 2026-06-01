@@ -423,7 +423,7 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_allowed(decision)
 
-    def test_blocks_direct_pr_create_with_shared_and_legacy_markers(self) -> None:
+    def test_blocks_direct_pr_create_unless_neutral_marker(self) -> None:
         code, decision, stderr = run_hook(
             "block-direct-pr-create.py",
             command_payload("gh pr create --draft"),
@@ -433,8 +433,7 @@ class SharedHookTests(unittest.TestCase):
 
         for marker in (
             "AGENT_RUNTIME_PR_SKILL=create-pr",
-            "AGENT_KIT_PR_SKILL=create-pr",
-            "CLAUDE_KIT_PR_SKILL=pr:create-pr",
+            "AGENT_RUNTIME_PR_SKILL=pr:create-pr",
         ):
             code, decision, stderr = run_hook(
                 "block-direct-pr-create.py",
@@ -442,6 +441,18 @@ class SharedHookTests(unittest.TestCase):
             )
             self.assertEqual(code, 0, stderr)
             self.assert_allowed(decision)
+
+        # Retired legacy product markers must no longer bypass the gate.
+        for legacy in (
+            "AGENT_KIT_PR_SKILL=create-pr",
+            "CLAUDE_KIT_PR_SKILL=pr:create-pr",
+        ):
+            code, decision, stderr = run_hook(
+                "block-direct-pr-create.py",
+                command_payload(f"{legacy} gh pr create --draft"),
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
 
     def test_blocks_project_memory_write(self) -> None:
         code, decision, stderr = run_hook(
