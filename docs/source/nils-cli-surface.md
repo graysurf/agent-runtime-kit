@@ -1,20 +1,25 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-01 (refreshed for `v1.0.2`)
+- Snapshot date: 2026-06-02 (refreshed for `v1.0.3`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.2`
+- Active `git describe --tags` output: `v1.0.3`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.2`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.3`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `71357f0`
-  (`chore(release): bump cli versions to 1.0.2 (#746)`)
+- Head commit: `3d20dc9`
+  (`chore(release): bump cli versions to 1.0.3 (#749)`)
 - Release:
-  [`v1.0.2`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.2),
+  [`v1.0.3`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.3),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.3` adds a repeatable `--label` flag to `heuristic-inbox deliver`
+  ([#748](https://github.com/sympoies/nils-cli/pull/748)), forwarded verbatim to
+  `forge-cli pr create --label`, so records-branch PRs can carry taxonomy
+  labels. Additive; the `heuristic-session-closeout` consume of `--label` (and
+  its `heuristic-inbox >= 1.0.3` floor bump) lands in a follow-up.
 - `v1.0.2` adds the **`heuristic-inbox deliver`** subcommand: a cwd-independent
   records-branch PR writeback for uncommitted heuristic-system records (fetch
   `origin/<base>` → managed worktree on a `<prefix>/<slug>` branch matching
