@@ -441,6 +441,78 @@ run_sync_runtime_surfaces_prune_fixture_probe() {
   test -f "$claude_regular"
 }
 
+# Characterizes the upstream nils-cli limitation tracked in inbox case
+# sync-runtime-surfaces-prune-stale-dir-gap: a retired *recursive-file* managed
+# skill directory (real files, non-empty dir) is detected as a stale candidate
+# but conservatively SKIPPED, not removed, because prune-stale only removes
+# provably owned symlinks and empty directories. When nils-cli learns to remove
+# a provably owned managed directory tree, this probe will flip and the inbox
+# case can be promoted.
+run_sync_runtime_surfaces_prune_recursive_stale_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.prune-recursive-stale.txt"
+  local claude_home="$TMP_ROOT/sync-prune-recursive/claude-home"
+  local stale_dir="$claude_home/plugins/meta/skills/removed-recursive-skill"
+
+  require_meta_bin agent-runtime || return 1
+  rm -rf "$claude_home"
+  mkdir -p "$stale_dir/scripts"
+  printf '# removed recursive skill\n' >"$stale_dir/SKILL.md"
+  printf 'echo hi\n' >"$stale_dir/scripts/tool.sh"
+
+  agent-runtime prune-stale \
+    --source-root "$REPO_ROOT" \
+    --product claude \
+    --live-home "$claude_home" \
+    --apply --format json >"$out" 2>&1
+
+  grep -q "skipped-non-empty-directory" "$out" &&
+    grep -q "skipped-regular-file" "$out" &&
+    grep -q "removed-recursive-skill" "$out" &&
+    test -d "$stale_dir" &&
+    test -f "$stale_dir/SKILL.md"
+}
+
+# Regression for the misleading finish signal in inbox case
+# sync-runtime-surfaces-prune-stale-dir-gap: when prune-stale reports skipped>0,
+# the sync summary must report prune=review-needed (not prune=ok) and surface the
+# skipped rel_paths. Sources the script as a library to exercise the reporting
+# helpers directly, avoiding the --apply worktree guard and render/install.
+run_sync_runtime_surfaces_prune_review_reporting_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.prune-review-reporting.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+
+  # APPLY/PRODUCT are consumed by the sourced print_summary, and the source path
+  # is dynamic; shellcheck cannot see either through the dynamic source.
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    set +e
+    APPLY=1
+    PRODUCT=claude
+    PRUNE_SKIPPED_TOTAL=0
+    account_prune_skipped claude '{
+  "schema_version": "cli.agent-runtime.prune-stale.v1",
+  "ok": true,
+  "data": {
+    "skipped": 2,
+    "changes": 0,
+    "records": [
+      { "kind": "skipped-non-empty-directory", "rel_path": "plugins/meta/skills/removed-recursive-skill" },
+      { "kind": "skipped-regular-file", "rel_path": "plugins/meta/skills/removed-recursive-skill/SKILL.md" }
+    ]
+  }
+}'
+    echo "PRUNE_SKIPPED_TOTAL=$PRUNE_SKIPPED_TOTAL"
+    print_summary
+  ) >"$out" 2>&1
+
+  grep -q "PRUNE_SKIPPED_TOTAL=2" "$out" &&
+    grep -q "prune-stale left stale candidate for review" "$out" &&
+    grep -q "removed-recursive-skill" "$out" &&
+    grep -q "prune=review-needed" "$out" &&
+    ! grep -q "prune=ok" "$out"
+}
+
 run_project_local_shim_probe() {
   local name="$1"
   local script="$REPO_ROOT/tests/projects/project-local-smoke/.agents/scripts/${name}.sh"
@@ -727,5 +799,7 @@ record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned 
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-file managed skill directory (upstream gap characterization)" run_sync_runtime_surfaces_prune_recursive_stale_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe || failures=1
 
 exit "$failures"
