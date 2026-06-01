@@ -181,6 +181,55 @@ SH
   test -f "$apply_root/setup-project-validation.invoked"
 }
 
+assert_setup_project_compound_command() {
+  local helper="$REPO_ROOT/core/skills/meta/setup-project/scripts/setup-project.sh"
+  local root="$TMP_ROOT/setup-compound"
+  local out="$OUT_DIR/setup-project-compound"
+  local code
+
+  test -x "$helper"
+
+  # A compound --pre-pr-command (&&) must run every stage, not just the first.
+  mkdir -p "$root"
+  git -C "$root" init -q
+  "$helper" \
+    --repo "$root" \
+    --apply \
+    --pre-pr-command "echo stage-one >stage-one.ran && echo stage-two >stage-two.ran" \
+    >"$out.apply" 2>&1
+  grep -q "setup-project: wrote .agents/scripts/pre-pr.sh" "$out.apply"
+  if grep -Eq '^exec ' "$root/.agents/scripts/pre-pr.sh"; then
+    echo "project-local-smoke: dispatcher exec-binds the first command of a compound gate" >&2
+    cat "$root/.agents/scripts/pre-pr.sh" >&2
+    return 1
+  fi
+  (
+    cd "$root"
+    ./.agents/scripts/pre-pr.sh
+  ) >"$out.run" 2>&1
+  test -f "$root/stage-one.ran"
+  test -f "$root/stage-two.ran"
+
+  # A failing first stage must abort the gate (no silent green pass) and skip the tail.
+  rm -rf "$root"
+  mkdir -p "$root"
+  git -C "$root" init -q
+  "$helper" \
+    --repo "$root" \
+    --apply \
+    --pre-pr-command "false && echo reached >tail.ran" \
+    >"$out.apply-fail" 2>&1
+  set +e
+  (
+    cd "$root"
+    ./.agents/scripts/pre-pr.sh
+  ) >"$out.run-fail" 2>&1
+  code=$?
+  set -e
+  [ "$code" -ne 0 ]
+  test ! -e "$root/tail.ran"
+}
+
 for script in $scripts; do
   run_fixture_script "$script"
 done
@@ -190,5 +239,6 @@ install_temp_runtime
 assert_doctor_wired
 assert_doctor_missing
 assert_setup_project_adoption_gate
+assert_setup_project_compound_command
 
 printf 'project-local-smoke: OK scripts=%s skill=%s\n' "$scripts" "$project_skill"
