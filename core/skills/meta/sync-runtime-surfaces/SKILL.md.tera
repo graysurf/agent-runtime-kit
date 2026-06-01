@@ -36,7 +36,8 @@ Outputs:
 
 - The script's stdout/stderr and exit code.
 - A concise summary of whether pull, render, install, prune, doctor, and Codex
-  prompt-input verification were planned, skipped, or completed.
+  prompt-input verification were planned, skipped, completed, or (for prune)
+  flagged `review-needed`.
 - A read-only source count check before any render/install step.
 
 Failure modes:
@@ -109,7 +110,11 @@ bash scripts/sync-runtime-surfaces.sh --apply --no-prune
    local runtime homes (`$CODEX_HOME`/`$HOME/.codex`, `$HOME/.claude`, and
    runtime-kit state homes). By default, `--apply` also prunes stale managed
    skill surfaces with `agent-runtime prune-stale`; when `--no-prune` is
-   passed, warn that stale managed runtime surfaces may remain.
+   passed, warn that stale managed runtime surfaces may remain. `prune-stale`
+   only removes provably owned symlinks and empty directories, so a retired
+   recursive-file skill directory (real files / a non-empty managed dir) is
+   reported as `prune=review-needed` with the leftover paths listed; surface
+   those paths so the operator can remove the retired directories by hand.
 6. Run the script from the checkout root and let it own pull, render, install,
    prune, doctor, and Codex prompt-input sequencing.
 7. Report the final summary line and the first failing command if the script

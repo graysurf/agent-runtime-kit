@@ -20,6 +20,8 @@ NO_PRUNE=0
 SOURCE_ROOT=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_PROMPT_STATUS="not-run"
+PRUNE_SKIPPED_TOTAL=0
+PRUNE_LAST_SKIPPED=0
 
 # -----------------------------------------------------------------------------
 # Help
@@ -377,10 +379,36 @@ install_product() {
     "$mode_flag"
 }
 
+# Read the skipped count from one prune-stale JSON blob, accumulate it into the
+# run-wide total, and surface the skipped rel_paths so the operator sees exactly
+# which stale candidates prune-stale could not auto-remove. prune-stale only
+# removes provably owned symlinks and empty directories; a retired recursive-file
+# managed skill directory (real files, non-empty dir) is reported as skipped and
+# left in place, so a blind prune=ok is misleading. See the inbox case
+# core/policies/heuristic-system/error-inbox/sync-runtime-surfaces-prune-stale-dir-gap.
+# Sets PRUNE_LAST_SKIPPED and bumps PRUNE_SKIPPED_TOTAL.
+account_prune_skipped() {
+  local product="$1"
+  local json="$2"
+  local skipped
+
+  skipped="$(printf '%s\n' "$json" | json_number skipped)"
+  : "${skipped:=0}"
+  PRUNE_LAST_SKIPPED="$skipped"
+
+  if [ "$skipped" -gt 0 ]; then
+    PRUNE_SKIPPED_TOTAL=$((PRUNE_SKIPPED_TOTAL + skipped))
+    printf '%s\n' "$json" |
+      sed -n 's/.*"rel_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/  ? prune-stale left stale candidate for review (product='"$product"'): \1/p'
+  fi
+}
+
 prune_product() {
   local product="$1"
   local live_home
-  local mode_flag="--dry-run"
+  local prune_json
+  local code
+  local changes
 
   live_home="$(product_live_home "$product")"
 
@@ -393,16 +421,41 @@ prune_product() {
     return 0
   fi
 
-  if [ "$APPLY" = "1" ]; then
-    mode_flag="--apply"
+  log "pruning stale managed surfaces product=$product live_home=$live_home"
+
+  if [ "$APPLY" = "0" ]; then
+    run_cmd agent-runtime prune-stale \
+      --source-root "$SOURCE_ROOT" \
+      --product "$product" \
+      --live-home "$live_home" \
+      --dry-run
+    return 0
   fi
 
-  log "pruning stale managed surfaces product=$product live_home=$live_home"
-  run_cmd agent-runtime prune-stale \
+  print_cmd agent-runtime prune-stale \
     --source-root "$SOURCE_ROOT" \
     --product "$product" \
     --live-home "$live_home" \
-    "$mode_flag"
+    --apply --format json
+
+  set +e
+  prune_json="$(agent-runtime prune-stale \
+    --source-root "$SOURCE_ROOT" \
+    --product "$product" \
+    --live-home "$live_home" \
+    --apply --format json 2>&1)"
+  code=$?
+  set -e
+
+  if [ "$code" -ne 0 ]; then
+    printf '%s\n' "$prune_json" >&2
+    err "prune-stale failed for product=$product (exit=$code); run agent-runtime prune-stale --product $product --live-home $live_home --apply for details"
+    return 1
+  fi
+
+  changes="$(printf '%s\n' "$prune_json" | json_number changes)"
+  account_prune_skipped "$product" "$prune_json"
+  log "prune product=$product changes=${changes:-0} skipped=${PRUNE_LAST_SKIPPED:-0}"
 }
 
 json_number() {
@@ -514,6 +567,9 @@ print_summary() {
     mode="apply"
     doctor_status="ok"
     prune_status="ok"
+    if [ "$PRUNE_SKIPPED_TOTAL" -gt 0 ]; then
+      prune_status="review-needed"
+    fi
   fi
   if [ "$NO_PRUNE" = "1" ]; then
     prune_status="skipped"
@@ -523,6 +579,10 @@ print_summary() {
   fi
 
   log "summary: synced surfaces for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS"
+
+  if [ "$prune_status" = "review-needed" ]; then
+    log "note: prune-stale could not auto-remove $PRUNE_SKIPPED_TOTAL stale candidate(s) (real files / non-empty managed dirs). Review the paths above and remove any retired managed skill directories by hand. Tracked in core/policies/heuristic-system/error-inbox/sync-runtime-surfaces-prune-stale-dir-gap."
+  fi
 }
 
 # -----------------------------------------------------------------------------
@@ -554,4 +614,8 @@ main() {
   print_summary
 }
 
-main "$@"
+# Allow tests to source this script as a library (to exercise helpers like
+# account_prune_skipped / print_summary in isolation) without running main.
+if [ "${SYNC_RUNTIME_SURFACES_LIB:-0}" != "1" ]; then
+  main "$@"
+fi
