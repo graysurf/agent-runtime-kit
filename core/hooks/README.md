@@ -4,10 +4,9 @@
 Claude. Product-specific activation stays in `targets/<product>/hooks/` and in
 the product link map.
 
-The shared scripts accept neutral `AGENT_RUNTIME_*` environment variables and
-the legacy agent-kit / claude-kit names where existing workflows already use
-them. Do not fork a hook per product unless the payload protocol or runtime
-harness requires different behavior.
+The shared scripts accept neutral `AGENT_RUNTIME_*` environment variables. Do
+not fork a hook per product unless the payload protocol or runtime harness
+requires different behavior.
 
 Install surfaces:
 
