@@ -1,5 +1,4 @@
 <!--
-Migrated from $HOME/.config/agent-kit/CLI_TOOLS.md on 2026-05-20.
 Machine-readable derivative: manifests/cli-tools.yaml (profile-keyed brew formula
 catalog consumed by scripts/setup.sh and agent-runtime doctor). Update both files
 together; drift audit compares them.
