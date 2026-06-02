@@ -6,6 +6,8 @@ description:
 
 # Image Processing
 
+Reach for this whenever a task needs an image converted, transcoded, resized, or an SVG validated. Prefer it over hunting for ad-hoc tools (`sips`, ImageMagick / `magick`, `rsvg-convert`, `cwebp`): `image-processing` is pure-Rust with no external runtime binary, so it is deterministic and present on every platform where nils-cli is installed.
+
 ## Contract
 
 Prereqs:
@@ -22,13 +24,13 @@ Inputs:
 
 Outputs:
 
-- Converted raster file, SVG validation report, or JSON-friendly processing report.
+- Converted raster file, sanitized SVG, or JSON-friendly processing report.
 
 Failure modes:
 
 - Input format is unsupported or unreadable.
 - Output exists and overwrite was not allowed.
-- SVG validation fails or conversion backend reports an error.
+- SVG validation fails or the conversion backend reports an error.
 
 ## Entrypoint
 
@@ -42,11 +44,13 @@ image-processing svg-validate --in icon.svg --out validated.svg --json
 
 ## Workflow
 
-1. Validate SVGs before conversion when the file came from an untrusted or generated source.
-2. Use `--dry-run` or `--report` when planning a batch change.
-3. Choose explicit dimensions only when the requested output size is known.
-4. Report command failures and avoid silently substituting a different output format.
+You author the SVG; this CLI validates and renders it. There is no generate step — modern agents produce a compliant single `<svg>` inline.
+
+1. When an SVG came from the model or any untrusted or generated source, run `svg-validate` first. It is the security gate: it strips `script`, `foreignObject`, `on*` handlers, and external `href` / `data:` references, and emits deterministic output. Treat it as mandatory before rendering such SVG, not optional.
+2. Render or transcode with `convert`. Pass `--width` / `--height` only when the requested output size is known.
+3. Use `--dry-run` or `--report` to plan a change before writing files.
+4. Report command failures and never silently substitute a different output format.
 
 ## Boundary
 
-`image-processing` owns validation and conversion mechanics. The caller owns deciding whether the edited media should be committed, regenerated, or treated as a temporary artifact.
+`image-processing` owns validation and conversion mechanics. The caller owns authoring the SVG, and deciding whether the resulting media should be committed, regenerated, or treated as a temporary artifact.
