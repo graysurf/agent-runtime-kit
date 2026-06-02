@@ -15,21 +15,32 @@ recursive plugin-skill directories still existed in the live Codex / Claude
 homes and generated build tree. They had to be removed manually before the
 follow-up cleanup PR could be considered complete.
 
-Root cause, two layers:
+Root cause (corrected after upstream code investigation — see Evidence):
 
-1. `agent-runtime prune-stale` only removes provably owned symlinks and empty
-   directories. A retired *recursive-file* managed skill directory holds real
-   files (a non-empty dir), so prune-stale detects it as a candidate but
-   conservatively SKIPS it — it cannot prove ownership of real files versus
-   genuine user content. Confirmed on `agent-runtime v1.0.3`: a stale
-   `plugins/meta/skills/<retired>/` with real files yields
-   `candidates=N changes=0 skipped=N`, records `skipped-non-empty-directory` /
-   `skipped-regular-file`, and `ok: true`. This removal policy is a nils-cli
-   decision and the remaining open half of this case.
-2. `scripts/sync-runtime-surfaces.sh` discarded the prune-stale result and
-   hard-coded `prune=ok` on every `--apply`, so the operator never saw the
-   skipped candidates. This was the misleading finish signal and is fixed
-   in-repo (below).
+1. **`agent-runtime render` is additive.** When a skill is removed from
+   `manifests/skills.yaml` (renamed or retired), render leaves its
+   `build/<product>/` outputs and `.render-cache.json` entry behind — the
+   per-skill cleanup only fires for skills still being rendered, so a fully
+   retired skill is never revisited.
+2. **`prune-stale` then keeps the retired skill, silently.** prune-stale
+   rebuilds its "expected" set by expanding the recursive link-map entry over
+   the *current* `build/` tree (`InstallPlan::build` ->
+   `expected_paths_from_plan`). A retired skill that lingers in `build/` is
+   therefore still listed as expected. With the symlink-based install the
+   live-home entries are symlinks (not real files), and prune-stale reports
+   `candidates=0 changes=0` — a silent `prune=ok` that keeps the retired skill
+   discoverable in the runtime home. Confirmed on current nils-cli `main`:
+   removing the stale `build/<retired>` makes prune-stale immediately treat
+   those live entries as stale and remove them.
+
+So the root fix is in **`render`** (reconcile `build/`), not `prune-stale` —
+prune-stale is correct given a clean `build/`. The earlier "prune-stale skips
+real-file dirs" framing is a secondary, rarer path (real files in the live
+home, which the symlink-based install does not normally produce). Note this
+also means the in-repo finish-signal fix (PR #252: `prune=review-needed` when
+`skipped > 0`) does **not** catch this primary case — it is
+`candidates=0 / skipped=0`, a silent `prune=ok` — so the render-side reconcile
+is the real closure.
 
 ## Evidence
 
@@ -49,43 +60,51 @@ Root cause, two layers:
   Regression probes in `tests/runtime-smoke/cases/meta/run.sh` cover both the
   upstream skip behavior (`prune-stale skips retired recursive-file managed
   skill directory`) and the honest reporting (`reports prune=review-needed`).
-- Minimal repro against the pinned binary:
-  `mkdir -p home/plugins/meta/skills/retired/scripts && printf x > home/plugins/meta/skills/retired/SKILL.md`
-  then
-  `agent-runtime prune-stale --source-root <repo> --product claude --live-home home --apply`
-  reports `skipped` and leaves the directory.
+- Upstream investigation (current nils-cli `main`, debug binary) confirmed the
+  corrected diagnosis end to end:
+  - `render` is additive: planting an orphan skill dir in `build/<product>/`
+    and re-rendering leaves it in place (`render/writer.rs` cleanup only
+    iterates skills still present in the prior cache).
+  - With the stale `build/<retired>` present, `prune-stale` reports
+    `candidates=0 changes=0` and keeps the live-home symlinks; deleting
+    `build/<retired>` makes the same run report `candidates=N changes=N` and
+    remove them.
+- Upstream fix opened: `sympoies/nils-cli` PR #755 (`feat(render): reconcile
+  build/ outputs for retired skills`) — render removes a retired skill's
+  `build/` outputs + cache entry on the next render, with a regression test.
+  Not yet merged / released.
+- Minimal repro of the silent leak (current nils-cli `main`): render two skills,
+  remove one from `manifests/skills.yaml`, re-render, then install + prune-stale;
+  the retired skill stays in the live home with `prune-stale candidates=0` until
+  `build/<retired>` is gone.
 
 ## Impact
 
-Future managed skill renames or removals can still leave stale
-runtime-discoverable plugin skill directories that `agent-runtime prune-stale`
-will not auto-remove. The operator-facing half is now mitigated: the sync
-finish signal is honest (`prune=review-needed` plus the exact paths) instead of
-a misleading `prune=ok`, so retired directories are no longer silently left
-behind under a green summary. The directories still require a manual `rm` until
-prune-stale itself removes provably owned recursive managed directories.
+Until the render-side reconcile ships, a managed skill rename/removal can still
+leave the retired skill discoverable in `$CODEX_HOME` / `$HOME/.claude`, and the
+sync reports a green `prune=ok` because `prune-stale` (correctly, given the
+stale `build/`) sees nothing to do. The in-repo finish-signal fix (PR #252) only
+catches the secondary real-file path, not this primary `candidates=0` case, so
+the leak is silent until the render fix lands.
 
 ## Current Workaround
 
-`scripts/sync-runtime-surfaces.sh --apply` now surfaces every stale candidate
-prune-stale could not auto-remove and reports `prune=review-needed`. When that
-status appears, remove only the exact retired managed skill directories listed
-in the output.
+After a managed skill rename/removal, re-run `agent-runtime render` and then
+explicitly check the retired skill's `build/{codex,claude}/` and live-home
+(`$CODEX_HOME` / `$HOME/.claude`) paths; remove the exact retired managed skill
+directories by hand. (The `prune=review-needed` signal from
+`scripts/sync-runtime-surfaces.sh` only fires for the secondary real-file case.)
 
 ## Promotion Criteria
 
-The in-repo regression fixtures and honest finish signal have landed. Promote
-this case after `agent-runtime prune-stale` (nils-cli) learns to remove a
-provably owned recursive-file managed skill directory tree — for example via an
-install/ownership ledger that distinguishes managed content from genuine user
-content — so the live sync path removes stale managed plugin-skill directories
-without manual `rm`, and the
-`prune-stale skips retired recursive-file managed skill directory` probe is
-re-pointed to assert removal.
+Promote after the render-side reconcile (`sympoies/nils-cli` PR #755) is merged
+and released, the pinned surface in `docs/source/nils-cli-pin.yaml` is bumped to
+that release, and the end-to-end path (render -> install -> retire a skill ->
+render -> install -> prune-stale) leaves the runtime home clean without a manual
+`rm`.
 
 ## Next Action
 
-Upstream the remaining half in `sympoies/nils-cli`: give `agent-runtime
-prune-stale` an ownership-aware removal path for retired recursive-file managed
-skill directories, then re-point the characterization probe and promote this
-case.
+Land nils-cli PR #755 -> cut the release -> bump the homebrew tap and the
+agent-runtime-kit pin (via `meta:nils-cli-bump`) -> verify the end-to-end clean
+removal -> promote and archive this case.
