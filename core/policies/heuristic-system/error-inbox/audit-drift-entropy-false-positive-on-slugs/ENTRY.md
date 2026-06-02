@@ -4,7 +4,7 @@
 
 - Status: open
 - First observed: 2026-06-01
-- Area: audit-drift unsafe/entropy class; heuristic-system retained records; scripts/ci/all.sh Position 7
+- Area: audit-drift unsafe class (entropy + keyword_prefix); heuristic-system retained records; scripts/ci/all.sh Position 7
 - Severity: medium
 
 ## Signal
@@ -32,17 +32,32 @@ sibling cases and source folders.
 - `scripts/ci/all.sh` Position 7 runs `agent-runtime audit-drift` bare under
   `set -euo pipefail`, so a warn (audit-drift exit 1) fails the entire gate.
   Warn is not advisory in CI here.
+- Related trigger class (2026-06-02, agent-runtime-kit#251): the `keyword_prefix`
+  signal (distinct from `entropy_above_threshold`) fired at score 0.4 on a plain
+  prose policy doc, `core/policies/git-delivery.md`, after a bullet describing
+  commit-body rules introduced flag-shaped tokens. Unlike a retained-record slug
+  reference, a prose policy doc that only describes CLI flags is best fixed by
+  rewording to drop the flagged tokens (the precise flag examples can live in the
+  owning SKILL.md), NOT by adding the doc to the command-pattern allowlist — that
+  allowlist is reserved for files whose purpose is to carry command- or
+  credential-shaped content as evidence. Resolved by rewording in #251.
 
 ## Impact
 
-- Operation records and inbox entries cannot cross-reference sibling cases or
-  their archive folders by slug/path, even though that is the natural and most
-  useful navigation aid. The author is forced to rewrite references as prose
-  plus issue/PR numbers.
-- `audit-drift --help` exposes no allowlist, baseline, or per-finding
-  suppression (only `--verbose` to show suppressed findings), and the 0.4
-  threshold is fixed, so a legitimate slug reference at the boundary cannot be
-  whitelisted.
+- Remaining gap (2026-06-02): `operation-records/*/RECORD.md` is NOT in the
+  allowlist, so a slug-heavy operation record still trips the scorer and must be
+  reworded by hand (the three current records under `operation-records/` pass
+  only because the workaround below was applied). Inbox entries no longer hit
+  this — they are allowlisted — so operation records are the last retained-record
+  surface forced to rewrite slug references as prose plus issue/PR numbers.
+- Correction (2026-06-02): a committed per-path allowlist DOES exist —
+  `drift-audit.allow.yaml` at the repo root, read automatically by `audit-drift`,
+  which demotes a matched finding by one tier (block to warn, warn to suppressed)
+  with a documented reason. It already exempts `error-inbox/*/ENTRY.md`, the
+  `error-inbox/*/evidence/*` files, and the `archive/` peers. What the CLI lacks
+  is an allowlist FLAG; the 0.4 threshold and the per-line scorer are still fixed,
+  and a one-tier demotion of a block-level (score >= 0.8) line only reaches warn,
+  which still fails CI.
 - Net effect: the heuristic-system is penalised for self-referencing, working
   against the cross-linking the retained records are meant to provide.
 
@@ -56,16 +71,23 @@ separators) is a passing template.
 
 ## Promotion Criteria
 
-Promote when either: (a) the audit-drift entropy class gains an allowlist,
-per-path suppression, or committed baseline so legitimate retained-record slug
-references can be exempted; or (b) warn-level unsafe findings stop being a hard
-CI failure at Position 7 (block-only gating, with warn reported but non-fatal),
-and `docs/source/nils-cli-pin.yaml` rolls forward to that release.
+The committed-allowlist half of the original criterion is already met for inbox
+entries (see Correction above), so the bar is now narrower. Promote when either:
+(a) `operation-records/*/RECORD.md` (and `operation-records/*/evidence/*`) gain
+the same `drift-audit.allow.yaml` per-path demotion the `error-inbox` paths
+already have — closing the last retained-record surface that still trips the
+scorer — or the upstream scorer stops flagging legitimate slug references; or
+(b) warn-level unsafe findings stop being a hard CI failure at Position 7
+(block-only gating, with warn reported but non-fatal), and
+`docs/source/nils-cli-pin.yaml` rolls forward to that release.
 
 ## Next Action
 
-File upstream against the audit-drift entropy class (allowlist or
-warn-versus-block gating) in nils-cli; the likely fix location is the
-audit-drift unsafe/entropy scorer and/or the Position 7 exit handling in
-`scripts/ci/all.sh`. Until then, keep the workaround above and the dogfooded
-explicit-path rule added to the closeout skill in this same change.
+Two concrete paths, smallest first: (1) add `operation-records/*/RECORD.md` and
+`operation-records/*/evidence/*` globs to `drift-audit.allow.yaml`, mirroring the
+existing `error-inbox` entries and their rationale, to exempt the last
+retained-record surface; and/or (2) file upstream against the audit-drift unsafe
+scorer (fixed 0.4 threshold, no allowlist flag) and the Position 7 exit handling
+in `scripts/ci/all.sh` (warn-versus-block gating). The inbox-entry and
+prose-policy-doc halves are already resolved — allowlist demotion and rewording
+respectively — so keep the workaround for operation records only until (1) lands.
