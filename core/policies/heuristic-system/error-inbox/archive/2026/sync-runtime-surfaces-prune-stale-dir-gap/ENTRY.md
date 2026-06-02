@@ -2,8 +2,9 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
+- Resolved: 2026-06-02
 - Area: sync-runtime-surfaces; agent-runtime prune-stale; rendered skill directory cleanup
 - Severity: medium
 
@@ -99,15 +100,32 @@ directories by hand. (The `prune=review-needed` signal from
 
 ## Promotion Criteria
 
-Promote after the render-side reconcile (`sympoies/nils-cli` PR #755) is merged
-and released, the pinned surface in `docs/source/nils-cli-pin.yaml` is bumped to
-that release, and the end-to-end path (render -> install -> retire a skill ->
-render -> install -> prune-stale) leaves the runtime home clean without a manual
-`rm`.
+Met. The render-side reconcile (`sympoies/nils-cli` PR #755) is merged and
+shipped in `v1.0.5`, the agent-runtime-kit pin is bumped to `v1.0.5`
+(`docs/source/nils-cli-pin.yaml`, PR #260), and the end-to-end path (render ->
+install -> retire a skill -> render -> install -> prune-stale) leaves the
+runtime home clean without a manual `rm`.
+
+## Resolution
+
+- Render reconcile shipped in nils-cli `v1.0.5` (#755, squash `4d7c06f`):
+  render drops a retired skill's `build/<product>/` outputs + cache entry on the
+  next render, so `prune-stale` no longer sees the retired skill as expected and
+  removes its live-home symlinks.
+- agent-runtime-kit pin bumped `v1.0.4` -> `v1.0.5` (PR #260); host upgraded via
+  the tap. `sync-runtime-surfaces --apply` then reported
+  `prune=ok; doctor=ok; codex prompt-input=verified` against the v1.0.5 binary —
+  no leftover retired directories.
+- In-repo finish-signal mitigation (PR #252: `prune=review-needed` on
+  `skipped > 0`) and the runtime-smoke regression probes remain in place as a
+  belt-and-suspenders guard for the secondary real-file case.
 
 ## Next Action
 
-nils-cli PR #755 is merged (`4d7c06f`). Remaining: cut the nils-cli release that
-includes it -> bump the homebrew tap and the agent-runtime-kit pin (via
-`meta:nils-cli-bump`) -> verify the end-to-end clean removal -> promote and
-archive this case.
+None. Resolved and shipped in nils-cli `v1.0.5` (see Resolution); archived.
+
+## Archive
+
+- Archived: 2026-06-02
+- Reason: Render reconcile shipped in nils-cli v1.0.5 (#755); agent-runtime-kit pinned to v1.0.5 (#260); sync-runtime-surfaces verified clean.
+- Durable link: `https://github.com/sympoies/nils-cli/releases/tag/v1.0.5`
