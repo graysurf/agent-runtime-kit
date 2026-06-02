@@ -1,8 +1,6 @@
 # Claude install link map.
 #
 # Schema: ../../core/docs/schemas/link-map.schema.json
-# Plan:   docs/plans/04-installer-doctor-and-bootstrap/04-installer-doctor-and-bootstrap-plan.md
-#         Sprint 1 Task 1.2 — install pipeline body.
 #
 # Overlay merge for this file is per-entry replace, keyed by `id`. The
 # install plan walks `entries` in order; `recursive: true` expands a

@@ -4,12 +4,9 @@
 # Version-floor / Bump Ceremony: .github/PULL_REQUEST_TEMPLATE/min-version-bump.md
 #
 # Version-pin fields (`min_version`, `recommended_version`,
-# `min_version_effective_from`) were Phase 1 placeholders, pinned to
-# concrete values from a development-host snapshot on 2026-05-21
-# during the Plan 01 cleanup PR (the Plan 03 plan reserves `0.130.0`
-# and `2.1.145` as the Codex / Claude snapshot baselines).
-# `min_version_effective_from` is set 14 days after the Phase 2 PR
-# merge target so existing hosts have a runway before the floor
+# `min_version_effective_from`) hold concrete values taken from a
+# development-host snapshot. `min_version_effective_from` is set ahead of the
+# merge that raises a floor so existing hosts have a runway before the floor
 # starts blocking.
 schema_version: 1
 

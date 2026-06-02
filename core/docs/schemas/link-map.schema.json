@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/link-map.schema.json",
   "title": "targets/<product>/link-map.yaml",
-  "description": "Per-product install link map. Drives `agent-runtime install` plan generation (Plan 04 Sprint 1 Task 1.2): which build / target paths land where under the product runtime home, what gets symlinked, what gets copied, what edits a config file via a managed block, and what existing files must be backed up before replacement. Overlay merge for link maps is per-entry replace (keyed by `id`); see plan 04 Sprint 1 Task 1.2 acceptance criteria. The four entry kinds match Plan 04 Gap #1 resolution: symlinked-file (build/), plugin-manifest-copy (targets/), managed-block, backed-up-on-replace.",
+  "description": "Per-product install link map. Drives `agent-runtime install` plan generation: which build / target paths land where under the product runtime home, what gets symlinked, what gets copied, what edits a config file via a managed block, and what existing files must be backed up before replacement. Overlay merge for link maps is per-entry replace (keyed by `id`). The four entry kinds are symlinked-file (build/), plugin-manifest-copy (targets/), managed-block, and backed-up-on-replace.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "entries"],
@@ -56,18 +56,18 @@
         },
         "surface": {
           "type": "string",
-          "description": "Required for `kind=managed-block`. Passed to the Task 1.1 `ManagedBlock::new(surface, ...)` helper. ASCII alphanumeric / `-` / `_` only.",
+          "description": "Required for `kind=managed-block`. Passed to the `ManagedBlock::new(surface, ...)` helper. ASCII alphanumeric / `-` / `_` only.",
           "pattern": "^[A-Za-z0-9_-]+$",
           "minLength": 1
         },
         "comment_style": {
           "type": "string",
-          "description": "Required for `kind=managed-block`. Selects the marker prefix the Task 1.1 helper applies (`#` for TOML, `//` for JSONC).",
+          "description": "Required for `kind=managed-block`. Selects the marker prefix the managed-block helper applies (`#` for TOML, `//` for JSONC).",
           "enum": ["hash", "double-slash"]
         },
         "body_template": {
           "type": "string",
-          "description": "Required for `kind=managed-block`. Inline content placed between the markers. Plan 04 Sprint 1 ships only static bodies; future templating (env vars, render fragments) is plan-scoped to later sprints.",
+          "description": "Required for `kind=managed-block`. Inline content placed between the markers. Only static bodies are supported today; templating (env vars, render fragments) is future work.",
           "minLength": 1
         }
       },

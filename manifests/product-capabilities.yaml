@@ -2,10 +2,10 @@
 #
 # Schema: ../core/docs/schemas/product-capabilities.schema.json
 #
-# This file is NOT empty in Plan 01: the capability matrix is settled
-# architecture. Plan 03 adds skill / plugin entries elsewhere; this file
-# only changes when a product itself changes (e.g. Codex publishes a real
-# plugin loader). Resolved Decision #10 governs the Codex side.
+# This is settled architecture: the capability matrix changes only when a
+# product itself changes (e.g. Codex publishes a real plugin loader). Skill and
+# plugin entries live in their own manifests. Resolved Decision #10 governs the
+# Codex side.
 schema_version: 1
 
 products:
@@ -64,9 +64,9 @@ products:
       default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/claude"
     marketplace_concept: true
 
-# Field-level diff between the two plugin manifests. Plan 03 refined this
-# block against the concrete adapter plugin.json files landed in the
-# reporting POC (`targets/{codex,claude}/plugins/reporting/`). Drift audit
+# Field-level diff between the two plugin manifests, validated against the
+# concrete adapter plugin.json files under
+# `targets/{codex,claude}/plugins/<domain>/`. Drift audit
 # reads this to know which divergences are intentional and which are drift.
 plugin_manifest_diff:
   shared_fields:

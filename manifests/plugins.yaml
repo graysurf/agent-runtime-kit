@@ -1,5 +1,5 @@
-# Plugin manifest — Plan 03 lands the reporting plugin entry here. Other
-# domain plugins follow in Plan 05.
+# Plugin manifest — groups each domain's skills into a per-product plugin.
+# Covers every migrated domain; add a plugin entry here when a new domain ships.
 #
 # Schema: ../core/docs/schemas/plugins.schema.json
 #

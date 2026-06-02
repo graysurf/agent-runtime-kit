@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/runtime-roots.schema.json",
   "title": "runtime-roots.yaml",
-  "description": "Per-product runtime root resolution: command_root / config_path / state_home / plugin_root plus the version-floor ceremony fields (`min_version`, `recommended_version`, `min_version_effective_from`, `version_probe`) governed by the version-floor / Bump Ceremony in `.github/PULL_REQUEST_TEMPLATE/min-version-bump.md`. Plan 01 leaves version-pin fields as the literal placeholder `<TBD: pin during Phase 1>`; Plan 02 pins concrete values once a development-host snapshot is taken.",
+  "description": "Per-product runtime root resolution: command_root / config_path / state_home / plugin_root plus the version-floor ceremony fields (`min_version`, `recommended_version`, `min_version_effective_from`, `version_probe`) governed by the version-floor / Bump Ceremony in `.github/PULL_REQUEST_TEMPLATE/min-version-bump.md`. Version-pin fields carry concrete values taken from a development-host snapshot.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "products"],
@@ -76,17 +76,17 @@
         },
         "min_version": {
           "type": "string",
-          "description": "Blocking floor. Below this and past `min_version_effective_from` is a block. Plan 01 carries the literal `<TBD: pin during Phase 1>` placeholder; Plan 02 pins concrete semver ranges.",
+          "description": "Blocking floor. Below this and past `min_version_effective_from` is a block. Carries a concrete semver range.",
           "minLength": 1
         },
         "recommended_version": {
           "type": "string",
-          "description": "Warn floor. Below this is a warn. Plan 01 carries the literal `<TBD: pin during Phase 1>` placeholder.",
+          "description": "Warn floor. Below this is a warn.",
           "minLength": 1
         },
         "min_version_effective_from": {
           "type": "string",
-          "description": "Forward-pin ISO date that gates when a `min_version` bump starts blocking instead of warning. Plan 01 carries the literal `<TBD: pin during Phase 1>` placeholder.",
+          "description": "Forward-pin ISO date that gates when a `min_version` bump starts blocking instead of warning.",
           "minLength": 1
         },
         "version_probe": {

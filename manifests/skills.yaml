@@ -1,5 +1,5 @@
-# Skill manifest — Plan 03 lands the reporting domain entries here. Other
-# domains follow in Plan 05.
+# Skill manifest — declares every migrated domain's skills, their source paths,
+# supported products, and required nils-cli floors. Add new domains here.
 #
 # Schema: ../core/docs/schemas/skills.schema.json
 #
