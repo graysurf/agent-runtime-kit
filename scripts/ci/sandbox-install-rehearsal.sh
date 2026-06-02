@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/ci/sandbox-install-rehearsal.sh — Plan 04 CI gate position 6.
+# scripts/ci/sandbox-install-rehearsal.sh — CI gate sandbox install rehearsal.
 #
 # Uses `agent-runtime list-skills --format json` (cli.agent-runtime.list-skills.v1)
 # as the source of truth for the per-product skill list, then diffs against the

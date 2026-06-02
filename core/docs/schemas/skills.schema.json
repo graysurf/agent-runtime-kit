@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-runtime-kit.local/schemas/skills.schema.json",
   "title": "skills.yaml",
-  "description": "Skill manifest. Each entry declares a canonical skill ID, source path, supported products, required nils-cli binaries with semver floors, optional aliases, and per-product path overrides. Plan 03 (`03-domain-migration-reporting-pilot`) populates the `skills:` list — Plan 01 leaves it empty.",
+  "description": "Skill manifest. Each entry declares a canonical skill ID, source path, supported products, required nils-cli binaries with semver floors, optional aliases, and per-product path overrides.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "skills"],
@@ -14,7 +14,7 @@
     },
     "skills": {
       "type": "array",
-      "description": "List of skill entries. Empty in Plan 01.",
+      "description": "List of skill entries, one per migrated skill.",
       "items": { "$ref": "#/$defs/skill" }
     }
   },
@@ -50,7 +50,7 @@
         },
         "required_clis": {
           "type": "object",
-          "description": "Map of nils-cli binary name to a semver range (e.g. `\">=0.5.0\"`). The literal placeholder `<TBD: pin during Phase 1>` is allowed only during Phase 1; Plan 02 onwards treats any surviving `<TBD>` as a gate failure.",
+          "description": "Map of nils-cli binary name to a semver range (e.g. `\">=0.5.0\"`). Concrete floors are pinned against the released nils-cli surface; the audit-drift gate rejects any surviving `<TBD>` placeholder.",
           "additionalProperties": { "type": "string", "minLength": 1 }
         },
         "state_out_mode": {
