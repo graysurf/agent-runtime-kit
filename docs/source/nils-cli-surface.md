@@ -1,20 +1,34 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-02 (refreshed for `v1.0.3`)
+- Snapshot date: 2026-06-02 (refreshed for `v1.0.4`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.3`
+- Active `git describe --tags` output: `v1.0.4`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.3`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.4`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `3d20dc9`
-  (`chore(release): bump cli versions to 1.0.3 (#749)`)
+- Head commit: `e7e9757`
+  (`chore(release): bump cli versions to 1.0.4 (#753)`)
 - Release:
-  [`v1.0.3`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.3),
+  [`v1.0.4`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.4),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.4` adds a `--kind <feature|bug|chore|docs|ci|refactor>` flag to
+  `git-cli worktree add` (default `feature`, so the prior `feat/<slug>` behavior
+  is unchanged), deriving the branch as `<prefix>/<slug>` where the prefix is
+  the one `forge-cli pr deliver/create --kind` already enforces
+  (`feature->feat/`, `bug->fix/`, `chore->chore/`, `docs->docs/`, `ci->ci/`,
+  `refactor->refactor/`). The kind set and its prefix mapping now live once in
+  `nils_common::git::PrKind`; `forge-cli`'s `branch_kind` rule re-exports that
+  type and compares `branch_prefix()` instead of a duplicate pairing, so the two
+  tools can no longer drift. A worktree opened with `--kind bug` now delivers
+  cleanly under `--kind bug` with no rename step
+  ([#751](https://github.com/sympoies/nils-cli/pull/751)). This repo documents
+  the flag in `core/policies/git-delivery.md`; it is policy guidance, not yet an
+  automated skill invocation, so the `git-cli` `required_clis[]` floor does not
+  move.
 - `v1.0.3` adds a repeatable `--label` flag to `heuristic-inbox deliver`
   ([#748](https://github.com/sympoies/nils-cli/pull/748)), forwarded verbatim to
   `forge-cli pr create --label`, so records-branch PRs can carry taxonomy
@@ -332,7 +346,7 @@ Notes on derivation:
 | `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. `v0.21.0` extends the `plan-issue record` surface with `--label` on `record open`, and `--add-label` / `--remove-label` on `record post` and `record close` so v3 lifecycle commands can apply taxonomy labels alongside issue creation, state transitions, and closeout. As of `v0.31.3`, `--provider` gains a `local` file-backed backend value plus a `--store-root` flag (and the `FORGE_CLI_LOCAL_STORE` env var) for offline rehearsal; the `github` / `gitlab` lifecycle surfaces are unchanged (additive). As of `v0.31.7`, `forge-cli` gains a GitHub-only `activity` discovery surface (`activity commits` / `events` / `summary`) and a `search` surface (`search issues` / `search prs` full-text via `gh search`, plus `search refs-to` cross-reference via `gh api graphql`), both behind the provider seam — GitLab / Local return `provider_unsupported`. Additive; not yet consumed by this repo's skills, so no `required_clis[]` floor moves. |
 | `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
-| `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`. As of `v0.31.5`, this repo consumes `git-cli worktree add/list/remove/prune` for managed worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text and JSON output. |
+| `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`. As of `v0.31.5`, this repo consumes `git-cli worktree add/list/remove/prune` for managed worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text and JSON output. As of `v1.0.4`, `worktree add` gains `--kind <feature\|bug\|chore\|docs\|ci\|refactor>` (default `feature`), deriving `<prefix>/<slug>` from the shared `nils_common::git::PrKind` mapping that `forge-cli`'s `branch_kind` rule also consumes, so a non-feature worktree matches the prefix `forge-cli pr deliver --kind` expects without a manual rename. Documented in `git-delivery.md` as policy guidance; additive and not yet an automated skill invocation, so no `required_clis[]` floor moves. |
 | `git-lock`                  | `git-lock`                                                                                                          | git lock helper.                                                                                                                                                                                                                                                       |
 | `git-scope`                 | `git-scope`                                                                                                         | git scope summariser. Alias family `gs*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
 | `git-summary`               | `git-summary`                                                                                                       | git diff summariser.                                                                                                                                                                                                                                                   |
