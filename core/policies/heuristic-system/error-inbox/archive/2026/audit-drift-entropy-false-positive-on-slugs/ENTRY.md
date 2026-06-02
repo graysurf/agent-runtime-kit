@@ -12,6 +12,16 @@
   without the glob and `unsafe/suppressed` (root exit 0) with it. The inbox-entry
   and prose-policy-doc halves were already resolved (allowlist demotion and
   rewording in #251 respectively).
+- Superseded upstream 2026-06-02 — nils-cli v1.0.5 (#754) reworked the unsafe
+  scorer to skip path / kebab / dated identifier runs in the high-entropy
+  signal, so the slug-path trigger above no longer fires: under v1.0.5 the
+  `operation-records/*` records score `0.0` and need no demotion. With the host
+  pinned to v1.0.5 (agent-runtime-kit #260), the `operation-records/*` allowlist
+  globs were retired as redundant. The `error-inbox/*` demotions stay: those
+  entries still score `0.4`, but on `keyword_prefix` (`token` / `sk-` / `secret`
+  in case prose) and one genuine redaction nonce — residuals #754 did not touch
+  (keyword over-match was the deferred problem (2) in sympoies/nils-cli#752,
+  handled by rewording, not a scorer change).
 - Area: audit-drift unsafe class (entropy + keyword_prefix); heuristic-system retained records; scripts/ci/all.sh Position 7
 - Severity: medium
 
