@@ -39,3 +39,7 @@ unsafe_allow:
     reason: "Archived inbox case entries preserve the same CLI-surface evidence as their active form; new archives that retain bullet lists of upstream PRs, release tags, and command excerpts can still score at the threshold and need the same demotion the active path receives."
   - path: "core/policies/heuristic-system/error-inbox/archive/*/*/evidence/*"
     reason: "Archived evidence files preserve the same ingested findings.jsonl and command transcripts as the active path's evidence; same rationale applies."
+  - path: "core/policies/heuristic-system/operation-records/*/RECORD.md"
+    reason: "Operation records are the same class of retained record as inbox entries: they cross-reference sibling cases and source bundles by long hyphenated slug/path and cite CLI command excerpts, release tags, and dated snapshot paths as evidence. The high-entropy matches are documentation citations, not credentials, so they get the same one-tier demotion the error-inbox entries receive."
+  - path: "core/policies/heuristic-system/operation-records/*/evidence/*"
+    reason: "Operation-record evidence files preserve the same ingested findings.jsonl and command transcripts as the inbox evidence path; same rationale applies."
