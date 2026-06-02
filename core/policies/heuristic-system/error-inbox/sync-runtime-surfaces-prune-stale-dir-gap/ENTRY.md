@@ -69,10 +69,12 @@ is the real closure.
     `candidates=0 changes=0` and keeps the live-home symlinks; deleting
     `build/<retired>` makes the same run report `candidates=N changes=N` and
     remove them.
-- Upstream fix opened: `sympoies/nils-cli` PR #755 (`feat(render): reconcile
-  build/ outputs for retired skills`) — render removes a retired skill's
-  `build/` outputs + cache entry on the next render, with a regression test.
-  Not yet merged / released.
+- Upstream fix merged: `sympoies/nils-cli` PR #755 (`feat(render): reconcile
+  build/ outputs for retired skills`, squash `4d7c06f`) — render removes a
+  retired skill's `build/` outputs + cache entry on the next render, with a
+  regression test. Merged to nils-cli `main`; **not yet released**, so the
+  agent-runtime-kit pin (`v1.0.4`) does not consume it yet — a future release +
+  pin bump closes the loop.
 - Minimal repro of the silent leak (current nils-cli `main`): render two skills,
   remove one from `manifests/skills.yaml`, re-render, then install + prune-stale;
   the retired skill stays in the live home with `prune-stale candidates=0` until
@@ -105,6 +107,7 @@ render -> install -> prune-stale) leaves the runtime home clean without a manual
 
 ## Next Action
 
-Land nils-cli PR #755 -> cut the release -> bump the homebrew tap and the
-agent-runtime-kit pin (via `meta:nils-cli-bump`) -> verify the end-to-end clean
-removal -> promote and archive this case.
+nils-cli PR #755 is merged (`4d7c06f`). Remaining: cut the nils-cli release that
+includes it -> bump the homebrew tap and the agent-runtime-kit pin (via
+`meta:nils-cli-bump`) -> verify the end-to-end clean removal -> promote and
+archive this case.
