@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic probes for Plan 06 browser skills.
+# Deterministic probes for browser skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail

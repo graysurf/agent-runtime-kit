@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic probes for Plan 06 media skills.
+# Deterministic probes for media skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail

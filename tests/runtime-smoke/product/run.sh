@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Product-in-the-loop isolation probes for Plan 06.
+# Product-in-the-loop isolation probes.
 # shellcheck disable=SC2329
 
 set -euo pipefail

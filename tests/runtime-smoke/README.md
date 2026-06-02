@@ -1,6 +1,6 @@
 # Runtime Smoke Harness
 
-This directory contains the Plan 06 acceptance foundation for migrated runtime
+This directory contains the acceptance foundation for migrated runtime
 skills. The harness is intentionally offline and credential-free by default.
 It must never mutate real `$HOME/.codex`, `$HOME/.claude`, auth, sessions,
 history, logs, caches, or product state.
