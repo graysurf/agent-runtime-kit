@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic regression probes for Plan 03 reporting skills.
+# Deterministic regression probes for reporting skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail

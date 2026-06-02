@@ -1,8 +1,8 @@
 # Runtime Smoke Basic Repo
 
 This fixture is the default workspace for deterministic runtime skill probes.
-Sprint 1 only needs the fixture path to exist so the acceptance matrix can
-refer to a committed workspace. Later sprints can add tightly scoped files here
+The fixture path only needs to exist so the acceptance matrix can
+refer to a committed workspace. Probes can add tightly scoped files here
 when individual skill probes need sample inputs, fixture-local git state, or
 controlled diffs.
 

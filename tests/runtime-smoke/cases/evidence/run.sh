@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic probes for Plan 06 evidence skills.
+# Deterministic probes for evidence skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail
@@ -179,7 +179,7 @@ run_skill_usage_probe() {
     --out "$out_dir" \
     --skill evidence.review-evidence \
     --intent "runtime smoke evidence probe" \
-    --user-request-summary "Plan 06 evidence smoke" \
+    --user-request-summary "evidence smoke" \
     --trigger agent-selected \
     --referenced-file README.md \
     --cwd "$EVIDENCE_WORKSPACE" \

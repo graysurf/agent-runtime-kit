@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Controlled PR delivery smoke for Plan 05 Sprint 6.
+# Controlled PR delivery smoke.
 
 set -euo pipefail
 

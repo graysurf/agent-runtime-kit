@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic probes for Plan 06 meta skills.
+# Deterministic probes for meta skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail

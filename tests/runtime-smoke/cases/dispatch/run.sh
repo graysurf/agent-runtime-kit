@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic probes for Plan 05 dispatch skills.
+# Deterministic probes for dispatch skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail

@@ -27,7 +27,7 @@ auth, sessions, logs, caches, generated backups, or secrets.
 |---|---|---|
 | Codex CLI (`codex --version`) | `0.130.0` (effective 2026-06-03) | `manifests/runtime-roots.yaml` |
 | Claude Code (`claude --version`) | `2.1.145` (effective 2026-06-03) | `manifests/runtime-roots.yaml` |
-| `nils-cli` surface (`agent-runtime --version`) | `v0.31.5` | `docs/source/nils-cli-surface.md` |
+| `nils-cli` surface (`agent-runtime --version`) | `v1.0.5` | `docs/source/nils-cli-surface.md` |
 
 Per-skill `nils-cli` floors live in `manifests/skills.yaml` `required_clis`
 and are tighter than the surface-level pin.
@@ -143,6 +143,9 @@ and coupled nils-cli debug-build guidance.
 ├── AGENTS.md            # repo-local policy for this checkout
 ├── CLAUDE.md            # Claude import wrapper for AGENTS.md
 ├── AGENT_DOCS.toml      # project-local agent-docs dispatch entries
+├── DEVELOPMENT.md       # maintenance/dev guide: setup, validation, release boundary
+├── RELEASING.md         # how the GHCR container image is versioned and cut
+├── SUPPORT_MATRIX.md    # per-surface ship state
 ├── core/
 │   ├── docs/            # schemas and shared source docs
 │   ├── hooks/           # shared and product-specific hook sources
@@ -152,14 +155,20 @@ and coupled nils-cli debug-build guidance.
 ├── manifests/           # machine-checkable runtime inventory
 ├── docs/
 │   ├── source/          # architecture, policies, specs, and references
-│   └── plans/           # plan bundles and retained execution records
+│   ├── plans/           # plan bundles and retained execution records
+│   └── discussions/     # captured discussion / implementation-readiness specs
 ├── build/               # generated render output
+├── docker/              # container image build context (published to GHCR)
 ├── tests/
 │   ├── golden/          # render-golden snapshots
 │   ├── drift/           # drift-audit fixtures
 │   ├── runtime-smoke/   # runtime skill acceptance harness
-│   └── projects/        # project-local overlay smoke fixtures
-└── scripts/             # setup, sync, CI, and validation glue
+│   ├── projects/        # project-local overlay smoke fixtures
+│   ├── surfaces/        # surface-registry acceptance fixtures
+│   ├── sandbox/         # install-rehearsal expected surfaces
+│   ├── smoke/           # PR delivery lifecycle smoke
+│   └── hooks/           # shared hook contract smoke
+└── scripts/             # setup, sync, CI, dev, and validation glue
 ```
 
 ## Skills

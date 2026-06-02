@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic probes for Plan 05 PR/MR skills.
+# Deterministic probes for PR/MR skills.
 # shellcheck disable=SC2329
 
 set -euo pipefail
