@@ -43,11 +43,19 @@ detail behind the one-line gates.
 
 ## Branches
 
-- Branch names use `feat/<slug>` or `fix/<slug>` (lowercase, hyphenated, three
-  to six words). A ticket id `ABC-123` becomes `feat/abc-123-<slug>`.
-- `git-cli worktree add <slug>` derives the branch as `feat/<slug>` from the
-  base ref automatically, so manual branch creation in a shared checkout is
-  rarely needed.
+- Branch names carry a Conventional-Commits-style prefix matching the eventual
+  PR kind, since `forge-cli pr deliver/create --kind` enforces the pairing
+  (`feature->feat/`, `bug->fix/`, `chore->chore/`, `docs->docs/`, `ci->ci/`,
+  `refactor->refactor/`). Slugs are lowercase, hyphenated, three to six words; a
+  ticket id `ABC-123` becomes `feat/abc-123-<slug>`.
+- `git-cli worktree add <slug>` derives the branch from the base ref
+  automatically. It defaults to `feat/<slug>`; pass
+  `--kind <feature|bug|chore|docs|ci|refactor>` to select the matching prefix
+  (e.g. `--kind bug` -> `fix/<slug>`) so the worktree branch already satisfies
+  the `forge-cli --kind` rule at delivery — no rename step. The kind→prefix
+  mapping is shared with `forge-cli` via `nils_common::git::PrKind` (nils-cli
+  `>= v1.0.4`), so the two surfaces cannot drift. Manual branch creation in a
+  shared checkout is rarely needed.
 
 ## Issues, PRs, And MRs
 
