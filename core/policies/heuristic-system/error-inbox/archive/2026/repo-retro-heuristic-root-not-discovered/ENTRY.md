@@ -22,8 +22,8 @@ heuristic-system tree was demonstrably active:
 - Aging: no aged open retained item detected
 ```
 
-User-reported: "這個 HEURISTIC_SYSTEM 是怎麼判定的 為什麼都是 0" (how is this
-section derived, and why is everything 0).
+User-reported: how is the HEURISTIC_SYSTEM section derived, and why is
+everything 0?
 
 ## Evidence
 

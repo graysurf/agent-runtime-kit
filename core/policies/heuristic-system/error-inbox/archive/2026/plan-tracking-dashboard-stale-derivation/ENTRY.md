@@ -42,8 +42,7 @@ issue #54 closed with a Final Dashboard whose human-visible fields never
 advanced past the pre-flight authoring, even though the hidden payload
 `status` was correctly `complete` and the closeout gate passed.
 
-User-reported: "Final Dashboard 很多地方都沒有更新" (many Final Dashboard
-fields did not update).
+User-reported: many Final Dashboard fields did not update.
 
 ## Evidence
 
