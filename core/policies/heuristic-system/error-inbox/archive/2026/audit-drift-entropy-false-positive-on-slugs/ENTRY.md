@@ -2,8 +2,16 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-01
+- Resolved: 2026-06-02 — criterion (a) path (1) landed. `drift-audit.allow.yaml`
+  now demotes `operation-records/*/RECORD.md` and `operation-records/*/evidence/*`
+  (mirroring the `error-inbox` entries), closing the last retained-record surface
+  that still tripped the scorer. Verified with a throwaway probe: a `RECORD.md`
+  line that scored `entropy_above_threshold` 0.4 went `unsafe/warn` (root exit 1)
+  without the glob and `unsafe/suppressed` (root exit 0) with it. The inbox-entry
+  and prose-policy-doc halves were already resolved (allowlist demotion and
+  rewording in #251 respectively).
 - Area: audit-drift unsafe class (entropy + keyword_prefix); heuristic-system retained records; scripts/ci/all.sh Position 7
 - Severity: medium
 
@@ -44,12 +52,12 @@ sibling cases and source folders.
 
 ## Impact
 
-- Remaining gap (2026-06-02): `operation-records/*/RECORD.md` is NOT in the
-  allowlist, so a slug-heavy operation record still trips the scorer and must be
-  reworded by hand (the three current records under `operation-records/` pass
-  only because the workaround below was applied). Inbox entries no longer hit
-  this — they are allowlisted — so operation records are the last retained-record
-  surface forced to rewrite slug references as prose plus issue/PR numbers.
+- Closed gap (was: `operation-records/*/RECORD.md` not allowlisted). As of
+  2026-06-02 the allowlist covers `operation-records/*/RECORD.md` and
+  `operation-records/*/evidence/*`, so slug-heavy operation records are demoted
+  the same way inbox entries are and no longer need hand-rewording. The three
+  current records still read cleanly because the workaround was applied to them
+  earlier; new records may now cross-reference siblings by slug freely.
 - Correction (2026-06-02): a committed per-path allowlist DOES exist —
   `drift-audit.allow.yaml` at the repo root, read automatically by `audit-drift`,
   which demotes a matched finding by one tier (block to warn, warn to suppressed)
@@ -83,11 +91,17 @@ scorer — or the upstream scorer stops flagging legitimate slug references; or
 
 ## Next Action
 
-Two concrete paths, smallest first: (1) add `operation-records/*/RECORD.md` and
-`operation-records/*/evidence/*` globs to `drift-audit.allow.yaml`, mirroring the
-existing `error-inbox` entries and their rationale, to exempt the last
-retained-record surface; and/or (2) file upstream against the audit-drift unsafe
-scorer (fixed 0.4 threshold, no allowlist flag) and the Position 7 exit handling
-in `scripts/ci/all.sh` (warn-versus-block gating). The inbox-entry and
-prose-policy-doc halves are already resolved — allowlist demotion and rewording
-respectively — so keep the workaround for operation records only until (1) lands.
+None — all three retained-record surfaces (inbox entries, archived peers, and
+operation records) are now exempted via `drift-audit.allow.yaml`, and the
+prose-policy-doc case is handled by rewording. Archiving with status `promoted`.
+
+The deeper upstream item is optional and out of scope here: the audit-drift
+unsafe scorer still has a fixed 0.4 threshold and no allowlist flag, and Position
+7 still treats a warn as a hard CI failure. If that ergonomics gap is worth
+pursuing, file a fresh nils-cli issue for warn-versus-block gating rather than
+reopening this entry, which tracked the repo-side allowlist coverage now closed.
+
+## Archive
+
+- Archived: 2026-06-02
+- Reason: Promoted: operation-records allowlisted in drift-audit.allow.yaml, closing the last retained-record surface
