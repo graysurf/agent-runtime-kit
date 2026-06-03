@@ -3,6 +3,7 @@
 #
 # Responsibilities (intentionally thin for the v1 PoC):
 #   - print a short capability banner (suppress with AGENT_RUNTIME_KIT_QUIET=1)
+#   - optionally apply an operator-supplied zsh repo with zsh-kit
 #   - exec the requested command (default CMD: an interactive login shell)
 #
 # Auth is supplied at RUNTIME, never baked into the image:
@@ -26,13 +27,46 @@ agent-runtime-kit container (Codex + Claude)
 EOF
 }
 
+apply_zsh_setup() {
+  [ -n "${ZSH_SETUP_REPO_URL:-}" ] || return 0
+
+  local dest="${ZSH_SETUP_DEST:-$HOME/.config/zsh}"
+  local features="${ZSH_SETUP_FEATURES:-docker}"
+  local install_tools="${ZSH_SETUP_INSTALL_TOOLS:-skip}"
+  local -a cmd=(
+    zsh-kit setup
+    --repo "$ZSH_SETUP_REPO_URL"
+    --dest "$dest"
+    --apply
+    --install-tools "$install_tools"
+    --write-zshenv
+  )
+
+  if [ -n "$features" ]; then
+    cmd+=(--features "$features")
+  fi
+  if [ -n "${ZSH_SETUP_BRANCH:-}" ]; then
+    cmd+=(--branch "$ZSH_SETUP_BRANCH")
+  fi
+  if [ -n "${ZSH_SETUP_REF:-}" ]; then
+    cmd+=(--ref "$ZSH_SETUP_REF")
+  fi
+  if [ "${ZSH_SETUP_FORCE:-0}" = "1" ]; then
+    cmd+=(--force)
+  fi
+
+  "${cmd[@]}"
+}
+
 if [ "${AGENT_RUNTIME_KIT_QUIET:-0}" != "1" ]; then
   banner >&2
 fi
 
+apply_zsh_setup
+
 # No command given (shouldn't happen because CMD provides one) -> login shell.
 if [ "$#" -eq 0 ]; then
-  set -- bash -l
+  set -- zsh -il
 fi
 
 exec "$@"

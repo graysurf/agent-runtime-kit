@@ -28,7 +28,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GH_TOKEN: ${GH_TOKEN:-}
-    working_dir: /work
+    working_dir: /home/agent
     # Optional: mount a host project into /work to operate on real code.
     # volumes:
     #   - ./workspace:/work

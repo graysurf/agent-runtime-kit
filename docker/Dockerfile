@@ -20,7 +20,7 @@ ARG NODE_VERSION=22
 # Fallback only. The pin-aligned entrypoint `docker/build.sh` passes this from
 # docs/source/nils-cli-pin.yaml so the pin gate stays the single source; keep
 # this default roughly in step with that pin for plain `docker build` users.
-ARG NILS_CLI_VERSION=v1.0.7
+ARG NILS_CLI_VERSION=v1.0.9
 ARG CLAUDE_CODE_VERSION=latest
 ARG CODEX_VERSION=latest
 ARG GH_VERSION=2.65.0
@@ -84,13 +84,16 @@ LABEL org.opencontainers.image.source="https://github.com/graysurf/agent-runtime
       org.opencontainers.image.description="Standalone Linux image for Codex CLI + Claude Code on the agent-runtime-kit surface"
 
 # OS deps + the cli-tools.yaml "core" profile, mapped to Debian packages.
-# python3 is required by the rendered hook scripts (*.py guardrails).
+# python3 is required by the rendered hook scripts (*.py guardrails). The shell
+# tools are the generic zsh first-run floor; personal shell repos are still
+# supplied at runtime, not baked into this image.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
       ca-certificates curl git openssh-client tar xz-utils gnupg less bash zsh \
       python3 \
-      ripgrep fd-find fzf jq bat; \
+      ripgrep fd-find fzf jq bat \
+      starship zoxide eza git-delta tree neovim libnotify-bin; \
     rm -rf /var/lib/apt/lists/*; \
     # Debian renames fd->fdfind and bat->batcat; expose the documented names.
     ln -sf "$(command -v fdfind)" /usr/local/bin/fd; \
@@ -137,9 +140,30 @@ ARG AGENT_GID=1000
 RUN set -eux; \
     userdel -r node 2>/dev/null || true; \
     groupadd -g "${AGENT_GID}" agent; \
-    useradd -m -u "${AGENT_UID}" -g "${AGENT_GID}" -s /bin/bash agent; \
+    useradd -m -u "${AGENT_UID}" -g "${AGENT_GID}" -s /usr/bin/zsh agent; \
     mkdir -p /work; \
-    chown agent:agent /work
+    chown agent:agent /work; \
+    printf '%s\n' \
+      '# Managed by zsh-kit.' \
+      '# Seeded by the agent-runtime-kit Docker image.' \
+      'export SHELL=/usr/bin/zsh' \
+      'if [[ -z "${TERM-}" || "${TERM-}" == "dumb" ]]; then' \
+      '  export TERM=xterm-256color' \
+      'fi' \
+      > /home/agent/.zshenv; \
+    printf '%s\n' \
+      '# Managed by the agent-runtime-kit Docker image.' \
+      '# Operator-supplied zsh repos are installed at runtime with zsh-kit.' \
+      'if command -v zoxide >/dev/null 2>&1; then' \
+      '  source <(zoxide init zsh)' \
+      'fi' \
+      '' \
+      'if [[ -o interactive && -t 0 && -t 1 && -n "${TERM-}" && "${TERM-}" != "dumb" ]] && \' \
+      '    command -v starship >/dev/null 2>&1; then' \
+      '  source <(starship init zsh)' \
+      'fi' \
+      > /home/agent/.zshrc; \
+    chown agent:agent /home/agent/.zshenv /home/agent/.zshrc
 
 # Stable env contract (mirrors the host AGENT_HOME.md / runtime-roots.yaml).
 ENV AGENT_KIT_SRC=/opt/agent-runtime-kit \
@@ -147,7 +171,8 @@ ENV AGENT_KIT_SRC=/opt/agent-runtime-kit \
     CODEX_HOME=/home/agent/.codex \
     XDG_STATE_HOME=/home/agent/.local/state \
     AGENT_HOME=/home/agent/.local/state/agent-runtime-kit \
-    AGENT_RUNTIME_KIT_DOCKER=1
+    AGENT_RUNTIME_KIT_DOCKER=1 \
+    SHELL=/usr/bin/zsh
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 0755 /usr/local/bin/entrypoint.sh
@@ -174,6 +199,6 @@ RUN set -eux; \
     ln -sfn "${AGENT_KIT_SRC}/AGENT_HOME.md" "${HOME}/.claude/CLAUDE.md"; \
     ln -sfn "${AGENT_KIT_SRC}/AGENT_HOME.md" "${CODEX_HOME}/AGENTS.md"
 
-WORKDIR /work
+WORKDIR /home/agent
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["bash", "-l"]
+CMD ["zsh", "-il"]

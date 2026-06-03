@@ -25,7 +25,7 @@ added at the repo root.
 | `Dockerfile.dockerignore` | BuildKit per-Dockerfile context filter (keeps Docker out of the repo root). |
 | `build.sh` | Pin-aligned build entrypoint: reads `nils-cli` version from `docs/source/nils-cli-pin.yaml`. |
 | `compose.yaml` | Convenience wrapper for interactive use. |
-| `entrypoint.sh` | Prints a capability banner and execs the requested command. |
+| `entrypoint.sh` | Prints a capability banner, optionally applies a runtime Zsh repo, and execs the requested command. |
 | `env.example` | Template for `docker/.env` (auth passthrough; gitignored). |
 | `fixtures/zsh-kit-setup/` | Safe local fixture hook used by the image-level `zsh-kit setup --apply` smoke. |
 | `smoke-zsh-kit-apply.sh` | Container-internal e2e smoke that creates a fixture Git repo, applies it through `zsh-kit`, and asserts the result. |
@@ -38,7 +38,7 @@ image always matches the repo's authoritative pin gate:
 
 ```bash
 docker/build.sh                      # -> agent-runtime-kit:dev
-docker/build.sh -t agent-runtime-kit:1.0.7    # custom tag
+docker/build.sh -t agent-runtime-kit:1.0.9    # custom tag
 docker/build.sh -n                   # dry-run: print the resolved command
 docker/build.sh -- --no-cache        # pass extra flags to `docker build`
 ```
@@ -57,7 +57,7 @@ automatically via `TARGETARCH`.
 ## Run
 
 ```bash
-# Interactive shell with claude / codex / agent-runtime / nils-cli on PATH
+# Interactive zsh shell with claude / codex / agent-runtime / nils-cli on PATH
 docker run --rm -it agent-runtime-kit:dev
 
 # One-shot a CLI
@@ -69,7 +69,7 @@ docker run --rm -it agent-runtime-kit:dev \
   bash -lc '$AGENT_KIT_SRC/docker/smoke-zsh-kit-apply.sh'
 
 # Operate on a host project
-docker run --rm -it -v "$PWD:/work" agent-runtime-kit:dev
+docker run --rm -it -v "$PWD:/work" -w /work agent-runtime-kit:dev
 ```
 
 Via compose (reads `docker/.env` if present):
@@ -78,6 +78,9 @@ Via compose (reads `docker/.env` if present):
 cp docker/env.example docker/.env   # then fill in keys
 docker compose -f docker/compose.yaml run --rm agent
 ```
+
+The default shell starts in `/home/agent`. Use `-w /work` when you bind-mount a
+project and want the shell to start there.
 
 ## Auth
 
@@ -105,13 +108,23 @@ repository URL and auth at runtime:
 ```bash
 docker run --rm -it \
   -e ZSH_SETUP_REPO_URL="https://github.com/your-org/your-zsh-config.git" \
+  -e ZSH_SETUP_FEATURES="docker" \
+  -e ZSH_SETUP_INSTALL_TOOLS="skip" \
   -e GH_TOKEN \
-  agent-runtime-kit:dev \
-  bash -lc 'gh auth setup-git >/dev/null; \
-    zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" \
-      --dest "$HOME/.config/zsh" \
-      --apply --features docker --install-tools skip --write-zshenv'
+  agent-runtime-kit:dev
 ```
+
+When `ZSH_SETUP_REPO_URL` is present, the entrypoint runs
+`zsh-kit setup --apply --write-zshenv` before the requested command. The
+released `zsh-kit >= 1.0.9` bootstrap writes a container `~/.zshenv` that
+preserves `ZDOTDIR`, exports `ZSH_FEATURES`, and sources `$ZDOTDIR/.zshenv`.
+Additional knobs:
+
+- `ZSH_SETUP_DEST` — destination directory, default `$HOME/.config/zsh`
+- `ZSH_SETUP_FEATURES` — forwarded feature CSV, default `docker`
+- `ZSH_SETUP_INSTALL_TOOLS` — forwarded tool policy, default `skip`
+- `ZSH_SETUP_BRANCH` / `ZSH_SETUP_REF` — optional checkout selector
+- `ZSH_SETUP_FORCE=1` — allow guarded overwrite/update paths
 
 Use `--dry-run` first when validating a new repo hook:
 
@@ -142,9 +155,11 @@ baked `$HOME/.config/zsh` or `/opt/private-skills` tree.
 - **Base**: `node:22-trixie-slim` — Debian 13, glibc 2.41 (Node ≥18 for both
   CLIs; glibc for their native binaries). Trixie, not bookworm: the `nils-cli`
   release binaries require GLIBC ≥ 2.39, which bookworm's 2.36 cannot satisfy.
-- **Shell runtime**: Debian `zsh` plus `zsh-kit` for runtime shell setup from an
-  operator-supplied repo URL/path. Personal shell repos are fetched or mounted
-  at runtime, not copied into the image.
+- **Shell runtime**: Debian `zsh` plus a generic first-run floor (`starship`,
+  `zoxide`, `eza`, `git-delta`, `tree`, `neovim`, `libnotify-bin`) and
+  `zsh-kit` for runtime shell setup from an operator-supplied repo URL/path.
+  Personal shell repos are fetched or mounted at runtime, not copied into the
+  image.
 - **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via `npm -g`.
 - **nils-cli**: prebuilt Linux release tarball (`agent-runtime`, `agent-docs`,
   `semantic-commit`, `forge-cli`, `plan-tooling`, `plan-issue`, `zsh-kit`, …

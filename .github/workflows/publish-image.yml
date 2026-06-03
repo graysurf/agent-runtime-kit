@@ -90,8 +90,28 @@ jobs:
           run agent-runtime --version
           run zsh --version
           run zsh-kit --version
+          run bash -lc 'test "$(getent passwd agent | cut -d: -f7)" = /usr/bin/zsh'
+          run zsh -ic 'test "$PWD" = "$HOME"'
+          run zsh -ic 'print -r -- shell-ok'
+          run zsh -ic 'command -v starship && command -v zoxide && command -v eza && command -v delta && command -v tree && command -v nvim && command -v notify-send'
           run zsh-kit setup --repo https://example.invalid/operator/zsh.git --dest /tmp/zsh-kit-dry-run --dry-run --features docker --install-tools skip
           run bash -lc '$AGENT_KIT_SRC/docker/smoke-zsh-kit-apply.sh'
+          fixture="$(mktemp -d)"
+          mkdir -p "$fixture/bootstrap"
+          cp docker/fixtures/zsh-kit-setup/bootstrap/zsh-kit-setup.zsh "$fixture/bootstrap/zsh-kit-setup.zsh"
+          git -C "$fixture" init -b main
+          git -C "$fixture" add bootstrap/zsh-kit-setup.zsh
+          git -C "$fixture" \
+            -c commit.gpgsign=false \
+            -c user.name='agent-runtime-kit smoke' \
+            -c user.email='agent-runtime-kit-smoke@example.invalid' \
+            commit -m 'add zsh-kit fixture setup hook'
+          docker run --rm -e AGENT_RUNTIME_KIT_QUIET=1 \
+            -e ZSH_SETUP_REPO_URL=/fixture \
+            -e ZSH_SETUP_FEATURES=docker,opencode \
+            -v "$fixture:/fixture:ro" \
+            agent-runtime-kit:smoke \
+            zsh -ic 'test "$ZSH_FEATURES" = docker,opencode && test "$ZDOTDIR" = "$HOME/.config/zsh" && test -f "$HOME/.config/zsh/.zsh-kit-smoke/hook-ran.txt"'
           run gh --version
           run glab --version
           run rg --version

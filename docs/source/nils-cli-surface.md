@@ -1,20 +1,35 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-03 (refreshed for `v1.0.7`)
+- Snapshot date: 2026-06-04 (refreshed for `v1.0.9`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.7`
+- Active `git describe --tags` output: `v1.0.9`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.7`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.9`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `55d471b`
-  (`chore(release): bump cli versions to 1.0.7 (#765)`)
+- Head commit: `c6004d4`
+  (`chore(release): bump cli versions to 1.0.9 (#771)`)
 - Release:
-  [`v1.0.7`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.7),
+  [`v1.0.9`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.9),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.9` is a **patch** over `zsh-kit setup --write-zshenv`: the managed
+  `$HOME/.zshenv` now preserves requested `ZSH_FEATURES` and sources
+  `$ZDOTDIR/.zshenv`, so first-run Docker shells receive repo-owned environment
+  wiring without the image entrypoint duplicating bootstrap generation
+  ([#770](https://github.com/sympoies/nils-cli/pull/770),
+  [#771](https://github.com/sympoies/nils-cli/pull/771)). This repo's Docker
+  entrypoint consumes that released behavior, so the `zsh-kit` floor moves to
+  `>= 1.0.9`.
+- `v1.0.8` is a **patch** over `fzf-cli def` on Linux: the generated preview
+  script temp file is flushed and converted to a closed `TempPath` before fzf's
+  preview shell executes it, avoiding `zsh: text file busy` in container TTYs
+  ([#768](https://github.com/sympoies/nils-cli/pull/768),
+  [#769](https://github.com/sympoies/nils-cli/pull/769)). Additive runtime
+  bug fix only — no consumed flag or JSON envelope changed and no
+  `required_clis[]` floor moves.
 - `v1.0.7` ships the new `zsh-kit` binary, whose `setup` subcommand clones or
   updates an operator-supplied Zsh repo URL/path and dispatches that repo's
   public setup hook (`bootstrap/zsh-kit-setup.zsh` or `.zsh-kit/setup.zsh`) in
@@ -361,7 +376,7 @@ Notes on derivation:
 | `cli-template`              | `cli-template`                                                                                                      | Internal template/example crate. Marked `excluded` in `docs/specs/completion-coverage-matrix-v1.md`; manifests should not pin against it.                                                                                                                              |
 | `codex-cli`                 | `codex-cli`                                                                                                         | Codex runtime helper. Alias family `cx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
 | `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. `v0.21.0` extends the `plan-issue record` surface with `--label` on `record open`, and `--add-label` / `--remove-label` on `record post` and `record close` so v3 lifecycle commands can apply taxonomy labels alongside issue creation, state transitions, and closeout. As of `v0.31.3`, `--provider` gains a `local` file-backed backend value plus a `--store-root` flag (and the `FORGE_CLI_LOCAL_STORE` env var) for offline rehearsal; the `github` / `gitlab` lifecycle surfaces are unchanged (additive). As of `v0.31.7`, `forge-cli` gains a GitHub-only `activity` discovery surface (`activity commits` / `events` / `summary`) and a `search` surface (`search issues` / `search prs` full-text via `gh search`, plus `search refs-to` cross-reference via `gh api graphql`), both behind the provider seam — GitLab / Local return `provider_unsupported`. Additive; not yet consumed by this repo's skills, so no `required_clis[]` floor moves. |
-| `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
+| `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`. As of `v1.0.8`, `fzf-cli def` closes the generated preview script temp file before fzf executes it, avoiding Linux `text file busy` failures in container TTYs. |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
 | `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`. As of `v0.31.5`, this repo consumes `git-cli worktree add/list/remove/prune` for managed worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text and JSON output. As of `v1.0.4`, `worktree add` gains `--kind <feature\|bug\|chore\|docs\|ci\|refactor>` (default `feature`), deriving `<prefix>/<slug>` from the shared `nils_common::git::PrKind` mapping that `forge-cli`'s `branch_kind` rule also consumes, so a non-feature worktree matches the prefix `forge-cli pr deliver --kind` expects without a manual rename. As of `v1.0.6`, `worktree remove` detects when a not-found target exactly matches a linked worktree branch name and returns a hint pointing at the slug and full path; text-mode errors now print hints as well. Both changes are additive; the `v1.0.4` flag remains policy guidance rather than an automated skill invocation, and the `v1.0.6` hint is an ergonomic recovery path, so no `required_clis[]` floor moves. |
 | `git-lock`                  | `git-lock`                                                                                                          | git lock helper.                                                                                                                                                                                                                                                       |
@@ -381,7 +396,7 @@ Notes on derivation:
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |
 | `web-evidence`              | `web-evidence`                                                                                                      | Web evidence capture helper.                                                                                                                                                                                                                                           |
-| `zsh-kit`                   | `zsh-kit`                                                                                                           | Zsh setup helper. As of `v1.0.7`, this repo's Docker surface consumes `zsh-kit setup --repo <URL_OR_PATH> --dry-run|--apply` for operator-supplied runtime shell setup, with `--features`, `--install-tools`, and optional `.zshenv` management. |
+| `zsh-kit`                   | `zsh-kit`                                                                                                           | Zsh setup helper. As of `v1.0.7`, this repo's Docker surface consumes `zsh-kit setup --repo <URL_OR_PATH> --dry-run|--apply` for operator-supplied runtime shell setup, with `--features`, `--install-tools`, and optional `.zshenv` management. As of `v1.0.9`, this repo depends on `--write-zshenv` preserving `ZSH_FEATURES` and sourcing `$ZDOTDIR/.zshenv` so first-run container shells get repo-owned environment wiring. |
 
 ## Refresh procedure
 
