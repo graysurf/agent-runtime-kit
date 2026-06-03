@@ -91,6 +91,7 @@ jobs:
           run zsh --version
           run zsh-kit --version
           run zsh-kit setup --repo https://example.invalid/operator/zsh.git --dest /tmp/zsh-kit-dry-run --dry-run --features docker --install-tools skip
+          run bash -lc '$AGENT_KIT_SRC/docker/smoke-zsh-kit-apply.sh'
           run gh --version
           run glab --version
           run rg --version

@@ -27,6 +27,8 @@ added at the repo root.
 | `compose.yaml` | Convenience wrapper for interactive use. |
 | `entrypoint.sh` | Prints a capability banner and execs the requested command. |
 | `env.example` | Template for `docker/.env` (auth passthrough; gitignored). |
+| `fixtures/zsh-kit-setup/` | Safe local fixture hook used by the image-level `zsh-kit setup --apply` smoke. |
+| `smoke-zsh-kit-apply.sh` | Container-internal e2e smoke that creates a fixture Git repo, applies it through `zsh-kit`, and asserts the result. |
 
 ## Build
 
@@ -63,6 +65,8 @@ docker run --rm -it agent-runtime-kit:dev claude --version
 docker run --rm -it agent-runtime-kit:dev codex --version
 docker run --rm -it agent-runtime-kit:dev zsh --version
 docker run --rm -it agent-runtime-kit:dev zsh-kit --version
+docker run --rm -it agent-runtime-kit:dev \
+  bash -lc '$AGENT_KIT_SRC/docker/smoke-zsh-kit-apply.sh'
 
 # Operate on a host project
 docker run --rm -it -v "$PWD:/work" agent-runtime-kit:dev
@@ -103,7 +107,10 @@ docker run --rm -it \
   -e ZSH_SETUP_REPO_URL="https://github.com/your-org/your-zsh-config.git" \
   -e GH_TOKEN \
   agent-runtime-kit:dev \
-  bash -lc 'gh auth setup-git >/dev/null; zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" --dest "$HOME/.config/zsh" --apply --features docker --install-tools skip --write-zshenv'
+  bash -lc 'gh auth setup-git >/dev/null; \
+    zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" \
+      --dest "$HOME/.config/zsh" \
+      --apply --features docker --install-tools skip --write-zshenv'
 ```
 
 Use `--dry-run` first when validating a new repo hook:
@@ -112,8 +119,23 @@ Use `--dry-run` first when validating a new repo hook:
 docker run --rm -it \
   -e ZSH_SETUP_REPO_URL="https://github.com/your-org/your-zsh-config.git" \
   agent-runtime-kit:dev \
-  bash -lc 'zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" --dest /tmp/zsh-kit-dry-run --dry-run --features docker --install-tools skip'
+  bash -lc 'zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" \
+    --dest /tmp/zsh-kit-dry-run \
+    --dry-run --features docker --install-tools skip'
 ```
+
+The release workflow also runs a fixture apply smoke that does not require
+network auth or a private repository:
+
+```bash
+docker run --rm -it agent-runtime-kit:dev \
+  bash -lc '$AGENT_KIT_SRC/docker/smoke-zsh-kit-apply.sh'
+```
+
+That script creates a temporary local Git repository inside the container,
+applies it with `zsh-kit setup --apply`, and asserts both the JSON envelope and
+hook-created marker files. It also checks that the image does not start with a
+baked `$HOME/.config/zsh` or `/opt/private-skills` tree.
 
 ## What's inside
 
