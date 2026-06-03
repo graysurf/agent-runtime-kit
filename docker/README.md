@@ -38,7 +38,7 @@ image always matches the repo's authoritative pin gate:
 
 ```bash
 docker/build.sh                      # -> agent-runtime-kit:dev
-docker/build.sh -t agent-runtime-kit:1.0.7    # custom tag
+docker/build.sh -t agent-runtime-kit:1.0.8    # custom tag
 docker/build.sh -n                   # dry-run: print the resolved command
 docker/build.sh -- --no-cache        # pass extra flags to `docker build`
 ```
