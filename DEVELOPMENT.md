@@ -334,7 +334,8 @@ Two independent release axes touch this repo:
 
 - **This repo's own artifact** is the GHCR container image, cut from `main` on a
   CalVer tag. It is fully owned by [`RELEASING.md`](RELEASING.md) — that is the
-  entrypoint for publishing a kit snapshot, not anything below.
+  entrypoint for publishing a kit snapshot through `scripts/release.sh` /
+  `.agents/scripts/release.sh`, not anything below.
 - **The nils-cli surface** is an upstream dependency pinned by
   `docs/source/nils-cli-pin.yaml`. The steps below cover promoting a stable
   coupled nils-cli change into that pin.

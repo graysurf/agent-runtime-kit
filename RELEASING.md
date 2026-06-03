@@ -30,30 +30,45 @@ Each release publishes, for `linux/amd64` and `linux/arm64`:
 
 ## Cutting a release
 
-1. Make sure `main` is in the state you want to ship — the image bakes the
-   source tree, so whatever is on `main` is what the image contains.
-2. Create the GitHub Release. This creates the tag and fires the publish
-   workflow:
+1. Make sure `main` is in the state you want to ship. The release script
+   refuses to publish from a dirty tree, from a non-`main` branch, or from a
+   local `main` that differs from `origin/main`.
+2. Preview the release:
 
    ```bash
-   gh release create "v$(date +%Y.%m.%d)" --generate-notes \
-     --title "v$(date +%Y.%m.%d)"
+   scripts/release.sh --dry-run
    ```
 
-3. `.github/workflows/publish-image.yml` then runs on `release: published`:
+3. Cut the GitHub Release, wait for the publish workflow, and verify the public
+   GHCR manifests:
+
+   ```bash
+   scripts/release.sh --execute
+   ```
+
+   Use `--version YYYY.MM.DD` to cut an explicit CalVer tag, or `--prerelease`
+   to skip the rolling `latest` tag.
+
+4. `.github/workflows/publish-image.yml` runs on `release: published`:
    - resolves the `nils-cli` pin from `docs/source/nils-cli-pin.yaml`,
    - builds `linux/amd64` and smoke-tests it (`claude` / `codex` /
      `agent-runtime` versions and the rendered-home symlinks),
-   - builds multi-arch and pushes to GHCR with the dated tag plus `latest`.
+   - builds multi-arch and pushes to GHCR with the dated tag plus `latest`,
+   - verifies that the pushed GHCR manifests are anonymously readable and carry
+     both `linux/amd64` and `linux/arm64`.
 
-Mark the GitHub Release as a **pre-release** to skip the `latest` tag.
+The project-local `$release` dispatcher is wired to the same script:
 
-## One-time: make the package public
+```bash
+agent-run exec --cwd "$PWD" -- ./.agents/scripts/release.sh --dry-run
+agent-run exec --cwd "$PWD" -- ./.agents/scripts/release.sh --execute
+```
 
-GHCR packages are **private** by default. After the first successful publish,
-open the package from the repository's **Packages** section →
-**Package settings** → **Change visibility** → **Public**. This is a one-time
-manual step; subsequent pushes keep the chosen visibility.
+To verify an already-published image without creating a release:
+
+```bash
+scripts/release.sh --verify-only --version v2026.05.30
+```
 
 ## Pulling the image
 
