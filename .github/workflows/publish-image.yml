@@ -106,11 +106,10 @@ jobs:
             -c user.name='agent-runtime-kit smoke' \
             -c user.email='agent-runtime-kit-smoke@example.invalid' \
             commit -m 'add zsh-kit fixture setup hook'
+          printf '[safe]\n\tdirectory = /fixture/.git\n' > "$fixture/.gitconfig"
           chmod -R a+rX "$fixture"
           docker run --rm -e AGENT_RUNTIME_KIT_QUIET=1 \
-            -e GIT_CONFIG_COUNT=1 \
-            -e GIT_CONFIG_KEY_0=safe.directory \
-            -e GIT_CONFIG_VALUE_0=/fixture \
+            -e GIT_CONFIG_GLOBAL=/fixture/.gitconfig \
             -e ZSH_SETUP_REPO_URL=/fixture \
             -e ZSH_SETUP_FEATURES=docker,opencode \
             -e ZSH_SETUP_INSTALL_TOOLS=skip \
