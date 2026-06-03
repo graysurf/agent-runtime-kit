@@ -20,7 +20,7 @@ ARG NODE_VERSION=22
 # Fallback only. The pin-aligned entrypoint `docker/build.sh` passes this from
 # docs/source/nils-cli-pin.yaml so the pin gate stays the single source; keep
 # this default roughly in step with that pin for plain `docker build` users.
-ARG NILS_CLI_VERSION=v1.0.8
+ARG NILS_CLI_VERSION=v1.0.9
 ARG CLAUDE_CODE_VERSION=latest
 ARG CODEX_VERSION=latest
 ARG GH_VERSION=2.65.0

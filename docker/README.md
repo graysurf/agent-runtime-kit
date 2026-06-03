@@ -38,7 +38,7 @@ image always matches the repo's authoritative pin gate:
 
 ```bash
 docker/build.sh                      # -> agent-runtime-kit:dev
-docker/build.sh -t agent-runtime-kit:1.0.8    # custom tag
+docker/build.sh -t agent-runtime-kit:1.0.9    # custom tag
 docker/build.sh -n                   # dry-run: print the resolved command
 docker/build.sh -- --no-cache        # pass extra flags to `docker build`
 ```
@@ -115,8 +115,10 @@ docker run --rm -it \
 ```
 
 When `ZSH_SETUP_REPO_URL` is present, the entrypoint runs
-`zsh-kit setup --apply` before the requested command and writes a container
-`~/.zshenv` that preserves `ZDOTDIR` and `ZSH_SETUP_FEATURES`. Additional knobs:
+`zsh-kit setup --apply --write-zshenv` before the requested command. The
+released `zsh-kit >= 1.0.9` bootstrap writes a container `~/.zshenv` that
+preserves `ZDOTDIR`, exports `ZSH_FEATURES`, and sources `$ZDOTDIR/.zshenv`.
+Additional knobs:
 
 - `ZSH_SETUP_DEST` — destination directory, default `$HOME/.config/zsh`
 - `ZSH_SETUP_FEATURES` — forwarded feature CSV, default `docker`

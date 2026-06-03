@@ -1,20 +1,28 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-04 (refreshed for `v1.0.8`)
+- Snapshot date: 2026-06-04 (refreshed for `v1.0.9`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.8`
+- Active `git describe --tags` output: `v1.0.9`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.8`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.9`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `2851e86`
-  (`chore(release): bump cli versions to 1.0.8 (#769)`)
+- Head commit: `c6004d4`
+  (`chore(release): bump cli versions to 1.0.9 (#771)`)
 - Release:
-  [`v1.0.8`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.8),
+  [`v1.0.9`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.9),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.9` is a **patch** over `zsh-kit setup --write-zshenv`: the managed
+  `$HOME/.zshenv` now preserves requested `ZSH_FEATURES` and sources
+  `$ZDOTDIR/.zshenv`, so first-run Docker shells receive repo-owned environment
+  wiring without the image entrypoint duplicating bootstrap generation
+  ([#770](https://github.com/sympoies/nils-cli/pull/770),
+  [#771](https://github.com/sympoies/nils-cli/pull/771)). This repo's Docker
+  entrypoint consumes that released behavior, so the `zsh-kit` floor moves to
+  `>= 1.0.9`.
 - `v1.0.8` is a **patch** over `fzf-cli def` on Linux: the generated preview
   script temp file is flushed and converted to a closed `TempPath` before fzf's
   preview shell executes it, avoiding `zsh: text file busy` in container TTYs
@@ -388,7 +396,7 @@ Notes on derivation:
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |
 | `web-evidence`              | `web-evidence`                                                                                                      | Web evidence capture helper.                                                                                                                                                                                                                                           |
-| `zsh-kit`                   | `zsh-kit`                                                                                                           | Zsh setup helper. As of `v1.0.7`, this repo's Docker surface consumes `zsh-kit setup --repo <URL_OR_PATH> --dry-run|--apply` for operator-supplied runtime shell setup, with `--features`, `--install-tools`, and optional `.zshenv` management. |
+| `zsh-kit`                   | `zsh-kit`                                                                                                           | Zsh setup helper. As of `v1.0.7`, this repo's Docker surface consumes `zsh-kit setup --repo <URL_OR_PATH> --dry-run|--apply` for operator-supplied runtime shell setup, with `--features`, `--install-tools`, and optional `.zshenv` management. As of `v1.0.9`, this repo depends on `--write-zshenv` preserving `ZSH_FEATURES` and sourcing `$ZDOTDIR/.zshenv` so first-run container shells get repo-owned environment wiring. |
 
 ## Refresh procedure
 
