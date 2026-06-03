@@ -19,6 +19,7 @@ agent-runtime-kit container (Codex + Claude)
   claude        : $(claude --version 2>/dev/null || echo 'n/a')
   codex         : $(codex --version 2>/dev/null || echo 'n/a')
   agent-runtime : $(agent-runtime --version 2>/dev/null || echo 'n/a')
+  zsh-kit       : $(zsh-kit --version 2>/dev/null || echo 'n/a')
   source        : ${AGENT_KIT_SRC:-unset}
   docs home     : ${AGENT_DOCS_HOME:-unset}
   auth          : claude=$([ -n "${ANTHROPIC_API_KEY:-}" ] && echo env || echo none), codex=$([ -n "${OPENAI_API_KEY:-}" ] && echo env || echo none)

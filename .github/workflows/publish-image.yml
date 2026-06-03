@@ -88,6 +88,9 @@ jobs:
           run claude --version
           run codex --version
           run agent-runtime --version
+          run zsh --version
+          run zsh-kit --version
+          run zsh-kit setup --repo https://example.invalid/operator/zsh.git --dest /tmp/zsh-kit-dry-run --dry-run --features docker --install-tools skip
           run gh --version
           run glab --version
           run rg --version

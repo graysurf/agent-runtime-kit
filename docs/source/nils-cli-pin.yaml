@@ -20,7 +20,7 @@ schema_version: 1
 
 nils_cli:
   # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
-  pinned_tag: "v1.0.6"
+  pinned_tag: "v1.0.7"
 
 # Optional per-binary floors for the downstream-consumed CLIs. nils-cli
 # ships every crate in lock-step, so the exact `pinned_tag` above is the
@@ -43,3 +43,5 @@ required_clis:
     min: "0.31.5"
   - bin: heuristic-inbox  # deliver + --label: records-branch PR writeback (closeout consumer)
     min: "1.0.3"
+  - bin: zsh-kit          # runtime shell setup entrypoint for operator-supplied Zsh repos
+    min: "1.0.7"
