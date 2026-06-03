@@ -36,7 +36,7 @@ image always matches the repo's authoritative pin gate:
 
 ```bash
 docker/build.sh                      # -> agent-runtime-kit:dev
-docker/build.sh -t agent-runtime-kit:0.30.1   # custom tag
+docker/build.sh -t agent-runtime-kit:1.0.7    # custom tag
 docker/build.sh -n                   # dry-run: print the resolved command
 docker/build.sh -- --no-cache        # pass extra flags to `docker build`
 ```
@@ -61,6 +61,8 @@ docker run --rm -it agent-runtime-kit:dev
 # One-shot a CLI
 docker run --rm -it agent-runtime-kit:dev claude --version
 docker run --rm -it agent-runtime-kit:dev codex --version
+docker run --rm -it agent-runtime-kit:dev zsh --version
+docker run --rm -it agent-runtime-kit:dev zsh-kit --version
 
 # Operate on a host project
 docker run --rm -it -v "$PWD:/work" agent-runtime-kit:dev
@@ -83,9 +85,34 @@ Auth is supplied at runtime and never baked into the image:
   `~/.codex/auth.json`.
 - **forge-cli / gh** — `GH_TOKEN` (or `GITHUB_TOKEN`).
 - **forge-cli / glab** — `GITLAB_TOKEN` (or `GL_TOKEN`).
+- **zsh-kit setup** — runtime Git credentials for the operator-supplied Zsh
+  repo, such as `GH_TOKEN` with `gh auth setup-git`, or mounted SSH credentials.
 
 ```bash
 docker run --rm -it -e ANTHROPIC_API_KEY -e OPENAI_API_KEY agent-runtime-kit:dev
+```
+
+## Runtime Zsh setup
+
+The image includes public `zsh` and the released `zsh-kit` binary, but it does
+not bake any personal shell repository or private setup scripts. Supply the Zsh
+repository URL and auth at runtime:
+
+```bash
+docker run --rm -it \
+  -e ZSH_SETUP_REPO_URL="https://github.com/your-org/your-zsh-config.git" \
+  -e GH_TOKEN \
+  agent-runtime-kit:dev \
+  bash -lc 'gh auth setup-git >/dev/null; zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" --dest "$HOME/.config/zsh" --apply --features docker --install-tools skip --write-zshenv'
+```
+
+Use `--dry-run` first when validating a new repo hook:
+
+```bash
+docker run --rm -it \
+  -e ZSH_SETUP_REPO_URL="https://github.com/your-org/your-zsh-config.git" \
+  agent-runtime-kit:dev \
+  bash -lc 'zsh-kit setup --repo "$ZSH_SETUP_REPO_URL" --dest /tmp/zsh-kit-dry-run --dry-run --features docker --install-tools skip'
 ```
 
 ## What's inside
@@ -93,9 +120,13 @@ docker run --rm -it -e ANTHROPIC_API_KEY -e OPENAI_API_KEY agent-runtime-kit:dev
 - **Base**: `node:22-trixie-slim` — Debian 13, glibc 2.41 (Node ≥18 for both
   CLIs; glibc for their native binaries). Trixie, not bookworm: the `nils-cli`
   release binaries require GLIBC ≥ 2.39, which bookworm's 2.36 cannot satisfy.
+- **Shell runtime**: Debian `zsh` plus `zsh-kit` for runtime shell setup from an
+  operator-supplied repo URL/path. Personal shell repos are fetched or mounted
+  at runtime, not copied into the image.
 - **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via `npm -g`.
 - **nils-cli**: prebuilt Linux release tarball (`agent-runtime`, `agent-docs`,
-  `semantic-commit`, `forge-cli`, `plan-tooling`, `plan-issue`, … ~40 binaries),
+  `semantic-commit`, `forge-cli`, `plan-tooling`, `plan-issue`, `zsh-kit`, …
+  ~40 binaries),
   pinned to the version in `docs/source/nils-cli-pin.yaml` and verified against
   the published `.sha256`. No Linuxbrew.
 - **Core CLI tools** (`cli-tools.yaml` `core` profile): `ripgrep`, `fd`, `fzf`,

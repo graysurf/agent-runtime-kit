@@ -1,20 +1,28 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-03 (refreshed for `v1.0.6`)
+- Snapshot date: 2026-06-03 (refreshed for `v1.0.7`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.6`
+- Active `git describe --tags` output: `v1.0.7`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.6`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.7`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `63c12d4`
-  (`chore(release): bump cli versions to 1.0.6 (#761)`)
+- Head commit: `55d471b`
+  (`chore(release): bump cli versions to 1.0.7 (#765)`)
 - Release:
-  [`v1.0.6`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.6),
+  [`v1.0.7`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.7),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.7` ships the new `zsh-kit` binary, whose `setup` subcommand clones or
+  updates an operator-supplied Zsh repo URL/path and dispatches that repo's
+  public setup hook (`bootstrap/zsh-kit-setup.zsh` or `.zsh-kit/setup.zsh`) in
+  dry-run or apply mode
+  ([#763](https://github.com/sympoies/nils-cli/pull/763),
+  [#765](https://github.com/sympoies/nils-cli/pull/765)). This repo's Docker
+  surface consumes it for runtime shell setup, so `zsh-kit >= 1.0.7` is added
+  to `required_clis[]`.
 - `v1.0.6` is a **patch** over `git-cli worktree remove`: when the remove
   target is not found but exactly matches a live linked worktree branch name,
   `git-cli` now returns a recovery hint pointing at the managed slug and full
@@ -327,7 +335,7 @@ keeps both in sync on a release bump.
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (35 entries).
+  `crates/` in the source repo (36 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -339,6 +347,7 @@ Notes on derivation:
 | Crate                       | Binary                                                                                                              | Notes                                                                                                                                                                                                                                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `agent-docs`                | `agent-docs`                                                                                                        | Data-driven required-doc resolver and auditor; no hardcoded builtins. As of `v0.30.0` the surface is `audit` (repo health: install-symlink wiring + declared-doc presence/validity + catalog validity), `preflight --intent X` (resolve the doc set plus the per-repo validation contract as versioned `agent-docs.preflight.v1` JSON for hooks to inject and enforce), and `init` / `explain` / `list` / `remove`. Policy is declared in `AGENT_DOCS.toml` (`[[document]]` + `[[validation]]`, `when` predicates, content validation); docs-home is derived from the install symlink. As of `v0.30.1`, a docs-home catalog's `scope = "project"` documents and its `[[validation]]` contracts are scoped to the declaring repository, so they never leak into unrelated projects. As of `v0.31.6`, `preflight --require-declared-intent` lets known-intent callers fail closed for undeclared intent names while preserving the unguarded compatibility fallback. The `resolve` / `baseline` / `scaffold-*` / `add` / `contexts` commands and the `startup` per-task context were retired in the redesign.                                                                                                  |
+| `agent-memory`              | `agent-memory`                                                                                                      | Agent memory helper. Not consumed by this repo's runtime surfaces today.                                                                                                                                                                                               |
 | `agent-out`                 | `agent-out`                                                                                                         | Agent output / artifact helper.                                                                                                                                                                                                                                        |
 | `agent-runtime`         | `agent-runtime`                                                                                                     | Runtime kit CLI. As of `v0.20.0`, this repo consumes released `render`, `install`, `uninstall`, `doctor` (including `--class skill-surface --product codex`), `audit-drift`, `gc-backups`, `restore-backups`, `purge-state`, and `pr-body render` bodies through Homebrew. The `pr-body render` surface renders standardized feature / bug PR and MR bodies before `forge-cli pr create` / `forge-cli pr deliver`. As of `v0.22.4`, `sync-runtime-surfaces` consumes `agent-runtime prune-stale` to remove stale managed Codex and Claude skill surfaces after install. As of `v0.28.0`, ships `doctor --class version-alignment --pin <manifest>` (the surface-pin drift gate this repo's Position 2 consumes via `docs/source/nils-cli-pin.yaml`) and adds build metadata to the `agent-runtime --version` output. As of `v1.0.5`, `render` reconciles `build/<product>/` for retired skills — a skill removed from the manifest has its outputs and `.render-cache.json` entry dropped on the next render, so `sync-runtime-surfaces` + `prune-stale` no longer leave the retired skill in the live home ([#755](https://github.com/sympoies/nils-cli/pull/755)); `audit-drift` also gains `--json` / `--fail-on` and skips path/slug runs in entropy ([#754](https://github.com/sympoies/nils-cli/pull/754)). |
 | `agent-scope-lock`          | `agent-scope-lock`                                                                                                  | Workspace scope-lock helper.                                                                                                                                                                                                                                           |
@@ -372,6 +381,7 @@ Notes on derivation:
 | `screen-record`             | `screen-record`                                                                                                     | Screen-recording helper (macOS).                                                                                                                                                                                                                                       |
 | `semantic-commit`           | `semantic-commit`                                                                                                   | Semantic commit message validator and committer.                                                                                                                                                                                                                       |
 | `web-evidence`              | `web-evidence`                                                                                                      | Web evidence capture helper.                                                                                                                                                                                                                                           |
+| `zsh-kit`                   | `zsh-kit`                                                                                                           | Zsh setup helper. As of `v1.0.7`, this repo's Docker surface consumes `zsh-kit setup --repo <URL_OR_PATH> --dry-run|--apply` for operator-supplied runtime shell setup, with `--features`, `--install-tools`, and optional `.zshenv` management. |
 
 ## Refresh procedure
 

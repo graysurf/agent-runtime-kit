@@ -20,7 +20,7 @@ ARG NODE_VERSION=22
 # Fallback only. The pin-aligned entrypoint `docker/build.sh` passes this from
 # docs/source/nils-cli-pin.yaml so the pin gate stays the single source; keep
 # this default roughly in step with that pin for plain `docker build` users.
-ARG NILS_CLI_VERSION=v0.30.1
+ARG NILS_CLI_VERSION=v1.0.7
 ARG CLAUDE_CODE_VERSION=latest
 ARG CODEX_VERSION=latest
 ARG GH_VERSION=2.65.0
@@ -31,9 +31,9 @@ ARG YQ_VERSION=v4.44.6
 # Stage 1 — fetch nils-cli prebuilt Linux binaries.
 #
 # nils-cli ships the agent-runtime, agent-docs, semantic-commit, forge-cli,
-# plan-tooling, plan-issue, plan-archive (and ~35 more) binaries as a single
-# release tarball. We download the arch-matched tarball and verify it against
-# the published .sha256 sidecar — no Linuxbrew required.
+# plan-tooling, plan-issue, plan-archive, zsh-kit (and ~35 more) binaries as a
+# single release tarball. We download the arch-matched tarball and verify it
+# against the published .sha256 sidecar — no Linuxbrew required.
 # -----------------------------------------------------------------------------
 FROM debian:trixie-slim AS nils
 ARG NILS_CLI_VERSION
@@ -88,7 +88,7 @@ LABEL org.opencontainers.image.source="https://github.com/graysurf/agent-runtime
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      ca-certificates curl git tar xz-utils gnupg less bash \
+      ca-certificates curl git openssh-client tar xz-utils gnupg less bash zsh \
       python3 \
       ripgrep fd-find fzf jq bat; \
     rm -rf /var/lib/apt/lists/*; \
@@ -119,7 +119,7 @@ RUN set -eux; \
 
 # nils-cli binaries (agent-runtime et al.) from stage 1.
 COPY --from=nils /opt/nils/bin/ /usr/local/bin/
-RUN agent-runtime --version
+RUN agent-runtime --version; zsh-kit --version; zsh --version
 
 # Claude Code + Codex CLI via npm (global).
 RUN set -eux; \
