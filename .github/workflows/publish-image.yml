@@ -108,6 +108,9 @@ jobs:
             commit -m 'add zsh-kit fixture setup hook'
           chmod -R a+rX "$fixture"
           docker run --rm -e AGENT_RUNTIME_KIT_QUIET=1 \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/fixture \
             -e ZSH_SETUP_REPO_URL=/fixture \
             -e ZSH_SETUP_FEATURES=docker,opencode \
             -e ZSH_SETUP_INSTALL_TOOLS=skip \
