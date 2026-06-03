@@ -24,6 +24,7 @@ ARG NILS_CLI_VERSION=v0.30.1
 ARG CLAUDE_CODE_VERSION=latest
 ARG CODEX_VERSION=latest
 ARG GH_VERSION=2.65.0
+ARG GLAB_VERSION=1.101.0
 ARG YQ_VERSION=v4.44.6
 
 # -----------------------------------------------------------------------------
@@ -71,6 +72,7 @@ FROM node:${NODE_VERSION}-trixie-slim AS runtime
 ARG CLAUDE_CODE_VERSION
 ARG CODEX_VERSION
 ARG GH_VERSION
+ARG GLAB_VERSION
 ARG YQ_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -94,18 +96,26 @@ RUN set -eux; \
     ln -sf "$(command -v fdfind)" /usr/local/bin/fd; \
     ln -sf "$(command -v batcat)" /usr/local/bin/bat
 
-# gh + yq are not in Debian stable; install arch-matched release binaries.
+# gh, glab, and yq are installed from arch-matched release binaries.
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     curl -fsSL -o /tmp/gh.tgz \
       "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${arch}.tar.gz"; \
     tar -xzf /tmp/gh.tgz -C /tmp; \
     install -m 0755 "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh; \
+    glab_file="glab_${GLAB_VERSION}_linux_${arch}.tar.gz"; \
+    glab_base="https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads"; \
+    curl -fsSL -o "/tmp/${glab_file}" "${glab_base}/${glab_file}"; \
+    curl -fsSL -o /tmp/glab-checksums.txt "${glab_base}/checksums.txt"; \
+    cd /tmp; \
+    grep "  ${glab_file}$" glab-checksums.txt | sha256sum -c -; \
+    tar -xzf "/tmp/${glab_file}" -C /tmp; \
+    install -m 0755 /tmp/bin/glab /usr/local/bin/glab; \
     curl -fsSL -o /usr/local/bin/yq \
       "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${arch}"; \
     chmod 0755 /usr/local/bin/yq; \
-    rm -rf /tmp/gh*; \
-    gh --version; yq --version
+    rm -rf /tmp/gh* /tmp/glab* /tmp/bin; \
+    gh --version; glab --version; yq --version
 
 # nils-cli binaries (agent-runtime et al.) from stage 1.
 COPY --from=nils /opt/nils/bin/ /usr/local/bin/

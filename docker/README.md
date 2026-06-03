@@ -82,6 +82,7 @@ Auth is supplied at runtime and never baked into the image:
 - **Codex CLI** — `OPENAI_API_KEY`, or `codex login`, or mount
   `~/.codex/auth.json`.
 - **forge-cli / gh** — `GH_TOKEN` (or `GITHUB_TOKEN`).
+- **forge-cli / glab** — `GITLAB_TOKEN` (or `GL_TOKEN`).
 
 ```bash
 docker run --rm -it -e ANTHROPIC_API_KEY -e OPENAI_API_KEY agent-runtime-kit:dev
@@ -98,7 +99,7 @@ docker run --rm -it -e ANTHROPIC_API_KEY -e OPENAI_API_KEY agent-runtime-kit:dev
   pinned to the version in `docs/source/nils-cli-pin.yaml` and verified against
   the published `.sha256`. No Linuxbrew.
 - **Core CLI tools** (`cli-tools.yaml` `core` profile): `ripgrep`, `fd`, `fzf`,
-  `jq`, `yq`, `gh`, `bat`.
+  `jq`, `yq`, `gh`, `glab`, `bat`.
 - **Rendered runtime**: `agent-runtime render` + `install` activate the shared
   surface into `~/.claude` and `~/.codex`, plus the `AGENT_HOME.md` policy
   symlinks (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`).
@@ -111,7 +112,7 @@ are CalVer (`vYYYY.MM.DD`); cutting a GitHub Release fires
 `.github/workflows/publish-image.yml`, which resolves the `nils-cli` pin,
 smoke-tests an `amd64` build, then pushes the multi-arch image tagged with the
 date and `latest`. See [`../RELEASING.md`](../RELEASING.md) for the full
-process and the one-time "make package public" step.
+process.
 
 ```bash
 docker pull ghcr.io/graysurf/agent-runtime-kit:latest

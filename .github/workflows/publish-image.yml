@@ -88,6 +88,14 @@ jobs:
           run claude --version
           run codex --version
           run agent-runtime --version
+          run gh --version
+          run glab --version
+          run rg --version
+          run fd --version
+          run fzf --version
+          run jq --version
+          run yq --version
+          run bat --version
           run bash -lc 'test -L "$HOME/.claude/CLAUDE.md" && test -L "$CODEX_HOME/AGENTS.md"'
 
       - name: Build and push multi-arch

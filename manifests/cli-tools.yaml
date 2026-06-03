@@ -24,6 +24,7 @@ profiles:
     - jq
     - yq
     - gh
+    - glab
     - bat
 
   recommended:
@@ -33,6 +34,7 @@ profiles:
     - jq
     - yq
     - gh
+    - glab
     - bat
     - glow
     - delta
@@ -52,6 +54,7 @@ profiles:
     - jq
     - yq
     - gh
+    - glab
     - bat
     - glow
     - delta
@@ -121,6 +124,11 @@ formulas:
   gh:
     brew: gh
     command: gh
+    linux_only_alternative: null
+    categories: [vcs]
+  glab:
+    brew: glab
+    command: glab
     linux_only_alternative: null
     categories: [vcs]
   bat:
