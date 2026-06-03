@@ -69,7 +69,7 @@ docker run --rm -it agent-runtime-kit:dev \
   bash -lc '$AGENT_KIT_SRC/docker/smoke-zsh-kit-apply.sh'
 
 # Operate on a host project
-docker run --rm -it -v "$PWD:/work" agent-runtime-kit:dev
+docker run --rm -it -v "$PWD:/work" -w /work agent-runtime-kit:dev
 ```
 
 Via compose (reads `docker/.env` if present):
@@ -78,6 +78,9 @@ Via compose (reads `docker/.env` if present):
 cp docker/env.example docker/.env   # then fill in keys
 docker compose -f docker/compose.yaml run --rm agent
 ```
+
+The default shell starts in `/home/agent`. Use `-w /work` when you bind-mount a
+project and want the shell to start there.
 
 ## Auth
 

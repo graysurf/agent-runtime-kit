@@ -199,6 +199,6 @@ RUN set -eux; \
     ln -sfn "${AGENT_KIT_SRC}/AGENT_HOME.md" "${HOME}/.claude/CLAUDE.md"; \
     ln -sfn "${AGENT_KIT_SRC}/AGENT_HOME.md" "${CODEX_HOME}/AGENTS.md"
 
-WORKDIR /work
+WORKDIR /home/agent
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["zsh", "-il"]

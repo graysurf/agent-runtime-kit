@@ -91,6 +91,7 @@ jobs:
           run zsh --version
           run zsh-kit --version
           run bash -lc 'test "$(getent passwd agent | cut -d: -f7)" = /usr/bin/zsh'
+          run zsh -ic 'test "$PWD" = "$HOME"'
           run zsh -ic 'print -r -- shell-ok'
           run zsh -ic 'command -v starship && command -v zoxide && command -v eza && command -v delta && command -v tree && command -v nvim && command -v notify-send'
           run zsh-kit setup --repo https://example.invalid/operator/zsh.git --dest /tmp/zsh-kit-dry-run --dry-run --features docker --install-tools skip
