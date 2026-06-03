@@ -1,20 +1,28 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-02 (refreshed for `v1.0.5`)
+- Snapshot date: 2026-06-03 (refreshed for `v1.0.6`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.5`
+- Active `git describe --tags` output: `v1.0.6`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.5`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.6`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `fca5ce6`
-  (`chore(release): bump cli versions to 1.0.5 (#759)`)
+- Head commit: `63c12d4`
+  (`chore(release): bump cli versions to 1.0.6 (#761)`)
 - Release:
-  [`v1.0.5`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.5),
+  [`v1.0.6`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.6),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.6` is a **patch** over `git-cli worktree remove`: when the remove
+  target is not found but exactly matches a live linked worktree branch name,
+  `git-cli` now returns a recovery hint pointing at the managed slug and full
+  path, and text-mode errors print hints on stderr instead of hiding them in
+  JSON-only output
+  ([#760](https://github.com/sympoies/nils-cli/pull/760)). Additive — this
+  repo's consumers already remove managed worktrees by slug or path, so no
+  `required_clis[]` floor moves.
 - `v1.0.4` adds a `--kind <feature|bug|chore|docs|ci|refactor>` flag to
   `git-cli worktree add` (default `feature`, so the prior `feat/<slug>` behavior
   is unchanged), deriving the branch as `<prefix>/<slug>` where the prefix is
@@ -319,7 +327,7 @@ keeps both in sync on a release bump.
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (34 entries).
+  `crates/` in the source repo (35 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -346,7 +354,7 @@ Notes on derivation:
 | `forge-cli`                 | `forge-cli`                                                                                                         | Forge runtime helper. As of `v0.20.0`, this repo consumes released PR create/deliver/check/merge/comment and general issue create/view/comment/list surfaces. Issue-backed plan-record lifecycle mutation is owned by `plan-issue record`, not by composing `forge-cli issue` calls in dispatch skills. `v0.20.1` adds `forge-cli label list`, `label audit`, and `label ensure` for GitHub/GitLab label catalogs, plus repeatable `--label`, `--label-catalog`, and `--strict-labels` on `pr create` and `pr deliver` so create/deliver macros preserve selected taxonomy labels. `v0.21.0` extends the `plan-issue record` surface with `--label` on `record open`, and `--add-label` / `--remove-label` on `record post` and `record close` so v3 lifecycle commands can apply taxonomy labels alongside issue creation, state transitions, and closeout. As of `v0.31.3`, `--provider` gains a `local` file-backed backend value plus a `--store-root` flag (and the `FORGE_CLI_LOCAL_STORE` env var) for offline rehearsal; the `github` / `gitlab` lifecycle surfaces are unchanged (additive). As of `v0.31.7`, `forge-cli` gains a GitHub-only `activity` discovery surface (`activity commits` / `events` / `summary`) and a `search` surface (`search issues` / `search prs` full-text via `gh search`, plus `search refs-to` cross-reference via `gh api graphql`), both behind the provider seam — GitLab / Local return `provider_unsupported`. Additive; not yet consumed by this repo's skills, so no `required_clis[]` floor moves. |
 | `fzf-cli`                   | `fzf-cli`                                                                                                           | fzf wrapper. Alias family `fx*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                               |
 | `gemini-cli`                | `gemini-cli`                                                                                                        | Gemini runtime helper.                                                                                                                                                                                                                                                 |
-| `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`. As of `v0.31.5`, this repo consumes `git-cli worktree add/list/remove/prune` for managed worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text and JSON output. As of `v1.0.4`, `worktree add` gains `--kind <feature\|bug\|chore\|docs\|ci\|refactor>` (default `feature`), deriving `<prefix>/<slug>` from the shared `nils_common::git::PrKind` mapping that `forge-cli`'s `branch_kind` rule also consumes, so a non-feature worktree matches the prefix `forge-cli pr deliver --kind` expects without a manual rename. Documented in `git-delivery.md` as policy guidance; additive and not yet an automated skill invocation, so no `required_clis[]` floor moves. |
+| `git-cli`                   | `git-cli`                                                                                                           | git workflow helper. Alias family `gx*` ships in `aliases.zsh` / `aliases.bash`. As of `v0.31.5`, this repo consumes `git-cli worktree add/list/remove/prune` for managed worktrees under `$AGENT_HOME/worktrees/<repo-key>/<branch-slug>` with text and JSON output. As of `v1.0.4`, `worktree add` gains `--kind <feature\|bug\|chore\|docs\|ci\|refactor>` (default `feature`), deriving `<prefix>/<slug>` from the shared `nils_common::git::PrKind` mapping that `forge-cli`'s `branch_kind` rule also consumes, so a non-feature worktree matches the prefix `forge-cli pr deliver --kind` expects without a manual rename. As of `v1.0.6`, `worktree remove` detects when a not-found target exactly matches a linked worktree branch name and returns a hint pointing at the slug and full path; text-mode errors now print hints as well. Both changes are additive; the `v1.0.4` flag remains policy guidance rather than an automated skill invocation, and the `v1.0.6` hint is an ergonomic recovery path, so no `required_clis[]` floor moves. |
 | `git-lock`                  | `git-lock`                                                                                                          | git lock helper.                                                                                                                                                                                                                                                       |
 | `git-scope`                 | `git-scope`                                                                                                         | git scope summariser. Alias family `gs*` ships in `aliases.zsh` / `aliases.bash`.                                                                                                                                                                                      |
 | `git-summary`               | `git-summary`                                                                                                       | git diff summariser.                                                                                                                                                                                                                                                   |
