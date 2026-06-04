@@ -109,6 +109,10 @@ Do not commit a personal absolute path to this repo. Do not point
 `$HOME/.claude`; it should point at the checked-out `agent-runtime-kit` docs
 catalog. `$AGENT_HOME` is reserved for writable `agent-out` state.
 
+For an agent-driven clean install or reinstall on another Mac, use the
+copyable prompt in
+[`docs/source/macos-agent-bootstrap-prompt.md`](docs/source/macos-agent-bootstrap-prompt.md).
+
 ## Development workflow
 
 `agent-docs` is not a manual per-task step: required-doc and validation policy
@@ -208,6 +212,8 @@ repo is the active project.
 
 - [`DEVELOPMENT.md`](DEVELOPMENT.md): setup, validation gates, and release boundary.
 - [`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md): per-surface ship state and acceptance lanes.
+- [`docs/source/macos-agent-bootstrap-prompt.md`](docs/source/macos-agent-bootstrap-prompt.md):
+  copyable macOS agent prompt for clean zsh-kit / agent-runtime-kit setup.
 - [`core/skills/README.md`](core/skills/README.md): skill catalog by category and series.
 - [`AGENT_HOME.md`](AGENT_HOME.md): global agent policy loaded by both products.
 - [`AGENTS.md`](AGENTS.md): project-scope policy and current boundaries.

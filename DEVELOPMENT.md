@@ -59,6 +59,10 @@ surfaces into the runtime homes, and runs the skill-surface doctor probes; it
 is dry-run by default and writes only with `--apply`. Keep `scripts/setup.sh`
 for first-time host bootstrap and CLI tool installation.
 
+For non-technical operators setting up another Mac through an agent, use the
+copyable clean-reinstall prompt in
+[`docs/source/macos-agent-bootstrap-prompt.md`](docs/source/macos-agent-bootstrap-prompt.md).
+
 ## Overlaying Private Skills
 
 Personal **global skills** — ones that should be available in every session but
@@ -153,7 +157,8 @@ or local nils-cli surface, puts the full binary set on `PATH`, prints the
 resolved version, and runs your command:
 
 ```bash
-scripts/dev/with-nils-version.sh local           -- agent-runtime render --product codex
+scripts/dev/with-nils-version.sh local           -- \
+  agent-runtime render --product codex
 scripts/dev/with-nils-version.sh src:my-fix      -- bash tests/hooks/run.sh
 scripts/dev/with-nils-version.sh release:v1.0.0  -- agent-runtime audit-drift
 ```
