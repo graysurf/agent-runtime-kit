@@ -357,6 +357,10 @@ run_setup_render_before_install_probe() {
   local apply_home="$TMP_ROOT/setup-render-apply-home"
   local stub_bin="$TMP_ROOT/setup-render-bin"
   local source_root="$apply_home/.config/agent-runtime-kit"
+  local collision_out="$META_ARTIFACTS_DIR/setup.home-prompt-collision.txt"
+  local collision_home="$TMP_ROOT/setup-render-collision-home"
+  local collision_source_root="$collision_home/.config/agent-runtime-kit"
+  local status
 
   mkdir -p "$home"
   (
@@ -384,15 +388,30 @@ install_lines = [
     for idx, line in enumerate(lines, 1)
     if line.startswith("+ agent-runtime install ")
 ]
+link_lines = [
+    (idx, line)
+    for idx, line in enumerate(lines, 1)
+    if line.startswith("+ ln -s ")
+]
+audit_lines = [
+    (idx, line)
+    for idx, line in enumerate(lines, 1)
+    if line.startswith("+ agent-docs audit --target all --strict --project-path ")
+]
 
 assert len(render_lines) == 2, render_lines
 assert len(install_lines) == 2, install_lines
+assert len(link_lines) == 2, link_lines
+assert len(audit_lines) == 1, audit_lines
 assert any("--product codex" in line for _, line in render_lines), render_lines
 assert any("--product claude" in line for _, line in render_lines), render_lines
+assert max(idx for idx, _ in link_lines) < audit_lines[0][0], lines
+assert audit_lines[0][0] < min(idx for idx, _ in render_lines), lines
 assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
 PY
 
   mkdir -p "$stub_bin" "$source_root/.git"
+  printf '# AGENT_HOME fixture\n' >"$source_root/AGENT_HOME.md"
   cat >"$stub_bin/brew" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -455,7 +474,24 @@ case "$command_name" in
     ;;
 esac
 SH
-  chmod +x "$stub_bin/brew" "$stub_bin/agent-runtime"
+  cat >"$stub_bin/agent-docs" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+command_name="${1:-}"
+shift || true
+
+case "$command_name" in
+  audit)
+    printf 'agent-docs audit %s\n' "$*"
+    ;;
+  *)
+    printf 'unexpected agent-docs command: %s\n' "$command_name" >&2
+    exit 64
+    ;;
+esac
+SH
+  chmod +x "$stub_bin/brew" "$stub_bin/agent-runtime" "$stub_bin/agent-docs"
 
   (
     cd "$REPO_ROOT"
@@ -465,6 +501,14 @@ SH
       --skip-homebrew-install \
       --skip-cli-tools
   ) >"$apply_out" 2>&1
+
+  test -L "$apply_home/.codex/AGENTS.md"
+  test "$(readlink "$apply_home/.codex/AGENTS.md")" = "$source_root/AGENT_HOME.md"
+  test -L "$apply_home/.claude/CLAUDE.md"
+  test "$(readlink "$apply_home/.claude/CLAUDE.md")" = "$source_root/AGENT_HOME.md"
+  grep -q "+ agent-docs audit --target all --strict --project-path" "$apply_out"
+  grep -q "codex_home_prompt:" "$apply_out"
+  grep -q "claude_home_prompt:" "$apply_out"
 
   python3 - "$apply_out" <<'PY'
 import sys
@@ -476,6 +520,23 @@ events = [
 ]
 assert events == ["render codex", "render claude", "install claude", "install codex"], events
 PY
+
+  mkdir -p "$collision_home/.codex" "$collision_source_root/.git"
+  printf '# AGENT_HOME fixture\n' >"$collision_source_root/AGENT_HOME.md"
+  printf 'manual codex policy\n' >"$collision_home/.codex/AGENTS.md"
+  set +e
+  (
+    cd "$REPO_ROOT"
+    PATH="$stub_bin:$PATH" HOME="$collision_home" CODEX_HOME="$collision_home/.codex" \
+      bash scripts/setup.sh \
+      --profile core \
+      --skip-homebrew-install \
+      --skip-cli-tools
+  ) >"$collision_out" 2>&1
+  status=$?
+  set -e
+  [ "$status" -ne 0 ]
+  grep -q "refusing to overwrite" "$collision_out"
 }
 
 run_sync_runtime_surfaces_no_prune_probe() {
