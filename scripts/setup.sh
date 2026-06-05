@@ -25,6 +25,7 @@ SKIP_HOMEBREW_INSTALL=0
 SKIP_CLI_TOOLS=0
 DRY_RUN=0
 BREW_PREFIX=""
+BOOTSTRAP_SURFACE="phase commands"
 SCRIPT_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLI_TOOLS_MANIFEST="$SCRIPT_REPO_ROOT/manifests/cli-tools.yaml"
 
@@ -40,10 +41,12 @@ Bootstrap a host so it can run graysurf/agent-runtime-kit. Installs Homebrew
 when missing, taps sympoies/tap, installs nils-cli (which ships the
 agent-runtime binary), installs the profile-selected third-party CLI tools
 from manifests/cli-tools.yaml, clones agent-runtime-kit into
-\$HOME/.config/agent-runtime-kit when missing, renders Codex and Claude runtime
-surfaces, activates the runtime homes via
-\`agent-runtime install --product <p>\`, wires the home prompt docs symlinks,
-audits declared agent docs, and runs \`agent-runtime doctor\` for both products.
+\$HOME/.config/agent-runtime-kit when missing, wires the home prompt docs
+symlinks, audits declared agent docs, and then uses
+\`agent-runtime bootstrap-host\` for the runtime surface bootstrap when the
+installed nils-cli surface provides it. Older nils-cli pins fall back to the
+manual render / install / prune-stale phase commands. The script finishes with
+\`agent-runtime doctor\` for both products.
 
 For daily runtime surface refreshes, see \`scripts/sync-runtime-surfaces.sh\`.
 
@@ -419,11 +422,19 @@ ensure_home_prompt() {
       log "home prompt already wired product=$product target=$target"
       return 0
     fi
+    if [ "$DRY_RUN" = "1" ]; then
+      warn "$target is a symlink to $existing; apply would require $expected"
+      return 0
+    fi
     err "$target is a symlink to $existing; expected $expected"
     exit 1
   fi
 
   if [ -e "$target" ]; then
+    if [ "$DRY_RUN" = "1" ]; then
+      warn "$target exists and is not a symlink to $expected; apply would refuse to overwrite"
+      return 0
+    fi
     err "$target exists and is not a symlink to $expected; refusing to overwrite"
     exit 1
   fi
@@ -443,6 +454,29 @@ ensure_home_prompts() {
 run_agent_docs_audit() {
   log "verifying agent docs wiring"
   run_cmd agent-docs audit --target all --strict --project-path "$REPO_HOME_DEFAULT"
+}
+
+bootstrap_host_available() {
+  if ! command -v agent-runtime >/dev/null 2>&1; then
+    return 1
+  fi
+  agent-runtime bootstrap-host --help >/dev/null 2>&1
+}
+
+run_bootstrap_host() {
+  local mode_flag="--apply"
+  if [ "$DRY_RUN" = "1" ]; then
+    mode_flag="--dry-run"
+  fi
+  BOOTSTRAP_SURFACE="agent-runtime bootstrap-host"
+  log "delegating runtime surface bootstrap to agent-runtime bootstrap-host"
+  run_cmd agent-runtime bootstrap-host \
+    --source-root "$REPO_HOME_DEFAULT" \
+    --profile "$PROFILE" \
+    --product both \
+    --skip-homebrew-install \
+    --skip-cli-tools \
+    "$mode_flag"
 }
 
 activate_products() {
@@ -465,6 +499,23 @@ activate_products() {
   done
 }
 
+prune_products() {
+  local product
+  local live_home
+  local mode_flag="--apply"
+  if [ "$DRY_RUN" = "1" ]; then
+    mode_flag="--dry-run"
+  fi
+  for product in claude codex; do
+    live_home="$(product_live_home "$product")"
+    run_cmd agent-runtime prune-stale \
+      --source-root "$REPO_HOME_DEFAULT" \
+      --product "$product" \
+      --live-home "$live_home" \
+      "$mode_flag"
+  done
+}
+
 render_products() {
   local product
   for product in codex claude; do
@@ -473,6 +524,19 @@ render_products() {
       --source-root "$REPO_HOME_DEFAULT" \
       --product "$product"
   done
+}
+
+run_surface_bootstrap() {
+  if bootstrap_host_available; then
+    run_bootstrap_host
+    return 0
+  fi
+
+  BOOTSTRAP_SURFACE="phase commands"
+  warn "agent-runtime bootstrap-host is unavailable; using render/install/prune fallback"
+  render_products
+  activate_products
+  prune_products
 }
 
 run_doctor() {
@@ -524,6 +588,7 @@ Summary
 - repo_home: $REPO_HOME_DEFAULT
 - brew_prefix: ${BREW_PREFIX:-unavailable}
 - profile: $PROFILE
+- runtime_surface_bootstrap: $BOOTSTRAP_SURFACE
 - claude_live_home: $(product_live_home claude)
 - codex_live_home: $(product_live_home codex)
 - claude_home_prompt: $(product_home_prompt_path claude) -> $(agent_home_source)
@@ -550,8 +615,7 @@ main() {
   ensure_repo_clone
   ensure_home_prompts
   run_agent_docs_audit
-  render_products
-  activate_products
+  run_surface_bootstrap
   print_summary
   set +e
   run_doctor
