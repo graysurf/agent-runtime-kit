@@ -42,8 +42,8 @@ agent-runtime binary), installs the profile-selected third-party CLI tools
 from manifests/cli-tools.yaml, clones agent-runtime-kit into
 \$HOME/.config/agent-runtime-kit when missing, renders Codex and Claude runtime
 surfaces, activates the runtime homes via
-\`agent-runtime install --product <p>\`, and runs \`agent-runtime doctor\` for
-both products.
+\`agent-runtime install --product <p>\`, wires the home prompt docs symlinks,
+audits declared agent docs, and runs \`agent-runtime doctor\` for both products.
 
 For daily runtime surface refreshes, see \`scripts/sync-runtime-surfaces.sh\`.
 
@@ -209,7 +209,7 @@ tap_and_install_nils_cli() {
     run_cmd brew install "$TAP_FORMULA"
   fi
   if [ "$DRY_RUN" = "0" ]; then
-    require_commands agent-runtime
+    require_commands agent-runtime agent-docs
   fi
 }
 
@@ -342,6 +342,109 @@ product_state_home() {
   esac
 }
 
+agent_home_source() {
+  printf '%s\n' "$REPO_HOME_DEFAULT/AGENT_HOME.md"
+}
+
+product_home_prompt_path() {
+  case "$1" in
+    claude) printf '%s\n' "$HOME/.claude/CLAUDE.md" ;;
+    codex) printf '%s\n' "${CODEX_HOME:-$HOME/.codex}/AGENTS.md" ;;
+    *)
+      err "unknown product: $1"
+      exit 2
+      ;;
+  esac
+}
+
+canonical_path() {
+  local path="$1"
+  local dir
+  local base
+  dir="$(dirname "$path")"
+  base="$(basename "$path")"
+  if (
+    cd "$dir" 2>/dev/null &&
+      printf '%s/%s\n' "$(pwd -P)" "$base"
+  ); then
+    return 0
+  fi
+  printf '%s\n' "$path"
+}
+
+resolve_symlink_target() {
+  local link_path="$1"
+  local raw_target
+  local link_dir
+  local target_dir
+  local target_base
+
+  raw_target="$(readlink "$link_path")" || return 1
+  case "$raw_target" in
+    /*)
+      printf '%s\n' "$raw_target"
+      ;;
+    *)
+      link_dir="$(dirname "$link_path")"
+      target_dir="$(dirname "$raw_target")"
+      target_base="$(basename "$raw_target")"
+      (
+        cd "$link_dir" &&
+          cd "$target_dir" 2>/dev/null &&
+          printf '%s/%s\n' "$(pwd -P)" "$target_base"
+      ) || printf '%s/%s\n' "$link_dir" "$raw_target"
+      ;;
+  esac
+}
+
+ensure_home_prompt() {
+  local product="$1"
+  local target
+  local target_dir
+  local expected
+  local existing
+
+  target="$(product_home_prompt_path "$product")"
+  target_dir="$(dirname "$target")"
+  expected="$(canonical_path "$(agent_home_source)")"
+
+  if [ "$DRY_RUN" = "0" ] && [ ! -f "$expected" ]; then
+    err "missing home policy source: $expected"
+    exit 1
+  fi
+
+  if [ -L "$target" ]; then
+    existing="$(resolve_symlink_target "$target")"
+    if [ "$existing" = "$expected" ]; then
+      log "home prompt already wired product=$product target=$target"
+      return 0
+    fi
+    err "$target is a symlink to $existing; expected $expected"
+    exit 1
+  fi
+
+  if [ -e "$target" ]; then
+    err "$target exists and is not a symlink to $expected; refusing to overwrite"
+    exit 1
+  fi
+
+  log "wiring home prompt product=$product target=$target"
+  run_cmd mkdir -p "$target_dir"
+  run_cmd ln -s "$expected" "$target"
+}
+
+ensure_home_prompts() {
+  local product
+  for product in codex claude; do
+    ensure_home_prompt "$product"
+  done
+}
+
+run_agent_docs_audit() {
+  log "verifying agent docs wiring"
+  run_cmd agent-docs audit --target all --strict --project-path "$REPO_HOME_DEFAULT"
+}
+
 activate_products() {
   local product
   local live_home
@@ -423,6 +526,9 @@ Summary
 - profile: $PROFILE
 - claude_live_home: $(product_live_home claude)
 - codex_live_home: $(product_live_home codex)
+- claude_home_prompt: $(product_home_prompt_path claude) -> $(agent_home_source)
+- codex_home_prompt: $(product_home_prompt_path codex) -> $(agent_home_source)
+- docs_audit: agent-docs audit --target all --strict --project-path $REPO_HOME_DEFAULT
 EOF
 }
 
@@ -442,6 +548,8 @@ main() {
   tap_and_install_nils_cli
   install_cli_tools_profile
   ensure_repo_clone
+  ensure_home_prompts
+  run_agent_docs_audit
   render_products
   activate_products
   print_summary
