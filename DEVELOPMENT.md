@@ -101,6 +101,40 @@ agent-runtime doctor --source-root "$HOME/.config/agent-runtime-kit" \
   --profile core
 ```
 
+## Verified-Signature Push Fallback
+
+`main` is protected by repository rules that require verified commit
+signatures. Keep that protection in place. If a direct push fails with a rule
+error such as:
+
+```text
+GH013: Repository rule violations found
+Commits must have verified signatures
+error: cannot run gpg: No such file or directory
+```
+
+use a branch plus PR flow instead of weakening the rule or bypassing signing.
+For agent sessions, continue to use the managed worktree, `semantic-commit`,
+and `forge-cli` delivery path required by the repo policy. For manual human
+maintenance from a fresh machine with `gh auth login` and repo write access, the
+fallback is:
+
+```bash
+git switch -c docs/<short-topic>
+git push -u origin HEAD
+gh pr create --base main --head "$(git branch --show-current)"
+```
+
+Local GPG or SSH commit signing is optional for this fallback path. Configure it
+only when the operator wants signed local commits as part of their normal setup;
+do not make GPG installation a bootstrap prerequisite for every contributor.
+
+Generated plan bundles do not need a direct push to `main` before execution.
+They need provider-visible source, plan, and state records on the tracking issue.
+If the plan bundle PR remains open after execution finishes, update its
+execution-state document with the final evidence before merging it, or close the
+PR as obsolete if the issue closeout already superseded the branch contents.
+
 ## Refreshing Runtime Surfaces
 
 After managed runtime surface changes land, use
