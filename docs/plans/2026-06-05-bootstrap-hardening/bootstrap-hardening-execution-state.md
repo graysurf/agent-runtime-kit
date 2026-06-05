@@ -17,7 +17,7 @@
 - Source document: docs/plans/2026-06-05-bootstrap-hardening/bootstrap-hardening-discussion-source.md
 - Plan document: docs/plans/2026-06-05-bootstrap-hardening/bootstrap-hardening-plan.md
 - Direct source-doc execution waiver: not applicable.
-- Tracking issue: pending.
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/278>
 - Source snapshot: pending.
 - Plan snapshot: pending.
 - Initial state snapshot: pending.
