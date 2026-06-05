@@ -18,7 +18,7 @@ scope drift.
   `docs/plans/2026-06-05-skill-decision-minimal-review/2026-06-05-skill-decision-minimal-review-discussion-source.md`
 - Source type: discussion-to-implementation-doc
 - Prior implementation reference:
-  https://github.com/graysurf/agent-runtime-kit/pull/286
+  <https://github.com/graysurf/agent-runtime-kit/pull/286>
 - Open questions carried into execution:
   - Whether any domain needs a new shared spec rather than only shorter
     `SKILL.md.tera` bodies.
@@ -78,8 +78,10 @@ choose edit batches.
   - Provider issue contains source, plan, and initial state lifecycle evidence.
   - Local run state is initialized for the provider issue.
 - **Validation**:
-  - `plan-tooling validate --file docs/plans/2026-06-05-skill-decision-minimal-review/2026-06-05-skill-decision-minimal-review-plan.md --format text --explain`
-  - `plan-issue record audit --profile tracking --expect-visible` against the opened issue.
+  - Plan validation with `plan-tooling validate --file <plan-file> --format text
+    --explain`.
+  - Provider lifecycle audit with `plan-issue record audit --profile tracking
+    --expect-visible`.
 
 ### Task 1.2: Produce the skill inventory and triage matrix
 
@@ -277,7 +279,6 @@ the tracker only after issue-visible evidence is complete.
 
 - **Location**:
   - `core/skills/`
-  - `build/`
   - `tests/golden/`
   - `tests/runtime-smoke/`
   - `scripts/ci/`

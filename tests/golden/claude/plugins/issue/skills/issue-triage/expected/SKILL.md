@@ -22,6 +22,8 @@ Prereqs:
 - Provider authentication is available for non-dry-run inbox and issue reads.
 - For implementation handoff, the normal implementation, issue follow-up, or
   PR/MR workflow is available.
+- Shared close/comment rules in
+  `core/skills/issue/issue-lifecycle/README.md` are known for any handoff.
 
 Inputs:
 
@@ -128,3 +130,6 @@ forge-cli issue view "$ISSUE" --format json
 context enrichment. It does not replace `issue-follow-up`, mutate provider
 state, or implement the selected issue unless the user explicitly asks for that
 next step.
+
+Shared rules for follow-up comments and closure live in
+`core/skills/issue/issue-lifecycle/README.md`.

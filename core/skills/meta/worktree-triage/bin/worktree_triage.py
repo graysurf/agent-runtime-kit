@@ -185,7 +185,9 @@ def classify(repo: str, base: str, wt: dict, primary_path: str) -> dict:
 
     if ahead == 0 and is_ancestor(repo, tip, base):
         record["disposition"] = "safe-merged"
-        record["suggested_action"] = "git worktree remove + delete branch (fully in base)"
+        record["suggested_action"] = (
+            "git-cli worktree remove + delete branch (fully in base)"
+        )
         return record
 
     unique = cherry_unique_commits(repo, base, tip)
@@ -193,7 +195,8 @@ def classify(repo: str, base: str, wt: dict, primary_path: str) -> dict:
     if not unique:
         record["disposition"] = "safe-superseded"
         record["suggested_action"] = (
-            "git worktree remove + delete branch (all commits patch-equivalent in base)"
+            "git-cli worktree remove + delete branch "
+            "(all commits patch-equivalent in base)"
         )
         return record
 

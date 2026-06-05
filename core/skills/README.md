@@ -19,6 +19,32 @@ human index for scanning the skill catalog by category and skill series.
 | `pr` | 4 | GitHub PRs, GitLab MRs, dispatch-lane PRs |
 | `reporting` | 3 | Topic radar, daily brief, project retrospective |
 
+## Skill Body Editing Rubric
+
+When editing a `SKILL.md.tera`, keep the body decision-minimal: short enough to
+scan, but explicit about anything that changes an agent's next action.
+
+Keep text that carries one of these roles:
+
+- Hard prerequisites: CLI floors, provider auth, branch/base state, required
+  docs, validation contracts, or committed bundle state.
+- Irreversible or externally visible operations: provider mutation, merge,
+  issue close, archive, install/apply, runtime-home mutation, or destructive
+  cleanup.
+- Provider differences: GitHub/GitLab behavior, label shape, PR/MR refs, check
+  gates, reviewability, and provider API limits.
+- Stop conditions: exact blocker codes, stale state, missing evidence,
+  visible-lint failures, forbidden roles, or no-safe-retry cases.
+- Ownership boundaries: what the skill owns, what it must not own, and which
+  skill or CLI takes over at handoff.
+- Canonical entrypoints and validation: the smallest command sequence and
+  checks that prove the workflow shape.
+
+Remove or rehome text that only restates CLI help, repeats sibling-skill rules
+without local differences, explains history that no longer affects decisions,
+or expands optional branches into long examples. Shared rules belong in the
+narrowest domain reference folder, not copied across every sibling skill.
+
 ## Browser
 
 | Series | Skill | Purpose |
@@ -77,6 +103,9 @@ Routing guidance for the skill family lives in
 
 ## Issue
 
+Shared issue label, comment, and close discipline lives in
+[issue/issue-lifecycle/README.md](./issue/issue-lifecycle/README.md).
+
 | Series | Skill | Purpose |
 | --- | --- | --- |
 | Issue triage | [issue-triage](./issue/issue-triage/) | Reviews open GitHub or GitLab issues from `forge-cli inbox`, classifies readiness and blockers, and recommends execution order. |
@@ -105,6 +134,9 @@ classification lives in [meta/README.md](./meta/README.md).
 | Delivery and repo maintenance | [semantic-commit](./meta/semantic-commit/), [worktree-triage](./meta/worktree-triage/), [nils-cli-bump](./meta/nils-cli-bump/), [repo-retro](./meta/repo-retro/) | Semantic commits, worktree cleanup, nils-cli pin bumps, and retrospectives. |
 
 ## PR And MR
+
+Shared PR/MR body, label, branch, provider, and merge gate rules live in
+[pr/pr-lifecycle/README.md](./pr/pr-lifecycle/README.md).
 
 | Series | Skill | Purpose |
 | --- | --- | --- |

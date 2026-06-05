@@ -13,8 +13,8 @@ Prereqs:
 - `agent-runtime`, `forge-cli`, `plan-issue`, and `review-specialists` are
   installed from the released nils-cli package and available on `PATH`. The
   `code-review-pre-merge-gate` workflow uses `review-specialists`.
-- The provider CLI auth succeeds for the target host when running live mode:
-  `gh auth status` for GitHub, `glab auth status` for GitLab.
+- Shared provider, branch, body, and label rules in
+  `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The working tree contains only the intended delivery changes.
 - Local validation and review findings have been resolved before merge.
 
@@ -25,9 +25,7 @@ Inputs:
 - Delivery kind: `feature` or `bug`.
 - PR/MR title and body section files for `agent-runtime pr-body render`.
 - Optional head branch, base branch, merge method, reviewers, and timeout.
-- Required labels selected from the shared taxonomy: one `type::`, one primary
-  `area::`, and one `size::`. Add `risk::` or `provider::<github|gitlab>` when
-  the scope warrants it.
+- Required labels selected from the shared taxonomy.
 - Optional `--no-merge` when the workflow should stop after checks.
 - Optional `--no-closeout` to stop after delivery readiness checks and before
   linked issue closeout.
@@ -69,12 +67,9 @@ Failure modes:
 
 ## Body Format
 
-Use `agent-runtime pr-body render` as the canonical formatter. The renderer owns
-feature/bug section order and the `forge-cli`-compatible minimum headings
-(`## Summary` and `## Test plan`).
-
-For issue-backed tracking or dispatch work, put provider references in the
-rendered narrative as non-closing refs such as `Refs #<issue>`.
+Use `agent-runtime pr-body render` as the canonical formatter. The shared
+PR/MR lifecycle reference owns minimum headings, label selection, and
+non-closing issue references.
 
 ## Entrypoint
 
@@ -169,14 +164,10 @@ Use `profile=tracking` for lightweight plan-tracking issues and
 2. Inspect linked issues and closing references. For issue-backed plan work,
    use `Refs #<issue>` until `record close` has passed.
 3. Render the PR/MR body with `agent-runtime pr-body render`.
-4. Select labels before provider mutation. Every delivered PR/MR needs `type::`,
-   one primary `area::`, and `size::`; add `risk::` for high-risk changes and
-   `provider::<github|gitlab>` for provider-specific work. Use
-   `state::do-not-merge` instead of prose-only blockers when it must not merge.
-5. If `manifests/forge-labels.yaml` exists, run `forge-cli label ensure
-   --catalog manifests/forge-labels.yaml --repo "$OWNER_REPO" --format json`
-   before the first live delivery in that repo. Use `label audit` when mutation
-   is not allowed.
+4. Select labels before provider mutation; use
+   `core/skills/pr/pr-lifecycle/README.md` for the shared taxonomy rule.
+5. If `manifests/forge-labels.yaml` exists, validate labels with the
+   appropriate `forge-cli label` surface before the first live delivery.
 6. Run `forge-cli pr deliver` with selected `--label` flags,
    `--label-catalog manifests/forge-labels.yaml` when present, and
    `--no-merge` so checks / pipelines complete before the mandatory review gate.

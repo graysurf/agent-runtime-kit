@@ -37,6 +37,8 @@ Prereqs:
   tracker: `graysurf/plan-tracking-testbed`. The `plan-issue-finding` marker
   label plus the shared `type::` / `area::` / `severity::` / `state::` taxonomy
   exist there (mirrored from `manifests/forge-labels.yaml`).
+- Shared issue label/comment/close rules in
+  `core/skills/issue/issue-lifecycle/README.md` are satisfied.
 
 Inputs:
 
@@ -83,8 +85,8 @@ each dimension:
   (driver), `area::docs`, `area::infra` (catalog).
 - **severity** — `severity::s1`, `severity::s2`, `severity::s3`.
 
-When the tracker carries the shared catalog and label mutation is allowed,
-ensure missing labels before creating the issue:
+When the tracker carries the shared catalog, follow the shared issue lifecycle
+reference for `label audit` versus `label ensure`. The live ensure form is:
 
 ```bash
 forge-cli label ensure \
@@ -92,8 +94,6 @@ forge-cli label ensure \
   --repo "$TRACKER_REPO" \
   --format json
 ```
-
-Use `label audit` instead when mutation is not allowed.
 
 ## Workflow
 

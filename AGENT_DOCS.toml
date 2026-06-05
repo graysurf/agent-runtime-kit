@@ -2,15 +2,15 @@
 # here. Keep repo-only requirements at `scope = "project"`; they apply to this
 # repository and linked worktrees, but are skipped for unrelated projects.
 #
-# Use `scope = "global"` only for docs that should be inherited by unrelated
-# project repositories when this checkout is the docs home. Global entries are
-# still resolved from this checkout, so `path` must point at a tracked file here.
+# Use `scope = "home"` for docs that should be inherited by unrelated project
+# repositories when this checkout is the docs home. Home entries are resolved
+# from this checkout, so `path` must point at a tracked file here.
 #
-# Global-scope example:
+# Home-scope example:
 #
 # [[document]]
 # context = "startup"
-# scope = "global"
+# scope = "home"
 # path = "docs/source/<shared-home-scope-doc>.md"
 # required = true
 # when = "always"
@@ -26,27 +26,27 @@ notes = "Local validation and CI gate procedure; required only for code repos (a
 
 [[document]]
 context = "project-dev"
-scope = "global"
+scope = "home"
 path = "core/policies/work-tier-levels.md"
 required = true
 when = "always"
-notes = "Work-tier levels (L0-L3) and proactive triage: classify each work request into the lowest applicable tier, recommend the next step, and surface a decision at the L1+ escalation boundary. Global so any project-dev work inherits it when this checkout is the docs home."
+notes = "Work-tier levels (L0-L3) and proactive triage: classify each work request into the lowest applicable tier, recommend the next step, and surface a decision at the L1+ escalation boundary. Home-scoped so any project-dev work inherits it when this checkout is the docs home."
 
 [[document]]
 context = "project-dev"
-scope = "global"
+scope = "home"
 path = "core/policies/git-delivery.md"
 required = true
 when = "always"
-notes = "Detailed Git/commit/delivery mechanics behind the AGENT_HOME.md hard gates: semantic-commit body gate, managed worktree paths, branch naming, label selection, and PR/MR body format. Global so any project-dev work inherits it when this checkout is the docs home."
+notes = "Detailed Git/commit/delivery mechanics behind the AGENT_HOME.md hard gates: semantic-commit body gate, managed worktree paths, branch naming, label selection, and PR/MR body format. Home-scoped so any project-dev work inherits it when this checkout is the docs home."
 
 [[document]]
 context = "project-dev"
-scope = "global"
+scope = "home"
 path = "core/policies/files-hooks-validation.md"
 required = true
 when = "always"
-notes = "Detailed output-artifact, hook source/sync, and validation-command mechanics behind the AGENT_HOME.md directives: agent-out run dirs, the runtime-kit state out tree, hook config location and sync, and agent-run exec. Global so any project-dev work inherits it when this checkout is the docs home."
+notes = "Detailed output-artifact, hook source/sync, and validation-command mechanics behind the AGENT_HOME.md directives: agent-out run dirs, the runtime-kit state out tree, hook config location and sync, and agent-run exec. Home-scoped so any project-dev work inherits it when this checkout is the docs home."
 
 [[document]]
 context = "project-dev"
@@ -73,15 +73,15 @@ notes = "Downgrade / coupled-dev / pin-bump workflows for running a non-pinned n
 # intent. Optional docs remain auditable and available through agent-docs.
 [[document]]
 context = "task-tools"
-scope = "global"
+scope = "home"
 path = "core/policies/external-facts.md"
 required = true
 when = "always"
-notes = "External, unstable, or time-sensitive claims: when to run the task-tools preflight, source tags, authoritative sourcing, and which evidence/reporting skills to prefer. Global so any task-tools work inherits it when this checkout is the docs home."
+notes = "External, unstable, or time-sensitive claims: when to run the task-tools preflight, source tags, authoritative sourcing, and which evidence/reporting skills to prefer. Home-scoped so any task-tools work inherits it when this checkout is the docs home."
 
 [[document]]
 context = "task-tools"
-scope = "global"
+scope = "home"
 path = "core/policies/cli-tools.md"
 required = false
 when = "always"

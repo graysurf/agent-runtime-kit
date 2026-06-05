@@ -6,7 +6,7 @@ This policy holds the detailed mechanics for where agent output artifacts go,
 where hook source and managed config live, and how to run project validation
 commands.
 
-It is declared as a `project-dev` document in `AGENT_DOCS.toml` (global scope),
+It is declared as a `project-dev` document in `AGENT_DOCS.toml` (home scope),
 so the harness surfaces it through the hook preflight when implementation work
 starts. `AGENT_HOME.md` carries the always-on directives — follow the active
 project's conventions, keep debug artifacts out of `/tmp`, do not create durable

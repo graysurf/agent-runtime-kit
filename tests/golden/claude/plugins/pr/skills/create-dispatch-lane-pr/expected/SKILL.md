@@ -13,6 +13,8 @@ Prereqs:
 - Profile: helper (no plan-issue profile attached; the caller carries
   the dispatch profile).
 - CLI floors: `forge-cli`.
+- Shared provider and branch rules in
+  `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - Lane precondition: the lane has an assigned `BRANCH` (pushed),
   `BASE` (`PLAN_BRANCH`), `TASK_ID`, and ready body content.
 - Run state precondition: a dispatch `run-state.json` exists for the
@@ -112,3 +114,4 @@ Cross-references:
   `tracking run update --linked-pr`.
 - Family rules: Plan Issue Skill Family, Shared Family
   Rules section (under core/skills/dispatch/plan-issue-spec/).
+- PR/MR rules: `core/skills/pr/pr-lifecycle/README.md`.

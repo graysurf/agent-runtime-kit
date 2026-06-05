@@ -18,8 +18,8 @@ Prereqs:
   `--repo` and `--provider` to `forge-cli`.
 - `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
-- When the repository carries `manifests/forge-labels.yaml`, use it as the
-  label catalog and run `forge-cli label audit|ensure` before live mutation.
+- Shared label, comment, and close rules in
+  `core/skills/issue/issue-lifecycle/README.md` are satisfied.
 - Existing issue number or URL is known for follow-up mode; otherwise use open
   mode.
 - For implementation handoff, the appropriate implementation, PR/MR, or
@@ -29,9 +29,7 @@ Inputs:
 
 - New problem report, observation, screenshot/path, source evidence, or user
   instruction to open a tracking issue.
-- Selected issue labels: one `type::`, one primary `area::`, and a `state::`
-  label (`state::needs-triage` unless a more specific state is known). Bug,
-  incident, or security issues also need `severity::` when impact is known.
+- Selected issue labels from the shared taxonomy.
 - Existing issue number or URL plus a request to continue, investigate, update,
   unblock, implement, or close.
 - Optional desired state: `comment-only`, `blocked`,
@@ -90,21 +88,10 @@ Use when the user discovered a problem and wants a durable issue.
    If only a local screenshot path is available, include the path plus a short
    visual summary. Do not create unrelated repo artifacts just to host an image
    unless the user asks.
-3. Select labels before mutation. For ordinary follow-up issues, start with
-   `workflow::follow-up` plus the required `type::`, `area::`, and `state::`
-   labels. Keep the compatibility `issue` label during rollout.
-4. If the target repo has the shared catalog and label mutation is allowed,
-   ensure missing labels before creating the issue:
-
-   ```bash
-   forge-cli label ensure \
-     --catalog manifests/forge-labels.yaml \
-     --repo "$OWNER_REPO" \
-     --format json
-   ```
-
-   Use `label audit` instead when mutation is not allowed. Do not use
-   `--update-existing` unless drift repair was explicitly approved.
+3. Select labels before mutation using
+   `core/skills/issue/issue-lifecycle/README.md`.
+4. If the target repo has the shared catalog, run the matching
+   `forge-cli label audit|ensure` command before live mutation.
 5. Open the issue through `forge-cli`:
 
    ```bash
@@ -197,11 +184,7 @@ Use when follow-up determines the issue is actionable.
 
 ## Comment Discipline
 
-- Keep comments concise and evidence-based.
-- Do not paste long logs; summarize and link to durable artifacts when
-  available.
-- Separate facts, inferences, blockers, and next actions when the state is
-  uncertain.
-- Do not let chat history become the only source of truth once an issue exists.
-- Avoid opening replacement issues for the same unresolved problem unless the
-  user explicitly wants a split.
+Use the shared issue lifecycle reference for comment shape and close discipline.
+This skill's local rule is the mode decision: open a new follow-up issue only
+when the problem needs its own durable timeline; otherwise continue the
+existing issue with one checkpoint comment.
