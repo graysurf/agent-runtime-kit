@@ -19,7 +19,7 @@
 - Source document: docs/plans/2026-06-05-skill-decision-minimal-review/2026-06-05-skill-decision-minimal-review-plan.md
 - Plan document: docs/plans/2026-06-05-skill-decision-minimal-review/2026-06-05-skill-decision-minimal-review-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/288>
 
 ## Validation Plan
 
