@@ -734,7 +734,7 @@ skills:
         render_to: plugins/pr/skills/create-dispatch-lane-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
-      plan-issue: ">=0.21.0"
+      plan-issue: ">=1.0.1"
     state_out_mode: runtime
 
   - id: pr.close-pr
@@ -764,7 +764,7 @@ skills:
     required_clis:
       forge-cli: ">=0.20.1"
       agent-runtime: ">=0.19.0"
-      plan-issue: ">=0.21.0"
+      plan-issue: ">=1.0.1"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
@@ -779,8 +779,8 @@ skills:
         name: create-plan-tracking-issue
         render_to: plugins/dispatch/skills/create-plan-tracking-issue/SKILL.md
     required_clis:
-      plan-tooling: ">=0.25.10"
-      plan-issue: ">=0.25.10"
+      plan-tooling: ">=1.0.1"
+      plan-issue: ">=1.0.1"
       forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
@@ -796,8 +796,8 @@ skills:
         render_to: plugins/dispatch/skills/plan-tracking-issue-closeout/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
-      plan-issue: ">=0.25.10"
-      plan-tooling: ">=0.25.10"
+      plan-issue: ">=1.0.1"
+      plan-tooling: ">=1.0.1"
     state_out_mode: runtime
 
   - id: dispatch.deliver-dispatch-plan
@@ -811,8 +811,8 @@ skills:
         name: deliver-dispatch-plan
         render_to: plugins/dispatch/skills/deliver-dispatch-plan/SKILL.md
     required_clis:
-      plan-tooling: ">=0.25.10"
-      plan-issue: ">=0.25.10"
+      plan-tooling: ">=1.0.1"
+      plan-issue: ">=1.0.1"
       forge-cli: ">=0.20.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
@@ -829,8 +829,8 @@ skills:
         name: dispatch-plan-closeout
         render_to: plugins/dispatch/skills/dispatch-plan-closeout/SKILL.md
     required_clis:
-      plan-issue: ">=0.25.10"
-      plan-tooling: ">=0.25.10"
+      plan-issue: ">=1.0.1"
+      plan-tooling: ">=1.0.1"
       forge-cli: ">=0.20.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
@@ -847,8 +847,8 @@ skills:
         name: execute-plan-tracking-issue
         render_to: plugins/dispatch/skills/execute-plan-tracking-issue/SKILL.md
     required_clis:
-      plan-tooling: ">=0.25.10"
-      plan-issue: ">=0.25.10"
+      plan-tooling: ">=1.0.1"
+      plan-issue: ">=1.0.1"
       forge-cli: ">=0.20.1"
     state_out_mode: runtime
 
@@ -863,8 +863,8 @@ skills:
         name: deliver-plan-tracking-issue
         render_to: plugins/dispatch/skills/deliver-plan-tracking-issue/SKILL.md
     required_clis:
-      plan-tooling: ">=0.25.10"
-      plan-issue: ">=0.25.10"
+      plan-tooling: ">=1.0.1"
+      plan-issue: ">=1.0.1"
       forge-cli: ">=0.20.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
@@ -882,7 +882,7 @@ skills:
         render_to: plugins/dispatch/skills/review-dispatch-lane-pr/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
-      plan-issue: ">=0.25.10"
+      plan-issue: ">=1.0.1"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -899,7 +899,7 @@ skills:
         render_to: plugins/dispatch/skills/execute-dispatch-lane/SKILL.md
     required_clis:
       forge-cli: ">=0.20.1"
-      plan-issue: ">=0.25.10"
-      plan-tooling: ">=0.25.10"
+      plan-issue: ">=1.0.1"
+      plan-tooling: ">=1.0.1"
       review-evidence: ">=0.16.0"
     state_out_mode: runtime

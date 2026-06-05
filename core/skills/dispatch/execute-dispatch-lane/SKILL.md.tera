@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=0.25.10`, `plan-tooling >=0.25.10`, `forge-cli`.
+- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`, `forge-cli`.
 - Issue precondition: the shared dispatch issue exists and is at least
   `RECORD_OPEN_ACTIVE` with no `run-state-stale` warning.
 - Run state precondition: the dispatch `run-state.json` is reconciled

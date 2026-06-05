@@ -11,75 +11,43 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1` — the release that
-  ships execution-state sync, the reconcile gate, and `exec-state-sync`.
-- Issue precondition: the tracking issue exists with at least `source`,
-  `plan`, and an initial `state` lifecycle comment.
-- Run state precondition: a `run-state.json` exists for this issue (or
-  the skill must defer to `create-plan-tracking-issue` /
-  `tracking run init` first).
-- Shared family rules from the Plan Issue Skill Family
-  spec apply (see the Shared Family Rules section in
-  core/skills/dispatch/plan-issue-spec/).
+- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`.
+- The tracking issue exists with visible `source`, `plan`, and initial
+  `state` evidence.
+- `run-state.json` exists for this issue. If not, defer to
+  `create-plan-tracking-issue` / `tracking run init`.
+- Provider issue evidence wins over local run state. Any stale-state code
+  is a hard stop until reconciled.
+- Shared family rules apply from
+  `core/skills/dispatch/plan-issue-spec/skill-family.md`.
 
 Inputs:
 
-- `OWNER_REPO`, `ISSUE`, `PLAN_BUNDLE`, `BRANCH`.
-- `RUN_STATE` — path to the existing `run-state.json`.
-- Optional `TASK_ID` or sprint number when the run state does not
-  already name it.
-- Validation evidence path (`$VALIDATION_LOG`) when a validation run
-  has actually completed.
+- `OWNER_REPO`, `ISSUE`, `PLAN_BUNDLE`, `SLUG`, `RUN_STATE`, `BRANCH`.
+- Optional `TASK_ID` or sprint identifier when run state does not already
+  select the work.
+- Validation command/result/evidence only after validation actually ran.
 
 Outputs:
 
+- `tracking run update` for selected task, branch, phase, notes, blockers,
+  validation fields, and evidence pointers.
 - `tracking checkpoint --live --post state[,session[,validation]]` for
-  in-progress updates. `--live` is the default execution path so the
-  prescribed lifecycle posting writes to the provider instead of
-  returning a dry-run envelope. `tracking close-ready` later treats
-  `session` and `validation` as required, so post both at least once
-  before handing off to `plan-tracking-issue-closeout` (post them in
-  the final combined checkpoint after the last task transitions).
-- `tracking run update` writes `selected_task`, `branch`, `phase`,
-  `validation_*`, and notes back into the typed run state.
-- `plan-tooling ledger-update --execution-state <path> --task <id>
-  --status <status> --evidence <evidence>` patches the canonical
-  per-task ledger row in `<slug>-execution-state.md` immediately after
-  each task transitions (started → done / blocked / waived), so the
-  bundle's `## Task Ledger` stays faithful to actual execution.
-- Dashboard repair through `tracking checkpoint --live
-  --repair-dashboard` (or `record repair-dashboard` if a lower-level
-  fix is needed).
-- `tracking checkpoint --live` also reconciles the durable `Tracking issue`
-  bullet in `<slug>-execution-state.md` against run-state: it self-heals a
-  missing or placeholder URL (derived offline from the repo slug) and reports
-  the action under `execution_state_reconcile`.
+  useful progress only.
+- `plan-tooling ledger-update` after each task row changes status.
+- Dashboard repair only as part of a controller checkpoint or an explicit
+  lower-level repair.
 
 Failure modes:
 
-- Forbidden lifecycle roles for this skill: `record open` / `record
-  attach` (issue already exists), `review` posts (that belongs to
-  `deliver-plan-tracking-issue`), `closeout` posts. Any of these abort
-  with `forbidden-role-for-skill`.
-- Controller refusal codes propagated: `run-state-stale`,
-  `issue-evidence-missing`, `RECORD_BLOCKED`,
-  `visible-completeness-failed`.
-- Visible-completeness lint codes relevant here:
-  `state-missing-task-ledger`, `validation-missing-overall`,
-  `session-missing-summary`.
-- `ledger-rows-pending` (from `tracking close-ready`): a per-task
-  ledger row is still `pending` or `in-progress` at
-  `phase=ready_for_close`. Remediation: run `plan-tooling
-  ledger-update --execution-state <path> --task '<id>' --status done
-  --evidence <evidence>` for the offending row(s) before re-running
-  the gate.
-- `execution-state-issue-missing` / `execution-state-issue-mismatch` (durable
-  execution-state reconcile): `tracking checkpoint --live` self-heals a missing
-  or placeholder `Tracking issue` URL and refuses only on a genuine issue
-  mismatch; `tracking close-ready` blocks (non-mutating) on either. Remediation:
-  `plan-tooling exec-state-sync --execution-state <path> --issue-url <url>`.
-- Scope-leak: rewriting `source` / `plan` snapshots, posting for
-  purely local edits, or posting unchanged validation reruns.
+- Stop on `run-state-stale`, `issue-evidence-missing`, `RECORD_BLOCKED`,
+  `visible-completeness-failed`, or `tracking close-ready` blockers such
+  as `ledger-rows-pending`.
+- Stop on execution-state issue mismatch. Use
+  `plan-tooling exec-state-sync` only when the issue URL is known and the
+  mismatch is a placeholder/missing-url repair, not a genuine wrong issue.
+- Forbidden writes: `record open`, `record attach`, `review`, `closeout`,
+  PR delivery, source/plan snapshot rewrites, or unchanged validation noise.
 
 ## Entrypoint
 
@@ -98,100 +66,61 @@ plan-issue --format json tracking run update \
   --note "starting $TASK_ID" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-plan-issue --format json tracking checkpoint \
-  --provider-repo "$OWNER_REPO" \
-  --issue "$ISSUE" \
-  --run-state "$RUN_STATE" \
-  --live \
-  --post state
-```
-
-After validation results land, update run state and re-checkpoint:
-
-```bash
-plan-issue --format json tracking run update \
-  --run-state "$RUN_STATE" \
-  --phase validating \
-  --validation-overall pass \
-  --validation-command "cargo test -p ..." \
-  --validation-status pass \
-  --validation-evidence "$VALIDATION_LOG" \
-  --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+plan-tooling ledger-update \
+  --execution-state "$PLAN_BUNDLE/$SLUG-execution-state.md" \
+  --task "$TASK_ID" \
+  --status done \
+  --evidence "$EVIDENCE"
 
 plan-issue --format json tracking checkpoint \
   --provider-repo "$OWNER_REPO" \
   --issue "$ISSUE" \
+  --profile tracking \
   --run-state "$RUN_STATE" \
   --live \
   --post state,session,validation \
   --repair-dashboard
 ```
 
-After each task transitions, patch the canonical ledger row:
-
-```bash
-plan-tooling ledger-update \
-  --execution-state "$PLAN_BUNDLE/$SLUG-execution-state.md" \
-  --task "$TASK_ID" \
-  --status done \
-  --evidence "$EVIDENCE"
-```
-
-`--evidence` is required; pass the PR / commit / comment URL or other
-verifiable citation. Status values: `pending | in-progress | done |
-blocked | waived`. `--notes` is the only path that mutates the
-`Notes` column; omit it to leave `Notes` untouched.
+For validation, set `--validation-*` fields in `tracking run update` only
+after the command completed and evidence exists.
 
 ## Workflow
 
-1. **Preflight** — run `tracking status --expect-visible` and confirm
-   `fsm_state` is consistent with the run state; refuse to post on
-   `run-state-stale` or `issue-evidence-missing`.
-2. **Scope decision** — choose the task / sprint subset for this
-   resume; decide whether a comment would teach a reader something
-   new (started, completed, validation flipped, blocker discovered,
-   PR opened, sprint status changed).
-3. **Implementation** — do the local work outside this skill's CLI
-   flow; the skill resumes after work produces a postable change.
-4. **Lifecycle checkpoint** — call `tracking run update` with the
-   changed fields, then `tracking checkpoint --live` with only the
-   role(s) whose body actually changed.
-5. **Per-task ledger update** — immediately after a task transitions,
-   run the `plan-tooling ledger-update` call shown in the Entrypoint so
-   the bundle's canonical `## Task Ledger` table is patched before the
-   next checkpoint reads it.
-6. **Read-back** — re-run `tracking status --expect-visible` and
-   confirm the new role appears in the reconciled evidence with
-   `lint_pass: true`.
-7. **Stop** on any Failure mode code; record blockers via
-   `tracking run update --note` and surface to the user.
+1. **Preflight** — run `tracking status --expect-visible`; stop on stale
+   run state, missing issue evidence, blocked FSM state, or visible lint.
+2. **Scope decision** — choose the current task/sprint. Post only when the
+   issue-visible truth changes: task started/completed, validation changed,
+   blocker changed, PR state changed, sprint status changed, or handoff
+   context would prevent a wrong next decision.
+3. **Local work** — implement outside lifecycle calls.
+4. **Checkpoint branch**:
+   - If a task row changed, run `plan-tooling ledger-update` first.
+   - If validation ran, update validation fields and include
+     `validation`.
+   - If useful session context exists, include `session`.
+   - Otherwise post only `state`, or skip the post when it would repeat
+     the dashboard.
+5. **Read-back** — rerun `tracking status --expect-visible`; confirm the
+   new roles are visible and lint-clean.
+6. **Stop / handoff** — stop on any failure code. Hand off to
+   `deliver-plan-tracking-issue` when PR delivery or review evidence is in
+   scope; hand off to closeout only after required roles exist.
 
 ## Boundary
 
 Owns:
 
-- Scope selection for the resumed task / sprint.
-- The judgement of when a checkpoint is worth posting.
-- Validation interpretation and the choice of roles to include in a
-  combined checkpoint.
+- Resume scope selection, progress checkpoint judgement, validation
+  interpretation, and per-task ledger sync.
 
-Does not own:
+Must not:
 
-- Opening or attaching the issue — that is
-  `create-plan-tracking-issue`.
-- `review` checkpoints — those belong to `deliver-plan-tracking-issue`
-  (which carries delivery-grade review evidence).
-- Closeout and `record close` — that is
-  `plan-tracking-issue-closeout`.
-- Reconciliation algorithms and visible-lint enforcement — those are
-  owned by `plan-issue tracking`.
+- Open/attach the issue, post review evidence, create/merge PRs, post
+  closeout, or rewrite source/plan snapshots.
 
-Cross-references:
+Handoff:
 
-- Upstream: `create-plan-tracking-issue` provides the issue and
-  initial run state.
-- Downstream: `deliver-plan-tracking-issue` takes over when the
-  selected scope is ready to be carried through PR delivery and
-  close-readiness.
-- Family rules: Plan Issue Skill Family, Shared Family
-  Rules section (under core/skills/dispatch/plan-issue-spec/).
+- Upstream: `create-plan-tracking-issue`.
+- Delivery/review: `deliver-plan-tracking-issue`.
+- Closeout: `plan-tracking-issue-closeout`.
