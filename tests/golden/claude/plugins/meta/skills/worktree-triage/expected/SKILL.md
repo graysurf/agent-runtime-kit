@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Run from inside the target git repository (or pass `--repo <path>`).
-- `git` is on `PATH`; Python 3.11+ is available (the bundled
+- `git` and `git-cli` are on `PATH`; Python 3.11+ is available (the bundled
   `worktree_triage.py` helper is stdlib-only).
 - `forge-cli` is installed from the released nils-cli package for the
   draft-PR rescue path. The scan itself needs no provider access.
@@ -88,7 +88,7 @@ $HOME/.claude/plugins/meta/skills/worktree-triage/scripts/worktree-triage.sh --r
    `safe-merged` / `safe-superseded` worktree the user approves:
 
    ```bash
-   git worktree remove <path>
+   git-cli worktree remove <path-or-slug> --format json
    git branch -D <branch>
    ```
 

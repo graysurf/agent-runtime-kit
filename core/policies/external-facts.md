@@ -8,7 +8,7 @@ purpose-built tools to reach for. It pairs with `core/policies/cli-tools.md`
 (the cross-project CLI catalog), which is optional `task-tools` context
 available on demand.
 
-It is declared as a `task-tools` document in `AGENT_DOCS.toml` (global scope).
+It is declared as a `task-tools` document in `AGENT_DOCS.toml` (home scope).
 The UserPromptSubmit cue names it once per session in repos that declare an
 `AGENT_DOCS.toml`; read it before relying on an external fact. `AGENT_HOME.md`
 carries the always-on directives in its "Evidence, Memory, And External Facts"

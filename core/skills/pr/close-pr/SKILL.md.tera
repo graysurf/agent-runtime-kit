@@ -12,8 +12,8 @@ Prereqs:
 
 - `forge-cli` is installed from the released nils-cli package and available on
   `PATH`.
-- The provider CLI auth succeeds for the target host when running live mode:
-  `gh auth status` for GitHub, `glab auth status` for GitLab.
+- Shared provider and issue-backed merge rules in
+  `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The target PR/MR number is known.
 - Required validation, review findings, and issue-backed completion gates have
   been resolved before merge.
@@ -110,3 +110,5 @@ decision to merge versus abandon-close. Direct close requests do not run the
 mandatory delivery gate unless the user asked for review; end-to-end
 `deliver-pr` owns that mandatory gate and calls this close surface only after
 review has passed or been dispositioned.
+
+Shared rules: `core/skills/pr/pr-lifecycle/README.md`.

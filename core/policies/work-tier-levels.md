@@ -8,7 +8,7 @@ make one decision fast and consistent: **for any work request, pick the lowest
 applicable tier and use that tier's method — never run light work through a
 heavy tier.**
 
-It is declared as a `project-dev` document in `AGENT_DOCS.toml` (global scope),
+It is declared as a `project-dev` document in `AGENT_DOCS.toml` (home scope),
 so the harness injects it through the hook preflight when implementation work
 starts. `AGENT_HOME.md` carries the always-on short directive; this file is the
 full ladder, judge, methods, and behavior contract.
