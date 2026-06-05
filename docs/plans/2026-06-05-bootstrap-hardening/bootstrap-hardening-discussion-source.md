@@ -449,7 +449,7 @@ ships or is abandoned. Promote relevant sections into `DEVELOPMENT.md`,
 
 ## Recommended Next Artifact
 
-Create the umbrella issue first, then create the six child issues listed above.
+Create the umbrella issue first, then create the child issues listed above.
 Each issue should link this document and copy only the relevant problem,
 scope, acceptance criteria, and validation commands.
 
