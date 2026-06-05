@@ -40,9 +40,10 @@ Bootstrap a host so it can run graysurf/agent-runtime-kit. Installs Homebrew
 when missing, taps sympoies/tap, installs nils-cli (which ships the
 agent-runtime binary), installs the profile-selected third-party CLI tools
 from manifests/cli-tools.yaml, clones agent-runtime-kit into
-\$HOME/.config/agent-runtime-kit when missing, activates the Claude and Codex
-runtime homes via \`agent-runtime install --product <p>\`, and runs
-\`agent-runtime doctor\` for both products.
+\$HOME/.config/agent-runtime-kit when missing, renders Codex and Claude runtime
+surfaces, activates the runtime homes via
+\`agent-runtime install --product <p>\`, and runs \`agent-runtime doctor\` for
+both products.
 
 For daily runtime surface refreshes, see \`scripts/sync-runtime-surfaces.sh\`.
 
@@ -361,6 +362,16 @@ activate_products() {
   done
 }
 
+render_products() {
+  local product
+  for product in codex claude; do
+    log "rendering product=$product"
+    run_cmd agent-runtime render \
+      --source-root "$REPO_HOME_DEFAULT" \
+      --product "$product"
+  done
+}
+
 run_doctor() {
   local product
   local live_home
@@ -431,6 +442,7 @@ main() {
   tap_and_install_nils_cli
   install_cli_tools_profile
   ensure_repo_clone
+  render_products
   activate_products
   print_summary
   set +e

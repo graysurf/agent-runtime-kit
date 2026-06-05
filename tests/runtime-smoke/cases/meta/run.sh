@@ -350,6 +350,134 @@ run_sync_runtime_surfaces_probe() {
   grep -q "summary: synced surfaces for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
 }
 
+run_setup_render_before_install_probe() {
+  local out="$META_ARTIFACTS_DIR/setup.render-before-install.dry-run.txt"
+  local apply_out="$META_ARTIFACTS_DIR/setup.render-before-install.apply.txt"
+  local home="$TMP_ROOT/setup-render-home"
+  local apply_home="$TMP_ROOT/setup-render-apply-home"
+  local stub_bin="$TMP_ROOT/setup-render-bin"
+  local source_root="$apply_home/.config/agent-runtime-kit"
+
+  mkdir -p "$home"
+  (
+    cd "$REPO_ROOT"
+    HOME="$home" CODEX_HOME="$home/.codex" \
+      bash scripts/setup.sh \
+      --profile core \
+      --skip-homebrew-install \
+      --skip-cli-tools \
+      --dry-run
+  ) >"$out" 2>&1
+
+  python3 - "$out" <<'PY'
+import sys
+
+path = sys.argv[1]
+lines = open(path, encoding="utf-8").read().splitlines()
+render_lines = [
+    (idx, line)
+    for idx, line in enumerate(lines, 1)
+    if line.startswith("+ agent-runtime render ")
+]
+install_lines = [
+    (idx, line)
+    for idx, line in enumerate(lines, 1)
+    if line.startswith("+ agent-runtime install ")
+]
+
+assert len(render_lines) == 2, render_lines
+assert len(install_lines) == 2, install_lines
+assert any("--product codex" in line for _, line in render_lines), render_lines
+assert any("--product claude" in line for _, line in render_lines), render_lines
+assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
+PY
+
+  mkdir -p "$stub_bin" "$source_root/.git"
+  cat >"$stub_bin/brew" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "${1:-}" in
+  --prefix)
+    printf '/opt/homebrew\n'
+    ;;
+  list)
+    exit 1
+    ;;
+  tap | install | upgrade)
+    printf 'stub brew %s\n' "$*"
+    ;;
+  *)
+    printf 'stub brew %s\n' "$*"
+    ;;
+esac
+SH
+  cat >"$stub_bin/agent-runtime" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+command_name="${1:-}"
+shift || true
+source_root=""
+product=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --source-root)
+      source_root="$2"
+      shift 2
+      ;;
+    --product)
+      product="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+case "$command_name" in
+  render)
+    mkdir -p "$source_root/build/$product"
+    printf 'render %s\n' "$product"
+    ;;
+  install)
+    test -d "$source_root/build/$product"
+    printf 'install %s\n' "$product"
+    ;;
+  doctor)
+    printf 'doctor %s\n' "$product"
+    ;;
+  *)
+    printf 'unexpected agent-runtime command: %s\n' "$command_name" >&2
+    exit 64
+    ;;
+esac
+SH
+  chmod +x "$stub_bin/brew" "$stub_bin/agent-runtime"
+
+  (
+    cd "$REPO_ROOT"
+    PATH="$stub_bin:$PATH" HOME="$apply_home" CODEX_HOME="$apply_home/.codex" \
+      bash scripts/setup.sh \
+      --profile core \
+      --skip-homebrew-install \
+      --skip-cli-tools
+  ) >"$apply_out" 2>&1
+
+  python3 - "$apply_out" <<'PY'
+import sys
+
+events = [
+    line
+    for line in open(sys.argv[1], encoding="utf-8").read().splitlines()
+    if line.startswith(("render ", "install "))
+]
+assert events == ["render codex", "render claude", "install claude", "install codex"], events
+PY
+}
+
 run_sync_runtime_surfaces_no_prune_probe() {
   local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.no-prune.txt"
 
@@ -795,6 +923,7 @@ record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe 
 record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe || failures=1
 record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe || failures=1
 record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe || failures=1
+record_case "meta.setup" "setup dry-run renders codex and claude before install" run_setup_render_before_install_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned codex refresh without mutation" run_sync_runtime_surfaces_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe || failures=1
