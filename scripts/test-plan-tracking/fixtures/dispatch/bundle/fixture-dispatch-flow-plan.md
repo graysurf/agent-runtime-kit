@@ -31,7 +31,7 @@ lifecycle, not the underlying work.
 1. The testbed repo has no other open plan-tracking issues; reset ran
    before the flow started.
 2. `plan-issue` and `plan-tooling` on PATH are at or above the floors
-   declared by the source skills (currently `>=0.25.10`).
+   declared by the source skills (currently `>=1.0.1`).
 3. The driver supplies `OWNER_REPO=graysurf/plan-tracking-testbed` and a
    clean shared plan branch named `feat/dispatch-flow`; each lane bases
    its PR on that plan branch.
