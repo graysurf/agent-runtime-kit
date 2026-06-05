@@ -22,8 +22,9 @@ covering plan/skill governance, nils-cli pin alignment, Codex/Claude render and
 golden diff, drift audit, surface-registry acceptance, the skill-surface shape
 diagnostic, sandbox install rehearsal, runtime-smoke, project-local overlay
 smoke, and the shared hook contract. `scripts/setup.sh` contains the brew-first
-host bootstrap path for installing the released `agent-runtime` binary,
-activating Claude/Codex runtime homes, and running doctor.
+host bootstrap path for installing the released `agent-runtime` binary, wiring
+home prompt docs, activating Claude/Codex runtime homes, pruning stale managed
+surfaces, and running doctor.
 
 ## Setup
 
@@ -49,6 +50,56 @@ agent-docs preflight --intent project-dev --format json
 
 docs-home is derived from the install symlink; pass `--docs-home "$PWD"` to
 point at this checkout explicitly.
+
+For a first-time host or clean reinstall, prefer the setup wrapper and preview
+it first. If Homebrew is already present or managed by the operator, keep
+`--skip-homebrew-install`; otherwise omit that flag so setup can install
+Homebrew non-interactively.
+
+```bash
+bash scripts/setup.sh --profile core --skip-homebrew-install --dry-run
+bash scripts/setup.sh --profile core --skip-homebrew-install
+```
+
+The wrapper keeps the Homebrew / CLI-tool and home-prompt gates in shell, then
+feature-detects `agent-runtime bootstrap-host`. When the installed nils-cli
+surface provides that command, setup delegates runtime surface bootstrap to it
+for render, install, prune-stale, and skill-surface verification. When the host
+is still on an older pinned release, setup stays compatible by running the same
+manual phases directly.
+
+Manual phase recovery remains supported:
+
+```bash
+agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" --product codex
+agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" --product claude
+agent-runtime install --source-root "$HOME/.config/agent-runtime-kit" \
+  --product codex --live-home "${CODEX_HOME:-$HOME/.codex}" \
+  --state-home \
+  "${CODEX_AGENT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/codex}" \
+  --apply
+agent-runtime install --source-root "$HOME/.config/agent-runtime-kit" \
+  --product claude --live-home "$HOME/.claude" \
+  --state-home \
+  "${CLAUDE_KIT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/claude}" \
+  --apply
+agent-runtime prune-stale --source-root "$HOME/.config/agent-runtime-kit" \
+  --product codex --live-home "${CODEX_HOME:-$HOME/.codex}" --apply
+agent-runtime prune-stale --source-root "$HOME/.config/agent-runtime-kit" \
+  --product claude --live-home "$HOME/.claude" --apply
+agent-docs audit --target all --strict \
+  --project-path "$HOME/.config/agent-runtime-kit"
+agent-runtime doctor --source-root "$HOME/.config/agent-runtime-kit" \
+  --product codex --live-home "${CODEX_HOME:-$HOME/.codex}" \
+  --state-home \
+  "${CODEX_AGENT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/codex}" \
+  --profile core
+agent-runtime doctor --source-root "$HOME/.config/agent-runtime-kit" \
+  --product claude --live-home "$HOME/.claude" \
+  --state-home \
+  "${CLAUDE_KIT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/claude}" \
+  --profile core
+```
 
 ## Refreshing Runtime Surfaces
 
