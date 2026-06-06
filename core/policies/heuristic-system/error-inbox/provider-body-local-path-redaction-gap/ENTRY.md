@@ -101,6 +101,8 @@ on the final provider-bound payload.
 
 ## Next Action
 
-Track `https://github.com/sympoies/nils-cli/issues/786` until the provider
-payload privacy gate lands. After the nils-cli fix is validated, update
-runtime-kit skill guidance and smoke coverage, then archive this entry.
+Add runtime-kit skill guidance and smoke coverage for
+`create-plan-tracking-issue` and one `forge-cli` comment flow using the nils-cli
+provider payload gate, then archive this entry.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/788`
