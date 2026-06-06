@@ -72,6 +72,22 @@ if not platforms:
 print(" ".join(platforms))'
 }
 
+json_matching_run_id() {
+  local target_sha="$1"
+  JSON_MATCH_TARGET_SHA="$target_sha" python3 -c '
+import json
+import os
+import sys
+
+target_sha = os.environ["JSON_MATCH_TARGET_SHA"]
+runs = json.load(sys.stdin)
+for run in runs:
+    if run.get("headSha") == target_sha:
+        print(run.get("databaseId") or "")
+        break
+'
+}
+
 normalize_version() {
   local raw="$1"
   raw="${raw#v}"
@@ -148,18 +164,19 @@ wait_for_publish_run() {
   local repo="$1"
   local tag="$2"
   local timeout="$3"
-  local start now run_id run_url
+  local target_sha="$4"
+  local start now run_id run_url runs_json
 
   start="$(date +%s)"
   while :; do
-    run_id="$(gh run list \
+    runs_json="$(gh run list \
       --repo "$repo" \
       --workflow publish-image.yml \
       --event release \
       --branch "$tag" \
-      --limit 1 \
-      --json databaseId \
-      --jq '.[0].databaseId // empty')"
+      --limit 20 \
+      --json databaseId,headSha,url)"
+    run_id="$(printf '%s' "$runs_json" | json_matching_run_id "$target_sha")"
     if [ -n "$run_id" ]; then
       run_url="$(gh run view "$run_id" --repo "$repo" --json url --jq .url)"
       info "publish workflow: $run_url"
@@ -169,7 +186,7 @@ wait_for_publish_run() {
 
     now="$(date +%s)"
     if [ $((now - start)) -ge "$timeout" ]; then
-      die "publish-image workflow did not appear within ${timeout}s for $tag"
+      die "publish-image workflow did not appear within ${timeout}s for $tag at $target_sha"
     fi
     sleep 5
   done
@@ -297,7 +314,8 @@ if [ "$mode" = "execute" ]; then
     die "GitHub Release already exists: $tag"
   fi
 
-  args=(release create "$tag" --repo "$repo" --target main --generate-notes --title "$title")
+  target_sha="$(git rev-parse HEAD)"
+  args=(release create "$tag" --repo "$repo" --target "$target_sha" --generate-notes --title "$title")
   if [ "$prerelease" -eq 1 ]; then
     args+=(--prerelease)
   fi
@@ -307,7 +325,7 @@ if [ "$mode" = "execute" ]; then
   info "created GitHub Release: $release_url"
 
   if [ "$wait_for_workflow" -eq 1 ]; then
-    wait_for_publish_run "$repo" "$tag" "$timeout"
+    wait_for_publish_run "$repo" "$tag" "$timeout" "$target_sha"
   else
     info "skipped workflow wait"
     if [ "$skip_public_verify" -eq 0 ]; then
