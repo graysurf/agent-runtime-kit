@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`,
+- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`,
   `forge-cli >=1.0.11`.
 - The dispatch issue is either not opened yet, or the existing issue is
   the same shared plan being resumed by the orchestrator.

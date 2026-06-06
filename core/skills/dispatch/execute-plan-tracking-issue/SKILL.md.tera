@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`.
 - The tracking issue exists with visible `source`, `plan`, and initial
   `state` evidence.
 - `run-state.json` exists for this issue. If not, defer to
