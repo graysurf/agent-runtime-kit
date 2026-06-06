@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-01
 - Area: heuristic-session-closeout skill; retained-record delivery; git worktree
 - Severity: medium
@@ -59,7 +59,15 @@ the current branch or pushes `main` directly.
 
 ## Next Action
 
-Fixed in PR #236 (this change): the closeout Entrypoint, Workflow, Outputs, and
-Failure modes were rewritten to deliver records on a dedicated branch off
-`origin/main` through `git-cli worktree` and `forge-cli`. Archive this entry
-once #236 merges.
+None. Fixed by PR #236, which merged on 2026-05-31 and rewrote
+heuristic-session-closeout to deliver retained records through a dedicated
+branch and PR.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/236`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: PR #236 merged; closeout skill now delivers retained records through
+  a dedicated branch and PR.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/236`

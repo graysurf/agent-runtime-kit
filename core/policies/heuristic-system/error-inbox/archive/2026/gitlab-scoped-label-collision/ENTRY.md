@@ -2,13 +2,14 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
 - Area: plan-tracking skills + forge-cli labels
 - Severity: medium
 - CLI versions: plan-issue / plan-tooling / forge-cli 0.31.3
 - Source tracking issue: graysurf/plan-tracking-testbed#58
 - Source PR (fixture-side mitigation): graysurf/agent-runtime-kit#210
+- Source PR (skill guidance): graysurf/agent-runtime-kit#212
 
 ## Signal
 
@@ -48,8 +49,8 @@ GitLab run.
 Carry at most one label per GitLab scope: keep the lifecycle value
 (`workflow::tracking` / `workflow::dispatch`) and drop `workflow::plan`. The
 `test-plan-tracking` fixtures were fixed this way in
-`graysurf/agent-runtime-kit#210`; the SKILL-body recommendation is still
-unfixed.
+`graysurf/agent-runtime-kit#210`; the SKILL-body recommendation was fixed in
+`graysurf/agent-runtime-kit#212` with provider-aware GitLab label guidance.
 
 ## Promotion Criteria
 
@@ -60,8 +61,16 @@ validated by a green GitLab `assert create`.
 
 ## Next Action
 
-Upstream: stop recommending two `workflow::` labels in the
-`create-plan-tracking-issue` / `deliver-plan-tracking-issue` SKILL entrypoints;
-optionally warn in `forge-cli` when applying more than one same-scope scoped
-label. Fixtures already fixed in `graysurf/agent-runtime-kit#210`. Tracked at
-`graysurf/plan-tracking-testbed#58`.
+None. Source issue graysurf/plan-tracking-testbed#58 closed on 2026-05-31
+after graysurf/agent-runtime-kit#212 updated the skill entrypoints with
+provider-aware GitLab label guidance; the optional forge-cli warning remains
+deferred.
+
+Lifecycle link: `https://github.com/graysurf/plan-tracking-testbed/issues/58`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Source issue #58 closed after provider-aware GitLab label guidance
+  landed in skill entrypoints.
+- Durable link: `https://github.com/graysurf/plan-tracking-testbed/issues/58`
