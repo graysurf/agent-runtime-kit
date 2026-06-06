@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`,
+- CLI floors: `plan-issue >=1.0.10`, `plan-tooling >=1.0.1`,
   `forge-cli`.
 - The tracking issue is open, visible, and reconciled with
   `run-state.json`; FSM is not blocked or stale.
@@ -26,6 +26,9 @@ Inputs:
 - Optional `LINKED_PR` when a PR already exists and should be verified
   instead of created.
 - Approval evidence for the later close-ready probe.
+- `REVIEW_OUTCOME_COMMENT`: provider comment URL or retained evidence
+  path for the review outcome. `REVIEW_FINDINGS_JSON` is optional and
+  contains finding rows when findings exist.
 
 Outputs:
 
@@ -93,6 +96,9 @@ plan-issue --format json tracking run update \
   --phase ready-for-close \
   --linked-pr "$OWNER_REPO#$PR_NUMBER" \
   --review-decision approve \
+  --review-lens testing \
+  --review-lens maintainability \
+  --review-outcome-comment "$REVIEW_OUTCOME_COMMENT" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
@@ -130,10 +136,14 @@ ref with `tracking run update --linked-pr`.
    - If `LINKED_PR` exists, verify it is the intended merged PR and record
      it; do not re-run the create/merge macro.
 4. **Review branch** — record review decision/evidence before close-ready.
-   Single-author plans may use `decision=approve` when the merged PR is the
-   evidence; multi-author plans use the upstream reviewer decision.
-5. **Final checkpoint** — set `phase=ready-for-close`, record linked PR
-   and review decision, then post `state,review` in one live checkpoint.
+   Single-author plans may use `decision=approve` when the merged PR or
+   delivery-review outcome comment is the evidence; multi-author plans use the
+   upstream reviewer decision. Always record review lenses and an outcome
+   evidence URL/path; include `--review-findings-file "$REVIEW_FINDINGS_JSON"`
+   when findings exist.
+5. **Final checkpoint** — set `phase=ready-for-close`, record linked PR,
+   review decision, lenses, and outcome evidence, then post `state,review`
+   in one live checkpoint.
 6. **Close-ready probe** — run `tracking close-ready --expect-visible`.
    If `ready: true`, hand off to `plan-tracking-issue-closeout`; if
    `ready: false`, surface blockers and stop.

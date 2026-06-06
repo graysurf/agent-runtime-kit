@@ -852,7 +852,7 @@ cases:
     skill_id: dispatch.plan-tracking-issue-closeout
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: start from the same fixture as plan-tracking-closeout-gate (role=review missing, role=state status=in-progress) plus a minimal run-state with phase=ready_for_close and review.decision=approve
+    setup: start from the same fixture as plan-tracking-closeout-gate (role=review missing, role=state status=in-progress) plus a minimal run-state with phase=ready_for_close and review decision, lenses, and outcome evidence
     invocation: plan-issue tracking checkpoint --live --fixture --profile tracking --post state,review --repair-dashboard followed by tracking close-ready --expect-visible against the merged comments fixture
     expected_exit_code: 0
     expected_artifacts: checkpoint JSON with mode=fixture, posted entries carrying synthesized fixture URLs for state and review, and a follow-up close-ready JSON envelope with ready=true and blockers empty

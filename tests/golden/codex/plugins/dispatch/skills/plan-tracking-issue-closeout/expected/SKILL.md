@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.10`, `plan-tooling >=1.0.1`.
 - `tracking close-ready --profile tracking --expect-visible` returns
   `ready: true` and `blockers: []`, unless this skill is taking the
   explicit final-prerequisite repair branch below.
@@ -28,6 +28,8 @@ Inputs:
 - Optional dashboard repair request.
 - Optional validation evidence only when a real validation run exists and
   the final-prerequisite repair branch needs it.
+- Optional review outcome comment URL/path only when the final-prerequisite
+  repair branch must post missing review evidence.
 
 Outputs:
 
@@ -69,6 +71,8 @@ plan-issue --format json tracking run update \
   --phase ready-for-close \
   --linked-pr "$LINKED_PR" \
   --review-decision approve \
+  --review-lens closeout-readiness \
+  --review-outcome-comment "$REVIEW_OUTCOME_COMMENT" \
   --validation-overall pass \
   --validation-command "$VALIDATION_COMMAND" \
   --validation-status pass \
@@ -109,7 +113,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
    missing prerequisite roles (`state_complete-missing`,
    `session-missing`, `validation-missing`, `review-missing`), post one
    final `state,session,validation,review` checkpoint with real evidence
-   and rerun close-ready. For any other blocker, stop.
+   and rerun close-ready. When `review-missing` is repaired, the review update
+   must include a decision plus lenses and outcome evidence; do not create a
+   decision-only review checkpoint. For any other blocker, stop.
 3. **Dashboard branch** — run `record repair-dashboard` only when the live
    dashboard is stale after prerequisite evidence is complete.
 4. **Closing summary** — write one final run-state note that enumerates
