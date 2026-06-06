@@ -11,7 +11,8 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.10`, `forge-cli`, `review-evidence`.
+- CLI floors: `plan-issue >=1.0.11`, `forge-cli >=1.0.11`,
+  `review-evidence`.
 - Issue precondition: the shared dispatch issue exists and the lane PR
   has been created by `execute-dispatch-lane` /
   `create-dispatch-lane-pr`.
@@ -53,6 +54,9 @@ Failure modes:
 - Controller refusal codes propagated: `run-state-stale`,
   `RECORD_BLOCKED`,
   `visible-completeness-failed`.
+- Provider payload privacy failures such as `local_path_present`: rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Visible-completeness lint codes relevant here:
   `review-missing-decision`, `review-missing-disposition`,
   `state-missing-task-ledger`.

@@ -12,7 +12,7 @@ Prereqs:
 
 - Profile: helper (no plan-issue profile attached; the caller carries
   the dispatch profile).
-- CLI floors: `forge-cli`.
+- CLI floors: `forge-cli >=1.0.11`.
 - Shared provider and branch rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - Lane precondition: the lane has an assigned `BRANCH` (pushed),
@@ -50,6 +50,9 @@ Failure modes:
   `forge-cli issue comment`.
 - `forge-cli pr create` failures: auth, missing branch, wrong base,
   unpushed branch — surface and stop.
+- `local_path_present`: rewrite useful evidence paths in provider-visible PR
+  content to `$HOME/...` and omit remote-useless local artifact paths before
+  retrying.
 - Scope-leak: selecting or expanding lane scope (that lives in
   `deliver-dispatch-plan` / `execute-dispatch-lane`); targeting the
   repository default branch when a `PLAN_BRANCH` is assigned;

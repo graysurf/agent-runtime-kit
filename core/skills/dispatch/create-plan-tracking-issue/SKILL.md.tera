@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`.
   `forge-cli` is not required by this skill.
 - A complete, committed plan bundle exists at
   `docs/plans/<YYYY-MM-DD>-<slug>/` with `<slug>-plan.md`,
@@ -49,6 +49,9 @@ Failure modes:
   approval.
 - Stop on visible audit failures such as `state-missing-task-ledger` or
   `source-missing-snapshot`.
+- Stop on provider payload privacy failures such as `local_path_present`; rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Stop on wrong-provider label shape: on GitLab, do not pass both
   `workflow::plan` and `workflow::tracking`.
 - Forbidden writes: progress `state`, `session`, `validation`, `review`,

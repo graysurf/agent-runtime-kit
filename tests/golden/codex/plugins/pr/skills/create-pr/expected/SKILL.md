@@ -10,8 +10,8 @@ description:
 
 Prereqs:
 
-- `agent-runtime` and `forge-cli` are installed from the released nils-cli
-  package and available on `PATH`.
+- `agent-runtime` and `forge-cli >=1.0.11` are installed from the released
+  nils-cli package and available on `PATH`.
 - Shared provider, branch, body, and label rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The source branch has been pushed and has an upstream tracking branch.
@@ -45,6 +45,9 @@ Failure modes:
   `agent-runtime pr-body render` contract.
 - The rendered body is missing required `forge-cli` sections such as
   `## Summary` and `## Test plan`.
+- `local_path_present`: rewrite useful evidence paths in provider-visible PR
+  content to `$HOME/...` and omit remote-useless local artifact paths before
+  retrying.
 - The branch is not pushed, the base branch is invalid, selected labels fail
   catalog validation, or the provider rejects labels or reviewers.
 

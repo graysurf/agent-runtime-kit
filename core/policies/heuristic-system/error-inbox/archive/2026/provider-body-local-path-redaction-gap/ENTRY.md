@@ -101,8 +101,12 @@ on the final provider-bound payload.
 
 ## Next Action
 
-Add runtime-kit skill guidance and smoke coverage for
-`create-plan-tracking-issue` and one `forge-cli` comment flow using the nils-cli
-provider payload gate, then archive this entry.
+None. Fixed by sympoies/nils-cli#788, released in v1.0.11, and covered in runtime-kit skill guidance plus runtime smoke for create-plan-tracking-issue and forge-cli PR comment payloads.
 
 Lifecycle link: `https://github.com/sympoies/nils-cli/pull/788`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Fixed by nils-cli v1.0.11 provider payload gate; runtime-kit skills, floors, and smoke now cover create-plan-tracking-issue plus forge-cli PR comment payloads.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/788`

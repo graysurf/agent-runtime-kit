@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.10`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`.
 - `tracking close-ready --profile tracking --expect-visible` returns
   `ready: true` and `blockers: []`, unless this skill is taking the
   explicit final-prerequisite repair branch below.
@@ -49,6 +49,9 @@ Failure modes:
   `validation-missing`, `review-missing`.
 - Stop on linked PR failures, missing merge SHA, missing approval,
   `ledger-rows-pending`, or closeout visible-lint failures.
+- Stop on provider payload privacy failures such as `local_path_present`; rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Forbidden writes after successful `record close`: any progress,
   validation, review, or closeout checkpoint. Never hand-post the closeout
   body through raw provider comments.

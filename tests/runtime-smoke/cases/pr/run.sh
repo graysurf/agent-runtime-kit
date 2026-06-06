@@ -93,6 +93,35 @@ write_dispatch_session_record() {
 BODY
 }
 
+assert_provider_payload_local_path_gate() {
+  local path="$1"
+  local raw_path="$2"
+
+  grep -q '"code":"local_path_present"' "$path" || return 1
+  grep -q '[$]HOME/project' "$path" || return 1
+  ! grep -q "$raw_path" "$path" || return 1
+}
+
+run_pr_comment_provider_payload_privacy_gate_probe() {
+  local body="$PR_ARTIFACTS_DIR/pr-comment-local-path.md"
+  local out="$PR_ARTIFACTS_DIR/pr-comment-local-path-gate.json"
+  local raw_path="/U""sers/example/project"
+  local rc
+  require_pr_bin forge-cli || return 1
+  printf 'Runtime smoke should not publish %s\n' "$raw_path" >"$body"
+
+  set +e
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    pr comment 123 \
+    --body-file "$body" >"$out" 2>&1
+  rc="$?"
+  set -e
+
+  [ "$rc" -ne 0 ] || return 1
+  assert_provider_payload_local_path_gate "$out" "$raw_path"
+}
+
 run_specialist_scope_probe() {
   local workspace="$1"
   local out="$2"
@@ -398,6 +427,7 @@ run_deliver_pr_probe() {
   local rc=0
   run_deliver_github_probe || rc=1
   run_deliver_gitlab_probe || rc=1
+  run_pr_comment_provider_payload_privacy_gate_probe || rc=1
   return "$rc"
 }
 

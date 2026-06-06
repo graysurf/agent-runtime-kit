@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`.
 - `tracking close-ready --profile dispatch --expect-visible` returns
   `ready: true` and `blockers: []`.
 - Every lane PR is merged with required checks passing, every lane review
@@ -41,6 +41,9 @@ Failure modes:
 - Stop on any close-ready blocker, linked PR failure, missing merge SHA,
   missing approval, `ledger-rows-pending`, or closeout visible-lint
   failure.
+- Stop on provider payload privacy failures such as `local_path_present`; rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Forbidden writes: lane implementation, lane PR creation/update/merge,
   progress/review checkpoints during closeout, lightweight tracking
   closeout rules, or raw provider lifecycle comments.

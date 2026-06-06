@@ -14,6 +14,12 @@ This reference owns issue rules that repeat across issue-facing skills.
   drift repair was explicitly approved.
 - Keep comments short and evidence-based: checked, result, decision, next.
   Link durable artifacts instead of pasting long logs.
+- Provider-visible issue bodies and comments must not contain raw machine-local
+  home paths. Rewrite useful evidence paths to `$HOME/...`; omit local-only
+  artifact paths when a remote reader cannot use them. The released
+  `forge-cli` provider payload gate is the final enforcement point; do not set
+  `FORGE_CLI_ALLOW_LOCAL_PATH=1` unless you confirmed a false positive and
+  recorded that decision.
 - Keep unresolved issues open. Close only when the requested outcome is
   complete, the user explicitly abandons it, or the owning closeout workflow has
   verified the required lifecycle evidence.

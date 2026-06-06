@@ -10,9 +10,10 @@ description:
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli`, `plan-issue`, and `review-specialists` are
-  installed from the released nils-cli package and available on `PATH`. The
-  `code-review-pre-merge-gate` workflow uses `review-specialists`.
+- `agent-runtime`, `forge-cli >=1.0.11`, `plan-issue >=1.0.11`, and
+  `review-specialists` are installed from the released nils-cli package and
+  available on `PATH`. The `code-review-pre-merge-gate` workflow uses
+  `review-specialists`.
 - Shared provider, branch, body, and label rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The working tree contains only the intended delivery changes.
@@ -58,6 +59,9 @@ Failure modes:
   application.
 - Mandatory pre-merge review gate findings are unresolved or undispositioned.
 - Delivery review outcome comment posting fails.
+- `local_path_present`: rewrite useful evidence paths in provider-visible PR
+  bodies, delivery outcome comments, or linked issue closeout records to
+  `$HOME/...` and omit remote-useless local artifact paths before retrying.
 - A PR/MR body uses a provider auto-close keyword against a linked
   plan-tracking or dispatch issue.
 - A linked tracking or dispatch issue is missing lifecycle readiness before

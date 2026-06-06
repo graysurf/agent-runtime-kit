@@ -11,8 +11,8 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`,
-  `forge-cli`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`,
+  `forge-cli >=1.0.11`.
 - The dispatch issue is either not opened yet, or the existing issue is
   the same shared plan being resumed by the orchestrator.
 - Dispatch `run-state.json` is either uninitialized or reconciled.
@@ -50,6 +50,9 @@ Failure modes:
 
 - Stop on `run-state-stale`, `RECORD_BLOCKED`,
   `visible-completeness-failed`, or any close-ready blocker.
+- Stop on provider payload privacy failures such as `local_path_present`; rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Stop on `ledger-rows-pending`; repair only the named task rows before
   retrying close-ready.
 - Forbidden writes: `record close`, lane-scoped implementation posts,

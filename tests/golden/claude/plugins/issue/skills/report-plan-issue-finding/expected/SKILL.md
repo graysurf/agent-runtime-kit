@@ -29,8 +29,8 @@ the finding's issue record: open, dedup, comment, and close.
 
 Prereqs:
 
-- `forge-cli` is installed from the released nils-cli package and on `PATH`.
-  All issue mutation goes through it, never raw `gh issue create`.
+- `forge-cli >=1.0.11` is installed from the released nils-cli package and on
+  `PATH`. All issue mutation goes through it, never raw `gh issue create`.
 - `jq` is available for parsing `forge-cli ... --format json` output.
 - Provider authentication is available for non-dry-run issue reads/writes.
 - The canonical tracker repository and its label catalog are known. Default
@@ -73,6 +73,9 @@ Failure modes:
 - Attempting to implement the fix in the tracker repo — out of scope; the fix
   is an upstream `agent-runtime-kit` / `nils-cli` change.
 - Provider auth, permission, or network failure on a non-dry-run mutation.
+- `local_path_present`: rewrite useful evidence paths in provider-visible
+  finding bodies/comments to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 
 ## Label mapping
 

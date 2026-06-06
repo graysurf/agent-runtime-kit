@@ -10,8 +10,8 @@ description:
 
 Prereqs:
 
-- `forge-cli` is installed from the released nils-cli package and available on
-  `PATH`.
+- `forge-cli >=1.0.11` is installed from the released nils-cli package and
+  available on `PATH`.
 - Shared provider and issue-backed merge rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The target PR/MR number is known.

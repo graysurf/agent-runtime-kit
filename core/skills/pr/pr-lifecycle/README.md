@@ -16,6 +16,12 @@ skill's next action.
   `chore -> chore/`, `docs -> docs/`, `ci -> ci/`, `refactor -> refactor/`).
 - Rendered bodies must include `## Summary` and `## Test plan`. Do not
   hand-write section scaffolding or derive title/body from `git log -1`.
+- Provider-visible bodies and comments must not contain raw machine-local home
+  paths. Rewrite useful evidence paths to `$HOME/...`; omit local-only artifact
+  paths when a remote reader cannot use them. The released `forge-cli` provider
+  payload gate is the final enforcement point; do not set
+  `FORGE_CLI_ALLOW_LOCAL_PATH=1` unless you confirmed a false positive and
+  recorded that decision.
 - Issue-backed plan references use non-closing refs such as `Refs #<issue>`.
   Provider auto-close keywords are banned until the matching plan closeout skill
   has verified lifecycle evidence.

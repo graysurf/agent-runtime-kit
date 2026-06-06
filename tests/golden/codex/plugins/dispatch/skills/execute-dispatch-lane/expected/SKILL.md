@@ -11,7 +11,8 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`, `forge-cli`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`,
+  `forge-cli >=1.0.11`.
 - Issue precondition: the shared dispatch issue exists and is at least
   `RECORD_OPEN_ACTIVE` with no `run-state-stale` warning.
 - Run state precondition: the dispatch `run-state.json` is reconciled
@@ -59,6 +60,9 @@ Failure modes:
 - Controller refusal codes propagated: `run-state-stale`,
   `RECORD_BLOCKED`,
   `visible-completeness-failed`.
+- Provider payload privacy failures such as `local_path_present`: rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Visible-completeness lint codes relevant here:
   `state-missing-task-ledger`, `validation-missing-overall`,
   `session-missing-summary`.

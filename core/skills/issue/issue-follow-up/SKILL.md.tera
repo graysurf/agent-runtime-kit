@@ -16,8 +16,8 @@ Prereqs:
 
 - Run inside the target provider-backed git repository, or pass an explicit
   `--repo` and `--provider` to `forge-cli`.
-- `forge-cli` is installed from the released nils-cli package and available on
-  `PATH`.
+- `forge-cli >=1.0.11` is installed from the released nils-cli package and
+  available on `PATH`.
 - Shared label, comment, and close rules in
   `core/skills/issue/issue-lifecycle/README.md` are satisfied.
 - Existing issue number or URL is known for follow-up mode; otherwise use open
@@ -53,6 +53,9 @@ Failure modes:
 - Required evidence cannot be accessed and no safe summary can be recorded.
 - User asks to inline a local image but no provider-hosted attachment or URL is
   available.
+- `local_path_present`: rewrite useful evidence paths in provider-visible issue
+  content to `$HOME/...` and omit remote-useless local artifact paths before
+  retrying.
 - Implementation is ready but branch, PR/MR, test, or delivery workflow
   requirements are unclear or blocked.
 

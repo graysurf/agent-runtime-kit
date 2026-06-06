@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.1`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`.
 - The tracking issue exists with visible `source`, `plan`, and initial
   `state` evidence.
 - `run-state.json` exists for this issue. If not, defer to
@@ -43,6 +43,9 @@ Failure modes:
 - Stop on `run-state-stale`, `issue-evidence-missing`, `RECORD_BLOCKED`,
   `visible-completeness-failed`, or `tracking close-ready` blockers such
   as `ledger-rows-pending`.
+- Stop on provider payload privacy failures such as `local_path_present`; rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Stop on execution-state issue mismatch. Use
   `plan-tooling exec-state-sync` only when the issue URL is known and the
   mismatch is a placeholder/missing-url repair, not a genuine wrong issue.

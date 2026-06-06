@@ -11,8 +11,8 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.10`, `plan-tooling >=1.0.1`,
-  `forge-cli`.
+- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`,
+  `forge-cli >=1.0.11`.
 - The tracking issue is open, visible, and reconciled with
   `run-state.json`; FSM is not blocked or stale.
 - PR work is authorized by the active PR delivery workflow. Review
@@ -45,6 +45,9 @@ Failure modes:
 - Stop on `run-state-stale`, `issue-evidence-missing`, `RECORD_BLOCKED`,
   `visible-completeness-failed`, PR delivery failure, or any
   `close-ready` blocker.
+- Stop on provider payload privacy failures such as `local_path_present`; rewrite
+  useful evidence paths to `$HOME/...` and omit remote-useless local artifact
+  paths before retrying.
 - Stop on `ledger-rows-pending`; repair the named task rows with
   `plan-tooling ledger-update` before retrying the gate.
 - Forbidden writes: `record open`, `record attach`, `record close`,

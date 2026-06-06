@@ -118,6 +118,12 @@ Every rewritten skill in this family follows these rules:
 - Use `plan-issue tracking` for run-state controller, status, checkpoint, and
   close-readiness behavior.
 - Use `forge-cli` for PR and provider lifecycle outside the plan issue record.
+- Provider-visible lifecycle records, dashboards, PR bodies, and comments must
+  not contain raw machine-local home paths. Rewrite useful evidence paths to
+  `$HOME/...`; omit local-only artifact paths when a remote reader cannot use
+  them. The released `plan-issue` / `forge-cli` provider payload gate is the
+  final enforcement point; do not set `FORGE_CLI_ALLOW_LOCAL_PATH=1` unless you
+  confirmed a false positive and recorded that decision.
 
 ## Lightweight Tracking Issue Skills
 

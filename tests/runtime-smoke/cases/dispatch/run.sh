@@ -218,6 +218,47 @@ assert_state_comment_shape() {
   ! grep -q '# Runtime Smoke' "$path"
 }
 
+assert_provider_payload_home_path_gate() {
+  local path="$1"
+  local raw_path="$2"
+
+  grep -q 'machine-local home path' "$path" || return 1
+  grep -q '[$]HOME/project' "$path" || return 1
+  ! grep -q "$raw_path" "$path" || return 1
+}
+
+run_plan_issue_provider_payload_privacy_gate_probe() {
+  local payload="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-local-path-payload.json"
+  local summary="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-local-path-summary.md"
+  local out="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-local-path-gate.json"
+  local state_dir="$DISPATCH_ARTIFACTS_DIR/create-plan-tracking-local-path-state"
+  local raw_path="/U""sers/example/project"
+  local rc
+  require_dispatch_bin plan-issue || return 1
+  rm -rf "$state_dir"
+  mkdir -p "$state_dir"
+  cat >"$payload" <<'JSON'
+{"summary":"Runtime smoke provider payload privacy gate"}
+JSON
+  printf 'Runtime smoke should not publish %s\n' "$raw_path" >"$summary"
+
+  set +e
+  plan-issue --repo graysurf/agent-runtime-kit --format json record post \
+    --issue 0 \
+    --profile tracking \
+    --kind session \
+    --payload-file "$payload" \
+    --summary-file "$summary" \
+    --state-dir "$state_dir" >"$out" 2>&1
+  rc="$?"
+  set -e
+
+  [ "$rc" -ne 0 ] || return 1
+  assert_provider_payload_home_path_gate "$out" "$raw_path" || return 1
+  ! grep -q 'Could not resolve to a Repository' "$out" || return 1
+  ! grep -q 'issue comment 0' "$out" || return 1
+}
+
 write_validation_payload() {
   local path="$1"
   cat >"$path" <<'JSON'
@@ -499,6 +540,7 @@ run_create_plan_tracking_issue_probe() {
   grep -q 'plan-issue.record.open.v2' "$open_out"
   grep -q '"missing_required":\[\]' "$audit_out"
   grep -q '"profile":"tracking"' "$audit_out"
+  run_plan_issue_provider_payload_privacy_gate_probe
 }
 
 run_tracking_issue_closeout_probe() {
