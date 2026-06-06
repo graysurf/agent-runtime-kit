@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.1`, `forge-cli`, `review-evidence`.
+- CLI floors: `plan-issue >=1.0.10`, `forge-cli`, `review-evidence`.
 - Issue precondition: the shared dispatch issue exists and the lane PR
   has been created by `execute-dispatch-lane` /
   `create-dispatch-lane-pr`.
@@ -72,6 +72,8 @@ review-evidence --plan "$PLAN" --pr "$LANE_PR" --format json \
 
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --review-decision "$DECISION" \
+  --review-lens "$REVIEW_LENS" \
+  --review-outcome-comment "$REVIEW_EVIDENCE" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 plan-issue --format json tracking checkpoint \
@@ -92,7 +94,10 @@ forge-cli pr review --repo "$OWNER_REPO" --pr "$PR_NUMBER" \
 2. **Review judgement** — apply review lenses; produce
    `$REVIEW_EVIDENCE` through `review-evidence`. Findings get
    dispositions before approval.
-3. **Run state update** — `tracking run update --review-decision`.
+3. **Run state update** — `tracking run update --review-decision` plus
+   review lenses and retained outcome evidence. Repeat `--review-lens`
+   for every applied lens and pass `--review-findings-file
+   "$REVIEW_FINDINGS_JSON"` when findings exist.
 4. **Review checkpoint** — `tracking checkpoint --live --post review
    --repair-dashboard`. If findings flip the lane back to
    implementation, also post `state,session` for the lane scope.

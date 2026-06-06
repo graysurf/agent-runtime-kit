@@ -267,7 +267,7 @@ write_visible_tracking_comments_json() {
 {"body":"<!-- plan-issue-record:v2 role=state profile=tracking -->\n\n## Execution State\n\n- Profile: tracking\n- Status: complete\n\n## Task Ledger\n\n| ID | Status | Task |\n| --- | --- | --- |\n| 1.1 | done | Validate dispatch smoke |\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"state\",\"profile\":\"tracking\",\"data\":{\"status\":\"complete\",\"target_scope\":\"runtime smoke tracking\",\"current\":\"complete\",\"next_action\":\"closeout\",\"tasks\":[{\"id\":\"1.1\",\"status\":\"done\",\"title\":\"Validate dispatch smoke\"}],\"prs\":[{\"ref\":\"graysurf/agent-runtime-kit#123\",\"url\":\"https://github.com/graysurf/agent-runtime-kit/pull/123\",\"status\":\"merged\"}],\"blockers\":[],\"links\":{}}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-state","createdAt":"2026-01-01T00:00:02Z"},
 {"body":"<!-- plan-issue-record:v2 role=session profile=tracking -->\n\n## Execution Session\n\n- Summary: Runtime smoke session\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"session\",\"profile\":\"tracking\",\"data\":{\"summary\":\"Runtime smoke session\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-session","createdAt":"2026-01-01T00:00:03Z"},
 {"body":"<!-- plan-issue-record:v2 role=validation profile=tracking -->\n\n## Validation Evidence\n\n- Overall: pass\n\n| Command | Status |\n| --- | --- |\n| true | pass |\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"validation\",\"profile\":\"tracking\",\"data\":{\"overall\":\"pass\",\"commands\":[{\"command\":\"true\",\"status\":\"pass\"}],\"waivers\":[]}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-validation","createdAt":"2026-01-01T00:00:04Z"},
-{"body":"<!-- plan-issue-record:v2 role=review profile=tracking -->\n\n## Review Evidence\n\n- Decision: approve\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"review\",\"profile\":\"tracking\",\"data\":{\"decision\":\"approve\",\"lenses\":[\"testing\",\"maintainability\"],\"findings\":[]}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
+{"body":"<!-- plan-issue-record:v2 role=review profile=tracking -->\n\n## Review Evidence\n\n- Decision: approve\n- Lenses: testing, maintainability\n- Outcome comment: https://github.com/example/repo/pull/123#issuecomment-review-outcome\n\n```plan-issue-record-payload\n{\"schema\":\"plan-issue-record.payload.v2\",\"role\":\"review\",\"profile\":\"tracking\",\"data\":{\"decision\":\"approve\",\"lenses\":[\"testing\",\"maintainability\"],\"findings\":[],\"outcome_comment_url\":\"https://github.com/example/repo/pull/123#issuecomment-review-outcome\"}}\n```\n","url":"https://github.com/example/repo/issues/1#issuecomment-review","createdAt":"2026-01-01T00:00:05Z"}]}
 JSON
 }
 
@@ -603,12 +603,12 @@ run_tracking_closeout_gate_prereq_happy_path_probe() {
   # Sibling to run_tracking_closeout_gate_prereq_blockers_probe. Starts from
   # the same fixture (role=review missing, role=state status=in-progress),
   # then exercises the canonical close-ready handoff: bump the run-state
-  # phase to `ready_for_close` with `review.decision=approve` and call
+  # phase to `ready_for_close` with review decision plus context and call
   # `tracking checkpoint --live --fixture <dir> --post state,review
   # --repair-dashboard`. Fixture-mode live posting synthesizes
   # `fixture://issue/<n>/<role>` URLs without provider mutation and emits
-  # the rendered state (status=complete) and review (decision=approve)
-  # bodies under `payload.result.rendered[]`. The probe merges those bodies
+  # the rendered state (status=complete) and review bodies under
+  # `payload.result.rendered[]`. The probe merges those bodies
   # back into the fixture's `comments.json` (dropping the in-progress state
   # comment) and re-runs `tracking close-ready --expect-visible`, which must
   # now return `ready=true` with `blockers: []`. Together with the refusal
@@ -629,7 +629,7 @@ run_tracking_closeout_gate_prereq_happy_path_probe() {
   write_visible_tracking_comments_json "$source_comments"
   write_missing_review_state_complete_comments_json "$source_comments" "$comments_json"
   cat >"$run_state" <<'JSON'
-{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-happy-path","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","review":{"decision":"approve"}}
+{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-happy-path","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","review":{"decision":"approve","lenses":["testing","maintainability"],"evidence":"https://github.com/example/repo/pull/123#issuecomment-review-outcome"}}
 JSON
 
   plan-issue --format json tracking checkpoint \
@@ -718,7 +718,7 @@ run_tracking_closeout_gate_ledger_pending_probe() {
 | 1.3 | done | Already-done row | runtime-smoke fixture | not stuck |
 MD
   cat >"$run_state" <<JSON
-{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-ledger-pending","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","bundle":"$fixture","review":{"decision":"approve"}}
+{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-ledger-pending","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","bundle":"$fixture","review":{"decision":"approve","lenses":["testing","maintainability"],"evidence":"https://github.com/example/repo/pull/123#issuecomment-review-outcome"}}
 JSON
 
   set +e
@@ -791,7 +791,7 @@ run_tracking_closeout_gate_ledger_clean_probe() {
 | 1.3 | done | Third row | runtime-smoke fixture | clean |
 MD
   cat >"$run_state" <<JSON
-{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-ledger-clean","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","bundle":"$fixture","review":{"decision":"approve"}}
+{"schema":"plan-issue.execution-run.v1","run_id":"runtime-smoke-ledger-clean","repo":"graysurf/agent-runtime-kit","issue":1,"profile":"tracking","phase":"ready_for_close","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","bundle":"$fixture","review":{"decision":"approve","lenses":["testing","maintainability"],"evidence":"https://github.com/example/repo/pull/123#issuecomment-review-outcome"}}
 JSON
 
   set +e
