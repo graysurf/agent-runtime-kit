@@ -3,8 +3,7 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in-progress - implementation and validation are complete; PR delivery
-  and close-ready handoff are active in this deliver-plan-tracking-issue run.
+- Status: complete; tracking issue closed
 - Target scope: repo-wide decision-minimal review of managed
   agent-runtime-kit skills, preserving safety gates while reducing redundant
   prose.
@@ -12,10 +11,10 @@
   rubric and patterns -> Sprint 3 high-risk workflow skills -> Sprint 4 support
   and prompt-style skills -> Sprint 5 integration and closeout.
 - Current task: Task 5.2.
-- Next task: PR delivery, final checkpoint, and non-mutating close-ready probe.
-- Last updated: 2026-06-05T18:23:53Z
-- Branch/commit/PR: docs/skill-decision-minimal-review (bundle branch; no PR
-  yet).
+- Next task: none; tracking issue is closed.
+- Last updated: 2026-06-06
+- Branch/commit/PR: graysurf/agent-runtime-kit#289 merged
+  (<https://github.com/graysurf/agent-runtime-kit/pull/289>)
 - Source document: docs/plans/2026-06-05-skill-decision-minimal-review/2026-06-05-skill-decision-minimal-review-plan.md
 - Plan document: docs/plans/2026-06-05-skill-decision-minimal-review/2026-06-05-skill-decision-minimal-review-plan.md
 - Direct source-doc execution waiver: not applicable
