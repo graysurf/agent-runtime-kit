@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
 - Area: project-release-workflow release retry
 - Severity: medium
@@ -33,10 +33,9 @@ run unless the agent notices that the release commit was never pushed.
 
 ## Current Workaround
 
-After a push rejection, fetch/rebase the release bump, rerun the repo validation
-gate, push the rebased release bump to the upstream branch, then rerun the
-release dispatcher so it owns CI wait, tag push, release workflow wait, and
-release-page verification.
+None. Resolved by `project-release-workflow.sh` pushing an already-synced
+`HEAD` when it is ahead of the configured upstream before waiting for CI or
+pushing the release tag.
 
 ## Promotion Criteria
 
@@ -47,4 +46,13 @@ push-rejected retry path.
 
 ## Next Action
 
-Update the release script so a retry with versions already synced but HEAD ahead of upstream pushes the release bump or fails before CI wait.
+None. Fixed in
+`https://github.com/sympoies/nils-alfredworkflow/commit/038890d48348078c7fd7ff7f58fb0e16ad357f86`.
+
+Lifecycle link: `https://github.com/sympoies/nils-alfredworkflow/commit/038890d48348078c7fd7ff7f58fb0e16ad357f86`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Completed entry archived out of the active error inbox.
+- Durable link: `https://github.com/sympoies/nils-alfredworkflow/commit/038890d48348078c7fd7ff7f58fb0e16ad357f86`

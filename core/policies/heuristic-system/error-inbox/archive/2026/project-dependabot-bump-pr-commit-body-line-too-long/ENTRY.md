@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-04
 - Area: project-deliver-dependabot-bump-pr skill; semantic-commit body gate
 - Severity: medium
@@ -34,9 +34,9 @@ script emits commit bodies that satisfy the shared gate.
 
 ## Current Workaround
 
-Run the regeneration step, then commit manually through `semantic-commit` with a
-shorter body bullet such as:
-`Regenerate third-party artifacts after the chrono bump`.
+None. Resolved by the project skill emitting a shorter semantic-commit body
+bullet and by smoke coverage that rejects the former long
+`scripts/generate-third-party-artifacts.sh --write after` wording.
 
 ## Promotion Criteria
 
@@ -45,6 +45,13 @@ the gate and a smoke test covers the commit-message construction path.
 
 ## Next Action
 
-Shorten the generated semantic-commit body bullets in the
-project-deliver-dependabot-bump-pr script and add a smoke test that exercises
-the commit path.
+None. Fixed in
+`https://github.com/sympoies/nils-cli/commit/5ada8e990ae346fee4da328b7112c8ae5a2e40fc`.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/commit/5ada8e990ae346fee4da328b7112c8ae5a2e40fc`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Completed entry archived out of the active error inbox.
+- Durable link: `https://github.com/sympoies/nils-cli/commit/5ada8e990ae346fee4da328b7112c8ae5a2e40fc`

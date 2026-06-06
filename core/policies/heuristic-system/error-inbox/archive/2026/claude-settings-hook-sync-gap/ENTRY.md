@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
 - Area: Claude settings hooks; sync-runtime-skills; runtime hook rollout
 - Severity: medium
@@ -49,11 +49,10 @@ successful `sync-runtime-skills --apply` as live enforcement.
 
 ## Current Workaround
 
-After hook-source changes that affect Claude, manually verify
-`$HOME/.claude/settings.json` contains the new `PreToolUse` hook command. For
-this session, the new `block-direct-git-worktree.py` command was inserted
-manually in the existing Bash hook list and validated with `python3 -m
-json.tool`.
+None. Resolved by `scripts/sync-runtime-surfaces.sh --apply --product claude`
+merging `core/hooks/claude/settings.hooks.jsonc` into live
+`$HOME/.claude/settings.json` while preserving custom hooks and replacing only
+runtime-kit managed hook commands.
 
 ## Promotion Criteria
 
@@ -68,6 +67,12 @@ Promote when either:
 
 ## Next Action
 
-Add a Claude `settings.json` hook-block sync/reporting path, or document and
-gate the manual verification step in the sync workflow before future hook
-rollouts rely on Claude enforcement.
+None. Fixed in
+`https://github.com/graysurf/agent-runtime-kit/commit/4d55260d9a9bfbe138a1b18dfb8479732ac39583`.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/commit/4d55260d9a9bfbe138a1b18dfb8479732ac39583`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Completed entry archived out of the active error inbox.
