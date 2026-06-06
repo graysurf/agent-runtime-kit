@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-01
 - Area: heuristic-inbox CLI (archive destination resolution)
 - Severity: medium
@@ -54,5 +54,15 @@ relocating, and the new behavior is validated.
 
 ## Next Action
 
-Track `sympoies/nils-cli#739`; promote and archive this entry once the upstream
-fix ships and is verified.
+None. Fixed by sympoies/nils-cli#742 and released in v1.0.10; verified with
+heuristic-inbox 1.0.10 that archive dry-run derives the destination from the
+case path rather than the shell cwd.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/742`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Fixed by nils-cli #742 and released in v1.0.10; archive destination
+  behavior verified locally.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/742`

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-01
 - Area: heuristic-inbox verify (redacted-secret scan)
 - Severity: low
@@ -57,5 +57,15 @@ and it is validated against the plan-folder case captured in `#740`.
 
 ## Next Action
 
-Track `sympoies/nils-cli#740`; promote and archive this entry once the upstream
-boundary fix ships and is verified.
+None. Fixed by sympoies/nils-cli#742 and released in v1.0.10; verified with
+heuristic-inbox 1.0.10 that strict verify ignores a mid-word hyphenated
+identifier containing the short key prefix shape.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/742`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Fixed by nils-cli #742 and released in v1.0.10; redaction boundary
+  behavior verified locally.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/742`
