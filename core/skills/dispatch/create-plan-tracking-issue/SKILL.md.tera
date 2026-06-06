@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`.
   `forge-cli` is not required by this skill.
 - A complete, committed plan bundle exists at
   `docs/plans/<YYYY-MM-DD>-<slug>/` with `<slug>-plan.md`,

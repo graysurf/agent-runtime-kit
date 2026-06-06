@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`,
+- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`,
   `forge-cli >=1.0.11`.
 - The tracking issue is open, visible, and reconciled with
   `run-state.json`; FSM is not blocked or stale.

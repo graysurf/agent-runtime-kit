@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.11`, `plan-tooling >=1.0.1`,
+- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`,
   `forge-cli >=1.0.11`.
 - Issue precondition: the shared dispatch issue exists and is at least
   `RECORD_OPEN_ACTIVE` with no `run-state-stale` warning.
