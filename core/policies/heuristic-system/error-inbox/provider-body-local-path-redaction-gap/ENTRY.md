@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-24
 - Area: provider-bound issue/PR/MR payload privacy
 - Severity: medium
@@ -60,6 +60,9 @@ read-back.
 
 ## Scope To Decide
 
+- Decision recorded: implementation is tracked in `sympoies/nils-cli#786`;
+  keep enforcement in nils-cli provider mutation paths, with runtime-kit skills
+  and smoke coverage following after the CLI gate exists.
 - Primary enforcement location: prefer nils-cli because `forge-cli` and
   `plan-issue record` own the final provider mutation. Runtime-kit skills and
   hooks should still provide guidance and smoke coverage.
@@ -75,7 +78,8 @@ read-back.
 
 ## Promotion Criteria
 
-Promote this entry when all of the following are true:
+This entry has been promoted to `sympoies/nils-cli#786`. Archive it only when
+all of the following are true:
 
 - nils-cli has a provider-payload privacy gate before live GitHub/GitLab
   mutations, with tests for body-file, summary-file, dashboard, and rendered
@@ -97,6 +101,6 @@ on the final provider-bound payload.
 
 ## Next Action
 
-Open a nils-cli follow-up scope for the provider-payload privacy gate, starting
-with `forge-cli` and `plan-issue record` surfaces that accept body files,
-summary files, dashboards, or rendered tracker comments.
+Track `https://github.com/sympoies/nils-cli/issues/786` until the provider
+payload privacy gate lands. After the nils-cli fix is validated, update
+runtime-kit skill guidance and smoke coverage, then archive this entry.

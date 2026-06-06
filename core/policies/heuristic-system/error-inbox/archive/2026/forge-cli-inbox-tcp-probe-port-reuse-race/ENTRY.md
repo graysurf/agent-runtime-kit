@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
 - Area: forge-cli
 - Severity: medium
@@ -42,8 +42,10 @@ ephemeral port, so the probe connects instead of being refused and the
 
 ## Current Workaround
 
-Re-run the suite; the test passes in isolation and usually on retry. No code
-change shipped for this (kept out of the #716 search PRs as out-of-scope).
+None. Fixed in `sympoies/nils-cli` commit
+`eb3acf19527a4206a0b61ed6e52a3690113a3759` by changing the unavailable probe
+coverage to use reserved TCP port `0` instead of reconnecting to a released
+ephemeral listener port.
 
 ## Suggested Fix
 
@@ -62,11 +64,17 @@ two tests behind a shared `Mutex` — the same remedy likely applies here.
 
 ## Promotion Criteria
 
-Promote after the durable fix (or an accepted-risk decision) is implemented,
-validated, and linked from this entry. No upstream issue filed yet.
+Promoted after the durable fix landed on `nils-cli` `main`, with validation
+evidence from the focused test, three repeated package lib runs, and
+`bash scripts/ci/nils-cli-checks-entrypoint.sh --local-fast`.
 
 ## Next Action
 
-Open a focused `nils-cli` fix (or GitHub issue) for the port-reuse race in
-`inbox_tcp_vpn_probe_connects_and_reports_refused_ports`; link it here and set
-status `promoted` when the fix lands.
+None. Fixed in
+`https://github.com/sympoies/nils-cli/commit/eb3acf19527a4206a0b61ed6e52a3690113a3759`.
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Completed entry archived out of the active error inbox.
+- Durable link: `https://github.com/sympoies/nils-cli/commit/eb3acf19527a4206a0b61ed6e52a3690113a3759`
