@@ -183,16 +183,19 @@ a uniform shape:
   `statusLine`, etc. (`manifests/product-capabilities.yaml`,
   `hook_config_strategy: settings-json` in
   `manifests/runtime-roots.yaml`).
-- Source: no `targets/claude/settings.json` or `settings.json.template`
-  exists today. A managed `settings.json` block is the expected source
-  when it ships.
-- Install mechanism: managed-block contract described — paired
-  `# >>> agent-runtime-kit:<surface> >>>` / `<<<` markers. Not yet wired
-  in the Claude link-map.
-- Acceptance lane: drift audit covers managed-block presence; no shipped
-  fixture exists yet.
-- Support today: **planned-not-shipped**. Contract defined, template
-  artifact absent.
+- Source: `core/hooks/claude/settings.hooks.jsonc` is the runtime-kit
+  hook registration fragment. It intentionally is not a full
+  `settings.json` replacement.
+- Install mechanism: `scripts/sync-runtime-surfaces.sh --apply --product
+  claude` merges the fragment into `$HOME/.claude/settings.json` after
+  `agent-runtime install`, replacing only runtime-kit managed hook
+  commands and preserving custom user hooks / unrelated settings.
+- Acceptance lane: runtime-smoke `meta.sync-runtime-surfaces` fixture
+  validates custom hook preservation, retired managed hook removal,
+  source hook insertion, and idempotency.
+- Support today: **shipped** for the `hooks` block managed by
+  runtime-kit; other `settings.json` surfaces such as `statusLine`
+  remain not shipped.
 
 ### 10. Output styles (`output-styles/<name>.md`)
 
@@ -260,7 +263,7 @@ a uniform shape:
 | 6 | `commands/<n>.md` | yes | linked directory | 2.1.145 | v0.17.5 |
 | 7 | `agents/<n>.md` | no | — | n/a | n/a |
 | 8 | `hooks/<n>.*` scripts | partial | shared scripts linked; claude adapter slot empty | 2.1.145 | v0.17.5 |
-| 9 | `settings.json` managed block | planned-not-shipped | — | 2.1.145 | v0.17.5 |
+| 9 | `settings.json` hooks block | yes | fragment merge into live settings | 2.1.145 | v0.17.5 |
 | 10 | `output-styles/<n>.md` | no | — | n/a | n/a |
 | 11 | `statusLine` | no | — | n/a | n/a |
 | 12 | MCP servers | no | — | n/a | n/a |

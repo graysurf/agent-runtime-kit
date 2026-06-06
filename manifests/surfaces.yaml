@@ -348,14 +348,16 @@ surfaces:
         source_manifest:
           - "docs/source/harness-shape-codex.md#9-hook-registration-settingsjson-hooks-block"
       claude:
-        state: planned-not-shipped
-        mechanism: "managed-block contract defined; no `settings.json.template` artifact in `targets/claude/` yet"
-        source_artifacts: []
+        state: shipped
+        mechanism: "`sync-runtime-surfaces.sh --apply --product claude` merges `core/hooks/claude/settings.hooks.jsonc` into `~/.claude/settings.json`, replacing only runtime-kit managed hook commands"
+        source_artifacts:
+          - core/hooks/claude/settings.hooks.jsonc
+          - scripts/sync-runtime-surfaces.sh
         min_product: "2.1.145"
         min_nils_cli: "v0.17.5"
         acceptance:
           - kind: ci
-            note: "gate 5 (would cover marker pair when shipped)"
+            note: "gate 8 (runtime-smoke)"
             descriptive_only: true
           - kind: live
             note: "—"

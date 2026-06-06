@@ -702,6 +702,71 @@ run_sync_runtime_surfaces_prune_review_reporting_probe() {
     ! grep -q "prune=ok" "$out"
 }
 
+run_sync_runtime_surfaces_claude_settings_hooks_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.claude-settings-hooks.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+  local claude_home="$TMP_ROOT/sync-claude-settings/claude-home"
+  local settings="$claude_home/settings.json"
+
+  rm -rf "$claude_home"
+  mkdir -p "$claude_home"
+  cat >"$settings" <<'JSON'
+{
+  "theme": "dark",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo custom",
+            "statusMessage": "custom hook"
+          },
+          {
+            "type": "command",
+            "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/retired-managed-hook.py\"",
+            "statusMessage": "agent-runtime-kit: Retired hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+JSON
+
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    set +e
+    SOURCE_ROOT="$REPO_ROOT"
+    APPLY=1
+    sync_claude_settings_hooks "$claude_home"
+    sync_claude_settings_hooks "$claude_home"
+  ) >"$out" 2>&1
+
+  python3 - "$settings" <<'PY'
+import json
+import sys
+
+settings = json.load(open(sys.argv[1], encoding="utf-8"))
+assert settings["theme"] == "dark", settings
+bash_groups = [
+    group
+    for group in settings["hooks"]["PreToolUse"]
+    if group.get("matcher") == "Bash"
+]
+assert len(bash_groups) == 1, bash_groups
+commands = [hook.get("command") for hook in bash_groups[0]["hooks"]]
+assert "echo custom" in commands, commands
+assert not any("retired-managed-hook.py" in command for command in commands), commands
+assert any("block-direct-git-worktree.py" in command for command in commands), commands
+assert len(commands) == len(set(commands)), commands
+assert "UserPromptSubmit" in settings["hooks"], settings["hooks"]
+PY
+  grep -q "claude settings hooks synced" "$out"
+}
+
 run_project_local_shim_probe() {
   local name="$1"
   local script="$REPO_ROOT/tests/projects/project-local-smoke/.agents/scripts/${name}.sh"
@@ -991,5 +1056,6 @@ record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses li
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-file managed skill directory (upstream gap characterization)" run_sync_runtime_surfaces_prune_recursive_stale_probe || failures=1
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe || failures=1
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe || failures=1
 
 exit "$failures"

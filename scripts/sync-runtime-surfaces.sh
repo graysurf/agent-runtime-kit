@@ -379,6 +379,168 @@ install_product() {
     "$mode_flag"
 }
 
+sync_claude_settings_hooks() {
+  local live_home="$1"
+  local fragment="$SOURCE_ROOT/core/hooks/claude/settings.hooks.jsonc"
+  local settings_path="$live_home/settings.json"
+
+  if [ ! -f "$fragment" ]; then
+    err "missing Claude settings hook fragment: $fragment"
+    exit 2
+  fi
+
+  log "syncing Claude settings hooks live_home=$live_home"
+  print_cmd python3 - "$fragment" "$settings_path" "$APPLY"
+  python3 - "$fragment" "$settings_path" "$APPLY" <<'PY'
+import copy
+import json
+import os
+import stat
+import sys
+
+fragment_path, settings_path, apply_flag = sys.argv[1:4]
+
+
+def strip_line_comments(text):
+    lines = []
+    for line in text.splitlines():
+        if line.lstrip().startswith("//"):
+            continue
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def load_fragment(path):
+    with open(path, encoding="utf-8") as handle:
+        wrapped = "{\n" + strip_line_comments(handle.read()) + "\n}\n"
+    data = json.loads(wrapped)
+    hooks = data.get("hooks")
+    if not isinstance(hooks, dict):
+        raise SystemExit(f"Claude hook fragment must contain an object hooks block: {path}")
+    return hooks
+
+
+def load_settings(path):
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise SystemExit(f"Claude settings root must be a JSON object: {path}")
+    return data
+
+
+def is_managed_hook(hook):
+    if not isinstance(hook, dict):
+        return False
+    command = hook.get("command")
+    status = hook.get("statusMessage")
+    if isinstance(status, str) and status.startswith("agent-runtime-kit:"):
+        return True
+    return (
+        isinstance(command, str)
+        and "AGENT_RUNTIME_PRODUCT=claude" in command
+        and "$HOME/.claude/hooks/" in command
+    )
+
+
+def remove_managed_hooks(settings_hooks):
+    for event in list(settings_hooks):
+        groups = settings_hooks.get(event)
+        if not isinstance(groups, list):
+            continue
+        kept_groups = []
+        for group in groups:
+            if not isinstance(group, dict) or not isinstance(group.get("hooks"), list):
+                kept_groups.append(group)
+                continue
+            kept_hooks = [hook for hook in group["hooks"] if not is_managed_hook(hook)]
+            if kept_hooks:
+                next_group = copy.deepcopy(group)
+                next_group["hooks"] = kept_hooks
+                kept_groups.append(next_group)
+        if kept_groups:
+            settings_hooks[event] = kept_groups
+        else:
+            settings_hooks.pop(event, None)
+
+
+def append_source_hooks(settings_hooks, source_hooks):
+    managed_count = 0
+    for event, source_groups in source_hooks.items():
+        if not isinstance(source_groups, list):
+            raise SystemExit(f"Claude hook fragment event must be a list: {event}")
+        target_groups = settings_hooks.setdefault(event, [])
+        if not isinstance(target_groups, list):
+            raise SystemExit(f"Claude settings hooks.{event} must be a list")
+        for source_group in source_groups:
+            if not isinstance(source_group, dict) or not isinstance(source_group.get("hooks"), list):
+                raise SystemExit(f"Claude hook fragment group must contain hooks list: {event}")
+            matcher = source_group.get("matcher", "")
+            target_group = None
+            for group in target_groups:
+                if (
+                    isinstance(group, dict)
+                    and group.get("matcher", "") == matcher
+                    and isinstance(group.get("hooks"), list)
+                ):
+                    target_group = group
+                    break
+            if target_group is None:
+                target_group = copy.deepcopy(source_group)
+                target_group["hooks"] = []
+                target_groups.append(target_group)
+            for hook in source_group["hooks"]:
+                target_group["hooks"].append(copy.deepcopy(hook))
+                managed_count += 1
+    return managed_count
+
+
+source_hooks = load_fragment(fragment_path)
+settings = load_settings(settings_path)
+settings_hooks = settings.setdefault("hooks", {})
+if not isinstance(settings_hooks, dict):
+    raise SystemExit(f"Claude settings hooks block must be a JSON object: {settings_path}")
+
+remove_managed_hooks(settings_hooks)
+managed_count = append_source_hooks(settings_hooks, source_hooks)
+
+if apply_flag != "1":
+    print(f"claude settings hooks dry-run: managed_hooks={managed_count} target={settings_path}")
+    raise SystemExit(0)
+
+settings_dir = os.path.dirname(settings_path)
+os.makedirs(settings_dir, exist_ok=True)
+tmp_path = settings_path + ".tmp"
+with open(tmp_path, "w", encoding="utf-8") as handle:
+    json.dump(settings, handle, indent=2)
+    handle.write("\n")
+if os.path.exists(settings_path):
+    os.chmod(tmp_path, stat.S_IMODE(os.stat(settings_path).st_mode))
+else:
+    os.chmod(tmp_path, 0o600)
+os.replace(tmp_path, settings_path)
+print(f"claude settings hooks synced: managed_hooks={managed_count} target={settings_path}")
+PY
+}
+
+sync_product_activation() {
+  local product="$1"
+  local live_home
+
+  case "$product" in
+    claude)
+      live_home="$(product_live_home "$product")"
+      sync_claude_settings_hooks "$live_home"
+      ;;
+    codex) ;;
+    *)
+      err "unknown product: $product"
+      exit 2
+      ;;
+  esac
+}
+
 # Read the skipped count from one prune-stale JSON blob, accumulate it into the
 # run-wide total, and surface the skipped rel_paths so the operator sees exactly
 # which stale candidates prune-stale could not auto-remove. prune-stale only
@@ -608,6 +770,7 @@ main() {
   for product in $(selected_products); do
     render_product "$product"
     install_product "$product"
+    sync_product_activation "$product"
     prune_product "$product"
   done
   run_verification
