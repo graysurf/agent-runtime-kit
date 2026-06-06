@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-04
 - Area: runtime-kit release script; publish-image workflow discovery
 - Severity: medium
@@ -51,4 +51,14 @@ same-tag recreation after failed `publish-image` runs.
 
 ## Next Action
 
-Update scripts/release.sh to select the publish-image run matching the current release tag commit SHA or createdAfter time, and add coverage for same-tag recreation after failed publish-image runs.
+None. Fixed on main by commit 45fd65a, which filters publish-image release
+runs by the release target SHA and adds an offline stale-run smoke test.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/commit/45fd65a336f1a0778183e8a1c94989eddcace74e`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Fixed on main by commit 45fd65a with release-run SHA filtering and
+  stale-run smoke coverage.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/commit/45fd65a336f1a0778183e8a1c94989eddcace74e`
