@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-24
 - Area: plan-issue
 - Severity: medium
@@ -34,4 +34,12 @@ validated, and linked from this entry.
 
 ## Next Action
 
-Confirm whether nils-cli plan-issue record post needs a concurrency lock or whether runtime-kit skills should explicitly serialize lifecycle post calls; upstream issue search found no open match for 'plan-issue record post parallel'.
+None. Promoted into sympoies/nils-cli#793 after local upstream validation and runtime-kit e2e; release/pin follow-up belongs to nils-cli delivery.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/793`
+
+## Archive
+
+- Archived: 2026-06-06
+- Reason: Promoted to nils-cli primitive fix with runtime-kit e2e validation
+- Durable link: `https://github.com/sympoies/nils-cli/pull/793`
