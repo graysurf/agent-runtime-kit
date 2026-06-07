@@ -541,6 +541,12 @@ entries:
 
       [[hooks.PreToolUse.hooks]]
       type = "command"
+      command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/forge-label-reminder.py\""
+      timeout = 10
+      statusMessage = "agent-runtime-kit: Remind forge-cli label selection"
+
+      [[hooks.PreToolUse.hooks]]
+      type = "command"
       command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/finish-line-record.py\""
       timeout = 20
       statusMessage = "agent-runtime-kit: Record agent-docs validation runs"

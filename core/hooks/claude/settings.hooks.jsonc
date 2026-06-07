@@ -83,6 +83,11 @@
         },
         {
           "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/forge-label-reminder.py\"",
+          "statusMessage": "agent-runtime-kit: Remind forge-cli label selection"
+        },
+        {
+          "type": "command",
           "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-direct-python.py\"",
           "statusMessage": "agent-runtime-kit: Block bare Python in managed repos"
         },
