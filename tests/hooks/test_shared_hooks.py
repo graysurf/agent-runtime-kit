@@ -454,6 +454,56 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
 
+    def test_forge_label_reminder_fires_only_without_label(self) -> None:
+        reminded_commands = (
+            "forge-cli pr create --title x",
+            "forge-cli pr deliver --kind feature",
+            "forge-cli issue create --title x",
+            # A global option value must not be mistaken for the subcommand.
+            "forge-cli --repo owner/x --format json pr create --title x",
+            # The agent-run exec wrapper is unwrapped before matching.
+            "agent-run exec --cwd /repo -- forge-cli issue create --title x",
+            # --label-catalog is not a label selection.
+            "forge-cli pr create --label-catalog manifests/forge-labels.yaml",
+        )
+        for command in reminded_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "forge-label-reminder.py", command_payload(command)
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "--label")
+
+        allowed_commands = (
+            "forge-cli pr create --title x --label type::feature",
+            "forge-cli issue create --label=type::bug",
+            "forge-cli pr deliver --kind feature --label size::m",
+            # Non-labelable subcommands and non-forge commands stay silent.
+            "forge-cli pr view 123",
+            "forge-cli issue list",
+            "forge-cli label ensure",
+            "gh pr create --title x",
+            # Explicit no-label opt-out via the inline bypass marker.
+            "FORGE_NO_LABELS=1 forge-cli pr create --title x",
+            "AGENT_RUNTIME_FORGE_NO_LABELS=true forge-cli issue create --title x",
+        )
+        for command in allowed_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "forge-label-reminder.py", command_payload(command)
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
+        # The bypass also honours the process environment.
+        code, decision, stderr = run_hook(
+            "forge-label-reminder.py",
+            command_payload("forge-cli pr create --title x"),
+            env={"FORGE_NO_LABELS": "1"},
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
     def test_blocks_project_memory_write(self) -> None:
         code, decision, stderr = run_hook(
             "block-project-memory-write.py",
@@ -910,6 +960,7 @@ exit 65
             "block-direct-python.py",
             "block-project-memory-write.py",
             "finish-line-record.py",
+            "forge-label-reminder.py",
             "mcp-secret-scan.py",
             "portable-paths-scan.py",
             "semantic-commit-body-gate.py",
