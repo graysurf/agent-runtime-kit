@@ -29,17 +29,7 @@ require_meta_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_agent_docs_probe() {
@@ -152,9 +142,12 @@ run_heuristic_session_closeout_probe() {
   test -d "$shared_root/operation-records"
   grep -q "session's goal has been achieved" "$body"
   grep -q "heuristic-inbox verify" "$body"
-  grep -q "semantic-commit" "$body"
-  grep -q "push origin main" "$body"
-  grep -q "Do not include unrelated staged or unstaged changes" "$body"
+  grep -q "heuristic-inbox deliver" "$body"
+  grep -q "workflow::heuristic-records" "$body"
+  grep -q "forge-cli pr ready" "$body"
+  grep -q "forge-cli pr merge" "$body"
+  grep -q "never a direct push to \`main\`" "$body"
+  grep -q "git checkout -- core/policies/heuristic-system" "$body"
   {
     printf 'body=%s\n' "$body"
     printf 'shared_root=%s\n' "$shared_root"
@@ -346,7 +339,7 @@ run_sync_runtime_surfaces_probe() {
   grep -q "agent-runtime prune-stale" "$out"
   grep -q -- "--dry-run" "$out"
   grep -q "agent-runtime doctor" "$out"
-  grep -q "codex debug prompt-input" "$out"
+  grep -Eq "(\\+ codex debug prompt-input|codex prompt-input skipped)" "$out"
   grep -q "summary: synced surfaces for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
 }
 
@@ -388,6 +381,11 @@ install_lines = [
     for idx, line in enumerate(lines, 1)
     if line.startswith("+ agent-runtime install ")
 ]
+bootstrap_lines = [
+    (idx, line)
+    for idx, line in enumerate(lines, 1)
+    if line.startswith("+ agent-runtime bootstrap-host ")
+]
 link_lines = [
     (idx, line)
     for idx, line in enumerate(lines, 1)
@@ -399,15 +397,24 @@ audit_lines = [
     if line.startswith("+ agent-docs audit --target all --strict --project-path ")
 ]
 
-assert len(render_lines) == 2, render_lines
-assert len(install_lines) == 2, install_lines
 assert len(link_lines) == 2, link_lines
 assert len(audit_lines) == 1, audit_lines
-assert any("--product codex" in line for _, line in render_lines), render_lines
-assert any("--product claude" in line for _, line in render_lines), render_lines
 assert max(idx for idx, _ in link_lines) < audit_lines[0][0], lines
-assert audit_lines[0][0] < min(idx for idx, _ in render_lines), lines
-assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
+if bootstrap_lines:
+    assert len(bootstrap_lines) == 1, bootstrap_lines
+    bootstrap_line = bootstrap_lines[0][1]
+    assert "--product both" in bootstrap_line, bootstrap_line
+    assert "--dry-run" in bootstrap_line, bootstrap_line
+    assert "--skip-homebrew-install" in bootstrap_line, bootstrap_line
+    assert "--skip-cli-tools" in bootstrap_line, bootstrap_line
+    assert audit_lines[0][0] < bootstrap_lines[0][0], lines
+else:
+    assert len(render_lines) == 2, render_lines
+    assert len(install_lines) == 2, install_lines
+    assert any("--product codex" in line for _, line in render_lines), render_lines
+    assert any("--product claude" in line for _, line in render_lines), render_lines
+    assert audit_lines[0][0] < min(idx for idx, _ in render_lines), lines
+    assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
 PY
 
   mkdir -p "$stub_bin" "$source_root/.git"
@@ -465,6 +472,9 @@ case "$command_name" in
     test -d "$source_root/build/$product"
     printf 'install %s\n' "$product"
     ;;
+  prune-stale)
+    printf 'prune-stale %s\n' "$product"
+    ;;
   doctor)
     printf 'doctor %s\n' "$product"
     ;;
@@ -502,10 +512,16 @@ SH
       --skip-cli-tools
   ) >"$apply_out" 2>&1
 
-  test -L "$apply_home/.codex/AGENTS.md"
-  test "$(readlink "$apply_home/.codex/AGENTS.md")" = "$source_root/AGENT_HOME.md"
-  test -L "$apply_home/.claude/CLAUDE.md"
-  test "$(readlink "$apply_home/.claude/CLAUDE.md")" = "$source_root/AGENT_HOME.md"
+  assert_symlink_target() {
+    local link="$1"
+    local target="$2"
+    test -L "$link"
+    test "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$link")" = \
+      "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$target")"
+  }
+
+  assert_symlink_target "$apply_home/.codex/AGENTS.md" "$source_root/AGENT_HOME.md"
+  assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/AGENT_HOME.md"
   grep -q "+ agent-docs audit --target all --strict --project-path" "$apply_out"
   grep -q "codex_home_prompt:" "$apply_out"
   grep -q "claude_home_prompt:" "$apply_out"
@@ -1028,34 +1044,34 @@ PY
 }
 
 failures=0
-record_case "meta.agent-docs" "project-dev docs preflight passed from fixture workspace" run_agent_docs_probe || failures=1
-record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe || failures=1
-record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe || failures=1
-record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap || failures=1
-record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy || failures=1
-record_case "meta.heuristic-inbox" "heuristic inbox shared-root list and strict verification passed" run_heuristic_inbox_probe || failures=1
-record_case "meta.heuristic-session-closeout" "session closeout contract preserves retained heuristic records on main" run_heuristic_session_closeout_probe || failures=1
-record_case "meta.create-skill" "skill lifecycle create surface and governance fixture passed" run_create_skill_probe || failures=1
-record_case "meta.create-project-skill" "project skill lifecycle create surface and fixture passed" run_create_project_skill_probe || failures=1
-record_case "meta.remove-skill" "skill lifecycle removal surface and governance fixture passed" run_remove_skill_probe || failures=1
-record_case "meta.remove-project-skill" "project skill lifecycle removal surface and fixture passed" run_remove_project_skill_probe || failures=1
-record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" run_project_local_shim_probe pre-pr || failures=1
-record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release || failures=1
-record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe || failures=1
-record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe || failures=1
-record_case "meta.setup-project" "setup-project dry-run/apply adoption probes passed" run_setup_project_probe || failures=1
-record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe resolved archive target" run_plan_archive_migrate_probe || failures=1
-record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe || failures=1
-record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe || failures=1
-record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe || failures=1
-record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe || failures=1
-record_case "meta.setup" "setup dry-run renders codex and claude before install" run_setup_render_before_install_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned codex refresh without mutation" run_sync_runtime_surfaces_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-file managed skill directory (upstream gap characterization)" run_sync_runtime_surfaces_prune_recursive_stale_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe || failures=1
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe || failures=1
+record_case "meta.agent-docs" "project-dev docs preflight passed from fixture workspace" run_agent_docs_probe
+record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe
+record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe
+record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap
+record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy
+record_case "meta.heuristic-inbox" "heuristic inbox shared-root list and strict verification passed" run_heuristic_inbox_probe
+record_case "meta.heuristic-session-closeout" "session closeout contract preserves retained heuristic records on main" run_heuristic_session_closeout_probe
+record_case "meta.create-skill" "skill lifecycle create surface and governance fixture passed" run_create_skill_probe
+record_case "meta.create-project-skill" "project skill lifecycle create surface and fixture passed" run_create_project_skill_probe
+record_case "meta.remove-skill" "skill lifecycle removal surface and governance fixture passed" run_remove_skill_probe
+record_case "meta.remove-project-skill" "project skill lifecycle removal surface and fixture passed" run_remove_project_skill_probe
+record_case "meta.pre-pr" "project-local pre-pr shim executed fixture script" run_project_local_shim_probe pre-pr
+record_case "meta.release" "project-local release shim executed fixture script" run_project_local_shim_probe release
+record_case "meta.repo-retro" "repo-retro JSON report probe passed against temp git workspace" run_repo_retro_probe
+record_case "meta.semantic-commit" "semantic-commit dry-run validated staged temp change without commit" run_semantic_commit_probe
+record_case "meta.setup-project" "setup-project dry-run/apply adoption probes passed" run_setup_project_probe
+record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe resolved archive target" run_plan_archive_migrate_probe
+record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe
+record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe
+record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe
+record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe
+record_case "meta.setup" "setup dry-run renders codex and claude before install" run_setup_render_before_install_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned codex refresh without mutation" run_sync_runtime_surfaces_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe
+record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-file managed skill directory (upstream gap characterization)" run_sync_runtime_surfaces_prune_recursive_stale_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe
 
 exit "$failures"

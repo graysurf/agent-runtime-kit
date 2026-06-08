@@ -28,17 +28,7 @@ require_browser_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_browser_session_probe() {
@@ -115,7 +105,7 @@ run_canary_check_probe() {
 }
 
 failures=0
-record_case "browser.browser-session" "browser-session init, step, and verify passed with local artifacts" run_browser_session_probe || failures=1
-record_case "browser.canary-check" "canary-check recorded passing and expected-nonzero local commands" run_canary_check_probe || failures=1
+record_case "browser.browser-session" "browser-session init, step, and verify passed with local artifacts" run_browser_session_probe
+record_case "browser.canary-check" "canary-check recorded passing and expected-nonzero local commands" run_canary_check_probe
 
 exit "$failures"

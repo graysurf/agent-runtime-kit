@@ -35,17 +35,7 @@ require_dispatch_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 init_pushed_branch_fixture() {
@@ -1119,18 +1109,18 @@ run_dispatch_subagent_pr_probe() {
 }
 
 failures=0
-record_case "dispatch.create-plan-tracking-issue" "plan-tooling plus tracking post/repair/audit probes passed" run_create_plan_tracking_issue_probe || failures=1
-record_case "dispatch.deliver-dispatch-plan" "dispatch post/repair/audit, split, and specialist scope probes passed" run_deliver_dispatch_plan_probe || failures=1
-record_case "dispatch.dispatch-plan-closeout" "dispatch record close fixture probe passed" run_dispatch_issue_closeout_probe || failures=1
-record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixture probe passed" run_tracking_issue_closeout_probe || failures=1
+record_case "dispatch.create-plan-tracking-issue" "plan-tooling plus tracking post/repair/audit probes passed" run_create_plan_tracking_issue_probe
+record_case "dispatch.deliver-dispatch-plan" "dispatch post/repair/audit, split, and specialist scope probes passed" run_deliver_dispatch_plan_probe
+record_case "dispatch.dispatch-plan-closeout" "dispatch record close fixture probe passed" run_dispatch_issue_closeout_probe
+record_case "dispatch.plan-tracking-issue-closeout" "tracking record close fixture probe passed" run_tracking_issue_closeout_probe
 record_missing_session_closeout_gate_case || failures=1
-record_case "dispatch.plan-tracking-closeout-gate" "tracking close-ready refuses missing review + state=complete prereqs with the expected blocker codes" run_tracking_closeout_gate_prereq_blockers_probe || failures=1
-record_case "dispatch.plan-tracking-closeout-gate-happy-path" "tracking checkpoint --live --fixture posts review + state=complete and close-ready then returns ready=true with no blockers" run_tracking_closeout_gate_prereq_happy_path_probe || failures=1
-record_case "dispatch.plan-tracking-closeout-gate-ledger-pending" "tracking close-ready raises one ledger-rows-pending blocker per stuck row when bundle resolves to a ledger with pending/in-progress rows" run_tracking_closeout_gate_ledger_pending_probe || failures=1
-record_case "dispatch.plan-tracking-closeout-gate-ledger-clean" "tracking close-ready returns ready=true with no ledger blocker when every ledger row is done with non-empty evidence" run_tracking_closeout_gate_ledger_clean_probe || failures=1
-record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe || failures=1
-record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe || failures=1
-record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe || failures=1
-record_case "dispatch.execute-dispatch-lane" "execute dispatch lane PR create and dispatch session post probes passed" run_dispatch_subagent_pr_probe || failures=1
+record_case "dispatch.plan-tracking-closeout-gate" "tracking close-ready refuses missing review + state=complete prereqs with the expected blocker codes" run_tracking_closeout_gate_prereq_blockers_probe
+record_case "dispatch.plan-tracking-closeout-gate-happy-path" "tracking checkpoint --live --fixture posts review + state=complete and close-ready then returns ready=true with no blockers" run_tracking_closeout_gate_prereq_happy_path_probe
+record_case "dispatch.plan-tracking-closeout-gate-ledger-pending" "tracking close-ready raises one ledger-rows-pending blocker per stuck row when bundle resolves to a ledger with pending/in-progress rows" run_tracking_closeout_gate_ledger_pending_probe
+record_case "dispatch.plan-tracking-closeout-gate-ledger-clean" "tracking close-ready returns ready=true with no ledger blocker when every ledger row is done with non-empty evidence" run_tracking_closeout_gate_ledger_clean_probe
+record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe
+record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe
+record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe
+record_case "dispatch.execute-dispatch-lane" "execute dispatch lane PR create and dispatch session post probes passed" run_dispatch_subagent_pr_probe
 
 exit "$failures"

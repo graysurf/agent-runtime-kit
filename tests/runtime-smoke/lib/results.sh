@@ -15,6 +15,31 @@ results_add() {
   printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$product" "$status" "$skill_count" "$note" >>"$RESULTS_FILE"
 }
 
+results_record_case() {
+  local id="$1"
+  local note="$2"
+  local status
+  shift 2
+
+  set +e
+  (
+    set -e
+    "$@"
+  )
+  status=$?
+  set -e
+
+  if [ "$status" -eq 0 ]; then
+    results_add "$id" "shared-cli" "pass" "1" "$note"
+  else
+    results_add "$id" "shared-cli" "fail" "0" "$note"
+    # shellcheck disable=SC2034
+    failures=1
+  fi
+
+  return 0
+}
+
 results_count_status() {
   local status="$1"
   awk -F '\t' -v status="$status" '$3 == status { count++ } END { print count + 0 }' "$RESULTS_FILE"

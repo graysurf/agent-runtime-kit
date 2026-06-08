@@ -29,17 +29,7 @@ require_media_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_image_processing_probe() {
@@ -71,7 +61,7 @@ run_screen_record_probe() {
 }
 
 failures=0
-record_case "media.image-processing" "image-processing validated committed SVG fixture in temp workspace" run_image_processing_probe || failures=1
+record_case "media.image-processing" "image-processing validated committed SVG fixture in temp workspace" run_image_processing_probe
 
 if run_screen_record_probe; then
   results_add "media.screen-record" "shared-cli" "pass" "1" "screen-record host preflight passed"
