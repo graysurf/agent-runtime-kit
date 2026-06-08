@@ -20,7 +20,7 @@ schema_version: 1
 
 nils_cli:
   # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
-  pinned_tag: "v1.0.13"
+  pinned_tag: "v1.0.14"
 
 # Optional per-binary floors for the downstream-consumed CLIs. nils-cli
 # ships every crate in lock-step, so the exact `pinned_tag` above is the
@@ -33,8 +33,8 @@ required_clis:
     min: "1.0.13"
   - bin: plan-tooling     # ledger-update / ledger-sync + exec-state-sync repair
     min: "1.0.1"
-  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces + provider payload privacy gate
-    min: "1.0.11"
+  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces + provider payload privacy gate + GitLab MR check/merge API path
+    min: "1.0.14"
   - bin: plan-archive     # discover / migrate / refresh / query
     min: "0.25.5"
   - bin: agent-docs       # data-driven catalog + declared-intent preflight guard

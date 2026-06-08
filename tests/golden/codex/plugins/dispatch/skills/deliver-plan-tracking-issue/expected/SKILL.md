@@ -12,7 +12,7 @@ Prereqs:
 
 - Profile: `tracking`.
 - CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`,
-  `forge-cli >=1.0.11`.
+  `forge-cli >=1.0.14`.
 - The tracking issue is open, visible, and reconciled with
   `run-state.json`; FSM is not blocked or stale.
 - PR work is authorized by the active PR delivery workflow. Review
