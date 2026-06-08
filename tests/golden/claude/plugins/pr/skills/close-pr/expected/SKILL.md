@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `forge-cli >=1.0.11` is installed from the released nils-cli package and
+- `forge-cli >=1.0.14` is installed from the released nils-cli package and
   available on `PATH`.
 - Shared provider and issue-backed merge rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.

@@ -748,7 +748,7 @@ skills:
         name: close-pr
         render_to: plugins/pr/skills/close-pr/SKILL.md
     required_clis:
-      forge-cli: ">=1.0.11"
+      forge-cli: ">=1.0.14"
     state_out_mode: runtime
 
   - id: pr.deliver-pr
@@ -762,7 +762,7 @@ skills:
         name: deliver-pr
         render_to: plugins/pr/skills/deliver-pr/SKILL.md
     required_clis:
-      forge-cli: ">=1.0.11"
+      forge-cli: ">=1.0.14"
       agent-runtime: ">=0.19.0"
       plan-issue: ">=1.0.13"
       review-specialists: ">=0.17.1"
@@ -865,7 +865,7 @@ skills:
     required_clis:
       plan-tooling: ">=1.0.1"
       plan-issue: ">=1.0.13"
-      forge-cli: ">=1.0.11"
+      forge-cli: ">=1.0.14"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -898,7 +898,7 @@ skills:
         name: execute-dispatch-lane
         render_to: plugins/dispatch/skills/execute-dispatch-lane/SKILL.md
     required_clis:
-      forge-cli: ">=1.0.11"
+      forge-cli: ">=1.0.14"
       plan-issue: ">=1.0.13"
       plan-tooling: ">=1.0.1"
       review-evidence: ">=0.16.0"
