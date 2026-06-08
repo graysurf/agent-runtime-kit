@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-08
 - Area: forge-cli
 - Severity: medium
@@ -74,7 +74,12 @@ Promote after one of:
 
 ## Next Action
 
-File or link the upstream `forge-cli` follow-up. Decide whether to implement an
-API-backed checks/merge fallback, relax the strict minor parser guard for live
-GitLab MR delivery, or make the runtime preflight fail early when `glab` is
-outside the supported range.
+None. sympoies/nils-cli#798 implemented API-backed numeric GitLab MR checks/wait and merge while narrowing the glab version guard to the branch-only text fallback.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/798`
+
+## Archive
+
+- Archived: 2026-06-08
+- Reason: Promoted after PR #798 implemented API-backed GitLab MR checks/wait and merge, narrowing the glab version guard to the branch-only text fallback.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/798`
