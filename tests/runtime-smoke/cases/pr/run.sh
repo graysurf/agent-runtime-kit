@@ -29,17 +29,7 @@ require_pr_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 init_pushed_branch_fixture() {
@@ -432,9 +422,9 @@ run_deliver_pr_probe() {
 }
 
 failures=0
-record_case "pr.create-pr" "forge-cli GitHub+GitLab pr create dry-run passed" run_create_pr_probe || failures=1
-record_case "pr.create-dispatch-lane-pr" "forge-cli dispatch lane pr create dry-run passed" run_create_dispatch_lane_probe || failures=1
-record_case "pr.close-pr" "forge-cli GitHub+GitLab close dry-runs and optional specialist scope passed" run_close_pr_probe || failures=1
-record_case "pr.deliver-pr" "forge-cli GitHub+GitLab delivery macro and mandatory specialist scope passed" run_deliver_pr_probe || failures=1
+record_case "pr.create-pr" "forge-cli GitHub+GitLab pr create dry-run passed" run_create_pr_probe
+record_case "pr.create-dispatch-lane-pr" "forge-cli dispatch lane pr create dry-run passed" run_create_dispatch_lane_probe
+record_case "pr.close-pr" "forge-cli GitHub+GitLab close dry-runs and optional specialist scope passed" run_close_pr_probe
+record_case "pr.deliver-pr" "forge-cli GitHub+GitLab delivery macro and mandatory specialist scope passed" run_deliver_pr_probe
 
 exit "$failures"

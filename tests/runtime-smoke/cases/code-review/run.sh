@@ -27,17 +27,7 @@ require_code_review_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 init_diff_fixture() {
@@ -184,10 +174,10 @@ run_code_review_specialists_probe() {
 }
 
 failures=0
-record_case "code-review.code-review-focused-lens" "focused lens scope with forced specialists passed" run_focused_lens_probe || failures=1
-record_case "code-review.code-review-follow-up" "follow-up validation and affected lens scope passed" run_follow_up_probe || failures=1
-record_case "code-review.code-review-pre-merge-gate" "pre-merge gate mandatory forced specialists passed" run_pre_merge_gate_probe || failures=1
-record_case "code-review.code-review-quick-pass" "quick-pass scope sizing probe passed" run_quick_pass_probe || failures=1
-record_case "code-review.code-review-specialists" "review-specialists scope, validate, merge, and render probes passed" run_code_review_specialists_probe || failures=1
+record_case "code-review.code-review-focused-lens" "focused lens scope with forced specialists passed" run_focused_lens_probe
+record_case "code-review.code-review-follow-up" "follow-up validation and affected lens scope passed" run_follow_up_probe
+record_case "code-review.code-review-pre-merge-gate" "pre-merge gate mandatory forced specialists passed" run_pre_merge_gate_probe
+record_case "code-review.code-review-quick-pass" "quick-pass scope sizing probe passed" run_quick_pass_probe
+record_case "code-review.code-review-specialists" "review-specialists scope, validate, merge, and render probes passed" run_code_review_specialists_probe
 
 exit "$failures"

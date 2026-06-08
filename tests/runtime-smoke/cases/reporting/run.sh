@@ -29,17 +29,7 @@ require_reporting_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_daily_brief_probe() {
@@ -98,8 +88,8 @@ run_topic_radar_probe() {
 }
 
 failures=0
-record_case "reporting.daily-brief" "daily-brief backend topic-radar sample JSON exposes brief clusters" run_daily_brief_probe || failures=1
-record_case "reporting.project-retro" "project-retro repo-retro JSON report passed against temp git workspace" run_project_retro_probe || failures=1
-record_case "reporting.topic-radar" "topic-radar sample JSON and markdown probes passed without network" run_topic_radar_probe || failures=1
+record_case "reporting.daily-brief" "daily-brief backend topic-radar sample JSON exposes brief clusters" run_daily_brief_probe
+record_case "reporting.project-retro" "project-retro repo-retro JSON report passed against temp git workspace" run_project_retro_probe
+record_case "reporting.topic-radar" "topic-radar sample JSON and markdown probes passed without network" run_topic_radar_probe
 
 exit "$failures"

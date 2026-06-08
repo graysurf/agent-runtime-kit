@@ -28,17 +28,7 @@ require_evidence_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_web_evidence_probe() {
@@ -270,11 +260,11 @@ run_model_cross_check_probe() {
 }
 
 failures=0
-record_case "evidence.web-evidence" "web-evidence captured local loopback HTTP fixture" run_web_evidence_probe || failures=1
-record_case "evidence.test-first-evidence" "test-first evidence waiver and final validation verified" run_test_first_evidence_probe || failures=1
-record_case "evidence.review-evidence" "review evidence finding and validation verified" run_review_evidence_probe || failures=1
-record_case "evidence.skill-usage" "skill usage record linked child evidence and verified outcome" run_skill_usage_probe || failures=1
-record_case "evidence.docs-impact" "docs-impact classified controlled untracked docs fixture" run_docs_impact_probe || failures=1
-record_case "evidence.model-cross-check" "model cross-check recorded primary and checker observations without provider calls" run_model_cross_check_probe || failures=1
+record_case "evidence.web-evidence" "web-evidence captured local loopback HTTP fixture" run_web_evidence_probe
+record_case "evidence.test-first-evidence" "test-first evidence waiver and final validation verified" run_test_first_evidence_probe
+record_case "evidence.review-evidence" "review evidence finding and validation verified" run_review_evidence_probe
+record_case "evidence.skill-usage" "skill usage record linked child evidence and verified outcome" run_skill_usage_probe
+record_case "evidence.docs-impact" "docs-impact classified controlled untracked docs fixture" run_docs_impact_probe
+record_case "evidence.model-cross-check" "model cross-check recorded primary and checker observations without provider calls" run_model_cross_check_probe
 
 exit "$failures"

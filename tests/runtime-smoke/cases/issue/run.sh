@@ -26,17 +26,7 @@ require_issue_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_issue_follow_up_probe() {
@@ -141,8 +131,8 @@ run_report_plan_issue_finding_probe() {
 }
 
 failures=0
-record_case "issue.issue-follow-up" "forge-cli issue create/view/comment dry-run probes passed" run_issue_follow_up_probe || failures=1
-record_case "issue.issue-triage" "forge-cli inbox issue triage dry-run probes passed" run_issue_triage_probe || failures=1
-record_case "issue.report-plan-issue-finding" "forge-cli issue list dedup + create dry-run probes passed" run_report_plan_issue_finding_probe || failures=1
+record_case "issue.issue-follow-up" "forge-cli issue create/view/comment dry-run probes passed" run_issue_follow_up_probe
+record_case "issue.issue-triage" "forge-cli inbox issue triage dry-run probes passed" run_issue_triage_probe
+record_case "issue.report-plan-issue-finding" "forge-cli issue list dedup + create dry-run probes passed" run_report_plan_issue_finding_probe
 
 exit "$failures"

@@ -25,17 +25,7 @@ require_conversation_bin() {
 }
 
 record_case() {
-  local id="$1"
-  local note="$2"
-  shift 2
-
-  if "$@"; then
-    results_add "$id" "shared-cli" "pass" "1" "$note"
-    return 0
-  fi
-
-  results_add "$id" "shared-cli" "fail" "0" "$note"
-  return 1
+  results_record_case "$@"
 }
 
 run_conversation_skill_probe() {
@@ -64,12 +54,12 @@ run_conversation_skill_probe() {
 }
 
 failures=0
-record_case "conversation.actionable-advice" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe actionable-advice || failures=1
-record_case "conversation.actionable-knowledge" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe actionable-knowledge || failures=1
-record_case "conversation.discussion-to-implementation-doc" "workflow skill source and rendered surfaces exist for both products" run_conversation_skill_probe discussion-to-implementation-doc || failures=1
-record_case "conversation.handoff-session-prompt" "workflow skill source and rendered surfaces exist for both products" run_conversation_skill_probe handoff-session-prompt || failures=1
-record_case "conversation.orchestrator-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe orchestrator-first || failures=1
-record_case "conversation.parallel-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe parallel-first || failures=1
-record_case "conversation.test-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe test-first || failures=1
+record_case "conversation.actionable-advice" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe actionable-advice
+record_case "conversation.actionable-knowledge" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe actionable-knowledge
+record_case "conversation.discussion-to-implementation-doc" "workflow skill source and rendered surfaces exist for both products" run_conversation_skill_probe discussion-to-implementation-doc
+record_case "conversation.handoff-session-prompt" "workflow skill source and rendered surfaces exist for both products" run_conversation_skill_probe handoff-session-prompt
+record_case "conversation.orchestrator-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe orchestrator-first
+record_case "conversation.parallel-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe parallel-first
+record_case "conversation.test-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe test-first
 
 exit "$failures"
