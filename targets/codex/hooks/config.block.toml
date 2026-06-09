@@ -4,43 +4,43 @@ matcher = "Bash"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-git-commit.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/block-direct-git-commit.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Block direct git commit"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-git-worktree.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/block-direct-git-worktree.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Block direct git worktree"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/semantic-commit-body-gate.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/semantic-commit-body-gate.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Require semantic-commit body"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-python.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/block-direct-python.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Block bare Python in managed repos"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-direct-pr-create.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/block-direct-pr-create.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Block direct PR/MR creation"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/forge-label-reminder.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/forge-label-reminder.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Remind forge-cli label selection"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/finish-line-record.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/finish-line-record.py\""
 timeout = 20
 statusMessage = "agent-runtime-kit: Record agent-docs validation runs"
 
@@ -49,31 +49,31 @@ matcher = "Write|Edit|NotebookEdit|apply_patch"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/block-project-memory-write.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/block-project-memory-write.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Protect project memory writes"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/mcp-secret-scan.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/mcp-secret-scan.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Scan .mcp.json for secrets"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/portable-paths-scan.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/portable-paths-scan.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Scan docs for local paths"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/agent-scope-lock-guard.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/agent-scope-lock-guard.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Validate active scope lock"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/finish-line-record.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/finish-line-record.py\""
 timeout = 20
 statusMessage = "agent-runtime-kit: Record agent-docs code edits"
 
@@ -82,13 +82,13 @@ matcher = ""
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/user-prompt-agent-docs.sh\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/user-prompt-agent-docs.sh\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Remind agent-docs preflight"
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/skill-usage-reminder.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/skill-usage-reminder.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Remind skill-usage recording"
 
@@ -97,7 +97,7 @@ matcher = "startup|resume|clear"
 
 [[hooks.SessionStart.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/session-start-healthcheck.sh\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/session-start-healthcheck.sh\""
 timeout = 20
 statusMessage = "agent-runtime-kit: Check baseline health"
 
@@ -106,18 +106,18 @@ matcher = ""
 
 [[hooks.Stop.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/stop-pre-pr-reminder.sh\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/stop-pre-pr-reminder.sh\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Remind PR readiness"
 
 [[hooks.Stop.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/agent-scope-lock-guard.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/agent-scope-lock-guard.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Report scope lock violations"
 
 [[hooks.Stop.hooks]]
 type = "command"
-command = "AGENT_RUNTIME_PRODUCT=codex \"$CODEX_HOME/hooks/stop-finish-line-gate.py\""
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/stop-finish-line-gate.py\""
 timeout = 20
 statusMessage = "agent-runtime-kit: Enforce agent-docs validation gate"

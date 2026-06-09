@@ -70,14 +70,19 @@ I approve the clean reinstall
 
 After the user approves, run these steps.
 
-1. Start strict shell mode and create a backup folder.
+1. Start strict shell mode, set standard runtime homes, and create a backup
+   folder.
 
 ```bash
 set -euo pipefail
 
+export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+export CODEX_AGENT_STATE_HOME="${CODEX_AGENT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/codex}"
+
 stamp="$(date +%Y%m%d-%H%M%S)"
 backup_root="$HOME/.local/state/agent-runtime-kit/bootstrap-backups/$stamp"
 mkdir -p "$backup_root"
+echo "CODEX_HOME: $CODEX_HOME"
 echo "Backup root: $backup_root"
 ```
 
@@ -183,7 +188,7 @@ cd "$HOME/.config/agent-runtime-kit"
 
 agent-docs audit --target all --strict
 
-codex_state_home="${CODEX_AGENT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/codex}"
+codex_state_home="$CODEX_AGENT_STATE_HOME"
 claude_state_home="${CLAUDE_KIT_STATE_HOME:-$HOME/.local/state/agent-runtime-kit/claude}"
 
 agent-runtime doctor \
