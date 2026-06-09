@@ -983,6 +983,44 @@ exit 65
             self.assertIn(f"hooks/{script}", codex_block)
             self.assertIn(f"hooks/{script}", claude_fragment)
 
+    def test_codex_hook_paths_fall_back_when_codex_home_is_unset(self) -> None:
+        codex_block = (REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml").read_text(
+            encoding="utf-8"
+        )
+        path_exprs: list[str] = []
+        for line in codex_block.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("command = "):
+                continue
+            command = json.loads(stripped.split("=", 1)[1].strip())
+            parts = command.split('"')
+            self.assertEqual(parts[0], "AGENT_RUNTIME_PRODUCT=codex ")
+            self.assertEqual(len(parts), 3)
+            path_exprs.append(parts[1])
+
+        self.assertGreater(len(path_exprs), 0)
+        for path_expr in path_exprs:
+            script_name = path_expr.rsplit("/", 1)[-1]
+            completed = subprocess.run(
+                [
+                    "env",
+                    "-u",
+                    "CODEX_HOME",
+                    "HOME=/Users/example",
+                    "sh",
+                    "-c",
+                    f'printf "%s\\n" "{path_expr}"',
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(
+                completed.stdout.strip(),
+                f"/Users/example/.codex/hooks/{script_name}",
+            )
+
     def test_codex_hook_block_source_matches_install_body_template(self) -> None:
         source_block = (REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml").read_text(
             encoding="utf-8"
