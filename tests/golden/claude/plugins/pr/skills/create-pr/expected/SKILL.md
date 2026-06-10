@@ -22,7 +22,8 @@ Inputs:
 
 - Provider: `github` or `gitlab` (let `forge-cli` detect it from the remote, or
   pass `--provider` explicitly).
-- PR/MR kind: `feature` or `bug`.
+- PR/MR kind: `feature`, `bug`, `chore`, `docs`, `ci`, or `refactor`; it must
+  match the branch prefix.
 - Source branch, base branch, title, and body section files for
   `agent-runtime pr-body render`.
 - Required labels selected from the shared taxonomy.
@@ -126,9 +127,10 @@ forge-cli --provider "$PROVIDER" --dry-run --format json pr create \
    the intended change set.
 2. Push the branch and ensure it has an upstream tracking branch.
 3. Write the narrative content into section files, then render the body with
-   `agent-runtime pr-body render --kind feature|bug ... --out "$PR_BODY_FILE"`.
-   Do not hand-write the section scaffolding or derive the title/body from
-   `git log -1`.
+   `agent-runtime pr-body render --kind <kind> ... --out "$PR_BODY_FILE"`
+   (all six kinds render; pass `--issues-file` to carry non-closing
+   `Refs #<issue>` references as an `## Issues` section). Do not hand-write
+   the section scaffolding or derive the title/body from `git log -1`.
 4. Select labels before provider mutation; use
    `core/skills/pr/pr-lifecycle/README.md` for the shared taxonomy rule.
 5. If `manifests/forge-labels.yaml` exists, validate labels with the

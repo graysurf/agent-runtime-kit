@@ -24,7 +24,11 @@ skill's next action.
   recorded that decision.
 - Issue-backed plan references use non-closing refs such as `Refs #<issue>`.
   Provider auto-close keywords are banned until the matching plan closeout skill
-  has verified lifecycle evidence.
+  has verified lifecycle evidence. Carry the refs through
+  `agent-runtime pr-body render --issues-file` (rendered as `## Issues` for
+  every kind; `bug` renders its required `## Issues Found`); kind-specific
+  section files are rejected under a non-owning kind instead of silently
+  dropped.
 - Select labels from `manifests/forge-labels.yaml` when present: one `type::`,
   one primary `area::`, and `size::`; add `risk::`,
   `provider::<github|gitlab>`, or `state::do-not-merge` only when they convey a

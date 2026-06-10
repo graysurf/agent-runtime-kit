@@ -23,7 +23,8 @@ Inputs:
 
 - Provider: `github` or `gitlab` (let `forge-cli` detect it from the remote, or
   pass `--provider` explicitly).
-- Delivery kind: `feature` or `bug`.
+- Delivery kind: `feature`, `bug`, `chore`, `docs`, `ci`, or `refactor`;
+  it must match the branch prefix.
 - PR/MR title and body section files for `agent-runtime pr-body render`.
 - Optional head branch, base branch, merge method, reviewers, and timeout.
 - Required labels selected from the shared taxonomy.
@@ -33,6 +34,9 @@ Inputs:
 - Mandatory pre-merge review through `code-review-pre-merge-gate`.
 - If the body references a linked tracking or dispatch issue, use non-closing
   references such as `Refs #<issue>`; provider auto-close keywords are refused.
+  Carry the references through `pr-body render --issues-file` — rendered as
+  `## Issues` after `## Summary` for every kind (`bug` keeps its required
+  `## Issues Found` section) — instead of hand-placing them in the summary.
 - If the body references a linked tracking or dispatch issue, lifecycle
   readiness is also a pre-merge gate: source, plan, complete state, latest
   `role=session`, validation, and review evidence must be present before merge.
@@ -89,6 +93,13 @@ agent-runtime pr-body render \
   --risk-file "$RISK_FILE" \
   --out "$PR_BODY"
 ```
+
+Add `--issues-file "$ISSUES_FILE"` when the PR references a linked issue: it is
+required for `--kind bug` and optional for every other kind, rendering the
+non-closing references as `## Issues`. Kind-specific files passed with a
+non-owning kind are rejected (`--changes-file` is feature-only;
+`--problem-file`, `--reproduction-file`, and `--fix-approach-file` are
+bug-only) instead of being silently dropped.
 
 Use the released provider CLI directly. `forge-cli` detects the provider from
 the remote; pass `--provider "$PROVIDER"` to pin it (`github` or `gitlab`):
