@@ -1,20 +1,36 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-08 (refreshed for `v1.0.14`)
+- Snapshot date: 2026-06-10 (refreshed for `v1.0.15`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.14`
+- Active `git describe --tags` output: `v1.0.15`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.14`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.0.15`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `0c675ff`
-  (`chore(release): bump cli versions to 1.0.14 (#799)`)
+- Head commit: `1bbeaaa`
+  (`chore(release): bump cli versions to 1.0.15 (#807)`)
 - Release:
-  [`v1.0.14`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.14),
+  [`v1.0.15`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.15),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.0.15` tightens the `agent-runtime pr-body render` input contract
+  ([#806](https://github.com/sympoies/nils-cli/pull/806)): `--issues-file`
+  now renders for every kind (required for `bug` as `## Issues Found`,
+  optional otherwise as `## Issues` after `## Summary`), and kind-specific
+  section files hard-error under a non-owning kind (exit 2) instead of being
+  silently dropped. Runtime-kit `pr:create-pr` / `pr:deliver-pr` /
+  `pr:pr-lifecycle` docs adopted the surface in agent-runtime-kit commit
+  `99e3e81`. The exact `pinned_tag` gate covers the `agent-runtime` host, and
+  no `required_clis[]` floor moves: the remaining changes are test-only
+  refactors ([#801](https://github.com/sympoies/nils-cli/pull/801),
+  [#802](https://github.com/sympoies/nils-cli/pull/802),
+  [#803](https://github.com/sympoies/nils-cli/pull/803),
+  [#805](https://github.com/sympoies/nils-cli/pull/805)) and the additive
+  `forge-cli` activity feed
+  ([#800](https://github.com/sympoies/nils-cli/pull/800)), which no
+  runtime-kit consumer depends on yet.
 - `v1.0.14` hardens `forge-cli` GitLab merge request delivery: numeric MR
   `checks`, `wait-checks`, and `merge` now use structured GitLab API calls
   when project context is available, including pipeline job allow-failure
