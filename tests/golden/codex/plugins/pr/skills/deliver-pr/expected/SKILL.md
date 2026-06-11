@@ -48,6 +48,9 @@ Outputs:
 - A `code-review-pre-merge-gate` result completed before merge with at least
   `testing` and `maintainability`.
 - A delivery review outcome comment posted to the PR/MR before merge.
+- A provider review-thread sweep completed immediately before merge, with
+  every unresolved thread (bot or human) dispositioned: repaired, resolved as
+  accepted, or converted to a follow-up issue.
 - A merged PR/MR through `forge-cli pr merge`, unless `--no-merge` is supplied.
 - When a linked issue closeout runs, `plan-issue record close` posts closeout
   evidence, repairs the dashboard, verifies linked records, and closes the
@@ -62,6 +65,9 @@ Failure modes:
 - Selected labels fail catalog validation or the provider rejects label
   application.
 - Mandatory pre-merge review gate findings are unresolved or undispositioned.
+- Provider review threads — typically from bot reviewers posting minutes after
+  PR creation — remain unresolved and undispositioned at merge time. CI checks
+  and the local review gate do not surface them; only the sweep does.
 - Delivery review outcome comment posting fails.
 - `local_path_present`: rewrite useful evidence paths in provider-visible PR
   bodies, delivery outcome comments, or linked issue closeout records to
@@ -133,6 +139,40 @@ forge-cli --provider "$PROVIDER" pr comment "$PR_NUMBER" \
 forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER" --method squash
 ```
 
+Immediately before the merge call, sweep provider review threads. Bot
+reviewers post asynchronously — often minutes after PR creation — so the sweep
+runs at the last action before merge, not only at creation time:
+
+```bash
+# GitHub: unresolved review threads
+gh api graphql \
+  -f owner="$OWNER" -f name="$NAME" -F pr="$PR_NUMBER" -f query='
+  query($owner: String!, $name: String!, $pr: Int!) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 100) { nodes {
+          isResolved path
+          comments(first: 1) { nodes { author { login } body } }
+        } }
+      }
+    }
+  }' --jq '.data.repository.pullRequest.reviewThreads.nodes
+    | map(select(.isResolved | not))'
+
+# GitLab: unresolved discussions
+glab api "projects/$PROJECT_ID/merge_requests/$MR_NUMBER/discussions" \
+  --paginate \
+  | jq '[.[] | select(any(.notes[]?; .resolvable and (.resolved | not)))]'
+```
+
+An empty result is the gate. Disposition every unresolved thread before merge:
+repair it in this workflow, reply and resolve it as an accepted tradeoff, or
+convert it to a follow-up issue and resolve the thread with the link. Once
+`forge-cli pr merge` gates on unresolved threads mechanically
+(sympoies/nils-cli#808: fail-closed with `--allow-unresolved-threads` as the
+explicit bypass, plus a `pr review-threads` read surface), prefer those
+surfaces and treat the raw calls above as the fallback.
+
 For linked tracking or dispatch issues, run a pre-merge lifecycle audit before
 the merge. This is not closeout yet, because `record close` verifies the merged
 PR/MR after merge:
@@ -193,17 +233,22 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    lenses.
 9. Post the delivery review outcome body produced by
    `code-review-pre-merge-gate` before merge.
-10. Before merge, if the PR/MR references a linked tracking or dispatch issue,
+10. Sweep provider review threads immediately before merge (see Entrypoint):
+    fetch reviews and review threads — bot reviewers post asynchronously, so
+    this runs as the last gate, not only at creation. Disposition every
+    unresolved thread: repair, reply-and-resolve as accepted, or convert to a
+    follow-up issue. Do not merge with undispositioned threads.
+11. Before merge, if the PR/MR references a linked tracking or dispatch issue,
     audit it and confirm lifecycle readiness: source/plan snapshots, complete
     state, latest `role=session`, validation, review, and dashboard links are
     present. If not, stop and route to the matching plan delivery workflow.
-11. Merge with `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` unless
+12. Merge with `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` unless
     `--no-merge` is the requested final stop.
-12. After merge, if the body referenced a linked tracking or dispatch issue
+13. After merge, if the body referenced a linked tracking or dispatch issue
     and `--no-closeout` was not supplied, run `plan-issue record close` with
     the correct profile. On gate fail, leave the issue open with the blocked
     code surfaced by `plan-issue` and route to the matching closeout skill.
-13. Record the PR/MR URL, labels, check/pipeline evidence, review outcome, merge
+14. Record the PR/MR URL, labels, check/pipeline evidence, review outcome, merge
     commit, chained closeout result, and any fallback used in delivery notes.
 
 ## Boundary
