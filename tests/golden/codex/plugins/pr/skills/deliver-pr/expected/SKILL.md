@@ -10,10 +10,11 @@ description:
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli >=1.0.14`, `plan-issue >=1.0.13`, and
+- `agent-runtime`, `forge-cli >=1.0.16`, `plan-issue >=1.0.13`, and
   `review-specialists` are installed from the released nils-cli package and
   available on `PATH`. The `code-review-pre-merge-gate` workflow uses
-  `review-specialists`.
+  `review-specialists`; the review-thread sweep and merge gate need
+  `forge-cli` 1.0.16.
 - Shared provider, branch, body, and label rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The working tree contains only the intended delivery changes.
@@ -67,7 +68,9 @@ Failure modes:
 - Mandatory pre-merge review gate findings are unresolved or undispositioned.
 - Provider review threads — typically from bot reviewers posting minutes after
   PR creation — remain unresolved and undispositioned at merge time. CI checks
-  and the local review gate do not surface them; only the sweep does.
+  and the local review gate do not surface them; `forge-cli pr merge` fails
+  closed with `unresolved_review_threads`, and the sweep is how the workflow
+  dispositions them before that gate trips.
 - Delivery review outcome comment posting fails.
 - `local_path_present`: rewrite useful evidence paths in provider-visible PR
   bodies, delivery outcome comments, or linked issue closeout records to
@@ -144,34 +147,17 @@ reviewers post asynchronously — often minutes after PR creation — so the swe
 runs at the last action before merge, not only at creation time:
 
 ```bash
-# GitHub: unresolved review threads
-gh api graphql \
-  -f owner="$OWNER" -f name="$NAME" -F pr="$PR_NUMBER" -f query='
-  query($owner: String!, $name: String!, $pr: Int!) {
-    repository(owner: $owner, name: $name) {
-      pullRequest(number: $pr) {
-        reviewThreads(first: 100) { nodes {
-          isResolved path
-          comments(first: 1) { nodes { author { login } body } }
-        } }
-      }
-    }
-  }' --jq '.data.repository.pullRequest.reviewThreads.nodes
-    | map(select(.isResolved | not))'
-
-# GitLab: unresolved discussions
-glab api "projects/$PROJECT_ID/merge_requests/$MR_NUMBER/discussions" \
-  --paginate \
-  | jq '[.[] | select(any(.notes[]?; .resolvable and (.resolved | not)))]'
+forge-cli --provider "$PROVIDER" --format json pr review-threads "$PR_NUMBER"
 ```
 
-An empty result is the gate. Disposition every unresolved thread before merge:
-repair it in this workflow, reply and resolve it as an accepted tradeoff, or
-convert it to a follow-up issue and resolve the thread with the link. Once
-`forge-cli pr merge` gates on unresolved threads mechanically
-(sympoies/nils-cli#808: fail-closed with `--allow-unresolved-threads` as the
-explicit bypass, plus a `pr review-threads` read surface), prefer those
-surfaces and treat the raw calls above as the fallback.
+`data.unresolved == 0` is the gate. Disposition every unresolved thread before
+merge: repair it in this workflow, reply and resolve it as an accepted
+tradeoff, or convert it to a follow-up issue and resolve the thread with the
+link. `forge-cli pr merge` (and the `pr deliver` merge step) also enforces
+this mechanically — merging with unresolved threads fails closed with
+`unresolved_review_threads` (sympoies/nils-cli#808, shipped in v1.0.16). Never
+pass `--allow-unresolved-threads` to silence the gate without dispositioning
+the threads and recording the reason in the delivery review outcome.
 
 For linked tracking or dispatch issues, run a pre-merge lifecycle audit before
 the merge. This is not closeout yet, because `record close` verifies the merged
@@ -233,11 +219,13 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    lenses.
 9. Post the delivery review outcome body produced by
    `code-review-pre-merge-gate` before merge.
-10. Sweep provider review threads immediately before merge (see Entrypoint):
-    fetch reviews and review threads — bot reviewers post asynchronously, so
-    this runs as the last gate, not only at creation. Disposition every
-    unresolved thread: repair, reply-and-resolve as accepted, or convert to a
-    follow-up issue. Do not merge with undispositioned threads.
+10. Sweep provider review threads immediately before merge with
+    `forge-cli pr review-threads` (see Entrypoint) — bot reviewers post
+    asynchronously, so this runs as the last gate, not only at creation.
+    Disposition every unresolved thread: repair, reply-and-resolve as
+    accepted, or convert to a follow-up issue. `pr merge` refuses
+    undispositioned threads (`unresolved_review_threads`); do not bypass with
+    `--allow-unresolved-threads` without recording the reason.
 11. Before merge, if the PR/MR references a linked tracking or dispatch issue,
     audit it and confirm lifecycle readiness: source/plan snapshots, complete
     state, latest `role=session`, validation, review, and dashboard links are
