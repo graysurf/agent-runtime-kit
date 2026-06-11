@@ -2,10 +2,12 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-11
 - Area: pr-delivery
 - Severity: medium
+- Durable link: `https://github.com/sympoies/nils-cli/pull/809`
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/305`
 
 ## Signal
 
@@ -56,9 +58,26 @@ fix is the mechanical fail-closed gate in `forge-cli pr merge`
 
 ## Promotion Criteria
 
-Promote after the durable fix or accepted-risk decision is implemented,
-validated, and linked from this entry.
+Met on 2026-06-11. The durable fix shipped and is validated: merge
+lock-down rule 12 (`unresolved_review_threads`, bypass
+`--allow-unresolved-threads`) plus the `pr review-threads` read surface
+landed in `forge-cli` v1.0.16
+(<https://github.com/sympoies/nils-cli/pull/809>, released as
+<https://github.com/sympoies/nils-cli/releases/tag/v1.0.16>), and the
+`deliver-pr` skill prose switched from the raw `gh`/`glab` workaround
+calls to the released surfaces in the same pin-bump PR that archives
+this entry.
 
 ## Next Action
 
-Track sympoies/nils-cli#808 (forge-cli mechanical merge gate); archive when it ships and the skill prose switches to the released surface
+None. Durable outcome: <https://github.com/sympoies/nils-cli/pull/809>
+(forge-cli mechanical merge gate, released in v1.0.16); skill prose
+switched to the released surface in the v1.0.16 pin bump.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/809`
+
+## Archive
+
+- Archived: 2026-06-11
+- Reason: Completed entry archived out of the active error inbox.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/809`
