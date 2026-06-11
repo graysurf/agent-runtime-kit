@@ -10,8 +10,10 @@ description:
 
 Prereqs:
 
-- `forge-cli >=1.0.14` is installed from the released nils-cli package and
-  available on `PATH`.
+- `forge-cli >=1.0.17` is installed from the released nils-cli package and
+  available on `PATH`; its `pr merge` enforces the review-thread
+  (`unresolved_review_threads`) and task-list (`unchecked_task_items`)
+  fail-closed gates.
 - Shared provider and issue-backed merge rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The target PR/MR number is known.
@@ -45,6 +47,10 @@ Outputs:
 Failure modes:
 
 - Required checks / pipeline checks fail, time out, or remain pending.
+- Unresolved review threads or unchecked `- [ ]` task-list items remain on
+  the PR/MR at merge time; `forge-cli pr merge` fails closed with
+  `unresolved_review_threads` / `unchecked_task_items` until each is
+  dispositioned (or explicitly bypassed with a recorded reason).
 - The PR/MR is not mergeable, targets a non-default base without explicit
   allowance, or provider auth fails.
 - Issue-backed completion state is incomplete for a PR/MR that would close or
@@ -66,6 +72,22 @@ forge-cli --provider "$PROVIDER" pr wait-checks "$PR_NUMBER"
 forge-cli --provider "$PROVIDER" pr ready "$PR_NUMBER"
 forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER" --method merge
 ```
+
+Before the merge call, sweep both merge gates and disposition what they
+surface:
+
+```bash
+forge-cli --provider "$PROVIDER" --format json pr review-threads "$PR_NUMBER"
+forge-cli --provider "$PROVIDER" --format json pr tasks "$PR_NUMBER"
+```
+
+`data.unresolved == 0` and `data.unchecked == 0` are the gates `pr merge`
+enforces mechanically. Resolve threads by repair, reply-and-resolve, or a
+follow-up issue; resolve unchecked `- [ ]` description items by checking
+them off or rewriting them as deferred with a follow-up ref. Do not pass
+`--allow-unresolved-threads` or `--allow-unchecked-tasks` (the latter
+requires `--allow-unchecked-tasks-reason`) without recording why in the
+close decision.
 
 When the user requests review, run the matching read-only `code-review-*`
 workflow before continuing; do not inline review orchestration into this close
@@ -92,14 +114,17 @@ forge-cli --provider "$PROVIDER" pr close "$PR_NUMBER"
    decision.
 4. Run `forge-cli --provider "$PROVIDER" pr wait-checks "$PR_NUMBER"` to gate on
    required provider checks or pipelines.
-5. For plan-tracking issues, require complete issue-backed state and closeout
+5. Sweep `forge-cli pr review-threads` and `forge-cli pr tasks` (see
+   Entrypoint) and disposition every unresolved thread and unchecked `- [ ]`
+   description item before merging; `pr merge` refuses both fail-closed.
+6. For plan-tracking issues, require complete issue-backed state and closeout
    readiness before merging a PR/MR that closes or finalizes the issue. For
    dispatch issues, require `plan-issue` / `dispatch-plan-closeout` gates.
-6. Run `forge-cli --provider "$PROVIDER" pr ready "$PR_NUMBER"` if the PR/MR is
+7. Run `forge-cli --provider "$PROVIDER" pr ready "$PR_NUMBER"` if the PR/MR is
    still draft and is ready to merge.
-7. Run `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` with the
+8. Run `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` with the
    repo/project merge method and branch-retention choice.
-8. Record the merge commit, check/pipeline evidence, linked issue updates, and
+9. Record the merge commit, check/pipeline evidence, linked issue updates, and
    any residual risk in the durable timeline.
 
 ## Boundary

@@ -10,11 +10,11 @@ description:
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli >=1.0.16`, `plan-issue >=1.0.13`, and
+- `agent-runtime`, `forge-cli >=1.0.17`, `plan-issue >=1.0.13`, and
   `review-specialists` are installed from the released nils-cli package and
   available on `PATH`. The `code-review-pre-merge-gate` workflow uses
   `review-specialists`; the review-thread sweep and merge gate need
-  `forge-cli` 1.0.16.
+  `forge-cli` 1.0.16, the task-list sweep and merge gate 1.0.17.
 - Shared provider, branch, body, and label rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The working tree contains only the intended delivery changes.
@@ -52,6 +52,9 @@ Outputs:
 - A provider review-thread sweep completed immediately before merge, with
   every unresolved thread (bot or human) dispositioned: repaired, resolved as
   accepted, or converted to a follow-up issue.
+- A task-list sweep completed immediately before merge, with every unchecked
+  `- [ ]` item in the PR/MR description dispositioned: completed and checked
+  off, or rewritten as deferred with a follow-up issue ref.
 - A merged PR/MR through `forge-cli pr merge`, unless `--no-merge` is supplied.
 - When a linked issue closeout runs, `plan-issue record close` posts closeout
   evidence, repairs the dashboard, verifies linked records, and closes the
@@ -71,6 +74,10 @@ Failure modes:
   and the local review gate do not surface them; `forge-cli pr merge` fails
   closed with `unresolved_review_threads`, and the sweep is how the workflow
   dispositions them before that gate trips.
+- Unchecked `- [ ]` task-list items remain in the PR/MR description at merge
+  time. The description is the delivery contract; `forge-cli pr merge` fails
+  closed with `unchecked_task_items`, and the task-list sweep is how the
+  workflow dispositions them before that gate trips.
 - Delivery review outcome comment posting fails.
 - `local_path_present`: rewrite useful evidence paths in provider-visible PR
   bodies, delivery outcome comments, or linked issue closeout records to
@@ -159,6 +166,25 @@ this mechanically — merging with unresolved threads fails closed with
 pass `--allow-unresolved-threads` to silence the gate without dispositioning
 the threads and recording the reason in the delivery review outcome.
 
+In the same pre-merge pass, sweep the PR/MR description's task list:
+
+```bash
+forge-cli --provider "$PROVIDER" --format json pr tasks "$PR_NUMBER"
+```
+
+`data.unchecked == 0` is the gate. Disposition every unchecked `- [ ]` item
+before merge: finish the work and check it off (`- [x]`), or rewrite the item
+as deferred with a follow-up issue ref. `forge-cli pr merge` (and the
+`pr deliver` merge step) also enforces this mechanically — merging with
+unchecked items fails closed with `unchecked_task_items`
+(sympoies/nils-cli#814, shipped in v1.0.17). The bypass pair
+`--allow-unchecked-tasks` + `--allow-unchecked-tasks-reason` records its
+reason in the merge payload; use it only after dispositioning the items is
+genuinely not possible, and repeat the reason in the delivery review outcome.
+Author `## Test plan` checklists in their final state — a checklist you do
+not intend to finish before merge belongs in a follow-up issue, not the
+description.
+
 For linked tracking or dispatch issues, run a pre-merge lifecycle audit before
 the merge. This is not closeout yet, because `record close` verifies the merged
 PR/MR after merge:
@@ -226,17 +252,23 @@ Use `profile=tracking` for lightweight plan-tracking issues and
     accepted, or convert to a follow-up issue. `pr merge` refuses
     undispositioned threads (`unresolved_review_threads`); do not bypass with
     `--allow-unresolved-threads` without recording the reason.
-11. Before merge, if the PR/MR references a linked tracking or dispatch issue,
+11. In the same pass, sweep the description's task list with
+    `forge-cli pr tasks` (see Entrypoint). Disposition every unchecked
+    `- [ ]` item: check it off or rewrite it as deferred with a follow-up
+    ref. `pr merge` refuses unchecked items (`unchecked_task_items`); do not
+    bypass with `--allow-unchecked-tasks` without its required reason flag
+    and a matching note in the delivery review outcome.
+12. Before merge, if the PR/MR references a linked tracking or dispatch issue,
     audit it and confirm lifecycle readiness: source/plan snapshots, complete
     state, latest `role=session`, validation, review, and dashboard links are
     present. If not, stop and route to the matching plan delivery workflow.
-12. Merge with `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` unless
+13. Merge with `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` unless
     `--no-merge` is the requested final stop.
-13. After merge, if the body referenced a linked tracking or dispatch issue
+14. After merge, if the body referenced a linked tracking or dispatch issue
     and `--no-closeout` was not supplied, run `plan-issue record close` with
     the correct profile. On gate fail, leave the issue open with the blocked
     code surfaced by `plan-issue` and route to the matching closeout skill.
-14. Record the PR/MR URL, labels, check/pipeline evidence, review outcome, merge
+15. Record the PR/MR URL, labels, check/pipeline evidence, review outcome, merge
     commit, chained closeout result, and any fallback used in delivery notes.
 
 ## Boundary
