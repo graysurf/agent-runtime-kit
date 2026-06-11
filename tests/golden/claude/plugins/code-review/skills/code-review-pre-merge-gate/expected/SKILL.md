@@ -27,6 +27,10 @@ Inputs:
 
 - PR/MR identifier or reviewable summary, base ref, head ref, validation
   evidence, and optional linked issue context.
+- Optional provider-side review evidence collected read-only by the owning
+  delivery workflow: reviews and review threads already posted on the PR/MR
+  (typically by bot reviewers). When supplied, classify those findings with
+  the same delivery outcome vocabulary as local lens findings.
 - Optional forced risk lenses beyond the mandatory minimum:
   `--security`, `--performance`, `--data-migration`, `--api-contract`, or
   `--red-team`.
