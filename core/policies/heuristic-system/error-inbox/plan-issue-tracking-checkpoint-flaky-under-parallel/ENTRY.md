@@ -38,6 +38,23 @@ concurrent plan-issue lifecycle tests rather than a logic bug in the command.
   the `tracking_checkpoint_live` group under load.
 - Counter-evidence (deterministic pass):
   `cargo nextest run -p nils-plan-issue tracking_checkpoint_live_fixture_repair_dashboard_returns_fixture_repair_result --no-capture`.
+- Recurrence 2026-06-12 (workspace v1.0.16, during sympoies/nils-cli#815
+  delivery): two local full-workspace `cargo nextest run --profile ci
+  --workspace` runs failed on different victims in the module
+  (`…posts_state_and_review_in_declaration_order`, then
+  `…returns_posted_state_role_with_synthesized_url`), and the PR's first CI
+  `test` job failed the same way
+  (<https://github.com/sympoies/nils-cli/actions/runs/27366786899/job/80868338333>);
+  every victim passes in isolation. Same fingerprint: exit 1, empty stderr,
+  ~0.02s.
+- Root-cause candidate narrowed: `crates/plan-issue/tests/integration/common.rs`
+  `run_plan_issue` uses default `CmdOptions` with no per-test
+  `--state-dir` / `PLAN_ISSUE_HOME` override, so concurrent tests share the
+  host-default plan-issue state dir that `tracking checkpoint --live` writes
+  run artifacts into.
+- Upstream finding filed: graysurf/plan-tracking-testbed#61 (fix candidate:
+  isolate state per test via `--state-dir <TempDir>` or per-test
+  `PLAN_ISSUE_HOME` in the shared `plan_issue_cmd_options()` baseline).
 
 ## Impact
 
@@ -77,6 +94,11 @@ repeated full-workspace run with no flake and no `--retries`.
 
 ## Next Action
 
-Confirm whether fix/plan-issue-lifecycle-lock (#793 follow-up) covers tracking
-checkpoint paths; if not, serialize or isolate the shared mutable state these
-tests touch under parallel load, or mark them as a serial nextest test group.
+Land the test-isolation fix tracked in graysurf/plan-tracking-testbed#61:
+give every `tracking_checkpoint_live` test (ideally the shared
+`plan_issue_cmd_options()` baseline in
+`crates/plan-issue/tests/integration/common.rs`) an isolated
+`--state-dir` / `PLAN_ISSUE_HOME` TempDir, then validate with repeated
+full-workspace nextest runs without `--retries`. The #793 lifecycle-lock
+serialization did not stop the test-side flake, consistent with the shared
+state-dir hypothesis.
