@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Read-only triage of a repo's git worktrees against a base ref.
+"""Read-only triage of git worktrees against a base ref.
 
-Enumerates every linked worktree, classifies each by how its branch relates to
-the base ref (default ``origin/main``), and emits a structured envelope the
-``worktree-triage`` skill reasons over. The script never mutates anything: it
-does not fetch, remove worktrees, delete branches, or touch the index.
+Enumerates linked worktrees for one repo, or every git repository represented
+under the managed agent worktree root, classifies each by how its branch
+relates to the base ref (default ``origin/main``), and emits a structured
+envelope the ``worktree-triage`` skill reasons over. The script never mutates
+anything: it does not fetch, remove worktrees, delete branches, or touch the
+index.
 
 Dispositions
 ------------
@@ -45,6 +47,16 @@ class GitError(RuntimeError):
     pass
 
 
+def default_worktree_root() -> str:
+    agent_home = os.environ.get("AGENT_HOME")
+    if not agent_home:
+        state_home = os.environ.get(
+            "XDG_STATE_HOME", os.path.join(os.path.expanduser("~"), ".local", "state")
+        )
+        agent_home = os.path.join(state_home, "agent-runtime-kit")
+    return os.path.join(agent_home, "worktrees")
+
+
 def git(repo: str, *args: str, check: bool = True) -> str:
     proc = subprocess.run(
         ["git", "-C", repo, *args],
@@ -56,6 +68,48 @@ def git(repo: str, *args: str, check: bool = True) -> str:
             f"git {' '.join(args)} failed ({proc.returncode}): {proc.stderr.strip()}"
         )
     return proc.stdout
+
+
+def git_common_dir(repo: str) -> str:
+    raw = git(repo, "rev-parse", "--git-common-dir").strip()
+    if not os.path.isabs(raw):
+        raw = os.path.join(repo, raw)
+    return os.path.realpath(raw)
+
+
+def has_git_marker(path: str) -> bool:
+    return os.path.exists(os.path.join(path, ".git"))
+
+
+def iter_managed_worktree_paths(worktree_root: str) -> list[str]:
+    if not os.path.isdir(worktree_root):
+        return []
+
+    paths: list[str] = []
+    for repo_entry in sorted(os.scandir(worktree_root), key=lambda e: e.name):
+        if not repo_entry.is_dir(follow_symlinks=False):
+            continue
+        if has_git_marker(repo_entry.path):
+            paths.append(repo_entry.path)
+        for child in sorted(os.scandir(repo_entry.path), key=lambda e: e.name):
+            if child.is_dir(follow_symlinks=False) and has_git_marker(child.path):
+                paths.append(child.path)
+    return paths
+
+
+def discover_repos(worktree_root: str) -> list[dict]:
+    repos: list[dict] = []
+    seen_common_dirs: set[str] = set()
+    for path in iter_managed_worktree_paths(worktree_root):
+        try:
+            common_dir = git_common_dir(path)
+        except GitError:
+            continue
+        if common_dir in seen_common_dirs:
+            continue
+        seen_common_dirs.add(common_dir)
+        repos.append({"repo": path, "common_dir": common_dir})
+    return repos
 
 
 def parse_worktrees(repo: str) -> list[dict]:
@@ -144,6 +198,19 @@ def is_dirty(repo: str) -> bool:
     return bool(git(repo, "status", "--porcelain", check=False).strip())
 
 
+def repo_key_for_path(worktree_root: str | None, path: str) -> str | None:
+    if not worktree_root:
+        return None
+    try:
+        rel = os.path.relpath(os.path.realpath(path), os.path.realpath(worktree_root))
+    except ValueError:
+        return None
+    if rel.startswith(".."):
+        return None
+    parts = rel.split(os.sep)
+    return parts[0] if parts and parts[0] != "." else None
+
+
 def classify(repo: str, base: str, wt: dict, primary_path: str) -> dict:
     path = wt["path"]
     branch = wt.get("branch")
@@ -222,10 +289,42 @@ def classify(repo: str, base: str, wt: dict, primary_path: str) -> dict:
     return record
 
 
+def ref_exists(repo: str, ref: str) -> bool:
+    return bool(git(repo, "rev-parse", "--verify", "--quiet", ref, check=False).strip())
+
+
+def scan_repo(
+    repo: str, base: str, worktree_root: str | None = None
+) -> tuple[dict, list[dict]]:
+    worktrees = parse_worktrees(repo)
+    primary_path = worktrees[0]["path"] if worktrees else repo
+    common_dir = git_common_dir(repo)
+    records = []
+    for wt in worktrees:
+        rec = classify(repo, base, wt, primary_path)
+        rec["repo_root"] = primary_path
+        rec["repo_common_dir"] = common_dir
+        repo_key = repo_key_for_path(worktree_root, rec["path"])
+        if repo_key:
+            rec["managed_repo_key"] = repo_key
+        records.append(rec)
+
+    info = {
+        "repo": primary_path,
+        "representative": repo,
+        "repo_common_dir": common_dir,
+        "worktree_count": len(records),
+    }
+    return info, records
+
+
 def render_text(envelope: dict) -> str:
     s = envelope["summary"]
     lines = [
-        f"base: {envelope['base']}   worktrees: {s['total']}",
+        (
+            f"scope: {envelope.get('scope', 'repo')}   "
+            f"base: {envelope['base']}   worktrees: {s['total']}"
+        ),
         (
             f"  safe-merged={s.get('safe-merged', 0)} "
             f"safe-superseded={s.get('safe-superseded', 0)} "
@@ -235,6 +334,9 @@ def render_text(envelope: dict) -> str:
         ),
         "",
     ]
+    if envelope.get("worktree_root"):
+        lines.append(f"worktree-root: {envelope['worktree_root']}")
+        lines.append("")
     for wt in envelope["worktrees"]:
         head = (wt.get("branch") or wt.get("head", "")[:12]) or "(detached)"
         extra = ""
@@ -244,14 +346,31 @@ def render_text(envelope: dict) -> str:
         if ev:
             extra += f" net(+{ev['insertions']}/-{ev['deletions']})"
         lines.append(f"  {wt['disposition']:<18} {head}{extra}")
+        if envelope.get("scope") == "all-managed":
+            lines.append(f"      repo: {wt.get('repo_root')}")
         lines.append(f"      {wt['path']}")
         lines.append(f"      -> {wt['suggested_action']}")
+    if envelope.get("errors"):
+        lines.append("")
+        lines.append("errors:")
+        for err in envelope["errors"]:
+            lines.append(f"  {err['repo']}: {err['error']}")
     return "\n".join(lines)
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Read-only git worktree triage.")
-    parser.add_argument("--repo", default=".", help="repo root (default: cwd)")
+    parser.add_argument("--repo", help="repo root (default: cwd)")
+    parser.add_argument(
+        "--all-managed",
+        action="store_true",
+        help="scan every repo represented under the managed worktree root",
+    )
+    parser.add_argument(
+        "--worktree-root",
+        default=default_worktree_root(),
+        help="managed worktree root for --all-managed",
+    )
     parser.add_argument(
         "--base",
         default="origin/main",
@@ -262,25 +381,60 @@ def main(argv: list[str]) -> int:
     )
     args = parser.parse_args(argv)
 
-    repo = args.repo
-    try:
-        git(repo, "rev-parse", "--git-dir")
-    except GitError as exc:
-        print(f"worktree-triage: not a git repo: {exc}", file=sys.stderr)
-        return 1
-    # Confirm the base ref resolves; a missing origin/main is the most common
-    # caller mistake (forgot to fetch / different default branch).
-    if not git(repo, "rev-parse", "--verify", "--quiet", args.base, check=False).strip():
+    if args.all_managed and args.repo:
+        parser.error("--all-managed cannot be combined with --repo")
+
+    repo = args.repo or "."
+    scope = "all-managed" if args.all_managed else "repo"
+    repo_infos: list[dict] = []
+    records: list[dict] = []
+    errors: list[dict] = []
+
+    if args.all_managed:
+        for discovered in discover_repos(args.worktree_root):
+            rep = discovered["repo"]
+            try:
+                if not ref_exists(rep, args.base):
+                    errors.append(
+                        {
+                            "repo": rep,
+                            "error": (
+                                f"base ref '{args.base}' not found "
+                                "(fetch first, or pass --base)"
+                            ),
+                        }
+                    )
+                    continue
+                info, repo_records = scan_repo(rep, args.base, args.worktree_root)
+            except GitError as exc:
+                errors.append({"repo": rep, "error": str(exc)})
+                continue
+            repo_infos.append(info)
+            records.extend(repo_records)
+    else:
+        try:
+            git(repo, "rev-parse", "--git-dir")
+        except GitError as exc:
+            print(f"worktree-triage: not a git repo: {exc}", file=sys.stderr)
+            return 1
+        # Confirm the base ref resolves; a missing origin/main is the most common
+        # caller mistake (forgot to fetch / different default branch).
+        if not ref_exists(repo, args.base):
+            print(
+                f"worktree-triage: base ref '{args.base}' not found "
+                "(fetch first, or pass --base)",
+                file=sys.stderr,
+            )
+            return 1
+        info, records = scan_repo(repo, args.base)
+        repo_infos.append(info)
+
+    if args.all_managed and not repo_infos and errors:
         print(
-            f"worktree-triage: base ref '{args.base}' not found "
-            "(fetch first, or pass --base)",
+            f"worktree-triage: no repos scanned; first error: {errors[0]['error']}",
             file=sys.stderr,
         )
         return 1
-
-    worktrees = parse_worktrees(repo)
-    primary_path = worktrees[0]["path"] if worktrees else repo
-    records = [classify(repo, args.base, wt, primary_path) for wt in worktrees]
 
     summary = {"total": len(records)}
     for rec in records:
@@ -288,10 +442,16 @@ def main(argv: list[str]) -> int:
 
     envelope = {
         "schema_version": SCHEMA,
+        "scope": scope,
         "base": args.base,
         "summary": summary,
+        "repos": repo_infos,
         "worktrees": records,
     }
+    if args.all_managed:
+        envelope["worktree_root"] = args.worktree_root
+    if errors:
+        envelope["errors"] = errors
 
     if args.format == "json":
         print(json.dumps(envelope, indent=2))

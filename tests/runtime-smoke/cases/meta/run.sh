@@ -1000,8 +1000,11 @@ run_nils_cli_bump_probe() {
 
 run_worktree_triage_probe() {
   local out="$META_ARTIFACTS_DIR/worktree-triage.scan.json"
+  local all_out="$META_ARTIFACTS_DIR/worktree-triage.all-managed.json"
   local root="$META_ARTIFACTS_DIR/worktree-triage"
+  local managed="$root/managed"
   local repo="$root/repo"
+  local repo2="$root/repo2"
   local helper="$REPO_ROOT/core/skills/meta/worktree-triage/bin/worktree_triage.py"
   require_meta_bin python3 || return 1
   rm -rf "$root"
@@ -1040,6 +1043,34 @@ by = {w.get("branch"): w["disposition"] for w in data["worktrees"]}
 assert by.get("merged-branch") == "safe-merged", by
 assert by.get("super-branch") == "safe-superseded", by
 assert by.get("real-work") == "rescue-candidate", by
+PY
+
+  mkdir -p "$managed/repo-one" "$managed/repo-two" "$repo2"
+  (
+    cd "$repo"
+    git worktree add -q "$managed/repo-one/repo-one-safe" -b repo-one-safe main
+  )
+  (
+    cd "$repo2"
+    git init -q -b main
+    git config user.email smoke@example.com
+    git config user.name smoke
+    printf 'repo2\n' >r.txt
+    git add r.txt
+    git commit -q -m "base"
+    git update-ref refs/remotes/origin/main HEAD
+    git worktree add -q "$managed/repo-two/repo-two-safe" -b repo-two-safe main
+  )
+  python3 "$helper" --all-managed --worktree-root "$managed" --base origin/main --format json >"$all_out" 2>&1
+  python3 - "$all_out" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert data["schema_version"] == "worktree-triage.scan.v1", data
+assert data["scope"] == "all-managed", data
+assert len(data["repos"]) == 2, data["repos"]
+by = {w.get("branch"): w["disposition"] for w in data["worktrees"]}
+assert by.get("repo-one-safe") == "safe-merged", by
+assert by.get("repo-two-safe") == "safe-merged", by
 PY
 }
 
