@@ -47,6 +47,13 @@ concurrent plan-issue lifecycle tests rather than a logic bug in the command.
   (<https://github.com/sympoies/nils-cli/actions/runs/27366786899/job/80868338333>);
   every victim passes in isolation. Same fingerprint: exit 1, empty stderr,
   ~0.02s.
+- Recurrence 2026-06-12 (workspace v1.0.17, first observed on `main` itself):
+  the post-merge `coverage` job for sympoies/nils-cli#812's merge commit failed
+  on `…returns_posted_state_role_with_synthesized_url`
+  (`assertion failed: (left == right): stderr:` at ~0.02s — same fingerprint),
+  fail-fast left 640/4838 tests unrun and produced no lcov
+  (<https://github.com/sympoies/nils-cli/actions/runs/27405124627>); the next
+  `main` run (27405711000, post-#813) was green with no related change.
 - Root-cause candidate narrowed: `crates/plan-issue/tests/integration/common.rs`
   `run_plan_issue` uses default `CmdOptions` with no per-test
   `--state-dir` / `PLAN_ISSUE_HOME` override, so concurrent tests share the
