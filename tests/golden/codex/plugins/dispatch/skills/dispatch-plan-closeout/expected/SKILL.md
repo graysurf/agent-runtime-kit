@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.1.0`, `plan-tooling >=1.0.1`.
 - `tracking close-ready --profile dispatch --expect-visible` returns
   `ready: true` and `blockers: []`.
 - Every lane PR is merged with required checks passing, every lane review

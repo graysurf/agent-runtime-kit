@@ -267,7 +267,7 @@ a uniform shape:
 | 10 | `output-styles/<n>.md` | no | — | n/a | n/a |
 | 11 | `statusLine` | no | — | n/a | n/a |
 | 12 | MCP servers | no | — | n/a | n/a |
-| 13 | Heuristic system | yes | shared policy root | 2.1.145 | v0.17.5 (heuristic-inbox) |
+| 13 | Heuristic system | yes | shared policy root | 2.1.145 | v1.1.0 (heuristic-inbox) |
 | 14 | `state_home` | yes | env var + `agent-out` allocation | 2.1.145 | v0.17.5 (`agent-out >=0.13.0` floor in skills.yaml) |
 
 Status legend:

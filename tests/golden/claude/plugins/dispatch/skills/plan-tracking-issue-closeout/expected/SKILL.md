@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `tracking`.
-- CLI floors: `plan-issue >=1.0.13`, `plan-tooling >=1.0.1`.
+- CLI floors: `plan-issue >=1.1.0`, `plan-tooling >=1.0.1`.
 - `tracking close-ready --profile tracking --expect-visible` returns
   `ready: true` and `blockers: []`, unless this skill is taking the
   explicit final-prerequisite repair branch below.

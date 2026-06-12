@@ -10,11 +10,13 @@ description:
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli >=1.0.17`, `plan-issue >=1.0.13`, and
+- `agent-runtime`, `forge-cli >=1.1.0`, `plan-issue >=1.1.0`, and
   `review-specialists` are installed from the released nils-cli package and
   available on `PATH`. The `code-review-pre-merge-gate` workflow uses
   `review-specialists`; the review-thread sweep and merge gate need
-  `forge-cli` 1.0.16, the task-list sweep and merge gate 1.0.17.
+  `forge-cli` 1.0.16, the task-list sweep and merge gate 1.0.17, and
+  existing-PR adoption in `pr deliver` needs 1.1.0. Linked issue closeout
+  relies on the unified terminal task-row contract in `plan-issue` 1.1.0.
 - Shared provider, branch, body, and label rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - The working tree contains only the intended delivery changes.

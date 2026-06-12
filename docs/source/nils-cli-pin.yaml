@@ -29,19 +29,19 @@ nils_cli:
 # consumed surface each binary must satisfy. Values track the
 # surface-introduction versions recorded in docs/source/nils-cli-surface.md.
 required_clis:
-  - bin: plan-issue       # tracking controller + execution-state sync/writeback + review evidence context gate + provider payload privacy gate + lifecycle mutation lock
-    min: "1.0.13"
+  - bin: plan-issue       # tracking controller + execution-state sync/writeback + review evidence context gate + provider payload privacy gate + lifecycle mutation lock + unified terminal closeout rows
+    min: "1.1.0"
   - bin: plan-tooling     # ledger-update / ledger-sync + exec-state-sync repair
     min: "1.0.1"
-  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces + provider payload privacy gate + GitLab MR check/merge API path + review-thread read surface and merge gate + task-list read surface and merge gate
-    min: "1.0.17"
+  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces + provider payload privacy gate + GitLab MR check/merge API path + review-thread read surface and merge gate + task-list read surface and merge gate + existing-PR adoption in pr deliver
+    min: "1.1.0"
   - bin: plan-archive     # discover / migrate / refresh / query
     min: "0.25.5"
   - bin: agent-docs       # data-driven catalog + declared-intent preflight guard
     min: "0.31.6"
   - bin: git-cli          # managed worktree add/list/remove/prune surface
     min: "0.31.5"
-  - bin: heuristic-inbox  # deliver + --label: records-branch PR writeback (closeout consumer)
-    min: "1.0.3"
+  - bin: heuristic-inbox  # deliver + --label: records-branch PR writeback + default slug auto-suffixing (closeout consumer)
+    min: "1.1.0"
   - bin: zsh-kit          # runtime shell setup entrypoint + managed zshenv bootstrap for operator-supplied Zsh repos
     min: "1.0.9"
