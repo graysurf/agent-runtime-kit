@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-12
 - Area: heuristic-inbox deliver (records branch + managed worktree lifecycle)
 - Severity: medium
@@ -74,8 +74,9 @@ fails with the precise error).
 
 ## Next Action
 
-Track sympoies/nils-cli#820 (filed 2026-06-12) for the upstream fix
-(structured error envelope on the collision path, default-slug
-uniquification, and/or merged-worktree cleanup). Until it lands, keep the
-unique-`--slug` workaround. Promote per the promotion criteria once the
-fix ships with a same-day double-delivery test.
+None; fixed by sympoies/nils-cli#829 (merge
+385fa4751eebc52bce6c1891346de4a7a3097ed5) with default slug auto-suffixing,
+structured records-target-exists JSON errors for explicit collisions, and
+same-day collision regression coverage.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/829`
