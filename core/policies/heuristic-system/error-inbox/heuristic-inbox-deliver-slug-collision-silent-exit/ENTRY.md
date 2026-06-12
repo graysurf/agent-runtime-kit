@@ -33,6 +33,7 @@ step and exits 1 with no output at all: no JSON error envelope despite
   left behind); the second delivery failed silently until re-run with
   `--slug heuristic-records-2026-06-12-finding-links`, which landed as
   graysurf/agent-runtime-kit#311.
+- Upstream issue filed: sympoies/nils-cli#820 (2026-06-12).
 
 ## Impact
 
@@ -61,6 +62,8 @@ fails with the precise error).
 
 ## Next Action
 
-File the upstream nils-cli issue against `heuristic-inbox deliver` covering
-the silent exit-1 failure path, the same-day default-slug collision, and
-merged-worktree cleanup, then link it here.
+Track sympoies/nils-cli#820 (filed 2026-06-12) for the upstream fix
+(structured error envelope on the collision path, default-slug
+uniquification, and/or merged-worktree cleanup). Until it lands, keep the
+unique-`--slug` workaround. Promote per the promotion criteria once the
+fix ships with a same-day double-delivery test.
