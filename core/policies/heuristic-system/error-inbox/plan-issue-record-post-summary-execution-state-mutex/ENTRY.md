@@ -46,6 +46,9 @@ the picked file.
   (followed by the close-complete state at
   `<https://github.com/graysurf/agent-runtime-kit/issues/135#issuecomment-4560849526>`).
 - Upstream CLI: `sympoies/nils-cli` `plan-issue-cli` crate.
+- Re-verified on plan-issue 1.0.17 (2026-06-12): the parser still rejects
+  the flag combination and `--help` still gives no hint of the mutex.
+- Upstream finding filed: graysurf/plan-tracking-testbed#64 (2026-06-12).
 
 ## Impact
 
@@ -89,6 +92,7 @@ discoverable contract.
 
 ## Next Action
 
-File an issue against `sympoies/nils-cli` `plan-issue-cli` to either
-compose the two flags (preferred) or document the mutex in `--help` plus
-the affected skill bodies under `core/skills/dispatch/*-plan-tracking-issue/`.
+Track graysurf/plan-tracking-testbed#64 (filed 2026-06-12): compose the two
+flags (preferred) or document the mutex in `--help` plus the affected skill
+bodies under `core/skills/dispatch/*-plan-tracking-issue/`. Promote per the
+promotion criteria once either lands.
