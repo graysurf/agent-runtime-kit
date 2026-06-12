@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-12
 - Area: nils-cli CI completion audits
 - Severity: low
@@ -61,5 +61,12 @@ not just presence/coverage checks — presence audits cannot see staleness.
 
 ## Next Action
 
-Track sympoies/nils-cli#827; promote once the content-parity gate lands and
-a stale-asset regression test or audit run proves it fails closed.
+None. Resolved by sympoies/nils-cli#831 and ready to archive after strict verification.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/831`
+
+## Archive
+
+- Archived: 2026-06-12
+- Reason: Content-freshness gate delivered and verified in sympoies/nils-cli#831.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/831`
