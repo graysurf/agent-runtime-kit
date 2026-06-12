@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-28
 - Area: `plan-issue record post` CLI argument parser
 - Severity: low
@@ -49,6 +49,17 @@ the picked file.
 - Re-verified on plan-issue 1.0.17 (2026-06-12): the parser still rejects
   the flag combination and `--help` still gives no hint of the mutex.
 - Upstream finding filed: graysurf/plan-tracking-testbed#64 (2026-06-12).
+- Resolved upstream (2026-06-12): sympoies/nils-cli#824 (squash `6ac1749`)
+  implements promotion criterion 1 in full — the flags compose, with the
+  free-form summary rendered after the comment header, above the
+  execution-state document (the placement every other lifecycle kind already
+  uses for summaries). Single-flag behavior is byte-identical; both help
+  texts document the composition; the committed zsh completions for
+  `plan-issue` / `plan-issue-local` no longer encode the mutex. Red→green
+  parse-contract, dry-run integration, and golden tests pin the contract.
+  Finding graysurf/plan-tracking-testbed#64 closed. Ships in the next
+  nils-cli release after v1.0.17; skill bodies need no edit (their additive
+  description becomes accurate once the runtime-kit pin moves).
 
 ## Impact
 
@@ -92,7 +103,11 @@ discoverable contract.
 
 ## Next Action
 
-Track graysurf/plan-tracking-testbed#64 (filed 2026-06-12): compose the two
-flags (preferred) or document the mutex in `--help` plus the affected skill
-bodies under `core/skills/dispatch/*-plan-tracking-issue/`. Promote per the
-promotion criteria once either lands.
+None — fixed by sympoies/nils-cli#824 (compose, preferred candidate); finding graysurf/plan-tracking-testbed#64 closed. Ships in the next nils-cli release after v1.0.17.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/824`
+
+## Archive
+
+- Archived: 2026-06-12
+- Reason: Completed entry archived out of the active error inbox.
