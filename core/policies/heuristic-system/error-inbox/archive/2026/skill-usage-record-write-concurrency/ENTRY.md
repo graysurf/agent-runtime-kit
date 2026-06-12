@@ -54,3 +54,9 @@ skill_usage_serializes_concurrent_record_mutations; local-fast and PR CI
 passed.
 
 Lifecycle link: `https://github.com/sympoies/nils-cli/pull/828`
+
+## Archive
+
+- Archived: 2026-06-13
+- Reason: Fixed in nils-cli v1.1.0 and consumed by agent-runtime-kit v2026.06.13
+- Durable link: `https://github.com/sympoies/nils-cli/pull/828`
