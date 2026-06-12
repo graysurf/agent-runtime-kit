@@ -301,10 +301,13 @@ def scan_repo(
     common_dir = git_common_dir(repo)
     records = []
     for wt in worktrees:
+        repo_key = repo_key_for_path(worktree_root, wt["path"])
+        is_primary = os.path.realpath(wt["path"]) == os.path.realpath(primary_path)
+        if worktree_root and not is_primary and not repo_key:
+            continue
         rec = classify(repo, base, wt, primary_path)
         rec["repo_root"] = primary_path
         rec["repo_common_dir"] = common_dir
-        repo_key = repo_key_for_path(worktree_root, rec["path"])
         if repo_key:
             rec["managed_repo_key"] = repo_key
         records.append(rec)

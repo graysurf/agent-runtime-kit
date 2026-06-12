@@ -1049,6 +1049,7 @@ PY
   (
     cd "$repo"
     git worktree add -q "$managed/repo-one/repo-one-safe" -b repo-one-safe main
+    git worktree add -q "$root/unmanaged-safe" -b unmanaged-safe main
   )
   (
     cd "$repo2"
@@ -1071,6 +1072,8 @@ assert len(data["repos"]) == 2, data["repos"]
 by = {w.get("branch"): w["disposition"] for w in data["worktrees"]}
 assert by.get("repo-one-safe") == "safe-merged", by
 assert by.get("repo-two-safe") == "safe-merged", by
+for branch in ("merged-branch", "super-branch", "real-work", "unmanaged-safe"):
+    assert branch not in by, by
 PY
 }
 

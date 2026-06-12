@@ -17,8 +17,9 @@ Prereqs:
   research, review, or delivery work is intended.
 - `agent-docs` startup and project-dev preflight has passed before repository
   writes, commits, or pushes.
-- `heuristic-inbox` (nils-cli >= v1.0.2, which ships `heuristic-inbox deliver`)
-  and `forge-cli` are available on `PATH`. `deliver` drives `git`,
+- `heuristic-inbox` (nils-cli >= v1.1.0, which ships default records-slug
+  auto-suffixing for `heuristic-inbox deliver`) and `forge-cli` are available on
+  `PATH`. `deliver` drives `git`,
   `semantic-commit`, and `forge-cli pr create` internally; the skill only adds
   the auto-merge step.
 - The shared Heuristic System root can be resolved from
