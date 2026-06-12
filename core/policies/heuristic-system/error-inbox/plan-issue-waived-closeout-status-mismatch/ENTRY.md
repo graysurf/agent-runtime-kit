@@ -15,6 +15,7 @@ Workflow gap captured from an ingested evidence file. See the Evidence section f
 
 - Raw record: `evidence/plan-issue-waived-closeout-mismatch.md`
 - Summary: redacted evidence ingested at creation time; raw logs and secrets were stripped before commit.
+- Upstream finding filed: graysurf/plan-tracking-testbed#65 (2026-06-12).
 
 ## Impact
 
@@ -34,4 +35,8 @@ validated, and linked from this entry.
 
 ## Next Action
 
-File or fix a nils-cli plan-issue gate consistency issue: either record close should accept waived terminal tasks, close-ready should reject them, or ledger-update should expose deferred if that is the intended closeout status.
+Track graysurf/plan-tracking-testbed#65 (filed 2026-06-12): unify the
+close-ready / record close terminal-status contract (either record close
+accepts waived terminal tasks, or close-ready rejects them) and align the
+`ledger-update` status enum with whatever the gates accept. Promote once the
+fix lands.

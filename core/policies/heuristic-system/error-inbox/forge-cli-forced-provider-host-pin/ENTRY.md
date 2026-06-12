@@ -39,6 +39,9 @@ work around exactly this) would target the wrong instance.
 - `classify_host` accepts `gitlab.<corp>` (`starts_with("gitlab.")`), so the
   remote-detection path *would* resolve a self-hosted host correctly — it is
   only the forced path that pins `gitlab.com`.
+- Re-verified on forge-cli 1.0.17 (2026-06-12): still no global `--host`
+  flag, and the forced-provider dry-run plan still omits `--hostname`.
+- Upstream finding filed: graysurf/plan-tracking-testbed#63 (2026-06-12).
 
 ## Impact
 
@@ -59,12 +62,13 @@ it `cd`s into `TESTBED_ROOT` and never passes `--provider`.
 Promote when `forge-cli` gains a `--host` global override, or forced
 `--provider` consults `--remote` / the cwd remote for the host instead of
 defaulting; validated by a forced-provider call resolving a self-hosted GitLab
-host. (Not yet filed as a `forge-cli` issue — file before promotion.)
+host. (Filed: graysurf/plan-tracking-testbed#63.)
 
 ## Next Action
 
-Upstream `forge-cli`: add a `--host` override, or have forced `--provider`
-consult `--remote` / the cwd remote for the host. Workaround: omit `--provider`
-and run `forge-cli` from the target repo checkout so `detect()` reads
-provider+host from its remote (the `test-plan-tracking` driver's `tb_forge`
-does this).
+Track graysurf/plan-tracking-testbed#63 (filed 2026-06-12) for the upstream
+fix: a `--host` override, or forced `--provider` consulting `--remote` / the
+cwd remote for the host. Until it lands, keep the workaround: omit
+`--provider` and run `forge-cli` from the target repo checkout so `detect()`
+reads provider+host from its remote (the `test-plan-tracking` driver's
+`tb_forge` does this).

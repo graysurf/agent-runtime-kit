@@ -34,6 +34,7 @@ though its help ("open draft → CI green → ready → merge") reads as resumab
 - Untested open question: whether re-running `pr deliver` with a compliant
   `--body-file` on a branch with an open PR would adopt it or attempt (and
   fail?) to create a duplicate.
+- Upstream finding filed: graysurf/plan-tracking-testbed#62 (2026-06-12).
 
 ## Impact
 
@@ -60,6 +61,6 @@ create-then-deliver sequence.
 
 ## Next Action
 
-File the upstream finding against nils-cli (forge-cli) via
-`report-plan-issue-finding`, proposing adopt-or-precise-error behavior for
-`pr deliver` on branches with an existing open PR, and link the issue here.
+Track graysurf/plan-tracking-testbed#62 (filed 2026-06-12) for the upstream
+adopt-or-precise-error fix to `forge-cli pr deliver`; promote once the fix
+lands with a regression test covering the create-then-deliver sequence.

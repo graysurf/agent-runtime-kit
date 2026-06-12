@@ -22,6 +22,7 @@
 
 - Raw record: `<workspace>/.local/state/agent-runtime-kit/out/projects/sympoies__nils-cli/20260606-123919-skill-usage/skill-usage.record.json`
 - Summary: linked `skill-usage.record.v1` envelope; raw runtime details remain in the evidence location.
+- Upstream finding filed: graysurf/plan-tracking-testbed#66 (2026-06-12).
 
 ## Impact
 
@@ -46,4 +47,7 @@ cleanly.
 
 ## Next Action
 
-Add file locking or an explicit guard/documentation that record-* mutations for one out directory must be serialized.
+Track graysurf/plan-tracking-testbed#66 (filed 2026-06-12) for file locking /
+atomic update semantics in the `skill-usage` record-* mutation path. Until it
+lands, keep serializing record-* writes per `--out` directory. Promote per
+the promotion criteria once concurrency validation exists.
