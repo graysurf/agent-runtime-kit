@@ -1,20 +1,38 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-12 (refreshed for `v1.0.17`)
+- Snapshot date: 2026-06-12 (refreshed for `v1.1.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.0.17`
+- Active `git describe --tags` output: `v1.1.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.0.17`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.1.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `cdb3b88`
-  (`chore(release): bump cli versions to 1.0.17 (#816)`)
+- Head commit: `e21c037`
+  (`chore(release): bump cli versions to 1.1.0 (#832)`)
 - Release:
-  [`v1.0.17`](https://github.com/sympoies/nils-cli/releases/tag/v1.0.17),
+  [`v1.1.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.1.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.1.0` is a lock-step host pin over `v1.0.17`. It ships delivery and
+  lifecycle hardening that runtime-kit benefits from without requiring a
+  consumer rewrite: `forge-cli pr deliver` can adopt an existing open PR for
+  the resolved head branch ([#823](https://github.com/sympoies/nils-cli/pull/823))
+  and forced-provider detection now adopts the remote host when compatible
+  ([#822](https://github.com/sympoies/nils-cli/pull/822)); `plan-issue` can
+  compose `record post --execution-state-file` with `--summary-file`
+  ([#824](https://github.com/sympoies/nils-cli/pull/824)), accepts waived /
+  deferred terminal task rows consistently across closeout gates
+  ([#825](https://github.com/sympoies/nils-cli/pull/825)), and hardens summary
+  carrier linting ([#830](https://github.com/sympoies/nils-cli/pull/830));
+  `skill-usage` and `heuristic-inbox` fix local record/slug races
+  ([#828](https://github.com/sympoies/nils-cli/pull/828),
+  [#829](https://github.com/sympoies/nils-cli/pull/829)); and generated
+  completion freshness is now audited in nils-cli CI
+  ([#831](https://github.com/sympoies/nils-cli/pull/831)). Runtime-kit already
+  consumes the affected `forge-cli`, `plan-issue`, and workflow primitives
+  through older minimum floors, so no `required_clis[]` floor moves.
 - `v1.0.17` ships the `forge-cli` task-list surface
   ([#814](https://github.com/sympoies/nils-cli/issues/814),
   [#815](https://github.com/sympoies/nils-cli/pull/815)): a new
