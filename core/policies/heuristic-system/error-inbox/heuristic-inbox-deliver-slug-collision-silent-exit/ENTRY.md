@@ -34,6 +34,18 @@ step and exits 1 with no output at all: no JSON error envelope despite
   `--slug heuristic-records-2026-06-12-finding-links`, which landed as
   graysurf/agent-runtime-kit#311.
 - Upstream issue filed: sympoies/nils-cli#820 (2026-06-12).
+- Counter-datapoint (2026-06-12, later session, same v1.0.17): the same
+  same-day collision (third/fourth deliveries of the day, against the
+  leftover `docs/heuristic-records-2026-06-12` branch from the merged #314)
+  did NOT exit silently — both runs emitted a structured
+  `worktree-add-failed` JSON envelope naming the colliding branch and
+  `worktree_path`, with git's `fatal: a branch named ... already exists` in
+  `details.stderr`. The silent-exit gap may be conditional (or the original
+  observation may have been output-swallowing in the consuming pipe); the
+  envelope code is `worktree-add-failed`, not a dedicated
+  `records-branch-exists`, so promotion criterion (a) is at most partially
+  met. Re-run with `--slug heuristic-records-2026-06-12-record-post-compose`
+  landed as graysurf/agent-runtime-kit#315.
 
 ## Impact
 
