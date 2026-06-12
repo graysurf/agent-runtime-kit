@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-05-31
 - Area: forge-cli provider detection
 - Severity: medium
@@ -42,6 +42,10 @@ work around exactly this) would target the wrong instance.
 - Re-verified on forge-cli 1.0.17 (2026-06-12): still no global `--host`
   flag, and the forced-provider dry-run plan still omits `--hostname`.
 - Upstream finding filed: graysurf/plan-tracking-testbed#63 (2026-06-12).
+- Fixed upstream in sympoies/nils-cli#822 (merge
+  `e651fb168bf7857364cb982e612ff9e36f19b0ec`), released in nils-cli
+  `v1.1.0`, and consumed by agent-runtime-kit#321 / runtime-kit
+  `v2026.06.13`.
 
 ## Impact
 
@@ -52,23 +56,27 @@ will hit the wrong instance.
 
 ## Current Workaround
 
-Do not force `--provider`. Run `forge-cli` from a checkout of the target repo so
-`detect()` reads provider AND host from that remote. The `test-plan-tracking`
-driver's `tb_forge` helper does exactly this (`graysurf/agent-runtime-kit#210`):
-it `cd`s into `TESTBED_ROOT` and never passes `--provider`.
+No workaround is needed on forge-cli >= 1.1.0. On older hosts, do not force
+`--provider`; run `forge-cli` from a checkout of the target repo so `detect()`
+reads provider AND host from that remote. The `test-plan-tracking` driver's
+`tb_forge` helper does exactly this (`graysurf/agent-runtime-kit#210`): it
+`cd`s into `TESTBED_ROOT` and never passes `--provider`.
 
 ## Promotion Criteria
 
-Promote when `forge-cli` gains a `--host` global override, or forced
-`--provider` consults `--remote` / the cwd remote for the host instead of
-defaulting; validated by a forced-provider call resolving a self-hosted GitLab
-host. (Filed: graysurf/plan-tracking-testbed#63.)
+Met by sympoies/nils-cli#822: forced `--provider` consults `--remote` / the cwd
+remote and adopts the compatible remote host, with regression coverage and a
+closed upstream tracker (graysurf/plan-tracking-testbed#63).
 
 ## Next Action
 
-Track graysurf/plan-tracking-testbed#63 (filed 2026-06-12) for the upstream
-fix: a `--host` override, or forced `--provider` consulting `--remote` / the
-cwd remote for the host. Until it lands, keep the workaround: omit
-`--provider` and run `forge-cli` from the target repo checkout so `detect()`
-reads provider+host from its remote (the `test-plan-tracking` driver's
-`tb_forge` does this).
+None; fixed by sympoies/nils-cli#822, released in nils-cli `v1.1.0`, and
+consumed by agent-runtime-kit#321 / runtime-kit `v2026.06.13`.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/822`
+
+## Archive
+
+- Archived: 2026-06-13
+- Reason: Fixed in nils-cli v1.1.0 and consumed by agent-runtime-kit v2026.06.13
+- Durable link: `https://github.com/sympoies/nils-cli/pull/822`

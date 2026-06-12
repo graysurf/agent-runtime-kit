@@ -80,3 +80,9 @@ structured records-target-exists JSON errors for explicit collisions, and
 same-day collision regression coverage.
 
 Lifecycle link: `https://github.com/sympoies/nils-cli/pull/829`
+
+## Archive
+
+- Archived: 2026-06-13
+- Reason: Fixed in nils-cli v1.1.0 and consumed by agent-runtime-kit v2026.06.13
+- Durable link: `https://github.com/sympoies/nils-cli/pull/829`
