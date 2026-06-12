@@ -1,7 +1,7 @@
 ---
 name: worktree-triage
 description:
-  Read-only scan of a repo's git worktrees that classifies each branch against a base ref (default `origin/main`) as safe-to-prune (fully merged or patch-equivalent), a rescue-candidate carrying unique commits, dirty, or locked; then, only on explicit confirmation, prunes the safe worktrees and opens draft PRs for genuinely unmerged work. Use it when agent-spawned worktrees pile up and you need to (1) clean stale worktrees and (2) find commits that never made it back to the base branch.
+  Read-only scan of one repo's git worktrees, or every repo represented under the managed agent worktree root, that classifies each branch against a base ref (default `origin/main`) as safe-to-prune (fully merged or patch-equivalent), a rescue-candidate carrying unique commits, dirty, or locked; then, only on explicit confirmation, prunes the safe worktrees and opens draft PRs for genuinely unmerged work. Use it when agent-spawned worktrees pile up and you need to (1) clean stale worktrees and (2) find commits that never made it back to the base branch.
 ---
 
 # Worktree Triage
@@ -10,29 +10,40 @@ description:
 
 Prereqs:
 
-- Run from inside the target git repository (or pass `--repo <path>`).
+- For one repo, run from inside the target git repository (or pass
+  `--repo <path>`).
+- For machine-wide cleanup, pass `--all-managed` to scan every repository
+  represented under the managed worktree root
+  (`${AGENT_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/worktrees`).
 - `git` and `git-cli` are on `PATH`; Python 3.11+ is available (the bundled
   `worktree_triage.py` helper is stdlib-only).
 - `forge-cli` is installed from the released nils-cli package for the
   draft-PR rescue path. The scan itself needs no provider access.
-- The base ref the work should have landed on is fetched and current.
-  The helper is **read-only and never fetches** — run `git fetch origin`
-  yourself first so `origin/main` is not stale, or the ahead/behind and
+- The base ref the work should have landed on is fetched and current in every
+  scanned repo. The helper is **read-only and never fetches** — run
+  `git fetch origin --prune` yourself first (in each represented repo for
+  `--all-managed`) so `origin/main` is not stale, or the ahead/behind and
   supersession verdicts will be wrong.
 
 Inputs:
 
-- The repo to scan (`--repo`, defaults to the current repo).
+- The scope to scan:
+  - `--all-managed` for every repo represented under the managed worktree
+    root. Use this when the user says "all worktrees", "no agents are running",
+    or otherwise asks for global cleanup without naming one repo.
+  - `--repo <path>` for one repo, or no scope flag to scan the current repo.
 - The base ref each branch is classified against (`--base`, defaults to
   `origin/main`).
 
 Outputs:
 
-- A `worktree-triage.scan.v1` JSON envelope (or text) with a `summary`
+- A `worktree-triage.scan.v1` JSON envelope (or text) with a `scope`, optional
+  `worktree_root`, a `repos` array, a `summary`
   (per-disposition counts) and a `worktrees` array. Each record carries
-  `path`, `branch`, `is_primary`, `disposition`, `suggested_action`, and
-  — for branches with unique commits — `ahead`/`behind`, a
-  `unique_commit_count`, and an `evidence` block with the two-dot
+  `path`, `repo_root`, `branch`, `is_primary`, `disposition`,
+  `suggested_action`, and — for branches with unique commits —
+  `ahead`/`behind`, a `unique_commit_count`, and an `evidence` block with the
+  two-dot
   `git diff <base>..<branch>` shortstat plus a `likely_superseded` flag.
 
 Dispositions (the heart of the triage):
@@ -54,7 +65,9 @@ Dispositions (the heart of the triage):
 Failure modes:
 
 - Not a git repo, or `--base` does not resolve (usually a missing
-  `git fetch`, or a non-`main` default branch — pass `--base`).
+  `git fetch`, or a non-`main` default branch — pass `--base`). In
+  `--all-managed`, per-repo base failures are reported in `errors`; do not
+  prune worktrees from a repo whose base could not be verified.
 - A worktree is reported `dirty` or `locked`: that is a verdict to act on,
   not a tool error. Never remove either without resolving it first.
 - A `rescue-candidate` whose `evidence` looks subtractive is a *signal* to
@@ -63,7 +76,13 @@ Failure modes:
 
 ## Entrypoint
 
-Fetch first so the base ref is current, then scan:
+For all managed agent worktrees, fetch each represented repo first, then scan:
+
+```bash
+$CODEX_HOME/plugins/meta/skills/worktree-triage/scripts/worktree-triage.sh --all-managed --base origin/main --format json
+```
+
+For one repo, fetch first so the base ref is current, then scan:
 
 ```bash
 git fetch origin
@@ -78,23 +97,30 @@ $CODEX_HOME/plugins/meta/skills/worktree-triage/scripts/worktree-triage.sh --rep
 
 ## Workflow
 
-1. **Fetch + scan.** Run `git fetch origin` (state it; the helper never
-   fetches), then run the helper. Treat its output as read-only evidence.
+1. **Choose scope, fetch, then scan.** If the user names one repo, use
+   `--repo`; if the user asks for all worktrees or says no agents are running,
+   use `--all-managed`. Run `git fetch origin --prune` for every represented
+   repo in scope (state it; the helper never fetches), then run the helper.
+   Treat its output as read-only evidence.
 2. **Present the triage table.** Show the user each worktree's
    `disposition`, branch, ahead/behind, and `suggested_action`, grouped
    into: safe-to-prune (`safe-merged` + `safe-superseded`),
    rescue-candidates, and blocked (`dirty` / `locked` / `primary`).
 3. **Prune the safe set — only on explicit confirmation.** For each
-   `safe-merged` / `safe-superseded` worktree the user approves:
+   `safe-merged` / `safe-superseded` worktree the user approves, run the
+   removal against the reported `path` and delete the branch from that
+   record's `repo_root` (this matters for `--all-managed`, where rows may come
+   from different repos):
 
    ```bash
    git-cli worktree remove <path-or-slug> --format json
-   git branch -D <branch>
+   git -C <repo_root> branch -D <branch>
    ```
 
    Delete the remote branch only when it has no open PR, or its PR is
    itself superseded/closed. Never prune a `primary`, `dirty`, or `locked`
-   worktree, and never prune a `rescue-candidate`.
+   worktree, never prune anything from a repo listed in `errors`, and never
+   prune a `rescue-candidate`.
 4. **Judge each rescue-candidate.** Read its `evidence`:
    - `likely_superseded: true` (net diff empty or subtractive) means the
      branch's content has probably already landed on the base via another
