@@ -1,0 +1,66 @@
+# heuristic-inbox deliver exits 1 silently when the day's default records branch already exists
+
+## Status
+
+- Status: open
+- First observed: 2026-06-12
+- Area: heuristic-inbox deliver (records branch + managed worktree lifecycle)
+- Severity: medium
+
+## Signal
+
+`heuristic-inbox deliver` (nils-cli v1.0.17) derives its default records
+branch slug from the UTC date (`heuristic-records-<date>`). The second
+delivery on the same day collides with the first one's leftover branch +
+managed worktree at the `git worktree add -b docs/heuristic-records-<date>`
+step and exits 1 with no output at all: no JSON error envelope despite
+`--format json`, nothing on stderr, and the invocation log records only
+`exit_code: 1` with no error detail. Two gaps compound:
+
+1. The failure path emits no diagnostics on any surface, so the operator
+   sees a bare exit 1 (or, piped through `jq`, nothing).
+2. `deliver` never cleans up its merged records worktrees/branches, so the
+   day's first successful delivery guarantees the collision for the second
+   (six `heuristic-records-*` worktrees, 2026-06-03 through 2026-06-12, had
+   piled up when this was diagnosed).
+
+## Evidence
+
+- Raw record: `evidence/deliver-slug-collision-evidence.md`
+- Summary: redacted evidence ingested at creation time; raw logs and secrets were stripped before commit.
+- Live occurrence: first same-day delivery merged as
+  graysurf/agent-runtime-kit#309 (branch `docs/heuristic-records-2026-06-12`
+  left behind); the second delivery failed silently until re-run with
+  `--slug heuristic-records-2026-06-12-finding-links`, which landed as
+  graysurf/agent-runtime-kit#311.
+
+## Impact
+
+Every second same-day records delivery fails with zero diagnostics —
+closeout flows are exactly the same-day-repeat-prone path. The operator
+burns diagnosis time on an invisible failure, and the only recorded trace
+(`invocation.json`) carries no failure reason either.
+
+## Current Workaround
+
+- Pass a unique `--slug` (e.g. `heuristic-records-<date>-<topic>`) for any
+  delivery after the day's first.
+- Periodically remove merged records worktrees and branches
+  (`git-cli worktree remove <slug>` + `git branch -D docs/<slug>`; the
+  branch needs `-D` because records PRs are squash-merged), or run
+  `worktree-triage` when the pile grows.
+
+## Promotion Criteria
+
+Promote when `heuristic-inbox deliver` (a) emits a structured error envelope
+(e.g. `records-branch-exists`) naming the colliding branch and worktree on
+this failure path, and ideally (b) auto-uniquifies the default slug or
+cleans up its merged records worktrees; validated by a same-day
+double-delivery test (second run either succeeds with a uniquified slug or
+fails with the precise error).
+
+## Next Action
+
+File the upstream nils-cli issue against `heuristic-inbox deliver` covering
+the silent exit-1 failure path, the same-day default-slug collision, and
+merged-worktree cleanup, then link it here.
