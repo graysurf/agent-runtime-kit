@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-06
 - Area: skill-usage CLI; retained evidence record mutation concurrency
 - Severity: medium
@@ -47,7 +47,10 @@ cleanly.
 
 ## Next Action
 
-Track graysurf/plan-tracking-testbed#66 (filed 2026-06-12) for file locking /
-atomic update semantics in the `skill-usage` record-* mutation path. Until it
-lands, keep serializing record-* writes per `--out` directory. Promote per
-the promotion criteria once concurrency validation exists.
+None; fixed by sympoies/nils-cli#828 (merge
+d2dfbdc2d8a4f44f2cc2e0cd4903e1d1ee39541a), and tracker finding
+graysurf/plan-tracking-testbed#66 is closed. Validation added
+skill_usage_serializes_concurrent_record_mutations; local-fast and PR CI
+passed.
+
+Lifecycle link: `https://github.com/sympoies/nils-cli/pull/828`
