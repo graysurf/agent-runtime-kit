@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-12
 - Area: forge-cli pr lifecycle
 - Severity: medium
@@ -33,8 +33,21 @@ though its help ("open draft → CI green → ready → merge") reads as resumab
   squash` (merged: <https://github.com/sympoies/nils-cli/pull/817>).
 - Untested open question: whether re-running `pr deliver` with a compliant
   `--body-file` on a branch with an open PR would adopt it or attempt (and
-  fail?) to create a duplicate.
+  fail?) to create a duplicate. (Resolved by the fix: on adoption the
+  `--title` / `--body` inputs are ignored by design — the existing PR keeps
+  its own provider-validated title and body.)
 - Upstream finding filed: graysurf/plan-tracking-testbed#62 (2026-06-12).
+- Fix landed 2026-06-12 (promotion criteria option (a) in full):
+  <https://github.com/sympoies/nils-cli/pull/823> merged to `main` (squash
+  `954dd12`) — `pr deliver` now looks up open PRs for the resolved head
+  branch between `repo_view` and create, adopts one when found (`adopt` step
+  with the PR's `pr.view` payload replaces `create`; the PR's actual body is
+  re-fetched via `pr view` and re-gated), and failure envelopes name the
+  adopted PR instead of `data.pr.number=0`. Regression tests cover the
+  create-then-deliver sequence (`pr_deliver_adopts_existing_open_pr_for_head_branch`,
+  `pr_deliver_adopt_revalidates_existing_pr_body_and_fails_closed`). Finding
+  graysurf/plan-tracking-testbed#62 closed. Ships in the first release after
+  v1.0.17; the workaround below still applies to installed `<=1.0.17` hosts.
 
 ## Impact
 
@@ -61,6 +74,13 @@ create-then-deliver sequence.
 
 ## Next Action
 
-Track graysurf/plan-tracking-testbed#62 (filed 2026-06-12) for the upstream
-adopt-or-precise-error fix to `forge-cli pr deliver`; promote once the fix
-lands with a regression test covering the create-then-deliver sequence.
+None. Fixed upstream by sympoies/nils-cli#823 (merged 2026-06-12) with
+regression tests; finding graysurf/plan-tracking-testbed#62 closed. The
+manual-lifecycle workaround remains relevant only for hosts pinned to
+nils-cli <=1.0.17 until the next release ships.
+
+## Archive
+
+- Archived: 2026-06-12
+- Reason: Completed entry archived out of the active error inbox.
+- Durable link: `https://github.com/sympoies/nils-cli/pull/823`

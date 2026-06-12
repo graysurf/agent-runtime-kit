@@ -54,6 +54,13 @@ concurrent plan-issue lifecycle tests rather than a logic bug in the command.
   fail-fast left 640/4838 tests unrun and produced no lcov
   (<https://github.com/sympoies/nils-cli/actions/runs/27405124627>); the next
   `main` run (27405711000, post-#813) was green with no related change.
+- Recurrence 2026-06-12 (workspace v1.0.17 worktree, during sympoies/nils-cli#823
+  delivery): one local-fast workspace `cargo nextest run --profile ci
+  --workspace` run failed on `…returns_posted_state_role_with_synthesized_url`
+  with the same fingerprint (exit 1 vs 0, empty stderr, ~0.01s, fail-fast left
+  637/4843 unrun); the victim passed in isolation in the same worktree and the
+  immediate full-gate re-run was green. Third distinct delivery session hit —
+  recurrence cadence is now roughly every other full-workspace run day.
 - Root-cause candidate narrowed: `crates/plan-issue/tests/integration/common.rs`
   `run_plan_issue` uses default `CmdOptions` with no per-test
   `--state-dir` / `PLAN_ISSUE_HOME` override, so concurrent tests share the
