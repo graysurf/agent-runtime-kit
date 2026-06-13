@@ -67,10 +67,12 @@ skill model so it runs on both Codex and Claude.
    disallowed, the conductor runs the same explorer/architect role prompts
    **inline as sequential passes** rather than failing — so Codex remains usable
    even where its delegation is weaker than Claude's. [F1][F3]
-6. **Work-tier placement**: the conductor is an in-session L0–L1 procedure that
-   creates no provider artifacts. If work escalates (multiple lanes, durable
-   issue tracking), it hands off to `deliver-plan-tracking-issue` or
-   `deliver-dispatch-plan` rather than growing its own tracking. [F4]
+6. **Work-tier placement**: the conductor is an in-session procedure that
+   creates no provider artifacts and sits within the L0–L1 band of the
+   work-tier ladder. If work escalates (multiple lanes, durable issue
+   tracking), it stops and lets the user pick the durable tracking workflow per
+   the work-tier ladder rather than growing its own tracking or naming a
+   specific downstream skill. [F4]
 7. **Mode composition, not duplication**: when the user already has
    `test-first` / `parallel-first` / `orchestrator-first` active, the
    Implementation phase honors those modes instead of re-implementing their

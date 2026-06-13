@@ -122,14 +122,15 @@ Do not start without explicit user approval.
 1. Mark the todos complete.
 2. Summarize what was built, the key decisions, the files changed, and suggested
    next steps.
-3. If the work now needs durable tracking, multiple lanes, or PR grouping, hand
-   off to `deliver-plan-tracking-issue` or `deliver-dispatch-plan` rather than
-   continuing in this conductor.
+3. If the work now needs durable tracking, multiple lanes, or PR grouping, it
+   has outgrown this conductor — stop here and let the user choose the tracking
+   workflow rather than continuing.
 
 ## Boundary
 
-- This is an in-session L0–L1 conductor. It creates no provider issues, plans,
-  or tracking artifacts; it hands off on escalation (Phase 7).
+- This is an in-session conductor. It creates no provider issues, plans, or
+  tracking artifacts; on escalation it stops and hands the work to the user's
+  chosen tracking workflow (Phase 7).
 - It ships as a cross-product skill only. It defines no `agents/<n>.md` and no
   `commands/<n>.md`; the explorer and architect roles live as delegated role
   prompts under `references/prompts/`, fulfilled by each harness's own
