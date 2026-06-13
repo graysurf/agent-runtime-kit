@@ -18,7 +18,7 @@
 - Source document: docs/plans/2026-06-13-codex-review-subagents/codex-review-subagents-discussion-source.md
 - Plan document: docs/plans/2026-06-13-codex-review-subagents/codex-review-subagents-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/330>
 
 ## Validation Plan
 
