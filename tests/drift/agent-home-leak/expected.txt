@@ -1,4 +1,6 @@
 audit-drift [agent-home-leak/block] core/skills/sample/SKILL.md.tera: literal `$AGENT_HOME` at line 7, col 14 (byte 223); Resolved Decision #5 removed this variable
 audit-drift [agent-home-leak/block/claude] build/claude/plugins/sample/skills/determinism/SKILL.md: literal `$AGENT_HOME` at line 7, col 14 (byte 198); Resolved Decision #5 removed this variable
 audit-drift [agent-home-leak/block/codex] build/codex/skills/sample/SKILL.md: literal `$AGENT_HOME` at line 7, col 14 (byte 177); Resolved Decision #5 removed this variable
-audit-drift: 3 finding(s); highest-severity exit=2
+audit-drift [rendered-target/warn/claude] build/claude/.render-cache-agents.json: rendered output drifted from source for .render-cache-agents.json
+audit-drift [rendered-target/warn/codex] build/codex/.render-cache-agents.json: rendered output drifted from source for .render-cache-agents.json
+audit-drift: 5 finding(s); highest-severity exit=2

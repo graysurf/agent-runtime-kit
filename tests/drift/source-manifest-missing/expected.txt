@@ -1,2 +1,4 @@
+audit-drift [rendered-target/warn/claude] build/claude/.render-cache-agents.json: rendered output drifted from source for .render-cache-agents.json
+audit-drift [rendered-target/warn/codex] build/codex/.render-cache-agents.json: rendered output drifted from source for .render-cache-agents.json
 audit-drift [source-manifest/warn] manifests/runtime-roots.yaml: placeholder `<TBD…>` at line 24, col 16 (byte 843); pin before Phase 2 floor
-audit-drift: 1 finding(s); highest-severity exit=1
+audit-drift: 3 finding(s); highest-severity exit=1
