@@ -8,7 +8,7 @@ risk, or delivery policy requires it.
 
 | Situation | Use | Notes |
 | --- | --- | --- |
-| Small, routine, docs-only, or ordinary diff | `code-review-quick-pass` | Lightweight read-only review. Escalates when scope or confidence requires a stronger workflow. |
+| Small, routine, docs-only, or ordinary diff | `code-review-quick-pass` | Lightweight read-only review; dispatches the managed `reviewer-quick` subagent and synthesizes its findings (falls back to inline review with a recorded waiver when subagent dispatch is unavailable). Escalates when scope or confidence requires a stronger workflow. |
 | Explicit review lens requested, such as testing, security, performance, data migration, API contract, maintainability, or red-team | `code-review-focused-lens` | Runs one or more named lenses without invoking the full specialist bundle. Escalates if the selected lens exposes broader risk. |
 | PR/MR is close to merge and needs the shared delivery gate | `code-review-pre-merge-gate` | Mandatory delivery gate. Forces at least `testing` and `maintainability`, produces a delivery outcome, and leaves provider comments/merge decisions to the owning delivery workflow. |
 | Previous review findings were repaired and need disposition evidence | `code-review-follow-up` | Re-checks prior findings after fixes. It does not start a fresh broad review unless new concrete risk appears. |

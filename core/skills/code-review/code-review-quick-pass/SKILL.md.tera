@@ -21,6 +21,9 @@ Prereqs:
   running scope detection.
 - Keep this workflow read-only: it does not fix code, post PR/MR comments,
   merge, close issues, or write provider state.
+- Run the review through the managed read-only `reviewer-quick` subagent by
+  default; the parent agent dispatches it and synthesizes its findings, and
+  records an explicit waiver or blocker when subagent dispatch is unavailable.
 - Escalate to `code-review-specialists` or `code-review-pre-merge-gate` when the
   diff is broad, high-risk, security-sensitive, migration-heavy, or delivery
   blocking.
@@ -70,12 +73,22 @@ When retained evidence is required, record the final reviewer judgment through
 2. Run `review-specialists scope --base "$BASE_REF" --format json`.
 3. Keep the quick pass only when the diff is small or routine and does not
    touch security, data migration, API contracts, concurrency, release, or
-   runtime delivery behavior.
-4. Inspect the changed code, nearby call sites, tests, and validation evidence
-   needed to judge the actual change. Do not broaden into unrelated cleanup.
-5. Report only source-grounded findings. Include path and line anchors when
-   available; otherwise anchor to a command, diff hunk, or supplied evidence.
-6. Mark uncertain concerns as residual risk, not findings.
+   runtime delivery behavior. Escalate before reviewing when scope is broad.
+4. Dispatch the managed read-only `reviewer-quick` subagent on the sized diff
+   (installed at `~/.codex/agents/reviewer-quick.toml` for Codex and
+   `~/.claude/agents/reviewer-quick.md` for Claude). Hand it the base ref and
+   any focus notes; it inspects read-only and returns a compact verdict with
+   source-grounded findings and residual risks. You stay the parent: you own
+   base-ref selection, synthesis of the returned findings, the escalation
+   decision, and every provider / merge action.
+5. Fallback — if reviewer-subagent dispatch is unavailable (the agent is not
+   installed, or the host cannot spawn subagents), record an explicit waiver
+   or blocker naming the reason, then run the same read-only review inline. Do
+   not silently skip the reviewer path.
+6. Synthesize the subagent's (or inline) result: report only source-grounded
+   findings with path and line anchors; otherwise anchor to a command, diff
+   hunk, or supplied evidence. Mark uncertain concerns as residual risk, not
+   findings.
 7. If the review uncovers high-risk scope or insufficient confidence, stop with
    an `escalate` result and name the next workflow:
    `code-review-focused-lens`, `code-review-specialists`, or
@@ -83,12 +96,16 @@ When retained evidence is required, record the final reviewer judgment through
 
 ## Boundary
 
-`code-review-quick-pass` owns lightweight review judgment and escalation
-rationale. It does not own specialist orchestration, provider comments, PR/MR
-merge decisions, evidence record structure, or product-code repairs.
+`code-review-quick-pass` owns lightweight review judgment, reviewer-subagent
+dispatch, synthesis of the returned findings, and escalation rationale. The
+`reviewer-quick` subagent owns only the read-only inspection lens. This workflow
+does not own specialist orchestration, provider comments, PR/MR merge decisions,
+evidence record structure, or product-code repairs.
 
 ## References
 
+- Quick reviewer subagent source:
+  `core/agents/code-review/reviewer-quick/AGENT.md.tera`
 - Specialist review workflow:
   `skills/code-review/code-review-specialists/SKILL.md`
 - Focused lens workflow:
