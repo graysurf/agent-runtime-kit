@@ -129,6 +129,16 @@ fi
 mkdir -p "$ARTIFACTS_DIR"
 RESULTS_FILE="$ARTIFACTS_DIR/results.tsv"
 
+# Isolate child tools (notably forge-cli) from the operator's ~/.config so
+# user-global config never leaks into probe behaviour. Without this, a host
+# that opts into the forge-cli test-first gate
+# ($XDG_CONFIG_HOME/forge-cli/config.toml `[test_first] require = true`) makes
+# the `pr create --kind feature` dry-run probes fail with
+# test_first_evidence_required, even though that config is absent on CI runners.
+# Probes must exercise the documented default surface, not host gate settings.
+export XDG_CONFIG_HOME="$TMP_ROOT/xdg-config"
+mkdir -p "$XDG_CONFIG_HOME"
+
 cleanup() {
   if [ "$KEEP_ARTIFACTS" -eq 1 ]; then
     echo "runtime-smoke: kept temp root: $TMP_ROOT" >&2
