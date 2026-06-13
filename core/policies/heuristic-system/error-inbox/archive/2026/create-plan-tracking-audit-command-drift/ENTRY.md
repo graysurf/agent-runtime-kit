@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-13
 - Area: dispatch/create-plan-tracking-issue skill; plan-issue record audit surface
 - Severity: medium
@@ -30,6 +30,7 @@ evidence audit.
 
 - Raw record: `<workspace>/.local/state/agent-runtime-kit/out/projects/graysurf__agent-runtime-kit/20260614-013603-skill-usage/skill-usage.record.json`
 - Summary: linked `skill-usage.record.v1` envelope; raw runtime details remain in the evidence location.
+- Resolved by: https://github.com/graysurf/agent-runtime-kit/pull/333
 
 ## Impact
 
@@ -65,4 +66,21 @@ refreshed, and validation proves the documented command works against
 
 ## Next Action
 
-Update core/skills/dispatch/create-plan-tracking-issue/SKILL.md.tera to use plan-issue tracking status or pass comments-json/body-file to record audit, then refresh rendered targets and runtime smoke coverage.
+None. Resolved by PR #333: create-plan-tracking-issue step 6 now captures the
+live issue body and comments and passes `--body-file` / `--comments-json` to
+`record audit`, the form `plan-issue 1.2.0` requires; the codex and claude
+goldens were refreshed and the full `scripts/ci/all.sh` gate (including the
+dispatch runtime-smoke probe) is green against the v1.2.0 pin. Not covered: the
+identical bare `record audit --profile <p> --expect-visible` form still appears
+in `plan-tracking-issue-closeout` (step 6) and `dispatch-plan-closeout`
+(step 5); track those as a separate follow-up.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/333`
+
+## Archive
+
+- Archived: 2026-06-13
+- Reason: create-plan-tracking-issue read-back aligned to the `plan-issue 1.2.0`
+  `record audit` input contract (PR #333); validated green against the v1.2.0
+  pin.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/333`
