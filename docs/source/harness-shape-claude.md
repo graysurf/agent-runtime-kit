@@ -150,15 +150,22 @@ a uniform shape:
 
 ### 7. Subagent definitions (`agents/<name>.md`)
 
-- Claude reads from: `$HOME/.claude/agents/<name>.md` and
-  `${CLAUDE_PLUGIN_ROOT}/<plugin>/agents/<name>.md` for subagents
-  invokable via the Agent tool.
-- Source: **none** — no `agents/` tree under `targets/claude/` or
-  `core/`. Subagent definitions are absent from the runtime-kit source.
-- Install mechanism: not installed.
-- Acceptance lane: none.
-- Support today: **not shipped**. Claude-only primitive; absent from this
-  repo by design today.
+- Claude reads from: `$HOME/.claude/agents/<name>.md` (user) and
+  `${CLAUDE_PLUGIN_ROOT}/<plugin>/agents/<name>.md` for subagents invokable
+  via the Agent tool (<https://code.claude.com/docs/en/sub-agents>).
+- Source: one canonical `core/agents/<domain>/<name>/AGENT.md.tera`, rendered
+  per product. The `product` Tera variable branches the Claude body — YAML
+  frontmatter (`name`, `description`, read-only `tools: Read, Grep, Glob,
+  Bash`) plus the Markdown system prompt (`manifests/agents.yaml`).
+- Install mechanism: rendered to `build/claude/agents/<name>.md`, then
+  `symlinked-file` `recursive: true` (`id: agents-tree`) into
+  `~/.claude/agents/` (`targets/claude/link-map.yaml`).
+- Acceptance lane: render / golden / audit-drift / sandbox install rehearsal
+  gates; a live Claude discovery probe is deferred to the Sprint 4
+  product-probe task (agent-runtime-kit#330).
+- Support today: **shipped (read-only `reviewer-quick`)**. The first managed
+  subagent is the read-only quick-pass reviewer (user-level
+  `~/.claude/agents/reviewer-quick.md`), with specialist reviewers to follow.
 
 ### 8. Hook scripts (`hooks/<name>.*`)
 
