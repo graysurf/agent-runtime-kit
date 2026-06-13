@@ -1,14 +1,16 @@
 # Test-First Discipline Redesign Implementation Handoff
 
-- **Status**: ready for tier decision (evaluate-first; not yet scheduled)
+- **Status**: decided — L2 coupled, gate-first; the nils-cli gate is the first
+  deliverable
 - **Date**: 2026-06-14
 - **Source**: In-session design discussion re-examining how `agent-runtime-kit`
   enforces test-first discipline, comparing the current pieces against
   `obra/superpowers`' TDD model, plus a `meta:remove-skill` dry-run reference
   audit of the `conversation.test-first` mode skill.
-- **Intended next step**: classify the work tier (expected L2), then execute the
-  consolidation as a single coordinated change (enrich → gate → remove). Do not
-  bare-delete the mode skill.
+- **Intended next step**: execute as one L2 coupled effort, gate-first — build
+  the option-(b) gate in `sympoies/nils-cli`, cut a release and bump the pin,
+  then land the repo-local consume (enrich + remove + `guided-feature-build`) in
+  one `agent-runtime-kit` PR.
 
 ## Purpose
 
@@ -104,6 +106,9 @@ the same change. [F6]
    / `type::fix`, `--test-first-file` must be backed by a `test-first-evidence
    verify`-passing record **or** carry an explicit `waiver:` line; otherwise the
    delivery is blocked. `type::docs` / `chore` / `style` / `build` are exempt.
+   **Enforcement point: option (b)** — the gate is built into the released
+   `forge-cli pr create` / `agent-runtime pr-body` surface in `sympoies/nils-cli`,
+   not a repo-local hook, so it ships through a nils-cli release.
 4. **Keep waivers first-class.** Confirmed reasonable by the user; the gate is a
    verifiable floor, not a no-escape Iron Law.
 5. **Keep the `AGENT_HOME.md` policy** as the judgment baseline (the canonical
@@ -113,9 +118,11 @@ the same change. [F6]
    backing; only `test-first` is the odd member that earns consolidation.
 7. **Enforcement target is "verified evidence exists", not temporal ordering.**
    The record's failing-then-final structure is the accepted proxy.
-8. **Sequence enrich → gate → remove.** Never bare-delete: removing the mode
-   without first folding its trigger/how into `test-first-evidence` (and ideally
-   landing the gate) would leave the discipline as pure aspiration.
+8. **Gate-first, one coupled effort.** Build the nils-cli gate, release it, and
+   bump the pin first; then land the repo-local consume — enrich
+   `test-first-evidence`, remove the mode skill, update `guided-feature-build` —
+   in one `agent-runtime-kit` PR. Within that repo-local PR, the enrich
+   precedes/accompanies the removal (never bare-delete).
 
 ## Scope
 
@@ -142,12 +149,13 @@ the same change. [F6]
 
 - Skill bodies, manifests, golden, sandbox, runtime-smoke, `README.md`,
   `git-delivery.md`, and `guided-feature-build` edits are repo-local.
-- The gate's enforcement point must be chosen between (a) a `core/hooks/shared/`
-  PreToolUse hook on the `forge-cli pr create` / `deliver` call that reads the
-  `--label`s and the rendered body, calls `test-first-evidence verify`, and
-  checks for a record-or-waiver; or (b) a check inside the released
-  `forge-cli` / `agent-runtime pr-body` surface. Option (a) is repo-local glue
-  (preferred if sufficient); option (b) is `sympoies/nils-cli` upstream work.
+- **Enforcement point: option (b), decided.** The gate is built into the released
+  `forge-cli pr create` / `agent-runtime pr-body` surface in `sympoies/nils-cli`,
+  not a repo-local hook. It therefore ships through the coupled nils-cli release
+  boundary (implement → release → tap → `brew upgrade` → pin bump) before the
+  repo-local consume can land. The rejected alternative was (a) a
+  `core/hooks/shared/` PreToolUse hook reading labels + calling
+  `test-first-evidence verify`.
 - If `test-first-evidence` needs new label-aware or behavior-classification
   capability, that is upstream `nils-cli` work; declare the consumed binary
   floor in `manifests/` afterward.
@@ -210,13 +218,20 @@ the same change. [F6]
 
 - Status: not started; ready for tier decision.
 - Next-task source: this document.
-- Recommended next workflow: classify the tier (expected L2 — multi-surface,
-  coordinated removal + new gate). If executed as a tracked plan, graduate this
-  capture into a `docs/plans/<YYYY-MM-DD>-<slug>/` bundle and run
-  `create-plan-tracking-issue`; otherwise execute directly with `meta:remove-skill`
-  plus the enrich/gate edits behind one PR.
-  (No `Recommended plan` / `Recommended execution state` lines: this is a
-  `docs/discussions/` capture, not an L2 plan bundle.)
+- Recommended next workflow: L2 coupled, gate-first.
+  - Sprint 1 (`sympoies/nils-cli`): implement the option-(b) gate in `forge-cli
+    pr create` / `agent-runtime pr-body`, land the PR, cut a release, bump the
+    tap, and bump the pin in this repo via `meta:nils-cli-bump`.
+  - Sprint 2 (`agent-runtime-kit`, one PR): enrich `test-first-evidence`, remove
+    `conversation.test-first` via `meta:remove-skill`, update
+    `guided-feature-build`, and document the gate in `git-delivery.md`.
+  - This capture is the coordination source for both sprints. A single
+    plan-tooling bundle is a poor fit because its `Location` validation expects
+    repo-relative paths that exist in this repo, and Sprint 1 lives in nils-cli;
+    if a formal tracker is wanted, scope the bundle to Sprint 2 and link the
+    nils-cli PR as the dependency.
+  (No `Recommended plan` / `Recommended execution state` lines: this remains a
+  `docs/discussions/` capture, not a plan-tooling bundle.)
 
 ## Retention Intent
 
