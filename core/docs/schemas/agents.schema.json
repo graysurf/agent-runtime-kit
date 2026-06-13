@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-runtime-kit.local/schemas/agents.schema.json",
+  "title": "agents.yaml",
+  "description": "Optional agent manifest. Each entry declares a canonical agent ID, its source directory (containing one AGENT.md.tera), and the per-product render targets. The whole surface is optional: an absent agents.yaml renders nothing. One canonical AGENT.md.tera branches on the `product` Tera variable to emit Codex TOML vs Claude Markdown.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "agents"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version."
+    },
+    "agents": {
+      "type": "array",
+      "description": "List of agent entries, one per managed subagent definition.",
+      "items": { "$ref": "#/$defs/agent" }
+    }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "products"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Canonical `<domain>.<name>` identifier (lowercase, hyphenated within each segment, dot-separated).",
+          "pattern": "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9-]*$"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source directory under `core/agents/<domain>/<name>/`, containing one `AGENT.md.tera`.",
+          "minLength": 1
+        },
+        "products": {
+          "type": "object",
+          "description": "Per-product render configuration. Maps a supported product (`codex` / `claude`) to its rendered output path under `build/<product>/`.",
+          "additionalProperties": false,
+          "properties": {
+            "codex": { "$ref": "#/$defs/productRender" },
+            "claude": { "$ref": "#/$defs/productRender" }
+          }
+        }
+      }
+    },
+    "productRender": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["render_to"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Product-native agent name (typically the rendered filename stem).",
+          "minLength": 1
+        },
+        "render_to": {
+          "type": "string",
+          "description": "Rendered output path under `build/<product>/`, including the rendered filename (e.g. `agents/reviewer-quick.toml`).",
+          "minLength": 1
+        },
+        "path_override": {
+          "type": "string",
+          "description": "Optional override for the product-native source path.",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

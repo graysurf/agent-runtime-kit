@@ -400,6 +400,12 @@ entries:
     destination: skills/code-review/code-review-specialists
     recursive: false
 
+  - id: agents-tree
+    kind: symlinked-file
+    source: build/codex/agents
+    destination: agents
+    recursive: true
+
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/pr/.codex-plugin/plugin.json

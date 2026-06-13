@@ -20,8 +20,9 @@ Prereqs:
   running scope detection.
 - Keep this workflow read-only: it does not auto-fix code, merge, close PRs/MRs,
   open/close issues, or post live provider comments.
-- Use explicit user instruction or a delegation mode such as `parallel-first` or
-  `orchestrator-first` before spawning reviewer subagents.
+- Dispatch the managed read-only `reviewer-<lens>` subagents for the selected
+  lenses by default; the parent agent owns lens selection, dispatch, validation,
+  and merge, and records a waiver when subagent dispatch is unavailable.
 - Use `review-dispatch-lane-pr` for PR decision actions and `review-evidence` only
   when findings need a retained evidence record.
 
@@ -109,15 +110,22 @@ after fixes.
    - Consider `data-migration` for migration, schema, or data transform changes.
    - Consider `api-contract` for route, controller, API schema, OpenAPI,
      GraphQL, or protocol changes.
-5. Read only the specialist prompt files needed from `references/specialists/`.
-6. Run selected specialist passes as separate review lenses. In default
-   single-agent mode, the main agent performs the lenses sequentially. In
-   delegated mode, dispatch read-only reviewer subagents only when explicitly
-   allowed.
-7. Write each finding as JSONL following
-   `references/SPECIALIST_REVIEW_CONTRACT.md`. Cite concrete file, line, diff,
-   command, or evidence anchors when available. Mark unverifiable claims as
-   residual risk, not findings.
+5. Select the matching managed reviewer subagents for the chosen lenses
+   (`reviewer-testing`, `reviewer-maintainability`, `reviewer-security`,
+   `reviewer-performance`, `reviewer-data-migration`, `reviewer-api-contract`),
+   installed at `~/.codex/agents/reviewer-<lens>.toml` and
+   `~/.claude/agents/reviewer-<lens>.md`.
+6. Dispatch the selected read-only reviewer subagents by default, one per lens,
+   handing each the base ref and scope; each inspects read-only and returns
+   JSONL findings for its lens. If subagent dispatch is unavailable, run the
+   lenses inline (reading the prompt from `references/specialists/`) with a
+   recorded waiver. You stay the parent: you own base-ref selection, lens
+   selection, dispatch, and the validation/merge steps below.
+7. Collect each subagent's JSONL findings (or the inline equivalent) following
+   `references/SPECIALIST_REVIEW_CONTRACT.md`. Treat malformed JSONL, missing
+   required fields, unsupported severities, or absent evidence anchors as a
+   workflow failure or residual risk for that lens — never promote it to a
+   verified finding. Mark unverifiable claims as residual risk, not findings.
 8. Validate and merge findings:
 
    ```bash
@@ -125,9 +133,10 @@ after fixes.
    review-specialists merge --input findings.jsonl --summary-out specialist-review.md --format json
    ```
 
-9. Run `red-team` only after selected specialists when `diff_lines > 200`, any
-   selected specialist produced a `critical` finding, or the reviewer forced it.
-   Merge red-team findings into the final report.
+9. Dispatch `reviewer-red-team` only after the selected specialists when
+   `diff_lines > 200`, any selected specialist produced a `critical` finding,
+   or the reviewer forced it; hand it the merged findings so it can probe
+   cross-cutting failure modes. Merge its findings into the final report.
 10. Use the report template for the final synthesis. The recommended next step
     may route to `review-dispatch-lane-pr`, a normal implementation workflow, or a
     retained `review-evidence` record, but this workflow does not execute that
@@ -136,13 +145,17 @@ after fixes.
 ## Boundary
 
 `code-review-specialists` owns scope detection, specialist selection,
-read-only findings, validation, and the merged report. It does not fix code,
-post PR or MR review comments, mark a draft reviewable ready, merge, close
-issues, or execute the recommended next step — those belong to the owning
-PR / MR delivery skills, `review-dispatch-lane-pr`, or `review-evidence`.
+reviewer-subagent dispatch, validation and merge of the returned findings, and
+the merged report. Each `reviewer-<lens>` subagent owns only its read-only lens.
+This workflow does not fix code, post PR or MR review comments, mark a draft
+reviewable ready, merge, close issues, or execute the recommended next step —
+those belong to the owning PR / MR delivery skills, `review-dispatch-lane-pr`,
+or `review-evidence`.
 
 ## References
 
+- Reviewer subagent sources:
+  `core/agents/code-review/reviewer-<lens>/AGENT.md.tera`
 - Specialist review contract:
   `references/SPECIALIST_REVIEW_CONTRACT.md`
 - Quick pass workflow:

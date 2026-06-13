@@ -258,36 +258,41 @@ surfaces:
     name: "subagent definitions (`agents/<n>.md`)"
     products:
       codex:
-        state: not-applicable
-        mechanism: "Codex has no file-backed subagent loader; `AGENT_HOME.md` carries delegation modes as policy text"
-        source_artifacts: []
-        min_product: "n/a"
-        min_nils_cli: "n/a"
+        state: shipped
+        mechanism: "rendered to `build/codex/agents/<name>.toml`, then `symlinked-file` `recursive: true` (`agents-tree`) into `$CODEX_HOME/agents/`; Codex discovers personal subagents at `~/.codex/agents/*.toml` (TOML name / description / developer_instructions, optional `sandbox_mode = read-only`)"
+        source_artifacts:
+          - "core/agents/<domain>/<name>/AGENT.md.tera -> build/codex/agents/<name>.toml"
+        min_product: "0.139.0"
+        min_nils_cli: "v1.3.0"
         acceptance:
           - kind: ci
-            note: "—"
+            note: "gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox install rehearsal)"
             descriptive_only: true
           - kind: live
-            note: "—"
+            note: "Codex live subagent discovery is manual-only (needs an authenticated session); documented in tests/runtime-smoke/README.md"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-codex.md#7-subagent-definitions-agentsnamemd"
-          - AGENT_HOME.md
+          - manifests/agents.yaml
+          - targets/codex/link-map.yaml
       claude:
-        state: not-shipped
-        mechanism: "runtime-kit does not ship any `agents/<n>.md` source today"
-        source_artifacts: []
-        min_product: "n/a"
-        min_nils_cli: "n/a"
+        state: shipped
+        mechanism: "rendered to `build/claude/agents/<name>.md`, then `symlinked-file` `recursive: true` (`agents-tree`) into `~/.claude/agents/`; Claude discovers user subagents at `~/.claude/agents/*.md` (YAML frontmatter name / description / tools + Markdown system prompt)"
+        source_artifacts:
+          - "core/agents/<domain>/<name>/AGENT.md.tera -> build/claude/agents/<name>.md"
+        min_product: "2.1.145"
+        min_nils_cli: "v1.3.0"
         acceptance:
           - kind: ci
-            note: "—"
+            note: "gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox install rehearsal)"
             descriptive_only: true
           - kind: live
-            note: "—"
+            note: "Claude live subagent discovery is manual-only (needs an authenticated session); documented in tests/runtime-smoke/README.md"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-claude.md#7-subagent-definitions-agentsnamemd"
+          - manifests/agents.yaml
+          - targets/claude/link-map.yaml
 
   - id: hook-scripts
     ordinal: 8

@@ -98,6 +98,12 @@ entries:
     destination: plugins/code-review/skills
     recursive: true
 
+  - id: agents-tree
+    kind: symlinked-file
+    source: build/claude/agents
+    destination: agents
+    recursive: true
+
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/claude/plugins/pr/.claude-plugin/plugin.json

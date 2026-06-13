@@ -69,6 +69,30 @@ Prompt cases default to `skip-host-capability`; set
 running the quarantined prompt path manually. Product mode must not touch real
 `$HOME/.codex`, `$HOME/.claude`, auth, sessions, history, logs, or caches.
 
+## Reviewer Subagent Discovery
+
+The cross-product reviewer subagents render to `build/<product>/agents/` and
+install (via the `agents-tree` link-map entry) into `~/.codex/agents/*.toml`
+and `~/.claude/agents/*.md`.
+
+Automated coverage (in default CI):
+
+- `bash scripts/ci/sandbox-install-rehearsal.sh` diffs the installed reviewer
+  agent set against `tests/sandbox/<product>/expected-agents.txt` for both
+  products (`all.sh` sandbox-install position), failing on a missing or renamed
+  reviewer agent.
+
+Live product discovery is manual-only — it needs an authenticated product
+session and stays outside default CI:
+
+- Claude: in a session, run `/agents` and confirm `reviewer-quick` and the seven
+  `reviewer-<lens>` specialists appear under the user scope. Expected: all eight
+  are listed and invokable via the Agent tool.
+- Codex: start a session with `CODEX_HOME` pointed at the installed home and
+  confirm the definitions in `$CODEX_HOME/agents/*.toml` are offered for
+  delegation. Expected: `reviewer-quick` (and the specialists) are spawnable as
+  read-only subagents.
+
 ## Matrix Contract
 
 `acceptance-matrix.yaml` is a constrained YAML subset so it can be validated

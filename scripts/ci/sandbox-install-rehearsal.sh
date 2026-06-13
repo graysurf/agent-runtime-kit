@@ -7,6 +7,11 @@
 # the legacy dry-run-text regex parser when `list-skills` is not available on
 # the installed `agent-runtime`, so this script keeps working against
 # pre-0.22.0 binaries during rollout.
+#
+# It also diffs the installed reviewer subagent files (the `agents-tree`
+# link-map entry, parsed from the dry-run plan) against the committed
+# `tests/sandbox/<product>/expected-agents.txt` pin, so a missing or renamed
+# reviewer agent fails the gate in both product homes.
 
 set -euo pipefail
 
@@ -83,6 +88,15 @@ extract_skill_ids_via_dry_run_regex() {
   esac
 }
 
+extract_agent_names() {
+  local dry_run_output="$1"
+  local out="$2"
+  # `agents-tree` installs one file symlink per reviewer agent into the product
+  # home's `agents/` dir; capture each agent name (basename without the
+  # product-specific .toml / .md extension) from the dry-run plan.
+  sed -n 's#.*/agents/\([^/]*\)\.[a-z][a-z]* -> .*(agents-tree)#\1#p' "$dry_run_output" | sort -u >"$out"
+}
+
 run_product() {
   local product="$1"
   local expected="tests/sandbox/${product}/expected-skills.txt"
@@ -120,6 +134,23 @@ run_product() {
   if ! diff -u "$expected" "$observed" >/tmp/sandbox-install-"${product}".diff 2>&1; then
     echo "sandbox-install-rehearsal.sh: skill pin mismatch for $product:" >&2
     cat /tmp/sandbox-install-"${product}".diff >&2
+    exit 1
+  fi
+
+  # Reviewer subagent surfaces: the `agents-tree` link-map entry installs one
+  # file per reviewer agent into the product home `agents/` dir.
+  local expected_agents="tests/sandbox/${product}/expected-agents.txt"
+  local observed_agents="$TMP_ROOT/${product}.observed-agents.txt"
+  validate_expected_file "$expected_agents"
+  extract_agent_names "$dry_run_output" "$observed_agents"
+  if [ ! -s "$observed_agents" ]; then
+    echo "sandbox-install-rehearsal.sh: no reviewer agent surfaces found in dry-run output for $product" >&2
+    cat "$dry_run_output" >&2
+    exit 1
+  fi
+  if ! diff -u "$expected_agents" "$observed_agents" >/tmp/sandbox-install-"${product}"-agents.diff 2>&1; then
+    echo "sandbox-install-rehearsal.sh: reviewer agent pin mismatch for $product:" >&2
+    cat /tmp/sandbox-install-"${product}"-agents.diff >&2
     exit 1
   fi
 }

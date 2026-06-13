@@ -150,15 +150,25 @@ a uniform shape:
 
 ### 7. Subagent definitions (`agents/<name>.md`)
 
-- Claude reads from: `$HOME/.claude/agents/<name>.md` and
-  `${CLAUDE_PLUGIN_ROOT}/<plugin>/agents/<name>.md` for subagents
-  invokable via the Agent tool.
-- Source: **none** — no `agents/` tree under `targets/claude/` or
-  `core/`. Subagent definitions are absent from the runtime-kit source.
-- Install mechanism: not installed.
-- Acceptance lane: none.
-- Support today: **not shipped**. Claude-only primitive; absent from this
-  repo by design today.
+- Claude reads from: `$HOME/.claude/agents/<name>.md` (user) and
+  `${CLAUDE_PLUGIN_ROOT}/<plugin>/agents/<name>.md` for subagents invokable
+  via the Agent tool (<https://code.claude.com/docs/en/sub-agents>).
+- Source: one canonical `core/agents/<domain>/<name>/AGENT.md.tera`, rendered
+  per product. The `product` Tera variable branches the Claude body — YAML
+  frontmatter (`name`, `description`, read-only `tools: Read, Grep, Glob,
+  Bash`) plus the Markdown system prompt (`manifests/agents.yaml`).
+- Install mechanism: rendered to `build/claude/agents/<name>.md`, then
+  `symlinked-file` `recursive: true` (`id: agents-tree`) into
+  `~/.claude/agents/` (`targets/claude/link-map.yaml`).
+- Acceptance lane: render / golden / audit-drift / sandbox install rehearsal
+  gates (the rehearsal pins the installed reviewer agents per product against
+  `tests/sandbox/claude/expected-agents.txt`); the live Claude discovery probe
+  is manual-only, documented in `tests/runtime-smoke/README.md`.
+- Support today: **shipped (`reviewer-quick` + seven specialist lenses)**. The
+  managed read-only subagents are `reviewer-quick` (quick pass) plus seven
+  specialist lenses (testing, maintainability, security, performance,
+  api-contract, data-migration, red-team), each at user-level
+  `~/.claude/agents/reviewer-<lens>.md`.
 
 ### 8. Hook scripts (`hooks/<name>.*`)
 

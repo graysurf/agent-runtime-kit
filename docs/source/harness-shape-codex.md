@@ -152,14 +152,26 @@ a uniform shape:
 
 ### 7. Subagent definitions (`agents/<name>.md`)
 
-- Codex reads from: **nowhere** in the runtime-kit activation surface;
-  `AGENT_HOME.md` describes opt-in delegation modes as policy text, not
-  file-backed subagent discovery (`AGENT_HOME.md`).
-- Source: **none**.
-- Install mechanism: not installed.
-- Acceptance lane: none.
-- Support today: **not-applicable**. Claude's `agents/<name>.md` file
-  primitive has no Codex analogue in this repo.
+- Codex reads from: `$CODEX_HOME/agents/<name>.toml` (personal) and
+  `.codex/agents/<name>.toml` (project) for file-backed subagents Codex can
+  spawn, per the Codex subagents docs
+  (<https://developers.openai.com/codex/subagents>).
+- Source: one canonical `core/agents/<domain>/<name>/AGENT.md.tera`, rendered
+  per product. The `product` Tera variable branches the Codex TOML body —
+  `name`, `description`, `developer_instructions`, and (for a reviewer)
+  `sandbox_mode = "read-only"` (`manifests/agents.yaml`).
+- Install mechanism: rendered to `build/codex/agents/<name>.toml`, then
+  `symlinked-file` `recursive: true` (`id: agents-tree`) into
+  `$CODEX_HOME/agents/` (`targets/codex/link-map.yaml`).
+- Acceptance lane: render / golden / audit-drift / sandbox install rehearsal
+  gates (the rehearsal pins the installed reviewer agents per product against
+  `tests/sandbox/codex/expected-agents.txt`); the live Codex discovery probe is
+  manual-only, documented in `tests/runtime-smoke/README.md`.
+- Support today: **shipped (`reviewer-quick` + seven specialist lenses)**. The
+  cross-product agents render surface ships in nils-cli v1.3.0; the managed
+  read-only reviewers are `reviewer-quick` (quick pass) plus seven specialist
+  lenses (testing, maintainability, security, performance, api-contract,
+  data-migration, red-team).
 
 ### 8. Hook scripts (`hooks/<name>.*`)
 
