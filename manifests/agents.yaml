@@ -1,0 +1,27 @@
+# Agent manifest — declares the cross-product reviewer (and future) subagent
+# definitions, their canonical source, and per-product render targets. The
+# whole surface is optional: an absent file renders nothing (the optional
+# agents render surface added in nils-cli v1.3.0, sympoies/nils-cli#839).
+#
+# Schema: ../core/docs/schemas/agents.schema.json
+#
+# Each entry declares `id` (dotted `<domain>.<name>`), `source`
+# (`core/agents/<domain>/<name>/`, containing one `AGENT.md.tera`), and
+# `products` with a per-product `render_to` (relative to `build/<product>/`,
+# including the rendered filename). One canonical `AGENT.md.tera` branches on
+# the `product` Tera variable to emit Codex TOML
+# (`~/.codex/agents/<name>.toml`, user-level) vs Claude Markdown
+# (`~/.claude/agents/<name>.md`, user-level); the install link maps symlink
+# `build/<product>/agents/` into each product home.
+schema_version: 1
+
+agents:
+  - id: code-review.reviewer-quick
+    source: core/agents/code-review/reviewer-quick
+    products:
+      codex:
+        name: reviewer-quick
+        render_to: agents/reviewer-quick.toml
+      claude:
+        name: reviewer-quick
+        render_to: agents/reviewer-quick.md
