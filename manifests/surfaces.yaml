@@ -269,7 +269,7 @@ surfaces:
             note: "gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox install rehearsal)"
             descriptive_only: true
           - kind: live
-            note: "Codex live subagent discovery probe deferred to Sprint 4 / Task 4.1"
+            note: "Codex live subagent discovery is manual-only (needs an authenticated session); documented in tests/runtime-smoke/README.md"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-codex.md#7-subagent-definitions-agentsnamemd"
@@ -287,7 +287,7 @@ surfaces:
             note: "gate 3 (render), gate 4 (golden), gate 5 (drift), gate 7 (sandbox install rehearsal)"
             descriptive_only: true
           - kind: live
-            note: "Claude live subagent discovery probe deferred to Sprint 4 / Task 4.1"
+            note: "Claude live subagent discovery is manual-only (needs an authenticated session); documented in tests/runtime-smoke/README.md"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-claude.md#7-subagent-definitions-agentsnamemd"

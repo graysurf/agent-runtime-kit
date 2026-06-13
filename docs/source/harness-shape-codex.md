@@ -164,8 +164,9 @@ a uniform shape:
   `symlinked-file` `recursive: true` (`id: agents-tree`) into
   `$CODEX_HOME/agents/` (`targets/codex/link-map.yaml`).
 - Acceptance lane: render / golden / audit-drift / sandbox install rehearsal
-  gates; a live Codex discovery probe is deferred to the Sprint 4
-  product-probe task (agent-runtime-kit#330).
+  gates (the rehearsal pins the installed reviewer agents per product against
+  `tests/sandbox/codex/expected-agents.txt`); the live Codex discovery probe is
+  manual-only, documented in `tests/runtime-smoke/README.md`.
 - Support today: **shipped (read-only `reviewer-quick`)**. The cross-product
   agents render surface ships in nils-cli v1.3.0; the first managed agent is
   the read-only quick-pass reviewer, with specialist reviewers to follow.

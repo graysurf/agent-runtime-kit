@@ -161,8 +161,9 @@ a uniform shape:
   `symlinked-file` `recursive: true` (`id: agents-tree`) into
   `~/.claude/agents/` (`targets/claude/link-map.yaml`).
 - Acceptance lane: render / golden / audit-drift / sandbox install rehearsal
-  gates; a live Claude discovery probe is deferred to the Sprint 4
-  product-probe task (agent-runtime-kit#330).
+  gates (the rehearsal pins the installed reviewer agents per product against
+  `tests/sandbox/claude/expected-agents.txt`); the live Claude discovery probe
+  is manual-only, documented in `tests/runtime-smoke/README.md`.
 - Support today: **shipped (read-only `reviewer-quick`)**. The first managed
   subagent is the read-only quick-pass reviewer (user-level
   `~/.claude/agents/reviewer-quick.md`), with specialist reviewers to follow.
