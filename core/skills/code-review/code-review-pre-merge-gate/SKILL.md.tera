@@ -17,6 +17,9 @@ Prereqs:
 - Run inside the target git repository with `git` available on `PATH`.
 - `review-specialists` is installed from the released nils-cli package and
   available on `PATH`.
+- The mandatory and risk lenses run through the managed read-only reviewer
+  subagents dispatched by the shared specialist gate; record a waiver and
+  review inline when subagent dispatch is unavailable.
 - The PR/MR base branch or merge-base is known.
 - Local validation and provider check evidence are available or explicitly
   marked pending by the owning delivery workflow.
@@ -88,8 +91,11 @@ review-specialists scope \
    --maintainability --format json`. Do not skip small diffs.
 4. Add risk lenses for security, API contract, migration, performance, or
    red-team conditions when the scope warrants them.
-5. Review selected lenses read-only and classify each item using the shared
-   delivery outcome vocabulary.
+5. Review the selected lenses read-only by dispatching the matching managed
+   reviewer subagents (`reviewer-testing`, `reviewer-maintainability`, and any
+   forced risk lens such as `reviewer-security`, `reviewer-api-contract`, or
+   `reviewer-red-team`); collect their JSONL findings and classify each item
+   using the shared delivery outcome vocabulary.
 6. Treat evidence-backed concrete findings as blocking until repaired, accepted
    by the owner, or converted into an explicit follow-up.
 7. Produce a compact gate result and delivery review outcome body. The owning
@@ -97,9 +103,11 @@ review-specialists scope \
 
 ## Boundary
 
-`code-review-pre-merge-gate` owns the read-only review gate and the review
-outcome recommendation. Provider delivery skills own PR/MR comments, ready
-transitions, checks, merge/close calls, issue closeout, and repair execution.
+`code-review-pre-merge-gate` owns the read-only review gate, reviewer-subagent
+dispatch, and the review outcome recommendation. Each dispatched reviewer
+subagent owns only its read-only lens. Provider delivery skills own PR/MR
+comments, ready transitions, checks, merge/close calls, issue closeout, and
+repair execution.
 
 ## References
 
