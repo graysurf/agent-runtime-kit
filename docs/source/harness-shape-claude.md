@@ -164,9 +164,11 @@ a uniform shape:
   gates (the rehearsal pins the installed reviewer agents per product against
   `tests/sandbox/claude/expected-agents.txt`); the live Claude discovery probe
   is manual-only, documented in `tests/runtime-smoke/README.md`.
-- Support today: **shipped (read-only `reviewer-quick`)**. The first managed
-  subagent is the read-only quick-pass reviewer (user-level
-  `~/.claude/agents/reviewer-quick.md`), with specialist reviewers to follow.
+- Support today: **shipped (`reviewer-quick` + seven specialist lenses)**. The
+  managed read-only subagents are `reviewer-quick` (quick pass) plus seven
+  specialist lenses (testing, maintainability, security, performance,
+  api-contract, data-migration, red-team), each at user-level
+  `~/.claude/agents/reviewer-<lens>.md`.
 
 ### 8. Hook scripts (`hooks/<name>.*`)
 

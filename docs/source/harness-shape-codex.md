@@ -167,9 +167,11 @@ a uniform shape:
   gates (the rehearsal pins the installed reviewer agents per product against
   `tests/sandbox/codex/expected-agents.txt`); the live Codex discovery probe is
   manual-only, documented in `tests/runtime-smoke/README.md`.
-- Support today: **shipped (read-only `reviewer-quick`)**. The cross-product
-  agents render surface ships in nils-cli v1.3.0; the first managed agent is
-  the read-only quick-pass reviewer, with specialist reviewers to follow.
+- Support today: **shipped (`reviewer-quick` + seven specialist lenses)**. The
+  cross-product agents render surface ships in nils-cli v1.3.0; the managed
+  read-only reviewers are `reviewer-quick` (quick pass) plus seven specialist
+  lenses (testing, maintainability, security, performance, api-contract,
+  data-migration, red-team).
 
 ### 8. Hook scripts (`hooks/<name>.*`)
 
