@@ -8,6 +8,7 @@ code-review.code-review-specialists
 conversation.actionable-advice
 conversation.actionable-knowledge
 conversation.discussion-to-implementation-doc
+conversation.guided-feature-build
 conversation.handoff-session-prompt
 conversation.orchestrator-first
 conversation.parallel-first

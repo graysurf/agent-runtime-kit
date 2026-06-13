@@ -259,6 +259,12 @@ entries:
     destination: skills/conversation/discussion-to-implementation-doc
     recursive: false
 
+  - id: conversation.guided-feature-build.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/conversation/skills/guided-feature-build
+    destination: skills/conversation/guided-feature-build
+    recursive: false
+
   - id: conversation.handoff-session-prompt.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/conversation/skills/handoff-session-prompt

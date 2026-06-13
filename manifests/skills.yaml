@@ -458,6 +458,19 @@ skills:
     required_clis: {}
     state_out_mode: runtime
 
+  - id: conversation.guided-feature-build
+    domain: conversation
+    source: core/skills/conversation/guided-feature-build
+    products:
+      codex:
+        name: guided-feature-build
+        render_to: plugins/conversation/skills/guided-feature-build/SKILL.md
+      claude:
+        name: guided-feature-build
+        render_to: plugins/conversation/skills/guided-feature-build/SKILL.md
+    required_clis: {}
+    state_out_mode: runtime
+
   - id: conversation.handoff-session-prompt
     domain: conversation
     source: core/skills/conversation/handoff-session-prompt
