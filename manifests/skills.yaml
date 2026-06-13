@@ -510,19 +510,6 @@ skills:
     required_clis: {}
     state_out_mode: runtime
 
-  - id: conversation.test-first
-    domain: conversation
-    source: core/skills/conversation/test-first
-    products:
-      codex:
-        name: test-first
-        render_to: plugins/conversation/skills/test-first/SKILL.md
-      claude:
-        name: test-first
-        render_to: plugins/conversation/skills/test-first/SKILL.md
-    required_clis: {}
-    state_out_mode: runtime
-
   - id: evidence.web-evidence
     domain: evidence
     source: core/skills/evidence/web-evidence

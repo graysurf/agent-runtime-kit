@@ -80,7 +80,6 @@ plugins:
       - conversation.handoff-session-prompt
       - conversation.orchestrator-first
       - conversation.parallel-first
-      - conversation.test-first
     product_manifests:
       codex: targets/codex/plugins/conversation/.codex-plugin/plugin.json
       claude: targets/claude/plugins/conversation/.claude-plugin/plugin.json
