@@ -90,9 +90,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
    lanes/tasks done, linked PRs, and deferred follow-up.
 4. **Closeout mutation** — call `record close --profile dispatch` with
    every lane PR ref and approval. Include the state label transition.
-5. **Read-back** — audit the closed issue with
-   `record audit --profile dispatch --expect-visible`; confirm the
-   `closeout` role is visible and lint-clean.
+5. **Read-back** — capture the closed issue body and comments, then audit with
+   `record audit --body-file <issue-body> --comments-json <issue-json> --profile dispatch --expect-visible`;
+   confirm the `closeout` role is visible and lint-clean.
 6. **Stop** on any failure; do not retry blindly.
 
 ## Boundary

@@ -126,9 +126,9 @@ plan-issue --repo "$OWNER_REPO" --format json record close \
 5. **Closeout mutation** — call `record close --profile tracking` with
    linked PR and approval evidence. Include `--bundle` so terminal state is
    written back to the execution-state Markdown; commit that patch.
-6. **Read-back** — audit the closed issue with
-   `record audit --profile tracking --expect-visible`; confirm the
-   `closeout` role is visible and lint-clean.
+6. **Read-back** — capture the closed issue body and comments, then audit with
+   `record audit --body-file <issue-body> --comments-json <issue-json> --profile tracking --expect-visible`;
+   confirm the `closeout` role is visible and lint-clean.
 7. **Stop** on any failure; do not retry blindly and do not post after
    close.
 
