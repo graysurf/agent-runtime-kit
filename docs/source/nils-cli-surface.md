@@ -1,20 +1,38 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-12 (refreshed for `v1.1.0`)
+- Snapshot date: 2026-06-14 (refreshed for `v1.2.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.1.0`
+- Active `git describe --tags` output: `v1.2.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.1.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.2.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `e21c037`
-  (`chore(release): bump cli versions to 1.1.0 (#832)`)
+- Head commit: `5139160`
+  (`chore(release): bump cli versions to 1.2.0 (#837)`)
 - Release:
-  [`v1.1.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.1.0),
+  [`v1.2.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.2.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.2.0` is a lock-step host pin over `v1.1.0`. It ships the `forge-cli`
+  test-first evidence gate and rolls up plan-issue / heuristic validation
+  hardening, neither of which requires a consumer rewrite to adopt the pin:
+  `forge-cli pr create` / `pr deliver` gain `--test-first-evidence <dir>` and a
+  config-gated gate — when `[test_first].require` resolves true (from a repo
+  `.forge-cli.toml` or the new user-global
+  `${XDG_CONFIG_HOME:-~/.config}/forge-cli/config.toml` layer), a feature/bug
+  PR must carry a verified `test-first-evidence` record (failing test or
+  explicit waiver plus a passing final validation); docs/chore/ci/refactor are
+  exempt. The same release routes `forge-cli`'s existing `[merge]` / `[inbox]`
+  consumers through that layered loader and exports
+  `agent_workflow_primitives::test_first_evidence::verify_dir` for the gate
+  ([#836](https://github.com/sympoies/nils-cli/pull/836)). `plan-issue` and the
+  heuristic records path get validation hardening
+  ([#835](https://github.com/sympoies/nils-cli/pull/835)). This entry is a
+  mechanical pin + snapshot bump: runtime-kit adopts the test-first gate surface
+  (and raises the `forge-cli` floor to `>= 1.2.0`) in the follow-up consumer PR,
+  so the `required_clis[]` floors are unchanged here.
 - `v1.1.0` is a lock-step host pin over `v1.0.17`. It ships delivery and
   lifecycle hardening that runtime-kit benefits from without requiring a
   consumer rewrite: `forge-cli pr deliver` can adopt an existing open PR for
