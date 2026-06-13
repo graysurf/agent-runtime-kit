@@ -12,7 +12,6 @@ conversation.guided-feature-build
 conversation.handoff-session-prompt
 conversation.orchestrator-first
 conversation.parallel-first
-conversation.test-first
 dispatch.create-plan-tracking-issue
 dispatch.deliver-dispatch-plan
 dispatch.deliver-plan-tracking-issue

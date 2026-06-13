@@ -75,3 +75,28 @@ detail behind the one-line gates.
 - When the active project provides `manifests/forge-labels.yaml`, select labels
   from that catalog and follow `core/policies/forge-label-taxonomy.md`; current
   CLI / skill surfaces handle ensure, validation, and application details.
+
+## Test-First Evidence Gate
+
+- The test-first gate is enforced in the released `forge-cli` surface, not a
+  client-side hook: when `[test_first].require` resolves true, `forge-cli pr
+  create` / `pr deliver` require `--test-first-evidence <dir>` for `--kind
+  feature` / `bug` records (both the create and adopt paths, and the
+  `--dry-run` preflight). `docs` / `chore` / `ci` / `refactor` are exempt.
+- The gate is **off by default**. It is opt-in via `[test_first] require =
+  true` in either a repo `.forge-cli.toml` or the user-global
+  `${XDG_CONFIG_HOME:-$HOME/.config}/forge-cli/config.toml`. Precedence: explicit
+  flag > repo config > global config > default (off). A global opt-in turns the
+  gate on for every repo without a per-repo file.
+- The evidence directory must hold a record that `test-first-evidence verify`
+  accepts: a failing test **or** an explicit waiver, plus a passing final
+  validation. Produce it with the `test-first-evidence` skill — that skill also
+  owns the classification / failing-first / waiver judgment.
+- A waiver is the sanctioned path when a change is not testable production
+  behavior (docs-only, generated-only, no usable harness, emergency hotfix); it
+  still records substitute validation. Waivers are expected and legitimate — the
+  gate requires a *recorded decision*, not a test on every PR.
+- Failures surface as `test_first_evidence_required` / `_incomplete` /
+  `_unreadable` (exit `DATA`). Pin and consumed-surface detail live in
+  `docs/source/nils-cli-surface.md`; the record mechanics live in the
+  `test-first-evidence` skill.

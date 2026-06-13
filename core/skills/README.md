@@ -75,7 +75,6 @@ Routing guidance for the skill family lives in
 | Discussion capture and handoff | [handoff-session-prompt](./conversation/handoff-session-prompt/) | Generates a next-session initialization prompt from current context and user-specified references. |
 | Work modes | [orchestrator-first](./conversation/orchestrator-first/) | Makes the main agent own scope, dispatch, integration, validation, and final synthesis while subagents own lanes. |
 | Work modes | [parallel-first](./conversation/parallel-first/) | Applies the shared parallel delegation protocol for safely parallelizable sidecar work. |
-| Work modes | [test-first](./conversation/test-first/) | Governs implementation with failing-test evidence or an explicit waiver before production code changes. |
 
 ## Dispatch
 
@@ -96,7 +95,7 @@ Routing guidance for the skill family lives in
 | --- | --- | --- |
 | Web evidence | [web-evidence](./evidence/web-evidence/) | Captures redacted HTTP metadata, previews, and manifests through `web-evidence`. |
 | Review evidence | [review-evidence](./evidence/review-evidence/) | Persists review findings, validation commands, artifacts, and verification status through `review-evidence`. |
-| Test-first evidence | [test-first-evidence](./evidence/test-first-evidence/) | Records failing-test evidence, waivers, and final validation through `test-first-evidence`. |
+| Test-first evidence | [test-first-evidence](./evidence/test-first-evidence/) | Governs a change with failing-test discipline — classify, failing test or waiver before production edits, scoped implementation, final validation — and produces the record the `forge-cli` test-first gate verifies. |
 | Skill usage evidence | [skill-usage](./evidence/skill-usage/) | Records skill invocation intent, linked evidence, validation, failures, and outcomes through `skill-usage`. |
 | Documentation impact | [docs-impact](./evidence/docs-impact/) | Scans Git changes for documentation impact through `docs-impact`. |
 | Model cross-check | [model-cross-check](./evidence/model-cross-check/) | Records primary and checker model observations through `model-cross-check` without owning provider calls. |

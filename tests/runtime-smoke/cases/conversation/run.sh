@@ -61,6 +61,5 @@ record_case "conversation.guided-feature-build" "workflow skill source and rende
 record_case "conversation.handoff-session-prompt" "workflow skill source and rendered surfaces exist for both products" run_conversation_skill_probe handoff-session-prompt
 record_case "conversation.orchestrator-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe orchestrator-first
 record_case "conversation.parallel-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe parallel-first
-record_case "conversation.test-first" "prompt-style skill source and rendered surfaces exist for both products" run_conversation_skill_probe test-first
 
 exit "$failures"

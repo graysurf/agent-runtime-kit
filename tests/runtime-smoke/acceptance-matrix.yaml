@@ -495,19 +495,6 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
-  - id: conversation.test-first.shared-cli.deterministic
-    product: shared-cli
-    domain: conversation
-    skill_id: conversation.test-first
-    mode: deterministic
-    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
-    setup: render current product surfaces
-    invocation: verify prompt-style skill source and rendered Codex/Claude SKILL.md files
-    expected_exit_code: 0
-    expected_artifacts: rendered skill files
-    cleanup: temp-output-only
-    expected_disposition: pass
-    skip_policy: none
   - id: evidence.web-evidence.shared-cli.deterministic
     product: shared-cli
     domain: evidence

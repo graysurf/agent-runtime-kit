@@ -283,12 +283,6 @@ entries:
     destination: skills/conversation/parallel-first
     recursive: false
 
-  - id: conversation.test-first.codex-skill-dir
-    kind: symlinked-file
-    source: build/codex/plugins/conversation/skills/test-first
-    destination: skills/conversation/test-first
-    recursive: false
-
   - id: evidence.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/evidence/.codex-plugin/plugin.json

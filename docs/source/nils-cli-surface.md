@@ -29,10 +29,10 @@
   `agent_workflow_primitives::test_first_evidence::verify_dir` for the gate
   ([#836](https://github.com/sympoies/nils-cli/pull/836)). `plan-issue` and the
   heuristic records path get validation hardening
-  ([#835](https://github.com/sympoies/nils-cli/pull/835)). This entry is a
-  mechanical pin + snapshot bump: runtime-kit adopts the test-first gate surface
-  (and raises the `forge-cli` floor to `>= 1.2.0`) in the follow-up consumer PR,
-  so the `required_clis[]` floors are unchanged here.
+  ([#835](https://github.com/sympoies/nils-cli/pull/835)). Runtime-kit consumes
+  the test-first gate surface — the `test-first-evidence` skill produces the
+  record and `core/policies/git-delivery.md` documents the delivery-side gate —
+  so the `forge-cli` floor moves to `>= 1.2.0`.
 - `v1.1.0` is a lock-step host pin over `v1.0.17`. It ships delivery and
   lifecycle hardening that runtime-kit benefits from without requiring a
   consumer rewrite: `forge-cli pr deliver` can adopt an existing open PR for

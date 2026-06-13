@@ -23,8 +23,8 @@ Inputs:
   criteria, and any preferred approach when available.
 - Whether subagent delegation is available and allowed by active runtime
   instructions before any subagents are spawned.
-- Any execution mode already active in the thread (`test-first`,
-  `parallel-first`, `orchestrator-first`).
+- Any execution mode already active in the thread (`parallel-first`,
+  `orchestrator-first`).
 
 Outputs:
 
@@ -103,11 +103,16 @@ Do not skip this gate.
 Do not start without explicit user approval.
 
 1. Wait for approval of the chosen approach.
-2. If `test-first`, `parallel-first`, or `orchestrator-first` is already active
-   in the thread, honor that mode rather than re-implementing its behavior.
-3. Read the relevant files again, implement the chosen approach, follow codebase
+2. If `parallel-first` or `orchestrator-first` is already active in the thread,
+   honor that mode rather than re-implementing its behavior.
+3. For a testable production behavior change, follow the failing-test discipline
+   in the `test-first-evidence` skill (classify, failing test or waiver before
+   production edits, scoped implementation, final validation) and record the
+   evidence — required when the repo or user opts into the `forge-cli`
+   `[test_first].require` gate.
+4. Read the relevant files again, implement the chosen approach, follow codebase
    conventions strictly, and keep `TodoWrite` current.
-4. Run the project's required preflight and validation as edits land.
+5. Run the project's required preflight and validation as edits land.
 
 ### Phase 6 — Quality Review
 
@@ -135,5 +140,6 @@ Do not start without explicit user approval.
   `commands/<n>.md`; the explorer and architect roles live as delegated role
   prompts under `references/prompts/`, fulfilled by each harness's own
   delegation capability.
-- It reuses the `code-review` skills for Phase 6 and the `*-first` execution
-  modes for Phase 5 instead of duplicating them.
+- It reuses the `code-review` skills for Phase 6, the `parallel-first` /
+  `orchestrator-first` execution modes and the `test-first-evidence` failing-test
+  discipline for Phase 5, instead of duplicating them.
