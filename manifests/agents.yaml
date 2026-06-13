@@ -25,3 +25,66 @@ agents:
       claude:
         name: reviewer-quick
         render_to: agents/reviewer-quick.md
+  - id: code-review.reviewer-testing
+    source: core/agents/code-review/reviewer-testing
+    products:
+      codex:
+        name: reviewer-testing
+        render_to: agents/reviewer-testing.toml
+      claude:
+        name: reviewer-testing
+        render_to: agents/reviewer-testing.md
+  - id: code-review.reviewer-maintainability
+    source: core/agents/code-review/reviewer-maintainability
+    products:
+      codex:
+        name: reviewer-maintainability
+        render_to: agents/reviewer-maintainability.toml
+      claude:
+        name: reviewer-maintainability
+        render_to: agents/reviewer-maintainability.md
+  - id: code-review.reviewer-security
+    source: core/agents/code-review/reviewer-security
+    products:
+      codex:
+        name: reviewer-security
+        render_to: agents/reviewer-security.toml
+      claude:
+        name: reviewer-security
+        render_to: agents/reviewer-security.md
+  - id: code-review.reviewer-performance
+    source: core/agents/code-review/reviewer-performance
+    products:
+      codex:
+        name: reviewer-performance
+        render_to: agents/reviewer-performance.toml
+      claude:
+        name: reviewer-performance
+        render_to: agents/reviewer-performance.md
+  - id: code-review.reviewer-api-contract
+    source: core/agents/code-review/reviewer-api-contract
+    products:
+      codex:
+        name: reviewer-api-contract
+        render_to: agents/reviewer-api-contract.toml
+      claude:
+        name: reviewer-api-contract
+        render_to: agents/reviewer-api-contract.md
+  - id: code-review.reviewer-data-migration
+    source: core/agents/code-review/reviewer-data-migration
+    products:
+      codex:
+        name: reviewer-data-migration
+        render_to: agents/reviewer-data-migration.toml
+      claude:
+        name: reviewer-data-migration
+        render_to: agents/reviewer-data-migration.md
+  - id: code-review.reviewer-red-team
+    source: core/agents/code-review/reviewer-red-team
+    products:
+      codex:
+        name: reviewer-red-team
+        render_to: agents/reviewer-red-team.toml
+      claude:
+        name: reviewer-red-team
+        render_to: agents/reviewer-red-team.md
