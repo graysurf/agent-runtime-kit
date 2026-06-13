@@ -253,7 +253,7 @@ a uniform shape:
   `$HOME/.codex/skills` as the runtime-kit skill root
   (`manifests/product-capabilities.yaml`).
 - Source: `core/skills/<domain>/<skill>/`, rendered to
-  `build/codex/plugins/<domain>/skills/<skill>/`; 62 Codex skill
+  `build/codex/plugins/<domain>/skills/<skill>/`; 63 Codex skill
   entries are declared in `manifests/skills.yaml` (count auto-maintained
   by `scripts/ci/skill-governance-audit.sh --update-counts`).
 - Install mechanism: one non-recursive directory symlink per active
@@ -265,7 +265,7 @@ a uniform shape:
   `tests/sandbox/codex/expected-skills.txt`; runtime-smoke deterministic
   mode exercises representative skills; live Codex Desktop acceptance
   requires `codex debug prompt-input` (`DEVELOPMENT.md`,
-  `tests/sandbox/codex/expected-skills.txt:1-62`,
+  `tests/sandbox/codex/expected-skills.txt:1-63`,
   `docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`).
 - Support today: **shipped (rendered + directory symlink)**.
 

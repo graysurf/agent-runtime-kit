@@ -19,6 +19,10 @@
       "source": "core/skills/conversation/discussion-to-implementation-doc"
     },
     {
+      "id": "guided-feature-build",
+      "source": "core/skills/conversation/guided-feature-build"
+    },
+    {
       "id": "handoff-session-prompt",
       "source": "core/skills/conversation/handoff-session-prompt"
     },

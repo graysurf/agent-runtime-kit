@@ -176,6 +176,14 @@
     "record_when": "The workflow creates or updates a durable discussion, review, risk, or improvement source document."
   },
   {
+    "skill": "guided-feature-build",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["guided-feature-build", "guided feature build", "feature build conductor"],
+    "reason": "The guided feature build conductor implements a feature across files and routes to review and delivery.",
+    "record_when": "The workflow implements a feature, edits files, or routes to review or delivery for a guided build."
+  },
+  {
     "skill": "create-plan-tracking-issue",
     "tier": "default",
     "match_mode": "action_or_explicit",

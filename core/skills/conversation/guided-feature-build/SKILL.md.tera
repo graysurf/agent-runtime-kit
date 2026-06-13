@@ -1,0 +1,138 @@
+---
+name: guided-feature-build
+description: Use when the user wants a guided, in-session build of a feature on an existing codebase — explore, clarify, design options, implement after approval, then review — without opening issue-backed plan tracking.
+---
+
+# Guided Feature Build
+
+## Contract
+
+Prereqs:
+
+- User explicitly invokes `guided-feature-build`, asks for a guided feature
+  build, or asks to be walked through building a feature before any code is
+  written.
+- The delegated role prompts exist at `references/prompts/explorer.md` and
+  `references/prompts/architect.md`.
+- Active project preflight and validation rules are followed before any
+  repository edits.
+
+Inputs:
+
+- Feature request, the problem it solves, constraints, target area, done
+  criteria, and any preferred approach when available.
+- Whether subagent delegation is available and allowed by active runtime
+  instructions before any subagents are spawned.
+- Any execution mode already active in the thread (`test-first`,
+  `parallel-first`, `orchestrator-first`).
+
+Outputs:
+
+- A `TodoWrite` plan covering the seven phases.
+- A codebase-exploration summary with the key files that were read.
+- A clarifying-question list answered by the user before design.
+- Two or three compared architecture approaches with one recommendation and the
+  user's chosen approach.
+- An implementation that follows the chosen approach and codebase conventions,
+  validated per project rules.
+- A quality-review pass (delegated to the existing code-review skills) and a
+  closing summary of what was built, decisions, files changed, and next steps.
+
+Exit codes:
+
+- N/A (conversation workflow; no repo scripts)
+
+Failure modes:
+
+- A delegated role prompt is missing or empty.
+- The request is a trivial change, a hotfix, or already fully specified — use
+  direct implementation instead of this conductor.
+- The work needs durable issue tracking, multiple delivery lanes, or PR
+  grouping — hand off to the plan-tracking or dispatch workflow instead.
+- Active project rules conflict with the requested implementation path.
+
+## Workflow
+
+This skill conducts the build through fixed phases with explicit user gates. It
+delegates exploration and architecture to subagents when delegation is
+available, and degrades to inline sequential passes when it is not. It does not
+re-implement review: phase 6 calls the existing code-review skills.
+
+### Phase 1 — Discovery
+
+1. Restate the feature request and create a `TodoWrite` list with all seven
+   phases.
+2. If the request is unclear, ask what problem it solves, what the feature
+   should do, and any constraints. Confirm the understanding before proceeding.
+
+### Phase 2 — Codebase Exploration
+
+1. If subagent delegation is available, dispatch 2–3 subagents using
+   `references/prompts/explorer.md`, each targeting a different aspect (similar
+   features, architecture/abstractions, the current implementation of a related
+   area). If delegation is unavailable, run the same role prompt inline as
+   sequential read passes.
+2. Each pass returns entry points with `file:line` references and a curated list
+   of 5–10 key files to read.
+3. Read every file the passes flag before continuing, then present a concise
+   summary of the patterns and constraints discovered.
+
+### Phase 3 — Clarifying Questions
+
+Do not skip this gate.
+
+1. From the exploration findings and the original request, list every
+   underspecified aspect: edge cases, error handling, integration points, scope
+   boundaries, backward compatibility, and performance needs.
+2. Present the questions as one organized list and **wait for answers** before
+   designing. If the user defers ("whatever you think is best"), state your
+   recommended answers and get explicit confirmation.
+
+### Phase 4 — Architecture Design
+
+1. If delegation is available, dispatch 2–3 subagents using
+   `references/prompts/architect.md` with distinct focuses — minimal change,
+   clean architecture, and pragmatic balance. Degrade to inline sequential
+   passes when delegation is unavailable.
+2. Compare the approaches, form one recommendation with reasoning, and present
+   the trade-offs.
+3. **Ask the user which approach to use** and wait for the choice.
+
+### Phase 5 — Implementation
+
+Do not start without explicit user approval.
+
+1. Wait for approval of the chosen approach.
+2. If `test-first`, `parallel-first`, or `orchestrator-first` is already active
+   in the thread, honor that mode rather than re-implementing its behavior.
+3. Read the relevant files again, implement the chosen approach, follow codebase
+   conventions strictly, and keep `TodoWrite` current.
+4. Run the project's required preflight and validation as edits land.
+
+### Phase 6 — Quality Review
+
+1. Route the diff to the existing review skill: `code-review-quick-pass` for a
+   small or ordinary diff; `code-review-specialists` for a broad or risky one.
+   Do not define a separate review rubric here.
+2. Present the consolidated findings and ask the user how to proceed — fix now,
+   fix later, or proceed as-is — then act on the decision.
+
+### Phase 7 — Summary
+
+1. Mark the todos complete.
+2. Summarize what was built, the key decisions, the files changed, and suggested
+   next steps.
+3. If the work now needs durable tracking, multiple lanes, or PR grouping, hand
+   off to `deliver-plan-tracking-issue` or `deliver-dispatch-plan` rather than
+   continuing in this conductor.
+
+## Boundary
+
+- This is an in-session L0–L1 conductor. It creates no provider issues, plans,
+  or tracking artifacts; it hands off on escalation (Phase 7).
+- It ships as a cross-product skill only. It defines no `agents/<n>.md` and no
+  `commands/<n>.md`; the explorer and architect roles live as delegated role
+  prompts under `references/prompts/`, fulfilled by each harness's own
+  delegation capability.
+- It reuses the `code-review` skills for Phase 6 and the `*-first` execution
+  modes for Phase 5 instead of duplicating them.
