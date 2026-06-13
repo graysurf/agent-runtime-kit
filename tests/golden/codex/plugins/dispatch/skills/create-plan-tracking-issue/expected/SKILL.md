@@ -110,9 +110,9 @@ project-local rollout labels only when the target repo declares them.
    the execution-state URL sync before moving to execution.
 5. **Optional branch** — run `tracking run init` only when the next step
    will resume through run state.
-6. **Read-back** — audit the live issue with
-   `record audit --profile tracking --expect-visible`. Stop on any
-   failure code instead of repairing by hand.
+6. **Read-back** — capture the live issue body and comments, then audit with
+   `record audit --body-file <issue-body> --comments-json <issue-json> --profile tracking --expect-visible`.
+   Stop on any failure code instead of repairing by hand.
 
 ## Boundary
 
