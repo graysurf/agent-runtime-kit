@@ -93,7 +93,10 @@ review-specialists scope \
 3. Run `review-specialists scope --base "$BASE_REF" --testing
    --maintainability --format json`. Do not skip small diffs.
 4. Add risk lenses for security, API contract, migration, performance, or
-   red-team conditions when the scope warrants them.
+   red-team conditions when the scope warrants them. Include red-team when
+   `diff_lines > 200`, any first-wave specialist produces a `critical` finding,
+   the reviewable changes safety/security-sensitive behavior, or the caller
+   forced `--red-team`.
 5. Review the first-wave lenses read-only by dispatching the matching managed
    reviewer subagents (`reviewer-testing`, `reviewer-maintainability`, and any
    forced risk lens such as `reviewer-security`, `reviewer-api-contract`, or
@@ -102,22 +105,25 @@ review-specialists scope \
    that only spawn subagents on explicit request, such as Codex, review these
    lenses inline by default.)
 6. Dispatch `reviewer-red-team` only after the first-wave lenses, and only when
-   the scope warrants it (`diff_lines > 200`, any first-wave `critical` finding,
-   or a forced `--red-team`); hand it the merged first-wave findings so it can
-   probe cross-cutting failure modes, then pass its findings through the same
-   validate/merge gate before folding them into the result.
-7. Treat evidence-backed concrete findings as blocking until repaired, accepted
+   the scope warrants it. On explicit-only hosts such as Codex, run the same
+   red-team lens inline from `references/specialists/red-team.md` unless the
+   user explicitly opted into subagents. Hand it the merged first-wave findings
+   so it can probe cross-cutting failure modes, then validate its JSONL and merge
+   the combined first-wave plus red-team JSONL before folding it into the result.
+7. Classify every meaningful first-wave and red-team item using the shared
+   delivery outcome vocabulary.
+8. Treat evidence-backed concrete findings as blocking until repaired, accepted
    by the owner, or converted into an explicit follow-up.
-8. Produce a compact gate result and delivery review outcome body. The owning
+9. Produce a compact gate result and delivery review outcome body. The owning
    delivery skill posts comments, reruns checks, merges, or stops.
 
 ## Boundary
 
-`code-review-pre-merge-gate` owns the read-only review gate, reviewer-subagent
-dispatch, and the review outcome recommendation. Each dispatched reviewer
-subagent owns only its read-only lens. Provider delivery skills own PR/MR
-comments, ready transitions, checks, merge/close calls, issue closeout, and
-repair execution.
+`code-review-pre-merge-gate` owns the read-only review gate,
+reviewer-subagent dispatch when used, inline lens execution on explicit-only
+hosts, and the review outcome recommendation. Each dispatched reviewer subagent
+owns only its read-only lens. Provider delivery skills own PR/MR comments, ready
+transitions, checks, merge/close calls, issue closeout, and repair execution.
 
 ## References
 

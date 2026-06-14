@@ -142,14 +142,17 @@ after fixes.
    review-specialists merge --input findings.jsonl --summary-out specialist-review.md --format json
    ```
 
-9. Dispatch `reviewer-red-team` only after the selected specialists when
-   `diff_lines > 200`, any selected specialist produced a `critical` finding,
-   or the reviewer forced it; hand it the merged findings so it can probe
-   cross-cutting failure modes. Pass its findings through the same gate as the
-   other lenses — `review-specialists validate` (treating malformed JSONL,
-   missing fields, unsupported severities, or absent evidence anchors as a
-   workflow failure or residual risk, never a verified finding), then
-   `review-specialists merge` — before adding them to the final report.
+9. Run red-team only after the selected specialists when `diff_lines > 200`, any
+   selected specialist produced a `critical` finding, or the reviewer forced it.
+   On hosts that spawn subagents without an explicit per-run request, dispatch
+   `reviewer-red-team`; on explicit-only hosts such as Codex, run the same
+   red-team lens inline from `references/specialists/red-team.md` unless the
+   user explicitly opted into subagents. Hand it the merged first-wave findings
+   so it can probe cross-cutting failure modes. Pass the red-team JSONL through
+   `review-specialists validate`, then append it to the first-wave JSONL and run
+   `review-specialists merge` again over the combined input so duplicate
+   fingerprints, confirming specialists, and confidence ordering are resolved in
+   the final report.
 10. Use the report template for the final synthesis. The recommended next step
     may route to `review-dispatch-lane-pr`, a normal implementation workflow, or a
     retained `review-evidence` record, but this workflow does not execute that

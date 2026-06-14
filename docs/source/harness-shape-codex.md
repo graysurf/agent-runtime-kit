@@ -33,11 +33,11 @@ Scope rules:
 
 ## Version Floors (Codex side)
 
-- Codex product `min_version` / `recommended_version`: **0.130.0**;
-  `min_version_effective_from`: **2026-06-03**; probe:
+- Codex product `min_version` / `recommended_version`: **0.139.0**;
+  `min_version_effective_from`: **2026-06-28**; probe:
   `codex --version` (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Codex
-  surface) ships inside nils-cli; pinned snapshot **v0.30.2**
+  surface) ships inside nils-cli; pinned snapshot **v1.3.1**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
   Released subcommands consumed today: `render`, `install`, `uninstall`,
   `doctor` (including `--class skill-surface --product codex`),
@@ -320,7 +320,7 @@ a uniform shape:
 | 4 | `.codex-plugin/marketplace.json` | not-applicable | — | n/a | n/a |
 | 5 | `plugins/<p>/skills/<s>/` discovery | not-applicable | active Codex skill root is row 15 | n/a | n/a |
 | 6 | `commands/<n>.md` | not-applicable | — | n/a | n/a |
-| 7 | `agents/<n>.md` | not-applicable | — | n/a | n/a |
+| 7 | `agents/<n>.toml` | yes | rendered + directory symlink into `$CODEX_HOME/agents` | 0.139.0 | v1.3.0 |
 | 8 | `hooks/<n>.*` scripts | yes | shared scripts symlinked to `$CODEX_HOME/hooks` | 0.130.0 | v0.17.5 |
 | 9 | `settings.json` hooks block | not-applicable | — | n/a | n/a |
 | 10 | `output-styles/<n>.md` | not-applicable | — | n/a | n/a |
