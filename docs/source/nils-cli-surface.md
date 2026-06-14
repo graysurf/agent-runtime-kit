@@ -37,8 +37,9 @@
     ([#849](https://github.com/sympoies/nils-cli/pull/849)); a new
     `scripts/ci/publish-order-audit.sh` guards publish-order completeness from
     `cargo metadata` ([#852](https://github.com/sympoies/nils-cli/pull/852)).
-  The `nils-evidence` and `nils-scrub` crate rows already landed in the
-  `v1.5.0` snapshot; only the `evidence` migrate-surface note moves here.
+  The `nils-evidence` (binary `evidence`) and `nils-scrub` (library only) crate
+  rows are added to the Crate → binary table below in this refresh, alongside
+  the `evidence` migrate-surface note.
 - `v1.5.0` is a lock-step host bump over `v1.4.0`. It ships two new crates for
   the skill-usage evidence archive lifecycle:
   - `nils-evidence` (binary `evidence`): the query/migrate CLI over a durable,
@@ -559,7 +560,7 @@ keeps both in sync on a release bump.
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (39 entries).
+  `crates/` in the source repo (41 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -598,7 +599,9 @@ Notes on derivation:
 | `memo`                  | `memo`                                                                                                          | Memo storage CLI.                                                                                                                                                                                                                                                      |
 | `nils-build-info`           | (library only)                                                                                                      | Build metadata helper for the workspace `--version` output; consumed transitively, never appears in `required_clis`. New crate as of `v0.28.0` (#625).                                                                                                                 |
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
+| `nils-evidence`             | `evidence`                                                                                                          | Query/migrate CLI over the durable, secret-scrubbed skill-usage evidence archive (`migrate` / `discover` / `query` / `search` / `catalog` / `validate-*`). New crate as of `v1.5.0`; consumed by the `evidence-migrate` skill, which sets the `evidence >= 1.6.0` floor (the floor lands with that skill, not the pin bump). |
 | `nils-markdown`             | `md-render`                                                                                                         | Shared Tera-backed Markdown template layer. Ships the `md-render` binary behind the `bin-cli` cargo feature (enumerated by `workspace-bins.sh`); library role otherwise, not consumed by any skill today. Present since before `v0.25.8`; the prior snapshot omitted it. |
+| `nils-scrub`                | (library only)                                                                                                      | Shared secret-scrub pattern set plus labelled scrub-log format, extracted from `plan-archive` so both `plan-archive refresh` and `evidence migrate` reuse one v1 implementation. New crate as of `v1.5.0`; never appears in `required_clis`.                            |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
 | `nils-test-support`         | (library only)                                                                                                      | Integration-test harness; test-only, never appears in `required_clis`.                                                                                                                                                                                                 |
 | `opencode-cli`              | `opencode-cli`                                                                                                      | OpenCode runtime helper. As of `v1.0.12`, ships native prompt, advice, knowledge, and commit-agent command helpers plus generated completions. Runtime-kit does not consume this surface in required skill flows today. |
