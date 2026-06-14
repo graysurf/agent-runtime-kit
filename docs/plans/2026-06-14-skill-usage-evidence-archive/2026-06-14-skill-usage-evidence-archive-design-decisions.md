@@ -1,8 +1,7 @@
 # Skill Usage Evidence Durability And Query - Design Decisions
 
-- Status: draft frozen on 2026-06-14; this is the Sprint 1 Task 1.2 deliverable,
-  pre-drafted while the tracker open is pending. Mark it accepted when execution
-  formally enters Sprint 1.2.
+- Status: accepted on 2026-06-14; execution has entered Sprint 1.2. This is the
+  Sprint 1 Task 1.2 deliverable and gates Sprints 3, 4, and 5.
 - Source: docs/plans/2026-06-14-skill-usage-evidence-archive/2026-06-14-skill-usage-evidence-archive-discussion-source.md
 - Plan: docs/plans/2026-06-14-skill-usage-evidence-archive/2026-06-14-skill-usage-evidence-archive-plan.md
 
