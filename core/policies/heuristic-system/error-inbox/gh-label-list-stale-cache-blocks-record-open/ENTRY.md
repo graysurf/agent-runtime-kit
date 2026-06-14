@@ -1,4 +1,4 @@
-# gh issue list --label refuses requests on a stale cached X-Ratelimit-Remaining: 0 (cli/cli#8321), blocking plan-issue record open
+# gh issue list --label refuses requests on a stale cached X-Ratelimit-Remaining: 0 (cli/cli#12812), blocking plan-issue record open
 
 ## Status
 
@@ -16,14 +16,16 @@ rate_limit` showed a full GraphQL bucket (5000/5000) and both REST
 throughout. The failure survived a primary-window reset and long quiet windows,
 so it was not the live rate limit.
 
-Root cause (cli/cli#8321): `gh` caches a `SearchType` introspection GraphQL query
+Root cause (cli/cli#12812): `gh` caches a `SearchType` introspection GraphQL query
 with `X-Gh-Cache-Ttl: 24h`. If cached while the rate limit was momentarily
 exhausted, the cached response carries a stale `X-Ratelimit-Remaining: 0` for up
 to 24h. `gh issue list --label …` reads the stale cached header and refuses to
 send the request; REST and cache-bypassing paths stay healthy. `record open`'s
 duplicate-tracker pre-check is exactly such a label-filtered `gh issue list`, so
 it is blocked while everything else works. Burst retries do not help (and waste
-time) because the block is a stale cache entry, not a live limit.
+time) because the block is a stale cache entry, not a live limit. The older
+closed umbrella report cli/cli#8321 observed the symptom but did not track this
+cache mechanism; use cli/cli#12812 for fix status.
 
 ## Evidence
 
@@ -56,12 +58,16 @@ Verified this session: removing the single poisoned cache file unblocked
 ## Promotion Criteria
 
 Promote when the nils-cli `record open` dedup is changed to avoid the gh
-`SearchType` cache path — REST `issues?labels=` (verified working here) or a
-no-label list filtered client-side — and/or it detects the stale-cache symptom
-and surfaces the cache-clear remedy instead of the generic
-`record-open-list-failed`. Link the upstream nils-cli fix from this entry. Track
-upstream gh fix at cli/cli#8321.
+`SearchType` cache path — REST `issues?labels=` (verified working here, with
+REST pull-request rows filtered out via their `pull_request` key) or an
+exhaustive no-label list filtered client-side with explicit pagination / limit
+coverage — and/or it detects the stale-cache symptom and surfaces the
+cache-clear remedy instead of the generic `record-open-list-failed`. Link the
+upstream nils-cli fix from this entry. Track upstream gh fix at cli/cli#12812.
 
 ## Next Action
 
-Fix nils-cli record-open dedup to avoid the gh SearchType cache path (use REST issues?labels= or no-label list + client-side filter); detect the stale-cache symptom and surface the cache-clear remedy.
+Fix nils-cli record-open dedup to avoid the gh SearchType cache path: use REST
+`issues?labels=` while excluding PR rows, or use an exhaustive no-label issue
+list with explicit pagination before client-side filtering. Detect the
+stale-cache symptom and surface the cache-clear remedy.

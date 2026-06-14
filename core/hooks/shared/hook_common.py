@@ -573,6 +573,18 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
         char = line[index]
         if char in (" ", "\t", "<", ">", "|", "&", ";", "(", ")"):
             break
+        if char == "$" and index + 1 < length and line[index + 1] in ("'", '"'):
+            quote = line[index + 1]
+            index += 2
+            while index < length and line[index] != quote:
+                if quote == "'" and line[index] == "\\" and index + 1 < length:
+                    out.append(line[index + 1])
+                    index += 2
+                    continue
+                out.append(line[index])
+                index += 1
+            index += 1  # skip closing quote
+            continue
         if char in ("'", '"'):
             quote = char
             index += 1
@@ -590,15 +602,102 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
     return "".join(out), index
 
 
-def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool]]:
-    """Return ``(delimiter, strip_tabs)`` for each unquoted here-doc operator on
-    a physical line, in order.
+SHELL_HEREDOC_EXECUTORS = {"bash", "sh", "dash", "ksh", "zsh"}
+
+
+def _starts_shell_comment(line: str, index: int) -> bool:
+    return index == 0 or line[index - 1] in " \t;&|()"
+
+
+def _line_has_unquoted_continuation(line: str) -> bool:
+    run = len(line) - len(line.rstrip("\\"))
+    if run == 0 or run % 2 == 0:
+        return False
+
+    quote: str | None = None
+    index = 0
+    stop = len(line) - run
+    while index < stop:
+        char = line[index]
+        if quote == "'":
+            if char == "'":
+                quote = None
+            index += 1
+            continue
+        if quote == '"':
+            if char == "\\" and index + 1 < stop:
+                index += 2
+                continue
+            if char == '"':
+                quote = None
+            index += 1
+            continue
+        if char == "\\" and index + 1 < stop:
+            index += 2
+            continue
+        if char in ("'", '"'):
+            quote = char
+        index += 1
+    return quote != "'"
+
+
+def _simple_command_before_index(line: str, index: int) -> list[str]:
+    current: list[str] = []
+    for token in shell_tokens(line[:index]):
+        if is_shell_separator(token):
+            current = []
+            continue
+        current.append(token)
+    return current
+
+
+def _heredoc_body_is_executed_by_shell(line: str, index: int) -> bool:
+    invocation = invocation_tokens(_simple_command_before_index(line, index))
+    if not invocation:
+        return False
+    command = PurePosixPath(invocation[0]).name
+    if command not in SHELL_HEREDOC_EXECUTORS:
+        return False
+
+    forced_stdin_script = False
+    cursor = 1
+    while cursor < len(invocation):
+        token = invocation[cursor]
+        if token == "--":
+            cursor += 1
+            break
+        if token == "-c" or token == "--command":
+            return False
+        if token.startswith("-") and token != "-":
+            compact_flags = token[1:]
+            if "c" in compact_flags:
+                return False
+            if "s" in compact_flags:
+                forced_stdin_script = True
+            if token in {"-O", "+O", "--init-file", "--rcfile"}:
+                cursor += 2
+                continue
+            cursor += 1
+            continue
+        break
+
+    if cursor < len(invocation) and not forced_stdin_script:
+        return False
+    return True
+
+
+def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
+    """Return here-doc operators on a shell logical line, in order.
 
     Ignores `<<<` (here-string, which takes a word not a body), a `<<` inside
     single/double quotes, and a `<<` inside arithmetic `$(( ))` / `(( ))` (left
     shift), so those never start spurious body skipping.
+
+    The third tuple member is true when the body is script content executed by a
+    shell command such as ``bash <<EOF``. Such bodies must stay visible to the
+    validation matcher; inert data bodies such as ``cat <<EOF`` are stripped.
     """
-    result: list[tuple[str, bool]] = []
+    result: list[tuple[str, bool, bool]] = []
     index = 0
     length = len(line)
     quote: str | None = None
@@ -617,6 +716,8 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool]]:
             quote = char
             index += 1
             continue
+        if char == "#" and _starts_shell_comment(line, index):
+            break
         if char == "\\" and index + 1 < length:
             index += 2
             continue
@@ -644,7 +745,13 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool]]:
                 cursor += 1
             delimiter, cursor = _parse_heredoc_delimiter(line, cursor)
             if delimiter:
-                result.append((delimiter, strip_tabs))
+                result.append(
+                    (
+                        delimiter,
+                        strip_tabs,
+                        _heredoc_body_is_executed_by_shell(line, index),
+                    )
+                )
             index = cursor
             continue
         index += 1
@@ -664,20 +771,42 @@ def strip_heredoc_bodies(command: str) -> str:
     if "<<" not in command:
         return command
     lines = command.split("\n")
-    pending: list[tuple[str, bool]] = []
+    pending: list[tuple[str, bool, bool, list[str]]] = []
     kept: list[str] = []
+    logical_scan_parts: list[str] = []
+    logical_raw_lines: list[str] = []
     for raw in lines:
         line = raw.rstrip("\r")
         if pending:
-            delimiter, strip_tabs = pending[0]
+            delimiter, strip_tabs, preserve_body, body = pending[0]
             candidate = line.lstrip("\t") if strip_tabs else line
             if candidate == delimiter:
+                if preserve_body and body:
+                    kept.append(strip_heredoc_bodies("\n".join(body)))
                 pending.pop(0)  # closing delimiter line: drop it
-            # body line (or the closer): dropped either way
+            elif preserve_body:
+                body.append(raw)
+            # inert body line (or the closer): dropped either way
             continue
-        for op in _heredoc_delimiters_on_line(line):
-            pending.append(op)
-        kept.append(raw)
+
+        logical_raw_lines.append(raw)
+        if _line_has_unquoted_continuation(line):
+            logical_scan_parts.append(line[:-1])
+            continue
+
+        logical_scan_parts.append(line)
+        logical_line = "".join(logical_scan_parts)
+        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
+            logical_line
+        ):
+            pending.append((delimiter, strip_tabs, preserve_body, []))
+        kept.extend(logical_raw_lines)
+        logical_scan_parts = []
+        logical_raw_lines = []
+    kept.extend(logical_raw_lines)
+    for _delimiter, _strip_tabs, preserve_body, body in pending:
+        if preserve_body and body:
+            kept.append(strip_heredoc_bodies("\n".join(body)))
     return "\n".join(kept)
 
 
