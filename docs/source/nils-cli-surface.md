@@ -1,20 +1,40 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-14 (refreshed for `v1.3.1`)
+- Snapshot date: 2026-06-14 (refreshed for `v1.4.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.3.1`
+- Active `git describe --tags` output: `v1.4.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.3.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.4.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `1c06b45`
-  (`chore(release): bump cli versions to 1.3.1 (#843)`)
+- Head commit: `5147af4`
+  (`chore(release): bump cli versions to 1.4.0 (#845)`)
 - Release:
-  [`v1.3.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.3.1),
+  [`v1.4.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.4.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.4.0` is a lock-step host bump over `v1.3.1`, carrying one consumed
+  additive surface change plus pre-released fixes:
+  - `skill-usage` records now carry an additive `producer` block
+    (`{tool, nils_cli_version}`), stamped at `init` from the producing crate
+    version, so archived skill-usage evidence records the producing nils-cli
+    version independent of this host pin
+    ([#844](https://github.com/sympoies/nils-cli/pull/844)). The field is
+    backward compatible — older records deserialize with `producer` absent and
+    still verify — so no consumer rewrite is required. The runtime-kit closeout
+    surfacing and the planned evidence archive (agent-runtime-kit#352) read it.
+  - `test-first-evidence` now rejects a `failing_test` recorded with
+    `exit_code: 0` and no waiver, and `forge-cli` scopes the rule-10 keep-branch
+    conflict to the repo config layer so an explicit `--keep-branch` no longer
+    collides with a global `[merge] delete_branch = true`
+    ([#841](https://github.com/sympoies/nils-cli/pull/841)). Both are behavior
+    refinements, not surface retirements — runtime-kit already records non-zero
+    failing exit codes — so no consumer rewrite is required.
+  No `required_clis[]` floor moves — `agent-runtime` has no floor row (its
+  `pinned_tag` is the gate), and no consumed flag or JSON envelope was retired
+  or renamed.
 - `v1.3.1` is a lock-step host pin over `v1.3.0`. It is a single-fix patch:
   `agent-runtime audit-drift`'s `rendered-target` class now skips the agents
   render cache scratchpad (`.render-cache-agents.json`) the same way it already
