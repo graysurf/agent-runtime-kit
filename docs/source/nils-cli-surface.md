@@ -1,20 +1,34 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-14 (refreshed for `v1.4.0`)
+- Snapshot date: 2026-06-14 (refreshed for `v1.5.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.4.0`
+- Active `git describe --tags` output: `v1.5.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.4.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.5.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `5147af4`
-  (`chore(release): bump cli versions to 1.4.0 (#845)`)
+- Head commit: `46e5733`
+  (`chore(release): bump cli versions to 1.5.0 (#851)`)
 - Release:
-  [`v1.4.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.4.0),
+  [`v1.5.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.5.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.5.0` is a lock-step host bump over `v1.4.0`. It ships two new crates for
+  the skill-usage evidence archive lifecycle:
+  - `nils-evidence` (binary `evidence`): the query/migrate CLI over a durable,
+    scrubbed skill-usage evidence archive (migrate / discover / query / search /
+    catalog / validate-*), consumed by the kit's new evidence-migrate skill
+    ([#848](https://github.com/sympoies/nils-cli/pull/848)).
+  - `nils-scrub`: the shared secret-scrub library extracted from `plan-archive`
+    so both `plan-archive refresh` and `evidence migrate` reuse one v1 pattern
+    set + a labelled scrub-log format
+    ([#846](https://github.com/sympoies/nils-cli/pull/846)).
+  No existing consumed surface was retired or renamed (a new binary plus an
+  internal extraction), so no consumer rewrite, and the only `required_clis[]`
+  move is the new `evidence` floor that lands with the consuming
+  evidence-migrate skill — not this pin bump.
 - `v1.4.0` is a lock-step host bump over `v1.3.1`, carrying one consumed
   additive surface change plus pre-released fixes:
   - `skill-usage` records now carry an additive `producer` block
