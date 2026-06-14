@@ -129,6 +129,13 @@ Keep these layers separate:
      `test-first-evidence`, `browser-session`, or `agent-out`.
    - May live under project output directories or product state homes.
    - Not automatically committed or copied into this shared root.
+   - Has its own durable, queryable retention lane — the
+     agent-evidence-archive, reached via the `evidence-migrate` skill (see
+     `core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`). That archive stores
+     the machine-emitted `skill-usage` records themselves and is distinct from
+     this shared root, which holds curated lessons. The two lanes join through
+     a record's `promotion.heuristic_inbox_case` link: an archived record can
+     point at the curated case it motivated, and vice versa.
 2. Curated improvement inbox:
    - Written through `heuristic-inbox` when a retained follow-up is justified.
    - Contains compact `ENTRY.md` case folders and optional redacted evidence

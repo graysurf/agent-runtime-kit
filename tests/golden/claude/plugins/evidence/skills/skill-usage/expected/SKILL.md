@@ -13,9 +13,13 @@ Prereqs:
 - `skill-usage` is installed from the released nils-cli package and available on `PATH`.
 - The skill identity, user-request summary, and output directory are explicit.
 - Writes to a given record directory are serialized by the caller.
-- Raw `skill-usage` records are runtime evidence. Promote only curated,
-  reusable follow-up gaps into `heuristic-inbox` cases under the shared
-  Heuristic System root.
+- Raw `skill-usage` records are runtime evidence with two distinct
+  dispositions: durable retention into the agent-evidence-archive via the
+  `evidence-migrate` skill (queryable history; see the `evidence-archive`
+  policy), and curated promotion of important unresolved or reusable follow-up
+  gaps into `heuristic-inbox` cases under the shared Heuristic System root.
+  These are complementary lanes, not alternatives — a record can be both
+  archived and the source of a promoted case.
 
 Inputs:
 
@@ -55,6 +59,9 @@ skill-usage verify --out /tmp/skill --format json
 5. When verified evidence exposes an important unresolved or reusable
    skill-contract gap, create a curated `heuristic-inbox` case instead of
    committing the raw record.
+6. For durable, queryable retention of the record itself, migrate it into the
+   agent-evidence-archive with the `evidence-migrate` skill — do not commit the
+   raw record into a working repo. This is orthogonal to step 5.
 
 ## Boundary
 

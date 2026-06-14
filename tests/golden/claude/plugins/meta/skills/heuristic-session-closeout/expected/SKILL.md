@@ -147,7 +147,10 @@ abandoned feature branch.
      `accepted_risk` / `accepted-risk`, and any record with non-empty
      `failures[]` or `follow_up[]`, as a promotion-review candidate for step 4.
      This is read-only surfacing: never write to, scrub, or auto-commit the raw
-     records here.
+     records here. Durable retention of the surfaced records themselves is a
+     separate lane — the `evidence-migrate` skill (the `evidence-archive`
+     policy) — which this skill does not perform; surfacing only routes non-pass
+     outcomes toward curated promotion in step 4.
    - Review the conversation's concrete outcomes, repairs, failures, retries,
      validation results, and current diff.
    - Inspect existing active and archived Heuristic System cases before adding
@@ -241,6 +244,7 @@ retention routing, and the merge policy for landing retained records on `main`
 (auto-merge the `heuristic-inbox deliver` docs PR). It delegates the delivery
 mechanics — worktree, staging guard, commit, push, PR-open — to
 `heuristic-inbox deliver`, and does not re-encode them. It does not replace
-`heuristic-inbox` case mechanics, `skill-usage` runtime evidence, project
-implementation workflows, general PR/MR delivery, raw session-log archiving, or
-memory updates.
+`heuristic-inbox` case mechanics, `skill-usage` runtime evidence, durable
+evidence retention (the `evidence-migrate` skill and the `evidence-archive`
+policy), project implementation workflows, general PR/MR delivery, raw
+session-log archiving, or memory updates.
