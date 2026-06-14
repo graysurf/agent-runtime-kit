@@ -968,6 +968,36 @@ run_plan_archive_discover_probe() {
   grep -q '"code":"no-provider-refs"' "$out"
 }
 
+run_evidence_migrate_probe() {
+  local out="$META_ARTIFACTS_DIR/evidence-migrate.dry-run.json"
+  require_meta_bin evidence || return 1
+  local root="$META_ARTIFACTS_DIR/evidence-migrate"
+  local src="$root/out/projects"
+  local archive="$root/archive"
+  local good="$src/graysurf__agent-runtime-kit/20260614-100000-skill-usage"
+  local bad="$src/graysurf__agent-runtime-kit/20260614-110000-skill-usage"
+  rm -rf "$root"
+  mkdir -p "$good" "$bad" "$archive/config" "$archive/evidence"
+  # One valid record: a single-host archive resolves the slug-only dir to the
+  # sole host, so it is eligible for migration.
+  printf '%s' '{"schema":"skill-usage.record.v1","producer":{"tool":"skill-usage","nils_cli_version":"1.6.0"},"skill":"deliver-pr","started_at":"2026-06-14T10:00:00Z","ended_at":"2026-06-14T10:30:00Z","cwd":"/Users/tester/Project/kit","trigger":"user_explicit","intent":"deliver a PR","inputs":{"user_request_summary":"x","referenced_files":[],"external_sources":[]},"outcome":{"status":"pass","summary":"done"},"artifacts":[],"linked_records":[],"validation":[],"failures":[]}' \
+    >"$good/skill-usage.record.json"
+  # One malformed record the dry-run must skip and report (the #853 behavior),
+  # not abort the batch.
+  printf '%s' '{ "schema": "skill-usage.record.v1" TRAILING GARBAGE' \
+    >"$bad/skill-usage.record.json"
+  printf 'version: 1\nhosts:\n  github.com:\n    class: personal\n    primary_identity: graysurf\n' \
+    >"$archive/config/hosts.yaml"
+  evidence migrate \
+    --source-out "$src" \
+    --archive "$archive" \
+    --hosts "$archive/config/hosts.yaml" \
+    --format json >"$out" 2>&1
+  grep -q '"schema_version":"cli.evidence.migrate.v1"' "$out"
+  grep -q 'evidence/github.com/graysurf/agent-runtime-kit' "$out"
+  grep -q 'parse failed' "$out"
+}
+
 run_nils_cli_bump_probe() {
   local drift="$META_ARTIFACTS_DIR/nils-cli-bump.drift.json"
   local aligned="$META_ARTIFACTS_DIR/nils-cli-bump.aligned.json"
@@ -1097,6 +1127,7 @@ record_case "meta.setup-project" "setup-project dry-run/apply adoption probes pa
 record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe resolved archive target" run_plan_archive_migrate_probe
 record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe
 record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe
+record_case "meta.evidence-migrate" "evidence migrate dry-run JSON probe resolved an archive target and reported a blocked malformed record" run_evidence_migrate_probe
 record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe
 record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe
 record_case "meta.setup" "setup dry-run renders codex and claude before install" run_setup_render_before_install_probe
