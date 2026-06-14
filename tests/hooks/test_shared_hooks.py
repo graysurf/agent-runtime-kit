@@ -454,6 +454,50 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
 
+    def test_block_hooks_are_not_bypassed_by_multiline_commands(self) -> None:
+        # Regression: an unquoted newline must act as a command separator in the
+        # block guards. Otherwise a blocked command placed after a preamble line
+        # (commonly `cd <dir>`) is glued onto that line's command, so the guard
+        # inspects the preamble's command position and never sees the blocked
+        # one. Same root cause fixed in simple_commands() for the finish-line
+        # matcher; here it is a guard bypass, not just a missed validation.
+        cases = (
+            (
+                "block-direct-git-commit.py",
+                "cd repo\ngit commit -m test",
+                "semantic-commit",
+            ),
+            (
+                "block-direct-git-worktree.py",
+                "cd repo\ngit worktree add ../repo-topic",
+                "git-cli worktree",
+            ),
+            (
+                "block-direct-pr-create.py",
+                "cd repo\ngh pr create --draft",
+                "AGENT_RUNTIME_PR_SKILL",
+            ),
+        )
+        for hook, command, fragment in cases:
+            with self.subTest(hook=hook):
+                code, decision, stderr = run_hook(hook, command_payload(command))
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, fragment)
+
+        # block-direct-python: a python invocation on a second physical line, in
+        # a workspace with a project virtualenv, must still be blocked.
+        with tempfile.TemporaryDirectory() as tmp:
+            venv = Path(tmp) / ".venv"
+            venv.mkdir()
+            (venv / "pyvenv.cfg").write_text("home = /usr\n", encoding="utf-8")
+            code, decision, stderr = run_hook(
+                "block-direct-python.py",
+                command_payload("echo setup\npython manage.py migrate"),
+                cwd=Path(tmp),
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "local virtualenv")
+
     def test_forge_label_reminder_fires_only_without_label(self) -> None:
         reminded_commands = (
             "forge-cli pr create --title x",
