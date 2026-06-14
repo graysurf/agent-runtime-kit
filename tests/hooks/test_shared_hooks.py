@@ -650,6 +650,48 @@ class SharedHookTests(unittest.TestCase):
         assert isinstance(output, dict)
         self.assertIn("deliver-pr", str(output.get("additionalContext", "")))
 
+    def test_skill_usage_reminder_fires_on_evidence_migrate_cli_phrases(self) -> None:
+        # PR #365 follow-up: the evidence-migrate reminder must fire on the bare
+        # CLI / action phrasings named in its record_when, not only when an extra
+        # leading verb ("run evidence migrate") is present.
+        for prompt in (
+            "evidence migrate --apply",
+            "migrate evidence",
+            "archive skill-usage evidence",
+        ):
+            with self.subTest(prompt=prompt):
+                code, decision, stderr = run_hook(
+                    "skill-usage-reminder.py",
+                    {"prompt": prompt},
+                    env={"AGENT_RUNTIME_PRODUCT": "codex"},
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assertIsNotNone(decision)
+                assert decision is not None
+                output = decision.get("hookSpecificOutput")
+                self.assertIsInstance(output, dict)
+                assert isinstance(output, dict)
+                self.assertIn(
+                    "evidence-migrate",
+                    str(output.get("additionalContext", "")),
+                )
+
+    def test_skill_usage_reminder_ignores_unrelated_evidence_mentions(self) -> None:
+        # A passing mention of evidence that is not the migrate/archive action
+        # must not trigger the reminder.
+        code, decision, stderr = run_hook(
+            "skill-usage-reminder.py",
+            {"prompt": "the migration evidence in the report looked fine"},
+            env={"AGENT_RUNTIME_PRODUCT": "codex"},
+        )
+        self.assertEqual(code, 0, stderr)
+        context = ""
+        if decision is not None:
+            output = decision.get("hookSpecificOutput")
+            if isinstance(output, dict):
+                context = str(output.get("additionalContext", ""))
+        self.assertNotIn("evidence-migrate", context)
+
     def _require_agent_docs(self) -> None:
         if shutil.which("agent-docs") is None:
             self.skipTest("agent-docs not on PATH")
@@ -1082,6 +1124,14 @@ class SharedHookTests(unittest.TestCase):
             f"bash <<'A' <<'EOF'\n{validation}\nA\nfoo\nEOF",
             # Explicit non-stdin descriptor: fd 3 is not the shell's script.
             f"bash -s 3<<'EOF'\n{validation}\nEOF",
+            # PR #361 follow-up: an option that requires a filename argument
+            # cannot bind the here-doc operator as that argument -- bash aborts
+            # with "option requires an argument" and never runs the body.
+            f"bash --rcfile <<'EOF'\n{validation}\nEOF",
+            f"bash --init-file <<'EOF'\n{validation}\nEOF",
+            # `-O` likewise needs a shopt-name word; a redirection in that slot
+            # is not the argument, so bash errors before running anything.
+            f"bash -O <<'EOF'\n{validation}\nEOF",
         )
         for actual in not_executed:
             with self.subTest(actual=actual):
@@ -1096,6 +1146,14 @@ class SharedHookTests(unittest.TestCase):
             f"bash -s <<'EOF' arg1\n{validation}\nEOF",
             # Explicit stdin descriptor really feeds and runs the body.
             f"bash 0<<'EOF'\n{validation}\nEOF",
+            # PR #361 follow-up: `+n` turns the noexec flag back off, so a `-s`
+            # invocation still runs the here-doc body as its script.
+            f"bash -s +n <<'EOF'\n{validation}\nEOF",
+            # `+n` alone leaves noexec off and stdin is the script.
+            f"bash +n <<'EOF'\n{validation}\nEOF",
+            # `-O shopt` consumes its own name argument, leaving no script-file
+            # operand, so stdin (the body) is the executed script.
+            f"bash -O extglob <<'EOF'\n{validation}\nEOF",
         )
         for actual in executed:
             with self.subTest(actual=actual):
