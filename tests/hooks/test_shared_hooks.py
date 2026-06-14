@@ -1129,9 +1129,9 @@ class SharedHookTests(unittest.TestCase):
             # with "option requires an argument" and never runs the body.
             f"bash --rcfile <<'EOF'\n{validation}\nEOF",
             f"bash --init-file <<'EOF'\n{validation}\nEOF",
-            # `-O` likewise needs a shopt-name word; a redirection in that slot
-            # is not the argument, so bash errors before running anything.
-            f"bash -O <<'EOF'\n{validation}\nEOF",
+            # An unknown shopt name aborts before stdin is executed.
+            f"bash -O does_not_exist <<'EOF'\n{validation}\nEOF",
+            f"bash +O does_not_exist <<'EOF'\n{validation}\nEOF",
         )
         for actual in not_executed:
             with self.subTest(actual=actual):
@@ -1151,9 +1151,15 @@ class SharedHookTests(unittest.TestCase):
             f"bash -s +n <<'EOF'\n{validation}\nEOF",
             # `+n` alone leaves noexec off and stdin is the script.
             f"bash +n <<'EOF'\n{validation}\nEOF",
+            # PR #368 follow-up: bare `-O`/`+O` list shopt state, then stdin is
+            # still the script. Valid shopt names are consumed and stdin still
+            # runs when no script-file operand follows.
+            f"bash -O <<'EOF'\n{validation}\nEOF",
+            f"bash +O <<'EOF'\n{validation}\nEOF",
             # `-O shopt` consumes its own name argument, leaving no script-file
             # operand, so stdin (the body) is the executed script.
             f"bash -O extglob <<'EOF'\n{validation}\nEOF",
+            f"bash +O extglob <<'EOF'\n{validation}\nEOF",
         )
         for actual in executed:
             with self.subTest(actual=actual):
