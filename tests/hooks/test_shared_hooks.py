@@ -1052,6 +1052,55 @@ class SharedHookTests(unittest.TestCase):
             command_matches_validation("bash <<'EOF'\necho skip\nEOF", declared)
         )
 
+    def test_command_match_shell_heredoc_parser_edge_cases(self) -> None:
+        # Regression for the four PR #359 follow-up parser edge cases
+        # (agent-runtime-kit#360). Each `actual` carries the validation command
+        # inside a here-doc body; the body is credited only when bash actually
+        # executes it as stdin script content.
+        declared = "bash scripts/ci/all.sh"
+        validation = "bash scripts/ci/all.sh"
+
+        # Bodies bash does NOT execute as its script -> must not credit the gate.
+        not_executed = (
+            # GNU long option must not be scanned as compact `-s`; bash runs the
+            # script-file operand and the here-doc is its stdin data.
+            f"bash --posix ./script.sh <<'EOF'\n{validation}\nEOF",
+            # A long option consumes its own filename argument; the later token
+            # is the script file, so the body is still data.
+            f"bash --rcfile ./rc ./script.sh <<'EOF'\n{validation}\nEOF",
+            # Script-file operand AFTER the `<<` operator: invisible to a
+            # prefix-only tokenizer, so the body looks executed when it is data.
+            f"bash <<'EOF' ./script.sh\n{validation}\nEOF",
+            # A later stdin input redirection overrides the here-doc.
+            f"bash <<'EOF' < ./script.sh\n{validation}\nEOF",
+            # `-n` is noexec: the body is parsed but never run.
+            f"bash -n <<'EOF'\n{validation}\nEOF",
+            # noexec must win even when `-s` also forces stdin as the script.
+            f"bash -sn <<'EOF'\n{validation}\nEOF",
+            # A second stdin here-doc overrides the first; neither body is the
+            # reliably executed script, so both are dropped.
+            f"bash <<'A' <<'EOF'\n{validation}\nA\nfoo\nEOF",
+            # Explicit non-stdin descriptor: fd 3 is not the shell's script.
+            f"bash -s 3<<'EOF'\n{validation}\nEOF",
+        )
+        for actual in not_executed:
+            with self.subTest(actual=actual):
+                self.assertFalse(command_matches_validation(actual, declared))
+
+        # Bodies bash DOES execute as its script -> must credit the gate.
+        executed = (
+            # Bare stdin here-doc: the body is the script.
+            f"bash <<'EOF'\n{validation}\nEOF",
+            # `-s` forces stdin as the script; trailing tokens are positional
+            # args to it, not a competing script file, so the body still runs.
+            f"bash -s <<'EOF' arg1\n{validation}\nEOF",
+            # Explicit stdin descriptor really feeds and runs the body.
+            f"bash 0<<'EOF'\n{validation}\nEOF",
+        )
+        for actual in executed:
+            with self.subTest(actual=actual):
+                self.assertTrue(command_matches_validation(actual, declared))
+
     def test_finish_line_gate_enforces_every_declared_validation_intent(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:

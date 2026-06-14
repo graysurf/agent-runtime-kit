@@ -641,49 +641,135 @@ def _line_has_unquoted_continuation(line: str) -> bool:
     return quote != "'"
 
 
-def _simple_command_before_index(line: str, index: int) -> list[str]:
-    current: list[str] = []
-    for token in shell_tokens(line[:index]):
+def _simple_command_spanning(line: str, op_start: int) -> list[str]:
+    """Tokens of the simple command containing the redirection at ``op_start``.
+
+    Unlike a prefix-only scan, this also keeps operands and redirections that
+    appear AFTER the here-doc operator, so a trailing script-file operand
+    (``bash <<EOF ./script.sh``) or a later input redirection stays visible when
+    deciding whether the body is the shell's executed script. Splitting exactly
+    at ``op_start`` keeps any fd prefix glued to its operator as one token.
+    """
+    before: list[str] = []
+    for token in shell_tokens(line[:op_start]):
         if is_shell_separator(token):
-            current = []
+            before = []
             continue
-        current.append(token)
-    return current
+        before.append(token)
+    after: list[str] = []
+    for token in shell_tokens(line[op_start:]):
+        if is_shell_separator(token):
+            break
+        after.append(token)
+    return before + after
 
 
-def _heredoc_body_is_executed_by_shell(line: str, index: int) -> bool:
-    invocation = invocation_tokens(_simple_command_before_index(line, index))
+# A token that begins a redirection: optional fd digits then an operator. The
+# `&>` / `&>>` arms only fire on raw text; `shell_tokens` (shlex with `&` in
+# `punctuation_chars`) splits an `&`-redirection into separate tokens, so a
+# tokenized operand never reaches the walk starting with `&`.
+_REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
+
+
+def _redirect_consumes_next(token: str) -> bool:
+    """True when a redirection operator token carries no attached target word.
+
+    ``<`` / ``<<`` / ``>`` written with a following space take the next token as
+    their target (or here-doc delimiter), so that token must be skipped rather
+    than mistaken for a script-file operand.
+    """
+    match = _REDIRECT_TOKEN_RE.match(token)
+    return bool(match) and token[match.end() :] == ""
+
+
+def _stdin_redirect_kind(token: str) -> str | None:
+    """Classify how a token redirects stdin (fd 0 or unspecified).
+
+    Returns ``"heredoc"`` for ``<<`` / ``0<<``, ``"override"`` for a here-string
+    ``<<<`` or a plain stdin input redirection (``<``, ``0<``, ``<>``) that
+    supersedes a here-doc body, or ``None`` for output redirections and explicit
+    non-stdin descriptors. (``<&`` / ``>&`` are split by the tokenizer into
+    ``<`` / ``>`` plus ``&``, so a tokenized ``<&`` lands on the plain ``<`` arm.)
+    """
+    match = re.match(r"^(\d*)(<<<|<<-?|<>|<&|<|>>|>&|>)", token)
+    if not match:
+        return None
+    fd, operator = match.group(1), match.group(2)
+    if fd not in ("", "0") or operator.startswith(">"):
+        return None
+    if operator.startswith("<<") and operator != "<<<":
+        return "heredoc"
+    return "override"
+
+
+def _heredoc_body_is_executed_by_shell(
+    line: str, op_start: int, fd: int | None
+) -> bool:
+    # A here-doc on an explicit non-stdin descriptor (e.g. `bash -s 3<<EOF`) is
+    # data on that fd, never the shell's executed script.
+    if fd is not None and fd != 0:
+        return False
+
+    invocation = invocation_tokens(_simple_command_spanning(line, op_start))
     if not invocation:
         return False
-    command = PurePosixPath(invocation[0]).name
-    if command not in SHELL_HEREDOC_EXECUTORS:
+    if PurePosixPath(invocation[0]).name not in SHELL_HEREDOC_EXECUTORS:
+        return False
+
+    # A second stdin here-doc, a here-string, or a plain `< file` input
+    # redirection supersedes or competes with this body, so it is no longer
+    # reliably the executed script. Bias to "data" (drop): that can only fail to
+    # credit a validation, never wrongly credit one. The count includes the
+    # here-doc under evaluation, so `> 1` means a second stdin here-doc exists.
+    heredocs = 0
+    for token in invocation:
+        kind = _stdin_redirect_kind(token)
+        if kind == "override":
+            return False
+        if kind == "heredoc":
+            heredocs += 1
+    if heredocs > 1:
         return False
 
     forced_stdin_script = False
+    noexec = False
     cursor = 1
+    past_options = False
     while cursor < len(invocation):
         token = invocation[cursor]
-        if token == "--":
-            cursor += 1
-            break
-        if token == "-c" or token == "--command":
+        if _REDIRECT_TOKEN_RE.match(token):
+            cursor += 2 if _redirect_consumes_next(token) else 1
+            continue
+        if past_options:
+            break  # operand after `--`: bash runs it as the script file
+        if token in {"-c", "--command"}:
             return False
-        if token.startswith("-") and token != "-":
-            compact_flags = token[1:]
-            if "c" in compact_flags:
-                return False
-            if "s" in compact_flags:
-                forced_stdin_script = True
-            if token in {"-O", "+O", "--init-file", "--rcfile"}:
-                cursor += 2
-                continue
+        if token == "--":
+            past_options = True
             cursor += 1
             continue
-        break
+        if token.startswith("--"):
+            # GNU long option: a unit, never a compact short-flag cluster, so
+            # `--posix` must not be read as `-s`.
+            cursor += 2 if token in {"--init-file", "--rcfile"} else 1
+            continue
+        if token.startswith(("-", "+")) and token != "-":
+            cluster = token[1:]
+            if "c" in cluster:
+                return False
+            if "n" in cluster:
+                noexec = True  # read-but-do-not-execute: the body never runs
+            if "s" in cluster:
+                forced_stdin_script = True  # stdin is the script; operands are args
+            cursor += 2 if token in {"-O", "+O"} else 1
+            continue
+        break  # first non-option operand: bash runs it, the body is its stdin data
 
-    if cursor < len(invocation) and not forced_stdin_script:
+    if noexec:
         return False
-    return True
+    if forced_stdin_script:
+        return True
+    return cursor >= len(invocation)  # no script-file operand -> stdin is the script
 
 
 def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
@@ -736,6 +822,19 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
             if arith > 0:
                 index += 2  # arithmetic left shift, not a here-doc
                 continue
+            # An explicit fd prefix (`0<<`, `3<<`) selects which descriptor the
+            # body feeds. Leading digits count as an fd only when they form a
+            # standalone redirection token, not the tail of a word like `foo2<<`.
+            fd_begin = index
+            while fd_begin > 0 and line[fd_begin - 1].isdigit():
+                fd_begin -= 1
+            fd: int | None = None
+            op_start = index
+            if fd_begin < index and (
+                fd_begin == 0 or line[fd_begin - 1] in " \t;&|()<>"
+            ):
+                fd = int(line[fd_begin:index])
+                op_start = fd_begin
             cursor = index + 2
             strip_tabs = False
             if cursor < length and line[cursor] == "-":
@@ -749,7 +848,7 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
                     (
                         delimiter,
                         strip_tabs,
-                        _heredoc_body_is_executed_by_shell(line, index),
+                        _heredoc_body_is_executed_by_shell(line, op_start, fd),
                     )
                 )
             index = cursor
