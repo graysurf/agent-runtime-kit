@@ -46,19 +46,19 @@
 ## Work Mode
 
 - Natural-language collaboration is the default interface.
-- Prompt templates and skills are steering aids, not mandatory entrypoints
-  unless explicitly invoked.
-- For explicit implementation, maintenance, validation, or delivery requests:
-  honor the Required Preflight policy, then execute instead of prolonging
-  planning.
+- Prompt templates and skills are steering aids, not mandatory manual
+  entrypoints; use them when explicitly invoked or required by active policy,
+  tooling, or workflow routing.
+- Classify the request path first: for explicit implementation, maintenance,
+  validation, or delivery, honor Required Preflight and any required tier
+  decision, then execute instead of prolonging planning.
 - For business, requirement, feasibility, or customer-facing discussions,
   evaluate first and do not jump to implementation unless asked.
 - Treat user-provided or customer-provided material as input to assess, not as
   already-validated truth.
 - Ask only the minimum clarification needed when objective, done criteria,
   scope, constraints, environment, or safety/reversibility are materially
-  unclear.
-- When assumptions are acceptable, state them briefly and proceed.
+  unclear; when assumptions are acceptable, state them briefly and proceed.
 - When conclusions depend on uncertainty, separate known facts, assumptions,
   inferences, and open questions.
 - Before editing code, scripts, docs, or config, inspect the target plus
@@ -67,9 +67,9 @@
   discipline before editing production code: capture failing-test evidence
   first, or state an explicit waiver with substitute validation when not
   practical.
-- Keep answers concise, high-signal, and easy to verify.
-- Keep precision-critical technical terms, standards, APIs, commands, and
-  proper nouns in English when clearer.
+- Keep answers concise, high-signal, and easy to verify; keep precision-critical
+  technical terms, standards, APIs, commands, and proper nouns in English when
+  clearer.
 
 ## Work Tier Levels
 
