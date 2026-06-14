@@ -3,7 +3,7 @@
 <!-- plan-issue-record:v2 role=state profile=tracking -->
 ## Execution State
 
-- Status: in progress; plan bundle authored, tracker not yet opened.
+- Status: in progress; tracking issue #352 open; Sprint 1 ready.
 - Target scope: make skill-usage evidence durable and queryable through closeout
   surfacing, a producer nils-cli version stamp, evidence query primitives, and a
   scrubbed evidence archive store, then re-review the skill-usage and
@@ -19,7 +19,7 @@
 - Source document: docs/plans/2026-06-14-skill-usage-evidence-archive/2026-06-14-skill-usage-evidence-archive-plan.md
 - Plan document: docs/plans/2026-06-14-skill-usage-evidence-archive/2026-06-14-skill-usage-evidence-archive-plan.md
 - Direct source-doc execution waiver: not applicable
-- Tracking issue: pending; opened by create-plan-tracking-issue
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/352>
 
 ## Validation Plan
 
@@ -45,7 +45,7 @@
 
 | ID | Status | Task | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| 1.1 | in-progress | Create the plan bundle and open the tracker | Bundle authored on docs/skill-usage-evidence-archive; plan-tooling validate pending; tracker open pending. | This task. |
+| 1.1 | in-progress | Create the plan bundle and open the tracker | Bundle authored and committed on docs/skill-usage-evidence-archive; plan-tooling validate passed; tracking issue #352 opened with source/plan/state evidence. | Read-back audit and optional run init pending. |
 | 1.2 | in-progress | Freeze the evidence-record design decisions | Design-decisions doc pre-drafted at docs/plans/2026-06-14-skill-usage-evidence-archive/2026-06-14-skill-usage-evidence-archive-design-decisions.md; all 8 decisions locked. | Pending tracker open to formally enter Sprint 1.2. |
 | 2.1 | pending | Surface session skill-usage records in closeout | none | Kit-only; uses existing agent-out data. |
 | 3.1 | pending | Stamp the producer nils-cli version on the record | none | Upstream nils-cli PR + kit version-pin bump. |
@@ -67,9 +67,12 @@
   repo with XDG config/data split and zero-config default; additive `producer`
   version field; skill/outcome/repo/time query shapes; declared readable-schema
   query layer; reused scrub redaction; nils-cli upstream coordination via
-  version-pin). Design-decisions doc pre-drafted. Tracker open deferred: GitHub
-  secondary rate limit from concurrent board-automation API traffic on the same
-  token; low-frequency retry in progress.
+  version-pin). Design-decisions doc pre-drafted.
+- 2026-06-14: Tracker open #352 was blocked for ~1h by a poisoned `gh` HTTP
+  cache entry carrying a stale `X-Ratelimit-Remaining: 0` header (cli/cli#8321),
+  which made `gh issue list --label` (the record-open dedup) refuse requests
+  while REST and the live rate limit stayed healthy. Clearing the one cached
+  file under `~/.cache/gh` unblocked it immediately and the tracker opened.
 
 ## Validation
 
