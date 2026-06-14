@@ -642,6 +642,81 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "scripts/ci/all.sh")
 
+    def test_finish_line_record_matches_multiline_command_with_cd_preamble(self) -> None:
+        # Regression: agents routinely run the declared validation as a
+        # multi-line Bash command with a `cd` preamble, e.g.
+        #     cd /repo
+        #     bash scripts/ci/all.sh && bash tests/hooks/run.sh
+        # An unquoted newline must act as a command separator; otherwise the
+        # validation command on the second physical line is glued onto `cd`,
+        # never recognized, and the gate stays spuriously blocked.
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(
+                tmp, ("bash scripts/ci/all.sh", "bash tests/hooks/run.sh")
+            )
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            multiline = (
+                "cd /repo\n"
+                "bash scripts/ci/all.sh && bash tests/hooks/run.sh\n"
+                'echo "done=$?"'
+            )
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload(multiline),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            # Both declared validations ran after the edit, so the gate releases.
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
+    def test_finish_line_record_ignores_validation_text_inside_quotes(self) -> None:
+        # Guard against a false positive: a multi-line command whose only
+        # mention of the validation command is inside a quoted string (here a
+        # newline-bearing double-quoted argument) must NOT satisfy the gate.
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp, ("bash scripts/ci/all.sh",))
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            quoted = 'cd /repo\nprintf "%s\nbash scripts/ci/all.sh\n" "header"'
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload(quoted),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+
     def test_finish_line_gate_enforces_every_declared_validation_intent(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:

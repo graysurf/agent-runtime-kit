@@ -482,10 +482,67 @@ def is_shell_separator(token: str) -> bool:
     )
 
 
+def normalize_command_separators(command: str) -> str:
+    """Replace unquoted newlines with `;` so multi-line commands split.
+
+    `shell_tokens` runs `shlex` with `whitespace_split`, which treats a newline
+    as ordinary whitespace rather than a command boundary. Without this, a
+    common multi-line invocation such as::
+
+        cd /repo
+        bash scripts/ci/all.sh && bash tests/hooks/run.sh
+
+    collapses `cd` and the next line's command into one simple command whose
+    command-position token is `cd`, so the real command is never recognized.
+
+    Single- and double-quoted spans are preserved verbatim, and a backslash
+    escapes the following character (including a line-continuation newline), so
+    a quoted or continued newline is never turned into a separator.
+    """
+    out: list[str] = []
+    quote = None  # active quote char ("'" or '"'), or None when unquoted
+    index = 0
+    length = len(command)
+    while index < length:
+        char = command[index]
+        if quote == "'":
+            out.append(char)
+            if char == "'":
+                quote = None
+            index += 1
+        elif quote == '"':
+            if char == "\\" and index + 1 < length:
+                out.append(char)
+                out.append(command[index + 1])
+                index += 2
+                continue
+            out.append(char)
+            if char == '"':
+                quote = None
+            index += 1
+        elif char == "\\" and index + 1 < length:
+            # Escaped char (including a line-continuation newline): never a
+            # separator; keep both characters and skip past them.
+            out.append(char)
+            out.append(command[index + 1])
+            index += 2
+        elif char in ("'", '"'):
+            quote = char
+            out.append(char)
+            index += 1
+        elif char in ("\n", "\r"):
+            out.append(";")
+            index += 1
+        else:
+            out.append(char)
+            index += 1
+    return "".join(out)
+
+
 def simple_commands(command: str) -> list[list[str]]:
     commands: list[list[str]] = []
     current: list[str] = []
-    for token in shell_tokens(command):
+    for token in shell_tokens(normalize_command_separators(command)):
         if is_shell_separator(token):
             if current:
                 commands.append(current)
