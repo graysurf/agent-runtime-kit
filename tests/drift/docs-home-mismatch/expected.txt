@@ -1,4 +1,2 @@
 audit-drift [docs-home/block/codex] build/codex/skills/sample/SKILL.md: --docs-home "$HOME/.claude" at line 7; expected "$CODEX_HOME" for product `codex`
-audit-drift [rendered-target/warn/claude] build/claude/.render-cache-agents.json: rendered output drifted from source for .render-cache-agents.json
-audit-drift [rendered-target/warn/codex] build/codex/.render-cache-agents.json: rendered output drifted from source for .render-cache-agents.json
-audit-drift: 3 finding(s); highest-severity exit=2
+audit-drift: 1 finding(s); highest-severity exit=2
