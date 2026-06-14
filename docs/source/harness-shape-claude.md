@@ -271,7 +271,7 @@ a uniform shape:
 | 4 | `.claude-plugin/marketplace.json` | yes | rendered + copy-install | 2.1.145 | v0.17.5 |
 | 5 | `plugins/<p>/skills/<s>/` | yes | rendered + recursive symlink | 2.1.145 | v0.20.0 |
 | 6 | `commands/<n>.md` | yes | linked directory | 2.1.145 | v0.17.5 |
-| 7 | `agents/<n>.md` | no | — | n/a | n/a |
+| 7 | `agents/<n>.md` | yes | rendered + directory symlink into `~/.claude/agents` | 2.1.145 | v1.3.0 |
 | 8 | `hooks/<n>.*` scripts | partial | shared scripts linked; claude adapter slot empty | 2.1.145 | v0.17.5 |
 | 9 | `settings.json` hooks block | yes | fragment merge into live settings | 2.1.145 | v0.17.5 |
 | 10 | `output-styles/<n>.md` | no | — | n/a | n/a |
@@ -305,7 +305,8 @@ From `DEVELOPMENT.md`:
    Codex-only today; **no Claude-side skill-surface diagnostic** in the
    default gate.
 7. **sandbox install rehearsal** — installs into a temp `live_home`,
-   diffs `tests/sandbox/claude/expected-skills.txt`.
+   diffs `tests/sandbox/claude/expected-skills.txt` and
+   `tests/sandbox/claude/expected-agents.txt`.
 8. **runtime-smoke deterministic mode** — exercises representative
    Claude-installed skills.
 9. project-local overlay smoke — Codex-side; not Claude.
