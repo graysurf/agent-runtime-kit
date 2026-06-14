@@ -823,6 +823,70 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "scripts/ci/all.sh")
 
+    def test_finish_line_record_ignores_validation_inside_heredoc_body(self) -> None:
+        # Guard against a false positive: a command whose only mention of the
+        # validation command is inside a HERE-DOC body (data fed to another
+        # command such as `cat`, never executed by the shell) must NOT satisfy
+        # the gate (agent-runtime-kit#351).
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp, ("bash scripts/ci/all.sh",))
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            heredoc = "cat > ci.sh <<'EOF'\nbash scripts/ci/all.sh\nEOF"
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload(heredoc),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+
+    def test_finish_line_record_credits_validation_after_heredoc(self) -> None:
+        # The here-doc stripping must remove only the body: a real validation
+        # run AFTER the here-doc closes still credits the gate (agent-runtime-kit#351).
+        self._require_agent_docs()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp, ("bash scripts/ci/all.sh",))
+            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            payload = "cat > note.txt <<'EOF'\nsome notes\nEOF\nbash scripts/ci/all.sh"
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload(payload),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_allowed(decision)
+
     def test_finish_line_gate_enforces_every_declared_validation_intent(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:

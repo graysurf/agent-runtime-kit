@@ -560,7 +560,130 @@ def normalize_command_separators(command: str) -> str:
     return "".join(out)
 
 
-def simple_commands(command: str) -> list[list[str]]:
+def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
+    """Read a here-doc delimiter word starting at ``index``.
+
+    Returns the *unquoted* delimiter (the form bash compares the closing line
+    against) and the index just past it. Quotes and backslash escapes around the
+    delimiter are stripped, matching bash.
+    """
+    out: list[str] = []
+    length = len(line)
+    while index < length:
+        char = line[index]
+        if char in (" ", "\t", "<", ">", "|", "&", ";", "(", ")"):
+            break
+        if char in ("'", '"'):
+            quote = char
+            index += 1
+            while index < length and line[index] != quote:
+                out.append(line[index])
+                index += 1
+            index += 1  # skip closing quote
+            continue
+        if char == "\\" and index + 1 < length:
+            out.append(line[index + 1])
+            index += 2
+            continue
+        out.append(char)
+        index += 1
+    return "".join(out), index
+
+
+def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool]]:
+    """Return ``(delimiter, strip_tabs)`` for each unquoted here-doc operator on
+    a physical line, in order.
+
+    Ignores `<<<` (here-string, which takes a word not a body), a `<<` inside
+    single/double quotes, and a `<<` inside arithmetic `$(( ))` / `(( ))` (left
+    shift), so those never start spurious body skipping.
+    """
+    result: list[tuple[str, bool]] = []
+    index = 0
+    length = len(line)
+    quote: str | None = None
+    arith = 0
+    while index < length:
+        char = line[index]
+        if quote is not None:
+            if char == "\\" and quote == '"' and index + 1 < length:
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            index += 1
+            continue
+        if char == "\\" and index + 1 < length:
+            index += 2
+            continue
+        if line.startswith("((", index):
+            arith += 1
+            index += 2
+            continue
+        if line.startswith("))", index) and arith > 0:
+            arith -= 1
+            index += 2
+            continue
+        if line.startswith("<<", index):
+            if line.startswith("<<<", index):
+                index += 3  # here-string, not a body
+                continue
+            if arith > 0:
+                index += 2  # arithmetic left shift, not a here-doc
+                continue
+            cursor = index + 2
+            strip_tabs = False
+            if cursor < length and line[cursor] == "-":
+                strip_tabs = True
+                cursor += 1
+            while cursor < length and line[cursor] in (" ", "\t"):
+                cursor += 1
+            delimiter, cursor = _parse_heredoc_delimiter(line, cursor)
+            if delimiter:
+                result.append((delimiter, strip_tabs))
+            index = cursor
+            continue
+        index += 1
+    return result
+
+
+def strip_heredoc_bodies(command: str) -> str:
+    """Drop here-doc body (and closing-delimiter) lines from ``command``.
+
+    A here-doc body is data fed to a command, not executed by the shell, so its
+    lines must not be parsed as commands. This is used only by the validation
+    matcher: erring toward dropping a line is safe there (it can only fail to
+    credit a validation, never wrongly credit or unblock one). It is deliberately
+    NOT applied to the block-direct guards, whose bias toward blocking ambiguous
+    input is intentional.
+    """
+    if "<<" not in command:
+        return command
+    lines = command.split("\n")
+    pending: list[tuple[str, bool]] = []
+    kept: list[str] = []
+    for raw in lines:
+        line = raw.rstrip("\r")
+        if pending:
+            delimiter, strip_tabs = pending[0]
+            candidate = line.lstrip("\t") if strip_tabs else line
+            if candidate == delimiter:
+                pending.pop(0)  # closing delimiter line: drop it
+            # body line (or the closer): dropped either way
+            continue
+        for op in _heredoc_delimiters_on_line(line):
+            pending.append(op)
+        kept.append(raw)
+    return "\n".join(kept)
+
+
+def simple_commands(command: str, *, strip_heredocs: bool = False) -> list[list[str]]:
+    if strip_heredocs:
+        command = strip_heredoc_bodies(command)
     commands: list[list[str]] = []
     current: list[str] = []
     for token in shell_tokens(normalize_command_separators(command)):
@@ -675,17 +798,28 @@ def command_matches_validation(actual: str, declared: str) -> bool:
     The check is intentionally shell-segment based, not substring based. A
     command that merely prints or mentions `bash scripts/ci/all.sh` must not
     satisfy the finish-line gate. Known wrappers such as
-    `agent-run exec -- bash scripts/ci/all.sh` are unwrapped before matching.
+    `agent-run exec -- bash scripts/ci/all.sh` are unwrapped before matching,
+    and here-doc bodies are stripped so a validation command that only appears
+    as data fed to another command (e.g. `cat <<EOF ... EOF`) is not credited.
+
+    This is a best-effort static matcher: it cannot evaluate runtime control
+    flow, so a validation command inside an uncalled function body or a
+    not-taken `if`/loop branch may still be credited. The finish-line gate is
+    the agent's own workflow guardrail and is intentionally waivable
+    (`AGENT_RUNTIME_VALIDATION_WAIVER`), so this residual is acceptable.
     """
     if not actual or not declared:
         return False
     declared_invocations = [
-        invocation_tokens(command) for command in simple_commands(declared.strip())
+        invocation_tokens(command)
+        for command in simple_commands(declared.strip(), strip_heredocs=True)
     ]
     if not declared_invocations or any(not command for command in declared_invocations):
         return False
     actual_invocations = [
-        invocation_tokens(command) for command in simple_commands(actual) if command
+        invocation_tokens(command)
+        for command in simple_commands(actual, strip_heredocs=True)
+        if command
     ]
     return all(
         any(
