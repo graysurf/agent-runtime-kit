@@ -20,9 +20,14 @@ Prereqs:
   running scope detection.
 - Keep this workflow read-only: it does not auto-fix code, merge, close PRs/MRs,
   open/close issues, or post live provider comments.
-- Dispatch the managed read-only `reviewer-<lens>` subagents for the selected
-  lenses by default; the parent agent owns lens selection, dispatch, validation,
-  and merge, and records a waiver when subagent dispatch is unavailable.
+- On hosts that spawn subagents without an explicit per-run request (e.g. Claude
+  Code, or any host where the user invoked a delegation mode or explicitly asked),
+  dispatch the managed read-only `reviewer-<lens>` subagents for the selected
+  lenses by default. On hosts that only spawn subagents on explicit request (e.g.
+  Codex), run the lenses inline by default — the expected path for that host, not
+  a waiver — and dispatch subagents only when the user explicitly opts in. Either
+  way the parent agent owns lens selection, dispatch, validation, and merge, and
+  records a waiver only when an intended dispatch genuinely fails.
 - Use `review-dispatch-lane-pr` for PR decision actions and `review-evidence` only
   when findings need a retained evidence record.
 
@@ -115,12 +120,16 @@ after fixes.
    `reviewer-performance`, `reviewer-data-migration`, `reviewer-api-contract`),
    installed at `~/.codex/agents/reviewer-<lens>.toml` and
    `~/.claude/agents/reviewer-<lens>.md`.
-6. Dispatch the selected read-only reviewer subagents by default, one per lens,
-   handing each the base ref and scope; each inspects read-only and returns
-   JSONL findings for its lens. If subagent dispatch is unavailable, run the
-   lenses inline (reading the prompt from `references/specialists/`) with a
-   recorded waiver. You stay the parent: you own base-ref selection, lens
-   selection, dispatch, and the validation/merge steps below.
+6. Dispatch the selected read-only reviewer subagents one per lens, handing each
+   the base ref and scope; each inspects read-only and returns JSONL findings for
+   its lens. This is the default on hosts that spawn subagents without an explicit
+   per-run request (e.g. Claude Code). On hosts that only spawn subagents on
+   explicit request (e.g. Codex), or when an intended dispatch fails, run the
+   lenses inline (reading the prompt from `references/specialists/`); inline is
+   the expected path for explicit-only hosts and needs no waiver, but record a
+   waiver when an intended dispatch genuinely fails. You stay the parent: you own
+   base-ref selection, lens selection, dispatch, and the validation/merge steps
+   below.
 7. Collect each subagent's JSONL findings (or the inline equivalent) following
    `references/SPECIALIST_REVIEW_CONTRACT.md`. Treat malformed JSONL, missing
    required fields, unsupported severities, or absent evidence anchors as a
@@ -133,10 +142,17 @@ after fixes.
    review-specialists merge --input findings.jsonl --summary-out specialist-review.md --format json
    ```
 
-9. Dispatch `reviewer-red-team` only after the selected specialists when
-   `diff_lines > 200`, any selected specialist produced a `critical` finding,
-   or the reviewer forced it; hand it the merged findings so it can probe
-   cross-cutting failure modes. Merge its findings into the final report.
+9. Run red-team only after the selected specialists when `diff_lines > 200`, any
+   selected specialist produced a `critical` finding, or the reviewer forced it.
+   On hosts that spawn subagents without an explicit per-run request, dispatch
+   `reviewer-red-team`; on explicit-only hosts such as Codex, run the same
+   red-team lens inline from `references/specialists/red-team.md` unless the
+   user explicitly opted into subagents. Hand it the merged first-wave findings
+   so it can probe cross-cutting failure modes. Pass the red-team JSONL through
+   `review-specialists validate`, then append it to the first-wave JSONL and run
+   `review-specialists merge` again over the combined input so duplicate
+   fingerprints, confirming specialists, and confidence ordering are resolved in
+   the final report.
 10. Use the report template for the final synthesis. The recommended next step
     may route to `review-dispatch-lane-pr`, a normal implementation workflow, or a
     retained `review-evidence` record, but this workflow does not execute that

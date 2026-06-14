@@ -18,8 +18,11 @@ Prereqs:
 - `review-specialists` is installed from the released nils-cli package and
   available on `PATH`.
 - The mandatory and risk lenses run through the managed read-only reviewer
-  subagents dispatched by the shared specialist gate; record a waiver and
-  review inline when subagent dispatch is unavailable.
+  subagents dispatched by the shared specialist gate on hosts that spawn
+  subagents without an explicit per-run request (e.g. Claude Code). On hosts that
+  only spawn subagents on explicit request (e.g. Codex), review the lenses inline
+  by default — the expected path, not a waiver — and dispatch only on explicit
+  opt-in; record a waiver only when an intended dispatch genuinely fails.
 - The PR/MR base branch or merge-base is known.
 - Local validation and provider check evidence are available or explicitly
   marked pending by the owning delivery workflow.
@@ -90,24 +93,37 @@ review-specialists scope \
 3. Run `review-specialists scope --base "$BASE_REF" --testing
    --maintainability --format json`. Do not skip small diffs.
 4. Add risk lenses for security, API contract, migration, performance, or
-   red-team conditions when the scope warrants them.
-5. Review the selected lenses read-only by dispatching the matching managed
+   red-team conditions when the scope warrants them. Include red-team when
+   `diff_lines > 200`, any first-wave specialist produces a `critical` finding,
+   the reviewable changes safety/security-sensitive behavior, or the caller
+   forced `--red-team`.
+5. Review the first-wave lenses read-only by dispatching the matching managed
    reviewer subagents (`reviewer-testing`, `reviewer-maintainability`, and any
    forced risk lens such as `reviewer-security`, `reviewer-api-contract`, or
-   `reviewer-red-team`); collect their JSONL findings and classify each item
-   using the shared delivery outcome vocabulary.
-6. Treat evidence-backed concrete findings as blocking until repaired, accepted
+   `reviewer-performance`); collect their JSONL findings, validate and merge them,
+   and classify each item using the shared delivery outcome vocabulary. (On hosts
+   that only spawn subagents on explicit request, such as Codex, review these
+   lenses inline by default.)
+6. Dispatch `reviewer-red-team` only after the first-wave lenses, and only when
+   the scope warrants it. On explicit-only hosts such as Codex, run the same
+   red-team lens inline from `references/specialists/red-team.md` unless the
+   user explicitly opted into subagents. Hand it the merged first-wave findings
+   so it can probe cross-cutting failure modes, then validate its JSONL and merge
+   the combined first-wave plus red-team JSONL before folding it into the result.
+7. Classify every meaningful first-wave and red-team item using the shared
+   delivery outcome vocabulary.
+8. Treat evidence-backed concrete findings as blocking until repaired, accepted
    by the owner, or converted into an explicit follow-up.
-7. Produce a compact gate result and delivery review outcome body. The owning
+9. Produce a compact gate result and delivery review outcome body. The owning
    delivery skill posts comments, reruns checks, merges, or stops.
 
 ## Boundary
 
-`code-review-pre-merge-gate` owns the read-only review gate, reviewer-subagent
-dispatch, and the review outcome recommendation. Each dispatched reviewer
-subagent owns only its read-only lens. Provider delivery skills own PR/MR
-comments, ready transitions, checks, merge/close calls, issue closeout, and
-repair execution.
+`code-review-pre-merge-gate` owns the read-only review gate,
+reviewer-subagent dispatch when used, inline lens execution on explicit-only
+hosts, and the review outcome recommendation. Each dispatched reviewer subagent
+owns only its read-only lens. Provider delivery skills own PR/MR comments, ready
+transitions, checks, merge/close calls, issue closeout, and repair execution.
 
 ## References
 
