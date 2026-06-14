@@ -658,7 +658,32 @@ def _heredoc_body_is_executed_by_shell(line: str, index: int) -> bool:
     command = PurePosixPath(invocation[0]).name
     if command not in SHELL_HEREDOC_EXECUTORS:
         return False
-    return "-c" not in invocation[1:] and "--command" not in invocation[1:]
+
+    forced_stdin_script = False
+    cursor = 1
+    while cursor < len(invocation):
+        token = invocation[cursor]
+        if token == "--":
+            cursor += 1
+            break
+        if token == "-c" or token == "--command":
+            return False
+        if token.startswith("-") and token != "-":
+            compact_flags = token[1:]
+            if "c" in compact_flags:
+                return False
+            if "s" in compact_flags:
+                forced_stdin_script = True
+            if token in {"-O", "+O", "--init-file", "--rcfile"}:
+                cursor += 2
+                continue
+            cursor += 1
+            continue
+        break
+
+    if cursor < len(invocation) and not forced_stdin_script:
+        return False
+    return True
 
 
 def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:

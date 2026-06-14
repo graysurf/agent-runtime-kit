@@ -921,32 +921,71 @@ class SharedHookTests(unittest.TestCase):
 
     def test_finish_line_record_credits_validation_inside_shell_heredoc(self) -> None:
         self._require_agent_docs()
-        with tempfile.TemporaryDirectory() as tmp:
-            repo = self._init_contract_repo(tmp, ("bash scripts/ci/all.sh",))
-            env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+        commands = (
+            "bash <<'EOF'\nbash scripts/ci/all.sh\nEOF",
+            "bash -s positional <<'EOF'\nbash scripts/ci/all.sh\nEOF",
+        )
+        for payload in commands:
+            with self.subTest(payload=payload):
+                with tempfile.TemporaryDirectory() as tmp:
+                    repo = self._init_contract_repo(tmp, ("bash scripts/ci/all.sh",))
+                    env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
 
-            code, _, stderr = run_hook(
-                "finish-line-record.py",
-                write_payload("src/lib.rs", "fn main() {}\n"),
-                cwd=repo,
-                env=env,
-            )
-            self.assertEqual(code, 0, stderr)
+                    code, _, stderr = run_hook(
+                        "finish-line-record.py",
+                        write_payload("src/lib.rs", "fn main() {}\n"),
+                        cwd=repo,
+                        env=env,
+                    )
+                    self.assertEqual(code, 0, stderr)
 
-            payload = "bash <<'EOF'\nbash scripts/ci/all.sh\nEOF"
-            code, _, stderr = run_hook(
-                "finish-line-record.py",
-                command_payload(payload),
-                cwd=repo,
-                env=env,
-            )
-            self.assertEqual(code, 0, stderr)
+                    code, _, stderr = run_hook(
+                        "finish-line-record.py",
+                        command_payload(payload),
+                        cwd=repo,
+                        env=env,
+                    )
+                    self.assertEqual(code, 0, stderr)
 
-            code, decision, stderr = run_hook(
-                "stop-finish-line-gate.py", {}, cwd=repo, env=env
-            )
-            self.assertEqual(code, 0, stderr)
-            self.assert_allowed(decision)
+                    code, decision, stderr = run_hook(
+                        "stop-finish-line-gate.py", {}, cwd=repo, env=env
+                    )
+                    self.assertEqual(code, 0, stderr)
+                    self.assert_allowed(decision)
+
+    def test_finish_line_record_ignores_shell_heredoc_stdin_not_used_as_script(self) -> None:
+        self._require_agent_docs()
+        commands = (
+            "bash -lc 'true' <<'EOF'\nbash scripts/ci/all.sh\nEOF",
+            "bash ./script.sh <<'EOF'\nbash scripts/ci/all.sh\nEOF",
+        )
+        for payload in commands:
+            with self.subTest(payload=payload):
+                with tempfile.TemporaryDirectory() as tmp:
+                    repo = self._init_contract_repo(tmp, ("bash scripts/ci/all.sh",))
+                    env = {"AGENT_RUNTIME_DOCS_HOME": str(repo)}
+
+                    code, _, stderr = run_hook(
+                        "finish-line-record.py",
+                        write_payload("src/lib.rs", "fn main() {}\n"),
+                        cwd=repo,
+                        env=env,
+                    )
+                    self.assertEqual(code, 0, stderr)
+
+                    code, _, stderr = run_hook(
+                        "finish-line-record.py",
+                        command_payload(payload),
+                        cwd=repo,
+                        env=env,
+                    )
+                    self.assertEqual(code, 0, stderr)
+
+                    code, decision, stderr = run_hook(
+                        "stop-finish-line-gate.py", {}, cwd=repo, env=env
+                    )
+                    self.assertEqual(code, 0, stderr)
+                    self.assert_blocked(decision, "scripts/ci/all.sh")
 
     def test_finish_line_record_ignores_heredoc_operator_inside_comment(self) -> None:
         self._require_agent_docs()
