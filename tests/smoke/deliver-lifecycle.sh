@@ -138,6 +138,22 @@ if [ "$EXECUTE_LIVE" -eq 0 ]; then
   git -C "$WORKSPACE" branch --set-upstream-to "origin/$HEAD_BRANCH" "$HEAD_BRANCH" >/dev/null
 fi
 
+# Isolate only the forge-cli test-first gate for this smoke (#345). A repo-scoped
+# `.forge-cli.toml` with `[test_first] require = false` overrides a repo or
+# user-global `[test_first].require = true` (precedence: explicit flag > repo
+# .forge-cli.toml > global config), so a host with the gate enabled neither fails
+# the live `pr deliver` create step nor flags the dry-run preflight for a smoke
+# that legitimately carries no test-first evidence. forge-cli runs from
+# `cd "$WORKSPACE"`, so this workspace config wins without redirecting
+# $XDG_CONFIG_HOME (which would break live `gh` auth). It is written after the
+# workspace commit and git-ignored locally, so it never enters the scratch PR tree
+# nor trips the `worktree_clean` preflight (untracked files count as dirty).
+printf '.forge-cli.toml\n' >>"$WORKSPACE/.git/info/exclude"
+cat >"$WORKSPACE/.forge-cli.toml" <<'FORGECFG'
+[test_first]
+require = false
+FORGECFG
+
 cat >"$BODY_FILE" <<'BODY'
 ## Summary
 
@@ -189,6 +205,15 @@ fi
 grep -q '"schema_version":"cli.forge-cli.pr.deliver.v1"' "$OUT_FILE"
 grep -q '"provider":"github"' "$OUT_FILE"
 grep -q '"wait_checks"' "$OUT_FILE"
+
+# The test-first gate must not fire — proves the .forge-cli.toml gate isolation
+# above held on a test-first-enabled host (#345). The greps above pass even when
+# the dry-run preflight reports `test_first_evidence_required`, so assert its
+# absence explicitly rather than trust a top-level "ok".
+if grep -q 'test_first_evidence_required' "$OUT_FILE"; then
+  echo "deliver-lifecycle: test-first gate fired; .forge-cli.toml gate isolation failed" >&2
+  exit 1
+fi
 
 {
   printf 'scratch_fork=%s\n' "$SCRATCH_FORK"
