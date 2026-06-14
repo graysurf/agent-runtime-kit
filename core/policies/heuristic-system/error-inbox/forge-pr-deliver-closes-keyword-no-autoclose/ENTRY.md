@@ -20,17 +20,31 @@ close 341`.
 Host: nils-cli 1.3.1 (`forge-cli 1.3.1`). Merge method: squash. Base: default
 branch `main`.
 
+Second occurrence: delivering `sympoies/nils-alfredworkflow` PR #194 through
+`forge-cli pr deliver --kind refactor --no-merge` and
+`forge-cli pr merge 194 --method squash` left issue #190 OPEN immediately after
+the merge even though the rendered PR body contained `Closes #190` and GitHub's
+`closingIssuesReferences` for the PR included issue #190. The delivery closed
+#190 manually with a closeout comment plus `forge-cli issue close 190`.
+
 ## Evidence
 
 - Raw record: not captured (manual diagnosis, 2026-06-14)
 - PR: `graysurf/agent-runtime-kit#343` (merged `1db8fa8`, squash).
 - Issue: `graysurf/agent-runtime-kit#341` — body keyword `Closes #341` present,
   not auto-closed on merge; closed manually post-merge.
+- Evidence: `evidence/nils-alfredworkflow-pr194-no-autoclose.md`
+- PR: `sympoies/nils-alfredworkflow#194` (merged `3a8b28d`, squash).
+- Issue: `sympoies/nils-alfredworkflow#190` — body keyword `Closes #190`
+  present and `closingIssuesReferences` included #190; issue remained open
+  immediately after merge and was closed manually post-merge.
 - Cause **unconfirmed**: either (a) `forge-cli pr create/deliver` does not
   establish the GitHub "linked issue" (Development) relationship that body
   closing-keywords drive, or (b) GitHub squash-merge auto-close timing/edge —
-  i.e. it might have been latency that the manual close pre-empted. A second
-  occurrence is needed to distinguish.
+  i.e. it might have been latency that the manual close pre-empted. The second
+  occurrence showed GitHub did know the closing reference, but manual close still
+  happened quickly enough that delayed auto-close processing is not fully ruled
+  out.
 
 ## Impact
 
@@ -48,16 +62,17 @@ linking the merge SHA).
 
 ## Promotion Criteria
 
-Promote once the cause is confirmed on a second occurrence: if it is a forge-cli
-linkage gap, file an upstream `sympoies/nils-cli` issue and link it here, then
-either fix forge-cli to register the linked-issue relationship or document the
-post-merge close-verification step in `deliver-pr`. If it proves to be GitHub
-latency only, mark `wontfix` with the timing note.
+Promote once the cause is confirmed beyond quick post-merge observation: if it
+is a forge-cli linkage / merge-method gap, file an upstream
+`sympoies/nils-cli` issue and link it here, then either fix forge-cli or document
+the post-merge close-verification step in `deliver-pr`. If it proves to be
+GitHub latency only, mark `wontfix` with the timing note.
 
 ## Next Action
 
-Watch for recurrence on the next regular issue-backed forge-cli delivery. On the
-next occurrence, before any manual close, capture: the PR body as stored on
-GitHub, the issue timeline (to see whether a `connected`/`closed` event fired
-late), and the merge event timing. Route a confirmed forge-cli gap to an upstream
-nils-cli issue.
+On the next regular issue-backed forge-cli delivery, if user timing allows, wait
+several minutes after merge before manual close and capture: the PR body as
+stored on GitHub, `closingIssuesReferences`, the issue state over time, the
+issue timeline (to see whether a `connected`/`closed` event fired late), and the
+merge event timing. Route a confirmed non-latency gap to an upstream nils-cli
+issue.
