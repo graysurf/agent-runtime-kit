@@ -21,9 +21,13 @@ Prereqs:
   running scope detection.
 - Keep this workflow read-only: it does not fix code, post PR/MR comments,
   merge, close issues, or write provider state.
-- Run the review through the managed read-only `reviewer-quick` subagent by
-  default; the parent agent dispatches it and synthesizes its findings, and
-  records an explicit waiver or blocker when subagent dispatch is unavailable.
+- On hosts that spawn subagents without an explicit per-run request (e.g. Claude
+  Code), run the review through the managed read-only `reviewer-quick` subagent by
+  default; the parent agent dispatches it and synthesizes its findings. On hosts
+  that only spawn subagents on explicit request (e.g. Codex), run the same
+  read-only review inline by default — the expected path, not a waiver — and
+  dispatch only on explicit opt-in; record an explicit waiver or blocker only when
+  an intended dispatch genuinely fails.
 - Escalate to `code-review-specialists` or `code-review-pre-merge-gate` when the
   diff is broad, high-risk, security-sensitive, migration-heavy, or delivery
   blocking.
@@ -76,15 +80,18 @@ When retained evidence is required, record the final reviewer judgment through
    runtime delivery behavior. Escalate before reviewing when scope is broad.
 4. Dispatch the managed read-only `reviewer-quick` subagent on the sized diff
    (installed at `~/.codex/agents/reviewer-quick.toml` for Codex and
-   `~/.claude/agents/reviewer-quick.md` for Claude). Hand it the base ref and
-   any focus notes; it inspects read-only and returns a compact verdict with
-   source-grounded findings and residual risks. You stay the parent: you own
-   base-ref selection, synthesis of the returned findings, the escalation
+   `~/.claude/agents/reviewer-quick.md` for Claude) — the default on hosts that
+   spawn subagents without an explicit per-run request (e.g. Claude Code). Hand it
+   the base ref and any focus notes; it inspects read-only and returns a compact
+   verdict with source-grounded findings and residual risks. You stay the parent:
+   you own base-ref selection, synthesis of the returned findings, the escalation
    decision, and every provider / merge action.
-5. Fallback — if reviewer-subagent dispatch is unavailable (the agent is not
-   installed, or the host cannot spawn subagents), record an explicit waiver
-   or blocker naming the reason, then run the same read-only review inline. Do
-   not silently skip the reviewer path.
+5. Inline path — on hosts that only spawn subagents on explicit request (e.g.
+   Codex), run the same read-only review inline by default; this is the expected
+   path for those hosts and needs no waiver. If an intended dispatch genuinely
+   fails (the agent is not installed, or a dispatch-capable host cannot spawn it),
+   record an explicit waiver or blocker naming the reason, then run the same
+   inline review. Do not silently skip the reviewer path.
 6. Synthesize the subagent's (or inline) result: report only source-grounded
    findings with path and line anchors; otherwise anchor to a command, diff
    hunk, or supplied evidence. Mark uncertain concerns as residual risk, not
