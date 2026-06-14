@@ -521,12 +521,44 @@ class SharedHookTests(unittest.TestCase):
                 "gh \\\n pr create --draft",
                 "AGENT_RUNTIME_PR_SKILL",
             ),
+            # Bash also removes a backslash-LF continuation INSIDE double quotes,
+            # so a quoted subcommand split this way still runs the forbidden
+            # command and must be blocked (agent-runtime-kit#351 review).
+            (
+                "block-direct-git-commit.py",
+                'git "com\\\nmit" -m test',
+                "semantic-commit",
+            ),
+            (
+                "block-direct-git-worktree.py",
+                'git "work\\\ntree" add ../repo-topic',
+                "git-cli worktree",
+            ),
+            (
+                "block-direct-pr-create.py",
+                'gh pr "cre\\\nate" --draft',
+                "AGENT_RUNTIME_PR_SKILL",
+            ),
         )
         for hook, command, fragment in cases:
             with self.subTest(hook=hook):
                 code, decision, stderr = run_hook(hook, command_payload(command))
                 self.assertEqual(code, 0, stderr)
                 self.assert_blocked(decision, fragment)
+
+    def test_backslash_cr_is_not_a_line_continuation(self) -> None:
+        # A backslash before a CR is NOT a bash line continuation: `\<CR>` escapes
+        # the CR and a following LF still separates commands, so `git \<CR><LF>
+        # commit` runs `git $'\r'` then `commit` (neither a direct `git commit`).
+        # The normalizer must not collapse `\<CR><LF>` into `git commit`, which
+        # would false-block input bash never executes as a commit
+        # (agent-runtime-kit#351 review).
+        code, decision, stderr = run_hook(
+            "block-direct-git-commit.py",
+            command_payload("git \\\r\n commit -m test"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
 
     def test_forge_label_reminder_fires_only_without_label(self) -> None:
         reminded_commands = (
