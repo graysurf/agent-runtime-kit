@@ -91,7 +91,7 @@ plan-issue --format json tracking run update \
 
 # After local work completes:
 forge-cli pr create --repo "$OWNER_REPO" --base "$PLAN_BRANCH" \
-  --head "$BRANCH" --format json
+  --head "$BRANCH" --test-first-evidence "$EVIDENCE_DIR" --format json
 
 # Lane PRs target the plan branch, not the repo default branch, so the
 # eventual merge needs `--allow-non-default-base` — without it `forge-cli
@@ -112,6 +112,14 @@ plan-issue --format json tracking checkpoint \
   --live \
   --post state,session,validation
 ```
+
+When the lane is a `--kind feature` / `bug` record and the test-first gate is
+enabled (`[test_first].require = true` in a repo `.forge-cli.toml` or the
+user-global `${XDG_CONFIG_HOME:-~/.config}/forge-cli/config.toml`), pass
+`--test-first-evidence "$EVIDENCE_DIR"` to the `pr create` above — the
+`verify`-clean directory the `test-first-evidence` skill produces — or the
+create fails closed with `test_first_evidence_required`. Omit it for the exempt
+kinds (`docs` / `chore` / `ci` / `refactor`).
 
 After the lane's task transitions, patch the canonical ledger row:
 

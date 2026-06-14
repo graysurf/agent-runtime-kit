@@ -92,6 +92,28 @@ assert_provider_payload_local_path_gate() {
   ! grep -q "$raw_path" "$path" || return 1
 }
 
+# Every PR/MR delivery skill that can open a feature/bug record must thread the
+# forge-cli test-first gate flag (--test-first-evidence) into its documented
+# create/deliver invocation. Without it, an operator with [test_first].require =
+# true (repo or user-global) hits test_first_evidence_required at the documented
+# gate even with a valid record (agent-runtime-kit#341). Assert the flag is
+# present in each delivery skill body.
+assert_delivery_skills_thread_test_first_evidence() {
+  local rc=0 skill
+  for skill in \
+    core/skills/pr/create-pr/SKILL.md.tera \
+    core/skills/pr/deliver-pr/SKILL.md.tera \
+    core/skills/pr/create-dispatch-lane-pr/SKILL.md.tera \
+    core/skills/dispatch/execute-dispatch-lane/SKILL.md.tera \
+    core/skills/dispatch/deliver-plan-tracking-issue/SKILL.md.tera; do
+    if ! grep -q -- '--test-first-evidence' "$REPO_ROOT/$skill"; then
+      echo "runtime-smoke pr: $skill omits --test-first-evidence gate threading" >&2
+      rc=1
+    fi
+  done
+  return "$rc"
+}
+
 run_pr_comment_provider_payload_privacy_gate_probe() {
   local body="$PR_ARTIFACTS_DIR/pr-comment-local-path.md"
   local out="$PR_ARTIFACTS_DIR/pr-comment-local-path-gate.json"
@@ -418,6 +440,7 @@ run_deliver_pr_probe() {
   run_deliver_github_probe || rc=1
   run_deliver_gitlab_probe || rc=1
   run_pr_comment_provider_payload_privacy_gate_probe || rc=1
+  assert_delivery_skills_thread_test_first_evidence || rc=1
   return "$rc"
 }
 

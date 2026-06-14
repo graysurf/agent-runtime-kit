@@ -135,8 +135,18 @@ forge-cli pr deliver \
   --label size::m \
   --label-catalog manifests/forge-labels.yaml \
   --strict-labels \
+  --test-first-evidence "$EVIDENCE_DIR" \
   --no-merge
 ```
+
+When the test-first gate is enabled — `[test_first].require = true` in a repo
+`.forge-cli.toml` or the user-global
+`${XDG_CONFIG_HOME:-~/.config}/forge-cli/config.toml` — a `--kind feature` /
+`bug` deliver (the create, adopt, and `--dry-run` preflight steps) also requires
+`--test-first-evidence "$EVIDENCE_DIR"`, pointing at the `verify`-clean directory
+the `test-first-evidence` skill produces. Omit it for the exempt kinds (`docs` /
+`chore` / `ci` / `refactor`); without it delivery fails closed with
+`test_first_evidence_required`.
 
 Run `code-review-pre-merge-gate` before merge. Its minimum underlying scope is:
 

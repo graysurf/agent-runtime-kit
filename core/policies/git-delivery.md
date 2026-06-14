@@ -83,6 +83,12 @@ detail behind the one-line gates.
   create` / `pr deliver` require `--test-first-evidence <dir>` for `--kind
   feature` / `bug` records (both the create and adopt paths, and the
   `--dry-run` preflight). `docs` / `chore` / `ci` / `refactor` are exempt.
+- The active PR/MR delivery skills thread that flag for you: `create-pr`,
+  `deliver-pr`, `create-dispatch-lane-pr`, `execute-dispatch-lane`, and
+  `deliver-plan-tracking-issue` pass `--test-first-evidence "$EVIDENCE_DIR"` on
+  their `--kind feature` / `bug` invocations and omit it for the exempt kinds.
+  Point it at the `verify`-clean directory the `test-first-evidence` skill
+  produces.
 - The gate is **off by default**. It is opt-in via `[test_first] require =
   true` in either a repo `.forge-cli.toml` or the user-global
   `${XDG_CONFIG_HOME:-$HOME/.config}/forge-cli/config.toml`. Precedence: explicit

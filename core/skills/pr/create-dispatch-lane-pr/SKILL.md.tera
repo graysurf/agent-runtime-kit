@@ -67,8 +67,17 @@ forge-cli pr create \
   --head "$BRANCH" \
   --title "$LANE_TITLE" \
   --body-file "$LANE_BODY" \
+  --test-first-evidence "$EVIDENCE_DIR" \
   --format json
 ```
+
+When the lane is a `--kind feature` / `bug` record and the test-first gate is
+enabled (`[test_first].require = true` in a repo `.forge-cli.toml` or the
+user-global `${XDG_CONFIG_HOME:-~/.config}/forge-cli/config.toml`), pass
+`--test-first-evidence "$EVIDENCE_DIR"` — the `verify`-clean directory the
+`test-first-evidence` skill produces — or the create fails closed with
+`test_first_evidence_required`. Omit it for the exempt kinds (`docs` / `chore` /
+`ci` / `refactor`).
 
 The calling dispatch skill then records the PR ref back into the run
 state:
