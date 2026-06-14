@@ -16,7 +16,14 @@ from typing import Any
 # Codex may execute hooks through a source symlink; keep the checkout clean.
 sys.dont_write_bytecode = True
 
-from hook_common import ALLOW, command_from, emit_block, read_payload, tool_input_dict
+from hook_common import (
+    ALLOW,
+    command_from,
+    emit_block,
+    normalize_command_separators,
+    read_payload,
+    tool_input_dict,
+)
 
 BYPASS_ENV_NAMES = (
     "AGENT_RUNTIME_ALLOW_SYSTEM_PYTHON",
@@ -90,6 +97,10 @@ def find_python_manager(start: Path) -> PythonManager | None:
 
 
 def shell_tokens(command: str) -> list[str]:
+    # Treat unquoted newlines as command separators so a blocked command on a
+    # later physical line (after a `cd` or other preamble) cannot slip past the
+    # guard. See hook_common.normalize_command_separators.
+    command = normalize_command_separators(command)
     try:
         lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
         lexer.whitespace_split = True
