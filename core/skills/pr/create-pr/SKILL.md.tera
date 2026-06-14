@@ -103,7 +103,8 @@ forge-cli --provider "$PROVIDER" pr create \
   --label area::runtime \
   --label size::m \
   --label-catalog manifests/forge-labels.yaml \
-  --strict-labels
+  --strict-labels \
+  --test-first-evidence "$EVIDENCE_DIR"
 ```
 
 For an audited preview:
@@ -118,8 +119,18 @@ forge-cli --provider "$PROVIDER" --dry-run --format json pr create \
   --label area::runtime \
   --label size::m \
   --label-catalog manifests/forge-labels.yaml \
-  --strict-labels
+  --strict-labels \
+  --test-first-evidence "$EVIDENCE_DIR"
 ```
+
+When the test-first gate is enabled — `[test_first].require = true` in a repo
+`.forge-cli.toml` or the user-global
+`${XDG_CONFIG_HOME:-~/.config}/forge-cli/config.toml` — a `--kind feature` /
+`bug` create (the live create, the adopt path, and the `--dry-run` preflight)
+also requires `--test-first-evidence "$EVIDENCE_DIR"`, pointing at the
+`verify`-clean directory the `test-first-evidence` skill produces. Omit it for
+the exempt kinds (`docs` / `chore` / `ci` / `refactor`); without it the create
+fails closed with `test_first_evidence_required`.
 
 ## Workflow
 

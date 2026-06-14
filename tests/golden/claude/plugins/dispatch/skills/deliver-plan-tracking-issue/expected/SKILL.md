@@ -92,6 +92,7 @@ forge-cli pr deliver --repo "$OWNER_REPO" \
   --kind feature --title "$PR_TITLE" \
   --head "$BRANCH" --base main \
   --body-file "$PR_BODY_FILE" \
+  --test-first-evidence "$EVIDENCE_DIR" \
   --format json
 
 plan-issue --format json tracking run update \
@@ -127,6 +128,13 @@ plan-issue --format json tracking close-ready \
 the supplied branch; it does not take an existing `--pr`. When `LINKED_PR`
 already exists, verify that PR through the active PR workflow and record the
 ref with `tracking run update --linked-pr`.
+
+Plan-tracking PRs are `--kind feature` records, so when the test-first gate is
+enabled (`[test_first].require = true` in a repo `.forge-cli.toml` or the
+user-global `${XDG_CONFIG_HOME:-~/.config}/forge-cli/config.toml`) the deliver
+above requires `--test-first-evidence "$EVIDENCE_DIR"` — the `verify`-clean
+directory the `test-first-evidence` skill produces — or it fails closed with
+`test_first_evidence_required`.
 
 ## Workflow
 
