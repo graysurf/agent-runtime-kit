@@ -498,6 +498,68 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "local virtualenv")
 
+    def test_block_hooks_are_not_bypassed_by_line_continuations(self) -> None:
+        # Regression: a backslash-newline line continuation between an executable
+        # and its subcommand must not bypass the guards. A real shell removes the
+        # `\<newline>` entirely and runs e.g. `git commit`, but a normalizer that
+        # preserves the pair leaves a stray newline token between `git` and
+        # `commit`, so the subcommand walker returns that token instead of the
+        # real subcommand and the guard allows the command (agent-runtime-kit#351).
+        cases = (
+            (
+                "block-direct-git-commit.py",
+                "git \\\n commit -m test",
+                "semantic-commit",
+            ),
+            (
+                "block-direct-git-worktree.py",
+                "git \\\n worktree add ../repo-topic",
+                "git-cli worktree",
+            ),
+            (
+                "block-direct-pr-create.py",
+                "gh \\\n pr create --draft",
+                "AGENT_RUNTIME_PR_SKILL",
+            ),
+            # Bash also removes a backslash-LF continuation INSIDE double quotes,
+            # so a quoted subcommand split this way still runs the forbidden
+            # command and must be blocked (agent-runtime-kit#351 review).
+            (
+                "block-direct-git-commit.py",
+                'git "com\\\nmit" -m test',
+                "semantic-commit",
+            ),
+            (
+                "block-direct-git-worktree.py",
+                'git "work\\\ntree" add ../repo-topic',
+                "git-cli worktree",
+            ),
+            (
+                "block-direct-pr-create.py",
+                'gh pr "cre\\\nate" --draft',
+                "AGENT_RUNTIME_PR_SKILL",
+            ),
+        )
+        for hook, command, fragment in cases:
+            with self.subTest(hook=hook):
+                code, decision, stderr = run_hook(hook, command_payload(command))
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, fragment)
+
+    def test_backslash_cr_is_not_a_line_continuation(self) -> None:
+        # A backslash before a CR is NOT a bash line continuation: `\<CR>` escapes
+        # the CR and a following LF still separates commands, so `git \<CR><LF>
+        # commit` runs `git $'\r'` then `commit` (neither a direct `git commit`).
+        # The normalizer must not collapse `\<CR><LF>` into `git commit`, which
+        # would false-block input bash never executes as a commit
+        # (agent-runtime-kit#351 review).
+        code, decision, stderr = run_hook(
+            "block-direct-git-commit.py",
+            command_payload("git \\\r\n commit -m test"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
     def test_forge_label_reminder_fires_only_without_label(self) -> None:
         reminded_commands = (
             "forge-cli pr create --title x",

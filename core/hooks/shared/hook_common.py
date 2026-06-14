@@ -495,9 +495,13 @@ def normalize_command_separators(command: str) -> str:
     collapses `cd` and the next line's command into one simple command whose
     command-position token is `cd`, so the real command is never recognized.
 
-    Single- and double-quoted spans are preserved verbatim, and a backslash
-    escapes the following character (including a line-continuation newline), so
-    a quoted or continued newline is never turned into a separator.
+    Single-quoted spans are preserved verbatim. A backslash escapes the
+    following character, except a backslash-LF line continuation — which bash
+    removes both when unquoted and inside double quotes — so it is dropped
+    entirely and the logical line continues without leaving a stray newline
+    token (or a split quoted subcommand) that would hide the real command from
+    the guards. A backslash-CR is not a continuation in bash, so it is left
+    intact (and a following unquoted LF still acts as a separator).
     """
     out: list[str] = []
     quote = None  # active quote char ("'" or '"'), or None when unquoted
@@ -512,8 +516,16 @@ def normalize_command_separators(command: str) -> str:
             index += 1
         elif quote == '"':
             if char == "\\" and index + 1 < length:
+                nxt = command[index + 1]
+                if nxt == "\n":
+                    # Bash removes a backslash-LF line continuation inside double
+                    # quotes too, so `"com\<newline>mit"` is the word `commit`.
+                    # Drop both so a quoted subcommand is not hidden behind an
+                    # embedded newline token (guard bypass).
+                    index += 2
+                    continue
                 out.append(char)
-                out.append(command[index + 1])
+                out.append(nxt)
                 index += 2
                 continue
             out.append(char)
@@ -521,11 +533,20 @@ def normalize_command_separators(command: str) -> str:
                 quote = None
             index += 1
         elif char == "\\" and index + 1 < length:
-            # Escaped char (including a line-continuation newline): never a
-            # separator; keep both characters and skip past them.
-            out.append(char)
-            out.append(command[index + 1])
-            index += 2
+            nxt = command[index + 1]
+            if nxt == "\n":
+                # Shell line continuation (backslash-LF): removed entirely so the
+                # logical line continues without leaving a stray newline token
+                # between an executable and its subcommand (`git \<newline> commit`).
+                index += 2
+            else:
+                # Any other escaped char keeps both chars. A lone CR is NOT a
+                # continuation in bash (`\<CR>` escapes the CR; a following LF
+                # still separates), so dropping it would false-block
+                # `git \<CR><LF> commit`, which bash does not run as a commit.
+                out.append(char)
+                out.append(nxt)
+                index += 2
         elif char in ("'", '"'):
             quote = char
             out.append(char)
