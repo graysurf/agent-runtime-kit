@@ -1,10 +1,11 @@
 ---
 name: heuristic-session-closeout
 description:
-  Use when this session's goal has been achieved and the agent needs to review
-  available session evidence for Heuristic System updates, write curated
-  retained records when warranted, and land them on `main` through the
-  `heuristic-inbox deliver` records-branch PR (auto-merged).
+  Use when this session's goal has been achieved and the agent needs to surface
+  the session's skill-usage records, review available session evidence for
+  Heuristic System updates, write curated retained records when warranted, and
+  land them on `main` through the `heuristic-inbox deliver` records-branch PR
+  (auto-merged).
 ---
 
 # Heuristic Session Closeout
@@ -40,6 +41,9 @@ Outputs:
   `core/policies/heuristic-system/error-inbox/` or
   `core/policies/heuristic-system/operation-records/`, when retention is
   warranted.
+- A surfaced inventory of the active session's `skill-usage` records (skill,
+  outcome status, linked evidence) reviewed before retention, with every
+  non-`pass` outcome flagged as a promotion-review candidate.
 - Strict verification output for every changed retained record.
 - A `heuristic-inbox deliver` run that opens a docs records-branch PR off
   `origin/main` (never a commit on the current feature branch and never a direct
@@ -126,6 +130,18 @@ abandoned feature branch.
    preflight before writes; `agent-docs audit --target all --strict` surfaces
    any repo-health problems.
 3. Gather only available, relevant evidence:
+   - Surface the active session's `skill-usage` records first, so no non-`pass`
+     run is silently dropped before retention is judged. Records land under the
+     `agent-out` project tree at
+     `${AGENT_HOME:-$HOME/.local/state/agent-runtime-kit}/out/projects/<owner__repo>/<timestamp>-skill-usage/skill-usage.record.json`
+     (discover this session's with, e.g.,
+     `find "${AGENT_HOME:-$HOME/.local/state/agent-runtime-kit}/out/projects" -name skill-usage.record.json`).
+     For each, read `skill`, `outcome.status`, `outcome.summary`, and
+     `linked_records` / `artifacts`; list them with their outcome status and
+     flag every `fail`, `blocked`, or `worked_around` outcome — and any
+     non-empty `failures[]` or `follow_up[]` — as a promotion-review candidate
+     for step 4. This is read-only surfacing: never write to, scrub, or
+     auto-commit the raw records here.
    - Review the conversation's concrete outcomes, repairs, failures, retries,
      validation results, and current diff.
    - Inspect existing active and archived Heuristic System cases before adding
@@ -140,7 +156,10 @@ abandoned feature branch.
      next action, validates promotion criteria, or clarifies the workaround.
    - Create a new `error-inbox/<slug>/ENTRY.md` only for an important,
      unresolved, repeated, skill-contract-relevant, or future-agent-reusable
-     workflow gap.
+     workflow gap. When a flagged session `skill-usage` record motivates the
+     entry, seed it from that record with
+     `heuristic-inbox new --from-skill-usage <record>` so the runtime evidence
+     links forward to the curated case.
    - Use an `operation-records/<slug>/RECORD.md` only when the lesson is
      repeated, cross-skill, audit-worthy, or proves retained evidence became a
      durable fix.
