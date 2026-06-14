@@ -39,6 +39,8 @@ ACTION_HINTS = (
     "review ",
     "scan",
     "implement",
+    "migrate",
+    "archive",
 )
 
 
@@ -105,7 +107,13 @@ def strip_aliases(text: str, aliases: Iterable[str]) -> str:
 
 
 def alias_is_action_phrase(alias: str) -> bool:
-    return any(alias.startswith(f"{hint} ") for hint in ACTION_HINTS)
+    # An alias counts as an action phrase when it carries an action verb as a
+    # whole word -- not only as a leading prefix -- so a CLI-shaped alias whose
+    # verb trails the object (e.g. `evidence migrate`) still reads as an action.
+    return any(
+        re.search(rf"(?<![a-z0-9_-]){re.escape(hint.strip())}(?![a-z0-9_-])", alias)
+        for hint in ACTION_HINTS
+    )
 
 
 def _iter_strings(value: Any) -> Iterable[str]:

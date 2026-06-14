@@ -670,6 +670,79 @@ def _simple_command_spanning(line: str, op_start: int) -> list[str]:
 # tokenized operand never reaches the walk starting with `&`.
 _REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
 
+# Bash invocation options that always bind the FOLLOWING word as an argument.
+# When the next token is instead a redirection or here-doc operator, bash never
+# reads it as the argument and aborts with "option requires an argument", so the
+# here-doc body is never executed.
+_OPTIONS_TAKING_WORD_ARG = {"--init-file", "--rcfile"}
+
+# Bash's invocation-level -O/+O is special: with no shopt name, it lists shopt
+# state and continues to read stdin. With an unknown shopt name, it aborts before
+# executing stdin. Keep this list conservative; an unlisted future shopt option
+# becomes a false negative rather than an unsafe gate credit.
+_BASH_SHOPT_OPTIONS = {
+    "array_expand_once",
+    "assoc_expand_once",
+    "autocd",
+    "bash_source_fullpath",
+    "cdable_vars",
+    "cdspell",
+    "checkhash",
+    "checkjobs",
+    "checkwinsize",
+    "cmdhist",
+    "compat31",
+    "compat32",
+    "compat40",
+    "compat41",
+    "compat42",
+    "compat43",
+    "compat44",
+    "complete_fullquote",
+    "direxpand",
+    "dirspell",
+    "dotglob",
+    "execfail",
+    "expand_aliases",
+    "extdebug",
+    "extglob",
+    "extquote",
+    "failglob",
+    "force_fignore",
+    "globasciiranges",
+    "globskipdots",
+    "globstar",
+    "gnu_errfmt",
+    "histappend",
+    "histreedit",
+    "histverify",
+    "hostcomplete",
+    "huponexit",
+    "inherit_errexit",
+    "interactive_comments",
+    "lastpipe",
+    "lithist",
+    "localvar_inherit",
+    "localvar_unset",
+    "login_shell",
+    "mailwarn",
+    "no_empty_cmd_completion",
+    "nocaseglob",
+    "nocasematch",
+    "noexpand_translation",
+    "nullglob",
+    "patsub_replacement",
+    "progcomp",
+    "progcomp_alias",
+    "promptvars",
+    "restricted_shell",
+    "shift_verbose",
+    "sourcepath",
+    "varredir_close",
+    "xpg_echo",
+}
+_BASH_SHOPT_OPTION_FLAGS = {"-O", "+O"}
+
 
 def _redirect_consumes_next(token: str) -> bool:
     """True when a redirection operator token carries no attached target word.
@@ -748,20 +821,46 @@ def _heredoc_body_is_executed_by_shell(
             past_options = True
             cursor += 1
             continue
+        if token in _OPTIONS_TAKING_WORD_ARG:
+            # This option needs a following word argument. A redirection or
+            # here-doc operator in that slot is consumed by bash as a
+            # redirection, not the argument, so bash aborts ("option requires an
+            # argument") and never runs the body.
+            if cursor + 1 >= len(invocation) or _REDIRECT_TOKEN_RE.match(
+                invocation[cursor + 1]
+            ):
+                return False
+            cursor += 2
+            continue
+        if token in _BASH_SHOPT_OPTION_FLAGS:
+            if cursor + 1 >= len(invocation) or _REDIRECT_TOKEN_RE.match(
+                invocation[cursor + 1]
+            ):
+                cursor += 1
+                continue
+            if invocation[cursor + 1] not in _BASH_SHOPT_OPTIONS:
+                return False
+            cursor += 2
+            continue
         if token.startswith("--"):
-            # GNU long option: a unit, never a compact short-flag cluster, so
-            # `--posix` must not be read as `-s`.
-            cursor += 2 if token in {"--init-file", "--rcfile"} else 1
+            # Any other GNU long option is a single unit, never a compact
+            # short-flag cluster, so `--posix` must not be read as `-s`.
+            cursor += 1
             continue
         if token.startswith(("-", "+")) and token != "-":
-            cluster = token[1:]
+            sign, cluster = token[0], token[1:]
             if "c" in cluster:
                 return False
-            if "n" in cluster:
-                noexec = True  # read-but-do-not-execute: the body never runs
-            if "s" in cluster:
-                forced_stdin_script = True  # stdin is the script; operands are args
-            cursor += 2 if token in {"-O", "+O"} else 1
+            # `-n` is read-but-do-not-execute; the `+` form turns the flag back
+            # off, so only a `-`-sign cluster makes the body inert. `s` is gated
+            # the same way: a hypothetical `+s` must not force stdin-as-script
+            # (the unsafe direction), it only credits on the documented `-s`.
+            if sign == "-":
+                if "n" in cluster:
+                    noexec = True
+                if "s" in cluster:
+                    forced_stdin_script = True  # stdin is the script; operands are args
+            cursor += 1
             continue
         break  # first non-option operand: bash runs it, the body is its stdin data
 
