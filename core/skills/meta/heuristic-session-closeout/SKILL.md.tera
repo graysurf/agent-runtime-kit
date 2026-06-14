@@ -134,14 +134,20 @@ abandoned feature branch.
      run is silently dropped before retention is judged. Records land under the
      `agent-out` project tree at
      `${AGENT_HOME:-$HOME/.local/state/agent-runtime-kit}/out/projects/<owner__repo>/<timestamp>-skill-usage/skill-usage.record.json`
-     (discover this session's with, e.g.,
-     `find "${AGENT_HOME:-$HOME/.local/state/agent-runtime-kit}/out/projects" -name skill-usage.record.json`).
+     or under a workflow-owned run directory. Resolve the current session
+     boundary before searching: prefer explicit run/evidence directories already
+     produced in this session, then the current repo's project-keyed run
+     directories. Do not broad-scan every `out/projects` record and treat old
+     sessions or other repos as current promotion candidates.
      For each, read `skill`, `outcome.status`, `outcome.summary`, and
-     `linked_records` / `artifacts`; list them with their outcome status and
-     flag every `fail`, `blocked`, or `worked_around` outcome — and any
-     non-empty `failures[]` or `follow_up[]` — as a promotion-review candidate
-     for step 4. This is read-only surfacing: never write to, scrub, or
-     auto-commit the raw records here.
+     `linked_records` / top-level `artifacts`, plus nested
+     `failures[].artifacts`, `validation[].artifact`, and `follow_up[]`; list
+     them with their outcome status and evidence pointers. Flag every non-pass
+     outcome, including `fail`, `blocked`, `worked_around`,
+     `accepted_risk` / `accepted-risk`, and any record with non-empty
+     `failures[]` or `follow_up[]`, as a promotion-review candidate for step 4.
+     This is read-only surfacing: never write to, scrub, or auto-commit the raw
+     records here.
    - Review the conversation's concrete outcomes, repairs, failures, retries,
      validation results, and current diff.
    - Inspect existing active and archived Heuristic System cases before adding
@@ -158,8 +164,9 @@ abandoned feature branch.
      unresolved, repeated, skill-contract-relevant, or future-agent-reusable
      workflow gap. When a flagged session `skill-usage` record motivates the
      entry, seed it from that record with
-     `heuristic-inbox new --from-skill-usage <record>` so the runtime evidence
-     links forward to the curated case.
+     `heuristic-inbox new --from-skill-usage <record> --slug <slug> --out-dir "$root/error-inbox"`
+     so the runtime evidence links forward to the curated case in the canonical
+     inbox.
    - Use an `operation-records/<slug>/RECORD.md` only when the lesson is
      repeated, cross-skill, audit-worthy, or proves retained evidence became a
      durable fix.
