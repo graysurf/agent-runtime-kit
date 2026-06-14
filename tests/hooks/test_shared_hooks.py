@@ -498,6 +498,36 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "local virtualenv")
 
+    def test_block_hooks_are_not_bypassed_by_line_continuations(self) -> None:
+        # Regression: a backslash-newline line continuation between an executable
+        # and its subcommand must not bypass the guards. A real shell removes the
+        # `\<newline>` entirely and runs e.g. `git commit`, but a normalizer that
+        # preserves the pair leaves a stray newline token between `git` and
+        # `commit`, so the subcommand walker returns that token instead of the
+        # real subcommand and the guard allows the command (agent-runtime-kit#351).
+        cases = (
+            (
+                "block-direct-git-commit.py",
+                "git \\\n commit -m test",
+                "semantic-commit",
+            ),
+            (
+                "block-direct-git-worktree.py",
+                "git \\\n worktree add ../repo-topic",
+                "git-cli worktree",
+            ),
+            (
+                "block-direct-pr-create.py",
+                "gh \\\n pr create --draft",
+                "AGENT_RUNTIME_PR_SKILL",
+            ),
+        )
+        for hook, command, fragment in cases:
+            with self.subTest(hook=hook):
+                code, decision, stderr = run_hook(hook, command_payload(command))
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, fragment)
+
     def test_forge_label_reminder_fires_only_without_label(self) -> None:
         reminded_commands = (
             "forge-cli pr create --title x",

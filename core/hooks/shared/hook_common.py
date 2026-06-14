@@ -495,9 +495,11 @@ def normalize_command_separators(command: str) -> str:
     collapses `cd` and the next line's command into one simple command whose
     command-position token is `cd`, so the real command is never recognized.
 
-    Single- and double-quoted spans are preserved verbatim, and a backslash
-    escapes the following character (including a line-continuation newline), so
-    a quoted or continued newline is never turned into a separator.
+    Single- and double-quoted spans are preserved verbatim. A backslash escapes
+    the following character, except an unquoted backslash-newline line
+    continuation, which is removed entirely (matching shell semantics) so the
+    logical line continues without leaving a stray newline token between an
+    executable and its subcommand.
     """
     out: list[str] = []
     quote = None  # active quote char ("'" or '"'), or None when unquoted
@@ -521,11 +523,22 @@ def normalize_command_separators(command: str) -> str:
                 quote = None
             index += 1
         elif char == "\\" and index + 1 < length:
-            # Escaped char (including a line-continuation newline): never a
-            # separator; keep both characters and skip past them.
-            out.append(char)
-            out.append(command[index + 1])
-            index += 2
+            nxt = command[index + 1]
+            if nxt in ("\n", "\r"):
+                # Shell line continuation: a backslash-newline is removed
+                # entirely and the logical line continues. Drop both so a
+                # continuation between an executable and its subcommand (e.g.
+                # `git \<newline> commit`) cannot leave a stray newline token
+                # that hides the real command from the guards.
+                index += 2
+                if nxt == "\r" and index < length and command[index] == "\n":
+                    index += 1
+            else:
+                # Escaped non-newline char: never a separator; keep both
+                # characters and skip past them.
+                out.append(char)
+                out.append(nxt)
+                index += 2
         elif char in ("'", '"'):
             quote = char
             out.append(char)
