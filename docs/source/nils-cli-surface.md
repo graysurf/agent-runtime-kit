@@ -1,20 +1,44 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-14 (refreshed for `v1.5.0`)
+- Snapshot date: 2026-06-15 (refreshed for `v1.6.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.5.0`
+- Active `git describe --tags` output: `v1.6.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.5.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.6.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `46e5733`
-  (`chore(release): bump cli versions to 1.5.0 (#851)`)
+- Head commit: `38f9fa6`
+  (`chore(release): bump cli versions to 1.6.0 (#855)`)
 - Release:
-  [`v1.5.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.5.0),
+  [`v1.6.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.6.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.6.0` is a lock-step host bump over `v1.5.0`. It finalizes the
+  `evidence migrate` surface the kit's new evidence-migrate skill
+  (agent-runtime-kit#352) consumes, plus internal release-tooling hardening:
+  - `evidence migrate` (dry-run and apply) no longer aborts the batch on a
+    single bad record: per-record read / parse / identity / rollup-preparation
+    failures are collected in a `blocked` list (`record_path` + `reason`) and
+    skipped, so the resolvable records still archive and an all-blocked run is
+    a successful no-op. `migrate` also gains `--host <fqdn>`, letting the
+    operator vouch for the host of a slug-only record under a multi-host
+    `config/hosts.yaml` (validated against it) instead of a `cwd`->`origin`
+    derivation that fails for ephemeral worktree cwds
+    ([#853](https://github.com/sympoies/nils-cli/pull/853)). The
+    evidence-migrate skill depends on both the dry-run `blocked` review and the
+    `--host` vouch, so the kit's first `evidence` consumer pins
+    `evidence >= 1.6.0` (the floor lands with that skill, not this bump).
+  - Internal release-tooling only, no consumer floor moves: a
+    `plan_archive::scrub` compatibility shim re-exports the shared `nils-scrub`
+    crate at its original label-free signatures and the crates-io publish order
+    lists `nils-scrub` / `nils-evidence` before their dependents
+    ([#849](https://github.com/sympoies/nils-cli/pull/849)); a new
+    `scripts/ci/publish-order-audit.sh` guards publish-order completeness from
+    `cargo metadata` ([#852](https://github.com/sympoies/nils-cli/pull/852)).
+  The `nils-evidence` and `nils-scrub` crate rows already landed in the
+  `v1.5.0` snapshot; only the `evidence` migrate-surface note moves here.
 - `v1.5.0` is a lock-step host bump over `v1.4.0`. It ships two new crates for
   the skill-usage evidence archive lifecycle:
   - `nils-evidence` (binary `evidence`): the query/migrate CLI over a durable,
