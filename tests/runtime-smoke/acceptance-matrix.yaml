@@ -326,6 +326,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.evidence-migrate.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.evidence-migrate
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: seed a synthetic agent-out tree with one valid and one malformed skill-usage record under an owner__repo dir, plus a synthetic single-host archive clone with config/hosts.yaml
+    invocation: evidence migrate dry-run JSON probe against the seeded agent-out tree
+    expected_exit_code: 0
+    expected_artifacts: dry-run report resolving the valid record to an evidence/<host>/<org>/<repo> archive target and reporting the malformed record as blocked without aborting
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.nils-cli-bump.shared-cli.deterministic
     product: shared-cli
     domain: meta

@@ -172,6 +172,12 @@ entries:
     destination: skills/meta/plan-archive-discover
     recursive: false
 
+  - id: meta.evidence-migrate.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/evidence-migrate
+    destination: skills/meta/evidence-migrate
+    recursive: false
+
   - id: meta.nils-cli-bump.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/nils-cli-bump
