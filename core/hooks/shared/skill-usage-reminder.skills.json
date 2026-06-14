@@ -278,5 +278,13 @@
     "aliases": ["plan-archive-discover", "plan archive discover", "discover archive candidates", "scan archive candidates"],
     "reason": "Discover surfaces archive candidates and hands selected folders to plan-archive-migrate, which then drives the durable archive + source-delete lifecycle change.",
     "record_when": "The workflow scans plan folders, narrows candidate selection, and hands a folder off to plan-archive-migrate."
+  },
+  {
+    "skill": "evidence-migrate",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["evidence-migrate", "evidence migrate", "migrate evidence", "archive skill-usage evidence"],
+    "reason": "Migrating evidence copies skill-usage records into the durable agent-evidence-archive and commits + pushes them — a durable retention step (copy-only, so the source is left intact).",
+    "record_when": "The workflow runs evidence migrate --apply or commits archived skill-usage evidence."
   }
 ]

@@ -163,6 +163,11 @@ for turning workflow failures and repeated lessons into durable knowledge.
 - Important unresolved workflow gaps or suspected nils-cli / primitive bugs go
   through `heuristic-inbox`, with version, minimal repro, upstream issue link
   when found, and the current workaround.
+- Durable, queryable retention of `skill-usage` runtime evidence is a separate
+  lane from the curated inbox: migrate records into the agent-evidence-archive
+  with the `evidence-migrate` skill (`core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`),
+  dry-run first. A record can be both archived and the source of a promoted
+  inbox case.
 - Reproducible product bugs get a focused test or script fix. Repeated
   cross-skill lessons belong in operation records; stable policy belongs in
   `AGENT_HOME.md`, project policy files, or the relevant skill `SKILL.md`.
