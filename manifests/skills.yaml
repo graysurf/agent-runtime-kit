@@ -345,7 +345,7 @@ skills:
         name: evidence-migrate
         render_to: plugins/meta/skills/evidence-migrate/SKILL.md
     required_clis:
-      evidence: ">=1.6.0"
+      evidence: ">=1.7.0"
       semantic-commit: ">=0.25.0"
     state_out_mode: runtime
 
