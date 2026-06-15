@@ -24,11 +24,14 @@ project-defined validation. This file is the procedural detail behind them.
 - Do not override established tool/workflow artifact contracts; use
   `agent-out audit` before cleaning or enforcing the runtime-kit state out tree
   (`${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/out/`).
-- The `agent-out` tree is ephemeral. Durable, queryable retention of
-  `skill-usage` records beyond a session is a separate lane: migrate them into
-  the agent-evidence-archive with the `evidence-migrate` skill (clone path from
-  `$AGENT_EVIDENCE_ARCHIVE_HOME` / XDG; never committed into a working repo).
-  See `core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`.
+- The `agent-out` tree is scratch space, not a database. `skill-usage` records
+  are written there unconditionally (a useful breadcrumb even when no archive is
+  configured) and are **not** auto-reaped — they persist until manually cleaned
+  (`agent-out`) or migrated. Durable, queryable retention beyond a session is a
+  separate lane: migrate records into the agent-evidence-archive with the
+  `evidence-migrate` skill (clone path from `$AGENT_EVIDENCE_ARCHIVE_HOME` / XDG;
+  never committed into a working repo). See
+  `core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`.
 
 ## Hooks
 
