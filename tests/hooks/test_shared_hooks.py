@@ -1211,11 +1211,58 @@ class SharedHookTests(unittest.TestCase):
             # so a late `--rcfile` must not be credited.
             f"bash -O extglob --rcfile <<'EOF' -s\n{validation}\nEOF",
             f"bash -e --rcfile rc <<'EOF'\n{validation}\nEOF",
-            # `shell_tokens` strips quotes, so a quoted option argument that
-            # looks like an output redirection (`'>foo'`) must still bind as the
-            # `--rcfile` argument -- leaving the trailing operand as the script
-            # file and the body as its stdin data.
+            # PR #373 review follow-up (P1): an output-redirection-shaped token
+            # is never a safe `--rcfile`/`--init-file` word argument. An unquoted
+            # `>out` is a real redirection bash removes, leaving the option with
+            # no argument so it aborts before reading stdin; a quoted `'>foo'` is
+            # indistinguishable from it after `shell_tokens` strips the quotes.
+            # Either way the conservative reading refuses to credit the body.
+            # The redirect-shape refusal covers every output operator
+            # `_REDIRECT_TOKEN_RE` matches in the arg slot, including a
+            # fd-prefixed one (`2>log`), not just the literal `>` spelling.
+            f"bash --rcfile >out <<'EOF'\n{validation}\nEOF",
+            f"bash --init-file >>log <<'EOF'\n{validation}\nEOF",
+            f"bash --rcfile > out <<'EOF'\n{validation}\nEOF",
+            f"bash --rcfile 2>log <<'EOF'\n{validation}\nEOF",
             f"bash --rcfile '>foo' <<'EOF' ./script.sh\n{validation}\nEOF",
+            # The same refusal fires without a trailing operand: here the new
+            # redirect-shape check is the only thing that makes the body data.
+            f"bash --rcfile '>foo' <<'EOF'\n{validation}\nEOF",
+            # A non-bash, non-zsh long option still aborts before stdin runs;
+            # zsh's long-option grammar must not leak to dash/sh/ksh. `ksh` is
+            # folded into the POSIX reject path, so its long options are refused.
+            f"dash --no-rcs <<'EOF'\n{validation}\nEOF",
+            f"ksh --no-rcs <<'EOF'\n{validation}\nEOF",
+            # A zsh long option followed by a script-file operand runs that file,
+            # so stdin is data, not the executed script.
+            f"zsh --no-rcs ./script.sh <<'EOF'\n{validation}\nEOF",
+            # Broadening zsh long options must not re-credit a `-c`/`--command`
+            # invocation, whose script is the command string, not the here-doc.
+            f"zsh -c 'true' <<'EOF'\n{validation}\nEOF",
+            f"zsh --command 'true' <<'EOF'\n{validation}\nEOF",
+            # Only the allowlisted zsh startup-file toggles are credited. Other
+            # zsh long options are refused because real zsh (5.9) does not run
+            # the here-doc body: `--noexec`/`--no-exec` parse but do not execute
+            # it, `--version`/`--help` exit first, `--emulate` needs a word
+            # argument, and an unknown name aborts with "no such option".
+            f"zsh --noexec <<'EOF'\n{validation}\nEOF",
+            f"zsh --no-exec <<'EOF'\n{validation}\nEOF",
+            f"zsh --version <<'EOF'\n{validation}\nEOF",
+            f"zsh --help <<'EOF'\n{validation}\nEOF",
+            f"zsh --emulate sh <<'EOF'\n{validation}\nEOF",
+            f"zsh --not-a-real-option <<'EOF'\n{validation}\nEOF",
+            # PR #376 review follow-up: a zsh long option is credited only before
+            # any short option. Some zsh short options end option processing
+            # (`-b`, a cluster ending in `-` like `-x-`), turning a following
+            # `--no-rcs` into a script-file operand whose stdin (the body) is
+            # DATA -- verified against zsh 5.9, which reports "can't open input
+            # file: --no-rcs". A long option after any short flag is therefore
+            # refused as the safe direction (this also conservatively drops the
+            # benign `zsh -f --no-rcs`, where real zsh would run the body).
+            f"zsh -b --no-rcs <<'EOF'\n{validation}\nEOF",
+            f"zsh -x- --no-rcs <<'EOF'\n{validation}\nEOF",
+            f"zsh -bf --no-rcs <<'EOF'\n{validation}\nEOF",
+            f"zsh -f --no-rcs <<'EOF'\n{validation}\nEOF",
         )
         for actual in not_executed:
             with self.subTest(actual=actual):
@@ -1232,6 +1279,17 @@ class SharedHookTests(unittest.TestCase):
             # A Bash word-argument option still binds its argument after the
             # here-doc redirection when it is the first option.
             f"bash --rcfile <<'EOF' -s\n{validation}\nEOF",
+            # A real `--rcfile <file>` argument binds normally; stdin stays the
+            # script when no script-file operand follows.
+            f"bash --rcfile rc.sh <<'EOF'\n{validation}\nEOF",
+            # PR #373 review follow-up (P2): zsh accepts an allowlist of
+            # startup-file toggle long options (--rcs/--no-rcs/--globalrcs/
+            # --no-globalrcs) that still run stdin as the script, so a real
+            # `zsh --no-rcs <<EOF` validation -- including the enable spelling
+            # and a chain of long options -- must be credited.
+            f"zsh --no-rcs <<'EOF'\n{validation}\nEOF",
+            f"zsh --no-globalrcs --no-rcs <<'EOF'\n{validation}\nEOF",
+            f"zsh --rcs <<'EOF'\n{validation}\nEOF",
         )
         for actual in executed:
             with self.subTest(actual=actual):
