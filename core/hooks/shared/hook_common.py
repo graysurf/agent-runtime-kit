@@ -676,6 +676,10 @@ _REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
 # here-doc body is never executed.
 _OPTIONS_TAKING_WORD_ARG = {"--init-file", "--rcfile"}
 
+# Bash invocation options that print metadata/help/usage and exit before
+# reading stdin. The here-doc body is data for these commands, not script text.
+_BASH_EXIT_BEFORE_STDIN_LONG_OPTIONS = {"--version", "--help", "--usage"}
+
 # zsh GNU-style `--option-name` invocation options that are valid AND still read
 # and run stdin as the script (verified against zsh 5.9). They only toggle
 # startup-file loading. Every OTHER zsh long option is excluded on purpose:
@@ -903,6 +907,8 @@ def _heredoc_body_is_executed_by_shell(
             # short flag, the shell aborts or treats the token as the script-file
             # operand before the here-doc body runs, so never credit it.
             if not is_bash or seen_short_option:
+                return False
+            if token in _BASH_EXIT_BEFORE_STDIN_LONG_OPTIONS:
                 return False
             if token in _OPTIONS_TAKING_WORD_ARG:
                 # The option needs a following word argument. Skip an input

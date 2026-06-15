@@ -1138,6 +1138,11 @@ class SharedHookTests(unittest.TestCase):
             # local bash accepts them.
             f"bash -O array_expand_once <<'EOF'\n{validation}\nEOF",
             f"bash -O bash_source_fullpath <<'EOF'\n{validation}\nEOF",
+            # Issue #377: these invocation options print metadata/help and exit
+            # before reading stdin, so the here-doc body is never executed.
+            f"bash --version <<'EOF'\n{validation}\nEOF",
+            f"bash --help <<'EOF'\n{validation}\nEOF",
+            f"bash --usage <<'EOF'\n{validation}\nEOF",
         )
         for actual in not_executed:
             with self.subTest(actual=actual):
