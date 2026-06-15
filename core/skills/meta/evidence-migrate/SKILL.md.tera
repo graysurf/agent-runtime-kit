@@ -14,7 +14,8 @@ Prereqs:
   available on `PATH` (`>= 1.6.0`, the floor that ships the `--host`
   vouch and the skip-and-report blocked-record handling).
 - `semantic-commit` is installed from the released nils-cli package and
-  available on `PATH` (the apply path commits the archive through it).
+  available on `PATH` (`>= 0.25.0`; the apply path commits the archive through
+  it).
 - The archive repository is cloned locally and its path is resolvable
   from `$AGENT_EVIDENCE_ARCHIVE_HOME`, the machine-local config at
   `$XDG_CONFIG_HOME/agent-evidence-archive/config.yaml`, or the XDG
