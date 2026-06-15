@@ -119,10 +119,13 @@ forge-cli pr merge "$pr" --method squash
 git checkout -- core/policies/heuristic-system   # drop the source copies now on main
 ```
 
-If `deliver` or any auto-merge step blocks, stop and report the exact blocker
-plus `pr_url` / branch / `worktree_path` from the `deliver` envelope; the records
+If `deliver` or any auto-merge step blocks, capture the exact blocker plus
+`pr_url` / branch / `worktree_path` from the `deliver` envelope; the records
 remain recoverable on the pushed branch (or the open PR) and are never lost on an
-abandoned feature branch.
+abandoned feature branch. This blocks only the curated-records lane — do NOT exit
+here. Still run the independent evidence-retention lane (step 8, a different
+repository) before the final response, then report the blocker alongside the
+retention result.
 
 ## Workflow
 
@@ -191,15 +194,23 @@ abandoned feature branch.
      `Cluster:` is an operation-record-only line and `heuristic-inbox list`
      serializes only `path` / `title` / `status` / `first_observed` / `area` /
      `severity` / `raw_records` / `archived` — so do not group inbox entries by a
-     `cluster` value from this JSON; read existing `Cluster:` slugs from
-     `operation-records/*/RECORD.md` (and the archive) to tell whether a group is
-     already covered. A group with two or more resolved (`promoted` / `wontfix`)
-     members and no operation record already covering it is an
-     `operation-records/<slug>/RECORD.md` candidate per the Compression Rule,
-     even if this session created none of them. Compress only resolved members;
-     cite still-open siblings as evidence the class recurs rather than claiming
-     them fixed. This data-driven sweep is what keeps the operation-records lane
-     from going unused.
+     `cluster` value from this JSON. To decide whether a group is already
+     covered, read the `operation-records/*/RECORD.md` set and compare each
+     group's `area` / root cause and member cases against the CONTENT of every
+     `active` record (its title, root cause, and covered cases) — not against
+     `Cluster:` slug strings, which need not match the area/root-cause wording, so
+     slug-only matching would miss a covering record and create a duplicate. Only
+     an `active` record counts as current coverage: a record under
+     `operation-records/archive/` is retired/superseded history — consult it for
+     supersession lineage, but it does NOT cover a recurring class. A group with
+     two or more resolved (`promoted` / `wontfix`) members that no `active` record
+     covers is an `operation-records/<slug>/RECORD.md` candidate per the
+     Compression Rule, even if this session created none of them — a class whose
+     only coverage is archived but is recurring again is a re-open / new-record
+     candidate, not "already covered". Compress only resolved members; cite
+     still-open siblings as evidence the class recurs rather than claiming them
+     fixed. This data-driven sweep is what keeps the operation-records lane from
+     going unused.
    - Run the reverse retirement sweep over `operation-records/`: an `active`
      record whose rule is now mechanically enforced (an `Enforced-by:` gate or
      CLI), whose governed surface is retired, or that a broader record
