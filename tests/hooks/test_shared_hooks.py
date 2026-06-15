@@ -1622,6 +1622,122 @@ exit 65
         )
         self.assertEqual(source_block, codex_link_map_hook_body())
 
+    def test_session_start_healthcheck_evidence_archive_optin(self) -> None:
+        # The SessionStart healthcheck must validate evidence-archive wiring only
+        # when the user has opted in (env / local config / a default clone with
+        # commits), and stay completely silent otherwise so non-users are not
+        # nagged. CLI-side behavior is out of scope; this is kit-owned.
+        valid_hosts = (
+            "schema: agent-evidence-archive.hosts.v1\n"
+            "version: 1\n"
+            "hosts:\n"
+            "  github.com:\n"
+            "    class: personal\n"
+            "    primary_identity: tester\n"
+        )
+
+        def local_config(archive_path: Path) -> str:
+            return (
+                "version: 1\n"
+                f"archive_clone_path: {archive_path}\n"
+                "working_repo_roots: []\n"
+                "performance:\n"
+                "  migrate_batch_size: 50\n"
+            )
+
+        def base_env(home: Path, cfg_home: Path, data_home: Path) -> dict[str, str]:
+            return {
+                "HOME": str(home),
+                "XDG_CONFIG_HOME": str(cfg_home),
+                "XDG_DATA_HOME": str(data_home),
+                # Keep the agent-docs half quiet/deterministic in the sandbox;
+                # the evidence assertions below tolerate any agent-docs noise.
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                # Default to NOT opted in via env; cases opt in explicitly.
+                "AGENT_EVIDENCE_ARCHIVE_HOME": "",
+            }
+
+        def context_of(out: dict[str, object] | None) -> str:
+            if out is None:
+                return ""
+            return out["hookSpecificOutput"]["additionalContext"]  # type: ignore[index]
+
+        payload = {"hook_event_name": "SessionStart"}
+
+        # Case A: opted in via local config, but the archive clone is missing.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(root / "missing-archive"), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env=base_env(home, cfg_home, data_home),
+            )
+            self.assertEqual(code, 0, err)
+            self.assertIsNotNone(out, f"expected JSON output; stderr={err}")
+            self.assertIn("evidence-archive", context_of(out))
+
+        # Case B: not opted in at all -> evidence-archive stays silent.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            cfg_home.mkdir()
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env=base_env(home, cfg_home, data_home),
+            )
+            self.assertEqual(code, 0, err)
+            self.assertNotIn("evidence-archive", context_of(out))
+
+        # Case C: opted in via config AND wiring is healthy -> stays silent.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            archive = root / "archive"
+            (archive / "config").mkdir(parents=True)
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=archive, check=True)
+            subprocess.run(["git", "add", "-A"], cwd=archive, check=True)
+            subprocess.run(
+                ["git", "-c", "user.email=t@example.com", "-c", "user.name=t",
+                 "-c", "commit.gpgsign=false", "commit", "-qm", "seed"],
+                cwd=archive, check=True,
+            )
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env=base_env(home, cfg_home, data_home),
+            )
+            self.assertEqual(code, 0, err)
+            self.assertNotIn("evidence-archive", context_of(out))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

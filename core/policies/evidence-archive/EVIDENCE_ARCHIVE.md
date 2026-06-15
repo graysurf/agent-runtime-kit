@@ -1,7 +1,7 @@
 # Evidence Archive
 
 The evidence archive makes skill-usage evidence durable and queryable beyond
-the ephemeral agent-out runtime tree. It is the durability-and-query lane that
+the local agent-out runtime tree. It is the durability-and-query lane that
 sits beside the curated-lesson lane in
 [`heuristic-system/HEURISTIC_SYSTEM.md`](../heuristic-system/HEURISTIC_SYSTEM.md):
 the heuristic system retains hand-written lessons; the evidence archive retains
@@ -14,18 +14,21 @@ policy is the map, not a re-implementation of any of them.
 
 1. **Produce** — skills emit `skill-usage.record.v1` envelopes into the
    agent-out runtime tree (`${AGENT_HOME}/out/projects/<owner__repo>/...`)
-   during a session. Each record carries a `producer { tool, nils_cli_version }`
-   block so an archived record is attributable to the surface and CLI version
-   that wrote it.
+   during a session. Records are written **unconditionally** — regardless of
+   whether an archive is configured — so they are a useful breadcrumb even on a
+   machine that never archives. Each record carries a
+   `producer { tool, nils_cli_version }` block so an archived record is
+   attributable to the surface and CLI version that wrote it.
 2. **Surface** — at session end, `heuristic-session-closeout` enumerates the
    session's records (read-only) and flags non-pass outcomes as promotion
-   candidates. This is awareness, not durability: the runtime tree is still
-   ephemeral and is reaped on its own retention schedule.
+   candidates. This is awareness, not durability: the runtime tree is scratch
+   space that is **not** auto-reaped — records persist there until manually
+   cleaned (`agent-out`) or migrated.
 3. **Migrate** — `evidence migrate` (the `evidence-migrate` skill) copies
    records out of the runtime tree into the archive repository. Dry-run is the
    default; `--apply` writes, commits, and pushes. Migration is the durability
-   boundary: once a record is archived and pushed, it survives the runtime
-   tree's reaping.
+   boundary: once a record is archived and pushed, it survives any later cleanup
+   of the runtime tree.
 4. **Store** — the archive repository holds the rollups, their `metadata.yaml`,
    scrubbed linked evidence, scrub logs, and a derived `catalog.json` (see
    Layout).
@@ -100,8 +103,9 @@ never disabled. A working directory outside `$HOME` is itself redacted to
 
 ## Idempotency and copy-only semantics
 
-Migration is **copy-only**: the agent-out source tree is left intact (it is
-reaped by its own retention, not by migrate). Records dedup by content digest,
+Migration is **copy-only**: the agent-out source tree is left intact (migrate
+never deletes from it; the source is cleaned manually via `agent-out`). Records
+dedup by content digest,
 so re-running migrate is safe — already-archived records are reported in
 `already_archived` and skipped. There is no source-deletion step and no
 working-repo push to perform; the CLI commits and pushes only the archive.
@@ -123,6 +127,9 @@ motivated it, and vice versa.
 ## When to migrate
 
 Migrate after a session's goal is achieved and `heuristic-session-closeout` has
-surfaced its records, or periodically to drain the runtime tree before it is
-reaped. Migration is not a per-task step. Always review the dry-run — counts,
-prepared targets, scrub summary, and the `blocked` list — before `--apply`.
+surfaced its records, or periodically to drain the runtime tree. The tree is not
+auto-reaped — records persist until manually cleaned — so migration timing is
+not load-bearing: nothing is lost by migrating later, and draining mainly keeps
+the tree bounded. Migration is not a per-task step. Always review the dry-run —
+counts, prepared targets, scrub summary, and the `blocked` list — before
+`--apply`.
