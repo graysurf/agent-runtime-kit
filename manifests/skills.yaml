@@ -166,6 +166,7 @@ skills:
     required_clis:
       heuristic-inbox: ">=1.1.0"
       semantic-commit: ">=0.16.0"
+      evidence: ">=1.7.1"
     state_out_mode: runtime
 
   - id: meta.create-skill
