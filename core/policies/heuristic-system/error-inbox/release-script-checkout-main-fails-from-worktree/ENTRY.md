@@ -56,13 +56,12 @@ Verified across all three releases this session.
 
 ## Promotion Criteria
 
-Promote when `project-bump-version-tag-release.sh` either (a) detects a
-non-main-worktree run and performs the post-merge tag against `origin/main`
-without `git checkout main`, or (b) documents a run-from-main-checkout
-requirement in its usage and the consuming release skills follow it.
+Promote when `project-bump-version-tag-release.sh` detects a non-main-worktree
+run and performs the post-merge tag against `origin/main` without
+`git checkout main`.
 
 ## Next Action
 
-Add a worktree-aware post-merge tag step (or document the run-from-main-checkout
-requirement) in project-bump-version-tag-release.sh; file an upstream nils-cli
-issue referencing this entry.
+Add a worktree-aware post-merge tag step in
+project-bump-version-tag-release.sh; file an upstream nils-cli issue
+referencing this entry.
