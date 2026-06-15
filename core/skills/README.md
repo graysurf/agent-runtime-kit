@@ -129,6 +129,7 @@ classification lives in [meta/README.md](./meta/README.md).
 | Repo operation dispatchers | [bootstrap](./meta/bootstrap/), [deploy](./meta/deploy/), [pre-pr](./meta/pre-pr/), [release](./meta/release/), [setup-project](./meta/setup-project/) | Repo-owned `.agents/scripts/*` dispatch and project adoption. |
 | Skill lifecycle | [create-skill](./meta/create-skill/), [remove-skill](./meta/remove-skill/), [create-project-skill](./meta/create-project-skill/), [remove-project-skill](./meta/remove-project-skill/) | Managed runtime-kit skills and consuming-repo project-local skills. |
 | Plan archive | [plan-archive-query](./meta/plan-archive-query/), [plan-archive-discover](./meta/plan-archive-discover/), [plan-archive-migrate](./meta/plan-archive-migrate/) | Work-history lookup and completed plan migration. |
+| Evidence archive | [evidence-migrate](./meta/evidence-migrate/) | Durable, scrubbed skill-usage evidence migration into the agent-evidence-archive. |
 | Heuristic system | [heuristic-inbox](./meta/heuristic-inbox/), [heuristic-session-closeout](./meta/heuristic-session-closeout/) | Curated workflow-gap records and session closeout retention. |
 | Delivery and repo maintenance | [semantic-commit](./meta/semantic-commit/), [worktree-triage](./meta/worktree-triage/), [nils-cli-bump](./meta/nils-cli-bump/), [repo-retro](./meta/repo-retro/) | Semantic commits, worktree cleanup, nils-cli pin bumps, and retrospectives. |
 

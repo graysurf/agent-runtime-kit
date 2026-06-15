@@ -17,6 +17,7 @@ human routing index for choosing the right meta skill without scanning every
 | Repo operation dispatchers | 5 | Running repo-owned bootstrap, deploy, pre-PR, release, or adoption workflows |
 | Skill lifecycle | 4 | Creating or removing managed runtime-kit skills or consuming-repo project skills |
 | Plan archive | 3 | Querying, discovering, or migrating completed plan bundles |
+| Evidence archive | 1 | Migrating durable, scrubbed skill-usage evidence into the agent-evidence-archive |
 | Heuristic system | 2 | Recording unresolved workflow gaps or session closeout lessons |
 | Delivery and repo maintenance | 4 | Committing, worktree triage, CLI pin bumps, or local retrospectives |
 
@@ -55,6 +56,12 @@ human routing index for choosing the right meta skill without scanning every
 | [plan-archive-query](./plan-archive-query/) | Reads and refreshes the agent-plan-archive work-history cache before opening new work or diagnosing recurring problems. |
 | [plan-archive-discover](./plan-archive-discover/) | Performs a read-only scan of plan folders for archive candidates before migration. |
 | [plan-archive-migrate](./plan-archive-migrate/) | Migrates a closed plan folder into the agent-plan-archive repository, dry-run first and apply only on explicit confirmation. |
+
+## Evidence Archive
+
+| Skill | Purpose |
+| --- | --- |
+| [evidence-migrate](./evidence-migrate/) | Migrates skill-usage evidence out of the ephemeral agent-out tree into the agent-evidence-archive, dry-run first and apply only on explicit confirmation; the read surfaces (`evidence discover` / `query` / `search` / `catalog`) are driven directly per the evidence-archive policy. |
 
 ## Heuristic System
 

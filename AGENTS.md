@@ -41,6 +41,10 @@
     `${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit`.
   - `AGENT_DOCS_HOME` — `agent-docs` catalog root, e.g. this checkout
     (`$HOME/Project/<org>/agent-runtime-kit`).
+  - `AGENT_EVIDENCE_ARCHIVE_HOME` — optional `agent-evidence-archive` clone
+    root (resolution order: `evidence --archive` flag > this env var > XDG
+    config `agent-evidence-archive/config.yaml` > XDG data-home default). See
+    `core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`.
 
 ## Orientation
 
