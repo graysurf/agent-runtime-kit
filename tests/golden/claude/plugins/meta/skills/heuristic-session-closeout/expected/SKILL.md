@@ -3,9 +3,11 @@ name: heuristic-session-closeout
 description:
   Use when this session's goal has been achieved and the agent needs to surface
   the session's skill-usage records, review available session evidence for
-  Heuristic System updates, write curated retained records when warranted, and
-  land them on `main` through the `heuristic-inbox deliver` records-branch PR
-  (auto-merged).
+  Heuristic System updates, write curated retained records when warranted, land
+  them on `main` through the `heuristic-inbox deliver` records-branch PR
+  (auto-merged), and drive durable evidence retention into the
+  agent-evidence-archive (dry-run `evidence migrate`, apply when clean, surface
+  when risky).
 ---
 
 # Heuristic Session Closeout
@@ -147,10 +149,11 @@ abandoned feature branch.
      `accepted_risk` / `accepted-risk`, and any record with non-empty
      `failures[]` or `follow_up[]`, as a promotion-review candidate for step 4.
      This is read-only surfacing: never write to, scrub, or auto-commit the raw
-     records here. Durable retention of the surfaced records themselves is a
-     separate lane — the `evidence-migrate` skill (the `evidence-archive`
-     policy) — which this skill does not perform; surfacing only routes non-pass
-     outcomes toward curated promotion in step 4.
+     records here. Surfacing routes non-pass outcomes toward curated promotion
+     in step 4; durable retention of the raw records themselves is a separate
+     lane this skill *triggers* (does not re-implement) in step 8, via the
+     `evidence-migrate` skill / `evidence migrate` CLI (the `evidence-archive`
+     policy owns the mechanics).
    - Review the conversation's concrete outcomes, repairs, failures, retries,
      validation results, and current diff.
    - Inspect existing active and archived Heuristic System cases before adding
@@ -230,10 +233,35 @@ abandoned feature branch.
    - If `deliver` or any auto-merge step blocks, stop and report the exact
      blocker plus `pr_url` / `branch` / `worktree_path`; the records stay
      recoverable on the pushed branch or the open PR.
-8. Final response:
+8. Retain raw `skill-usage` evidence to the archive (the durability lane):
+   - Distinct from the curated-case lanes above. This durably stores the raw
+     `skill-usage` rollups for future query through the `evidence-migrate`
+     skill / `evidence migrate` CLI; the `evidence-archive` policy owns the
+     mechanics (scrub, host classification, dedup, commit, push) — this skill
+     only triggers them. It is whole-tree, not session-scoped: it drains every
+     not-yet-archived record, not only this session's.
+   - Skip entirely when no archive is configured (no `$AGENT_EVIDENCE_ARCHIVE_HOME`,
+     no machine-local `agent-evidence-archive/config.yaml`, no resolvable clone).
+     Produce stays a local breadcrumb; retention is simply inactive on that host.
+   - Dry-run first (read-only, no `--apply`): `evidence migrate --format json`.
+     Review `eligible`, the `blocked` list, and the per-record scrub summary.
+   - Apply automatically only when the dry-run is clean: `eligible > 0` and every
+     `blocked` entry is expected — an employer host absent from
+     `config/hosts.yaml` (the gamania-safety block) or an unresolvable/old-`cwd`
+     record. Then `evidence migrate --apply`; report the resulting archive commit.
+   - Do NOT auto-apply — surface the dry-run and hand the decision to the user —
+     when anything is off: an unexpected `blocked` reason, a surprising scrub
+     volume, a newly-classified host you do not recognize, or a dry-run error.
+   - This commits and pushes the archive repository directly (the CLI owns that);
+     it is independent of the curated-records `heuristic-inbox deliver` above and
+     touches a different repository, so neither blocks the other.
+9. Final response:
    - Name every case created, updated, promoted, archived, or skipped.
    - Include verification commands and the records branch / merged PR when
      completed.
+   - Report the evidence retention result from step 8: the archive commit when
+     migration applied, "surfaced for review" when it was withheld, or "no
+     archive configured" / "nothing pending" when it was a no-op.
    - If no durable record was warranted, say that explicitly and summarize the
      no-op rationale.
 
@@ -241,10 +269,14 @@ abandoned feature branch.
 
 This skill owns session-level Heuristic System closeout judgment, curated
 retention routing, and the merge policy for landing retained records on `main`
-(auto-merge the `heuristic-inbox deliver` docs PR). It delegates the delivery
-mechanics — worktree, staging guard, commit, push, PR-open — to
-`heuristic-inbox deliver`, and does not re-encode them. It does not replace
-`heuristic-inbox` case mechanics, `skill-usage` runtime evidence, durable
-evidence retention (the `evidence-migrate` skill and the `evidence-archive`
-policy), project implementation workflows, general PR/MR delivery, raw
+(auto-merge the `heuristic-inbox deliver` docs PR). It also *triggers* the
+durable evidence-retention lane (step 8) — dry-run `evidence migrate`, apply
+when clean, surface when risky — but delegates the migration mechanics (scrub,
+host classification, dedup, archive commit/push) to the `evidence-migrate` skill
+and `evidence migrate` CLI and does not re-encode them. It delegates the
+curated-record delivery mechanics — worktree, staging guard, commit, push,
+PR-open — to `heuristic-inbox deliver`, and does not re-encode them. It does not
+replace `heuristic-inbox` case mechanics, `skill-usage` runtime evidence, the
+`evidence migrate` implementation itself, project implementation workflows,
+general PR/MR delivery, raw
 session-log archiving, or memory updates.

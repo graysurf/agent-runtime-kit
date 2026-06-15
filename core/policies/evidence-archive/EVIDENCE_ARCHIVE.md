@@ -20,15 +20,23 @@ policy is the map, not a re-implementation of any of them.
    `producer { tool, nils_cli_version }` block so an archived record is
    attributable to the surface and CLI version that wrote it.
 2. **Surface** — at session end, `heuristic-session-closeout` enumerates the
-   session's records (read-only) and flags non-pass outcomes as promotion
-   candidates. This is awareness, not durability: the runtime tree is scratch
-   space that is **not** auto-reaped — records persist there until manually
-   cleaned (`agent-out`) or migrated.
+   **session's** records (read-only) and flags non-pass outcomes as promotion
+   candidates for the curated-lesson lane. This is awareness, not durability:
+   the runtime tree is scratch space that is **not** auto-reaped — records
+   persist there until manually cleaned (`agent-out`) or migrated.
 3. **Migrate** — `evidence migrate` (the `evidence-migrate` skill) copies
    records out of the runtime tree into the archive repository. Dry-run is the
    default; `--apply` writes, commits, and pushes. Migration is the durability
    boundary: once a record is archived and pushed, it survives any later cleanup
-   of the runtime tree.
+   of the runtime tree. **`heuristic-session-closeout` drives this stage** as
+   its step 8 (whole-tree, not session-scoped): it runs the dry-run, and when it
+   is clean — `eligible > 0` and every `blocked` entry is an expected
+   host-classification block (gamania-safety) or an unresolvable/old-`cwd`
+   record — it auto-`--apply`s; anything off (an unexpected block, a surprising
+   scrub volume, an unrecognized host, a dry-run error) is surfaced for the
+   operator instead of applied. The skill never re-implements the migration; it
+   only triggers the CLI. Manual `evidence migrate` remains available for
+   out-of-closeout drains.
 4. **Store** — the archive repository holds the rollups, their `metadata.yaml`,
    scrubbed linked evidence, scrub logs, and a derived `catalog.json` (see
    Layout).
@@ -126,10 +134,16 @@ motivated it, and vice versa.
 
 ## When to migrate
 
-Migrate after a session's goal is achieved and `heuristic-session-closeout` has
-surfaced its records, or periodically to drain the runtime tree. The tree is not
+The default trigger is `heuristic-session-closeout` step 8: after a session's
+goal is achieved, the closeout drives a dry-run and auto-applies it when clean
+(see the Migrate stage above). So under normal operation migration is hands-off
+and the archive tracks the runtime tree session by session.
+
+Run `evidence migrate` **manually** only outside that flow — to drain the tree
+between closeouts, to re-review after the closeout surfaced (rather than applied)
+a risky dry-run, or on a host where closeout has not run. The tree is not
 auto-reaped — records persist until manually cleaned — so migration timing is
 not load-bearing: nothing is lost by migrating later, and draining mainly keeps
-the tree bounded. Migration is not a per-task step. Always review the dry-run —
-counts, prepared targets, scrub summary, and the `blocked` list — before
-`--apply`.
+the tree bounded. Migration is not a per-task step. Whether driven by closeout
+or run by hand, always review the dry-run — counts, prepared targets, scrub
+summary, and the `blocked` list — before `--apply`.

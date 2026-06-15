@@ -128,9 +128,12 @@ CLI logic, call `git` directly, or delete anything from the source tree.
 ## Related Skills
 
 - `heuristic-session-closeout` — enumerates the session's skill-usage
-  records and flags non-pass outcomes for promotion. Run it at session
-  end; this skill is the durable next step that moves those records out
-  of the ephemeral runtime tree into the queryable archive.
+  records and flags non-pass outcomes for promotion, then **drives this
+  skill's CLI as its retention step**: it runs the `evidence migrate`
+  dry-run and auto-applies a clean result (surfacing a risky one instead).
+  So at session end retention is usually hands-off; invoke this skill
+  directly only for out-of-closeout drains or to re-review a dry-run the
+  closeout surfaced rather than applied.
 - The read-only archive surfaces — `evidence discover` (scan archivable
   candidates), `evidence query` / `evidence search` / `evidence catalog`
   (read past archived rollups) — are documented in the
