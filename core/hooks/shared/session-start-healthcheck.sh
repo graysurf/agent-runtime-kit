@@ -35,10 +35,29 @@ evidence_config_path() {
   printf '%s\n' "${XDG_CONFIG_HOME:-$HOME/.config}/agent-evidence-archive/config.yaml"
 }
 
+archive_has_git_metadata() {
+  [[ -d "$1/.git" || -f "$1/.git" ]]
+}
+
+unquote_yaml_scalar() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  if [[ "$value" == \"*\" && "$value" == *\" && "${#value}" -ge 2 ]]; then
+    value="${value:1:${#value}-2}"
+    value="${value//\\\"/\"}"
+    value="${value//\\\\/\\}"
+  elif [[ "$value" == \'*\' && "$value" == *\' && "${#value}" -ge 2 ]]; then
+    value="${value:1:${#value}-2}"
+    value="${value//\'\'/\'}"
+  fi
+  printf '%s\n' "$value"
+}
+
 evidence_opted_in() {
   [[ -n "${AGENT_EVIDENCE_ARCHIVE_HOME:-}" ]] && return 0
   [[ -f "$(evidence_config_path)" ]] && return 0
-  [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/agent-evidence-archive/.git" ]] && return 0
+  archive_has_git_metadata "${XDG_DATA_HOME:-$HOME/.local/share}/agent-evidence-archive" && return 0
   return 1
 }
 
@@ -53,6 +72,7 @@ resolve_archive_path() {
   if [[ -f "$cfg" ]]; then
     p="$(sed -n 's/^archive_clone_path:[[:space:]]*//p' "$cfg" | head -1)"
     if [[ -n "$p" ]]; then
+      p="$(unquote_yaml_scalar "$p")"
       printf '%s\n' "$p"
       return
     fi
@@ -73,7 +93,7 @@ evidence_problems() {
 "
   fi
   archive="$(resolve_archive_path)"
-  if [[ ! -d "$archive/.git" ]]; then
+  if ! archive_has_git_metadata "$archive"; then
     out="${out}- archive clone not found at: ${archive}
 "
   else

@@ -1699,14 +1699,24 @@ exit 65
             "    primary_identity: tester\n"
         )
 
-        def local_config(archive_path: Path) -> str:
+        def local_config(archive_path: Path, *, quoted: bool = False) -> str:
+            archive_value = json.dumps(str(archive_path)) if quoted else str(archive_path)
             return (
                 "version: 1\n"
-                f"archive_clone_path: {archive_path}\n"
+                f"archive_clone_path: {archive_value}\n"
                 "working_repo_roots: []\n"
                 "performance:\n"
                 "  migrate_batch_size: 50\n"
             )
+
+        def stub_bin(root: Path) -> Path:
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            for name in ("agent-docs", "evidence"):
+                script = bin_dir / name
+                script.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+                script.chmod(0o755)
+            return bin_dir
 
         def base_env(home: Path, cfg_home: Path, data_home: Path) -> dict[str, str]:
             return {
@@ -1782,6 +1792,7 @@ exit 65
             archive = root / "archive"
             (archive / "config").mkdir(parents=True)
             (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
             subprocess.run(["git", "init", "-q"], cwd=archive, check=True)
             subprocess.run(["git", "add", "-A"], cwd=archive, check=True)
             subprocess.run(
@@ -1796,7 +1807,72 @@ exit 65
             )
             code, out, err = run_shell_hook(
                 "session-start-healthcheck.sh", payload, cwd=work,
-                env=base_env(home, cfg_home, data_home),
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertNotIn("evidence-archive", context_of(out))
+
+        # Case D: quoted archive_clone_path is valid YAML and should resolve.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            archive = root / "archive"
+            (archive / "config").mkdir(parents=True)
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
+            subprocess.run(["git", "init", "-q"], cwd=archive, check=True)
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive, quoted=True), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertNotIn("evidence-archive", context_of(out))
+
+        # Case E: archive clones may be Git worktrees, where .git is a file.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            archive = root / "archive"
+            (archive / "config").mkdir(parents=True)
+            (archive / ".git").write_text(
+                "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
+            )
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
             )
             self.assertEqual(code, 0, err)
             self.assertNotIn("evidence-archive", context_of(out))
