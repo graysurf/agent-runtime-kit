@@ -1,20 +1,39 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-15 (refreshed for `v1.6.0`)
+- Snapshot date: 2026-06-15 (refreshed for `v1.6.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.6.0`
+- Active `git describe --tags` output: `v1.6.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.6.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.6.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `38f9fa6`
-  (`chore(release): bump cli versions to 1.6.0 (#855)`)
+- Head commit: `4ab0390`
+  (`chore(release): bump cli versions to 1.6.1 (#860)`)
 - Release:
-  [`v1.6.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.6.0),
+  [`v1.6.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.6.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.6.1` is a lock-step host bump over `v1.6.0`. It hardens the
+  `evidence migrate` surface the kit's evidence-migrate skill already consumes:
+  - `migrate` tightens scrub/path handling and fixes query/catalog/XDG gaps, so
+    malformed or partially resolvable records stay in the blocked/skipped
+    report instead of aborting the batch, and archive lookup stays consistent
+    across the read-only evidence surfaces
+    ([#854](https://github.com/sympoies/nils-cli/pull/854)).
+  - Resolved cwd identity now wins over an explicit `--host` vouch, preserving
+    operator-supplied host overrides for slug-only records without letting them
+    override records that already identify their repo from `cwd`
+    ([#856](https://github.com/sympoies/nils-cli/pull/856)).
+  - Evidence completion text was regenerated for the `--deep` help reword
+    ([#857](https://github.com/sympoies/nils-cli/pull/857)), and publish-order
+    CI now treats only path dependencies as publish-order edges
+    ([#858](https://github.com/sympoies/nils-cli/pull/858)).
+  No consumer rewrite is required and no consumed floor moves to `1.6.1`; this
+  bump records the already-declared `evidence >= 1.6.0` floor in
+  `docs/source/nils-cli-pin.yaml` so the pin manifest matches
+  `manifests/skills.yaml`.
 - `v1.6.0` is a lock-step host bump over `v1.5.0`. It finalizes the
   `evidence migrate` surface the kit's new evidence-migrate skill
   (agent-runtime-kit#352) consumes, plus internal release-tooling hardening:
@@ -29,7 +48,8 @@
     ([#853](https://github.com/sympoies/nils-cli/pull/853)). The
     evidence-migrate skill depends on both the dry-run `blocked` review and the
     `--host` vouch, so the kit's first `evidence` consumer pins
-    `evidence >= 1.6.0` (the floor lands with that skill, not this bump).
+    `evidence >= 1.6.0` (the runtime-kit skill declares the floor; the pin
+    manifest mirrors it in the `v1.6.1` bump).
   - Internal release-tooling only, no consumer floor moves: a
     `plan_archive::scrub` compatibility shim re-exports the shared `nils-scrub`
     crate at its original label-free signatures and the crates-io publish order
@@ -51,9 +71,9 @@
     set + a labelled scrub-log format
     ([#846](https://github.com/sympoies/nils-cli/pull/846)).
   No existing consumed surface was retired or renamed (a new binary plus an
-  internal extraction), so no consumer rewrite, and the only `required_clis[]`
-  move is the new `evidence` floor that lands with the consuming
-  evidence-migrate skill — not this pin bump.
+  internal extraction), so no consumer rewrite; the `evidence` floor lands with
+  the consuming evidence-migrate skill and is mirrored into the pin manifest in
+  the `v1.6.1` bump.
 - `v1.4.0` is a lock-step host bump over `v1.3.1`, carrying one consumed
   additive surface change plus pre-released fixes:
   - `skill-usage` records now carry an additive `producer` block
@@ -599,7 +619,7 @@ Notes on derivation:
 | `memo`                  | `memo`                                                                                                          | Memo storage CLI.                                                                                                                                                                                                                                                      |
 | `nils-build-info`           | (library only)                                                                                                      | Build metadata helper for the workspace `--version` output; consumed transitively, never appears in `required_clis`. New crate as of `v0.28.0` (#625).                                                                                                                 |
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
-| `nils-evidence`             | `evidence`                                                                                                          | Query/migrate CLI over the durable, secret-scrubbed skill-usage evidence archive (`migrate` / `discover` / `query` / `search` / `catalog` / `validate-*`). New crate as of `v1.5.0`; consumed by the `evidence-migrate` skill, which sets the `evidence >= 1.6.0` floor (the floor lands with that skill, not the pin bump). |
+| `nils-evidence`             | `evidence`                                                                                                          | Query/migrate CLI over the durable, secret-scrubbed skill-usage evidence archive (`migrate` / `discover` / `query` / `search` / `catalog` / `validate-*`). New crate as of `v1.5.0`; consumed by the `evidence-migrate` skill, which sets the `evidence >= 1.6.0` floor mirrored in `docs/source/nils-cli-pin.yaml`. As of `v1.6.1`, `migrate` hardens scrub/path handling, query/catalog/XDG behavior, and host-vouch precedence so `--host` resolves slug-only records without overriding records that already resolve a cwd identity ([#854](https://github.com/sympoies/nils-cli/pull/854), [#856](https://github.com/sympoies/nils-cli/pull/856)). |
 | `nils-markdown`             | `md-render`                                                                                                         | Shared Tera-backed Markdown template layer. Ships the `md-render` binary behind the `bin-cli` cargo feature (enumerated by `workspace-bins.sh`); library role otherwise, not consumed by any skill today. Present since before `v0.25.8`; the prior snapshot omitted it. |
 | `nils-scrub`                | (library only)                                                                                                      | Shared secret-scrub pattern set plus labelled scrub-log format, extracted from `plan-archive` so both `plan-archive refresh` and `evidence migrate` reuse one v1 implementation. New crate as of `v1.5.0`; never appears in `required_clis`.                            |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |
