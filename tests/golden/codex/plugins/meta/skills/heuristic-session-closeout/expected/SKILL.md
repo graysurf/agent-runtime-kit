@@ -25,6 +25,10 @@ Prereqs:
   `PATH`. `deliver` drives `git`,
   `semantic-commit`, and `forge-cli pr create` internally; the skill only adds
   the auto-merge step.
+- When an evidence archive is configured (step 8), `evidence` (nils-cli >= v1.7.1)
+  is also required on `PATH`; it owns the `evidence migrate` retention mechanics.
+  This dependency is declared in `manifests/skills.yaml` `required_clis`, so
+  version-alignment can require the floor rather than failing only at step 8.
 - The shared Heuristic System root can be resolved from
   `AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT` or
   `core/policies/heuristic-system/` in the active `agent-runtime-kit` checkout.
@@ -182,14 +186,20 @@ abandoned feature branch.
    - Run the cluster-compression sweep from data, not memory, and not only a
      this-session scan. Read
      `heuristic-inbox list --inbox-dir "$root/error-inbox" --include-archived --format json`
-     and group entries by their `Cluster:` slug (fall back to a shared `Area:` /
-     root cause when slugs are unset). A group with two or more resolved
-     (`promoted` / `wontfix`) members and no operation record already covering it
-     is an `operation-records/<slug>/RECORD.md` candidate per the Compression
-     Rule, even if this session created none of them. Compress only resolved
-     members; cite still-open siblings as evidence the class recurs rather than
-     claiming them fixed. This data-driven sweep is what keeps the
-     operation-records lane from going unused.
+     and group entries by their shared `area` (the field the list JSON emits)
+     and root cause. The list JSON does NOT carry a `cluster` field —
+     `Cluster:` is an operation-record-only line and `heuristic-inbox list`
+     serializes only `path` / `title` / `status` / `first_observed` / `area` /
+     `severity` / `raw_records` / `archived` — so do not group inbox entries by a
+     `cluster` value from this JSON; read existing `Cluster:` slugs from
+     `operation-records/*/RECORD.md` (and the archive) to tell whether a group is
+     already covered. A group with two or more resolved (`promoted` / `wontfix`)
+     members and no operation record already covering it is an
+     `operation-records/<slug>/RECORD.md` candidate per the Compression Rule,
+     even if this session created none of them. Compress only resolved members;
+     cite still-open siblings as evidence the class recurs rather than claiming
+     them fixed. This data-driven sweep is what keeps the operation-records lane
+     from going unused.
    - Run the reverse retirement sweep over `operation-records/`: an `active`
      record whose rule is now mechanically enforced (an `Enforced-by:` gate or
      CLI), whose governed surface is retired, or that a broader record
@@ -246,10 +256,16 @@ abandoned feature branch.
    - After the merge, discard the now-redundant uncommitted record copies in the
      current checkout (`git checkout -- core/policies/heuristic-system`) so they
      never leak into an unrelated feature branch.
-   - If `deliver` or any auto-merge step blocks, stop and report the exact
-     blocker plus `pr_url` / `branch` / `worktree_path`; the records stay
-     recoverable on the pushed branch or the open PR.
+   - If `deliver` or any auto-merge step blocks, capture the exact blocker plus
+     `pr_url` / `branch` / `worktree_path`; the records stay recoverable on the
+     pushed branch or the open PR. This blocks only the curated-records lane — do
+     NOT skip the rest of closeout. Still run the independent evidence-retention
+     lane (step 8, a different repository) before the final response, then report
+     the blocker alongside the retention result.
 8. Retain raw `skill-usage` evidence to the archive (the durability lane):
+   - Run this even when step 7 blocked: it commits to a different repository and
+     does not depend on the curated-records PR landing, so a stuck `deliver` /
+     auto-merge must not skip retention.
    - Distinct from the curated-case lanes above. This durably stores the raw
      `skill-usage` rollups for future query through the `evidence-migrate`
      skill / `evidence migrate` CLI; the `evidence-archive` policy owns the
