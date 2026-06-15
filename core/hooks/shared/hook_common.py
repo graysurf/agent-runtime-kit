@@ -760,6 +760,30 @@ def _skip_redirections(invocation: list[str], cursor: int) -> int:
     return cursor
 
 
+# A token that begins an stdin/input redirection: optional fd digits then an
+# input operator. Output operators (`>`, `>>`, `>&`) are deliberately excluded.
+_INPUT_REDIRECT_TOKEN_RE = re.compile(r"^\d*(?:<<<|<<-?|<>|<&|<)")
+
+
+def _skip_input_redirections(invocation: list[str], cursor: int) -> int:
+    """Skip stdin/input redirections only when locating an option's word argument.
+
+    ``shell_tokens`` strips quotes, so a quoted option argument that merely looks
+    like an OUTPUT redirection (``--rcfile '>foo'`` tokenizes to ``>foo``) is
+    indistinguishable from a real redirection and must bind as the argument
+    rather than be skipped — otherwise the trailing operand is mistaken for the
+    argument and the body is wrongly credited. Skipping only input redirections
+    keeps the legitimate ``--rcfile <<EOF arg`` case (the option argument lands
+    after a real here-doc redirection) while refusing to skip over an
+    output-redirect-shaped word, the conservative (never over-crediting) reading.
+    """
+    while cursor < len(invocation) and _INPUT_REDIRECT_TOKEN_RE.match(
+        invocation[cursor]
+    ):
+        cursor += 2 if _redirect_consumes_next(invocation[cursor]) else 1
+    return cursor
+
+
 def _stdin_redirect_kind(token: str) -> str | None:
     """Classify how a token redirects stdin (fd 0 or unspecified).
 
@@ -791,8 +815,15 @@ def _heredoc_body_is_executed_by_shell(
     invocation = invocation_tokens(_simple_command_spanning(line, op_start))
     if not invocation:
         return False
-    if PurePosixPath(invocation[0]).name not in SHELL_HEREDOC_EXECUTORS:
+    executor = PurePosixPath(invocation[0]).name
+    if executor not in SHELL_HEREDOC_EXECUTORS:
         return False
+    # GNU long options (`--rcfile`/`--init-file`/`--posix`), the `-O`/`+O` shopt
+    # flags, and the `+s` stdin-as-script spelling are all Bash-specific. A POSIX
+    # `sh`/`dash`/`ksh`/`zsh` invocation aborts on (or never honours) them before
+    # the here-doc body runs, so crediting them for a non-Bash executor is a
+    # false validation credit. Gate that grammar on an actual ``bash``.
+    is_bash = executor == "bash"
 
     # A second stdin here-doc, a here-string, or a plain `< file` input
     # redirection supersedes or competes with this body, so it is no longer
@@ -813,6 +844,7 @@ def _heredoc_body_is_executed_by_shell(
     noexec = False
     cursor = 1
     past_options = False
+    seen_short_option = False
     while cursor < len(invocation):
         token = invocation[cursor]
         if _REDIRECT_TOKEN_RE.match(token):
@@ -826,16 +858,33 @@ def _heredoc_body_is_executed_by_shell(
             past_options = True
             cursor += 1
             continue
-        if token in _OPTIONS_TAKING_WORD_ARG:
-            # Redirections are not argv words. An option argument can therefore
-            # appear after a here-doc redirection on the same command line.
-            arg_cursor = _skip_redirections(invocation, cursor + 1)
-            if arg_cursor >= len(invocation):
+        if token.startswith("--"):
+            # GNU long options are Bash-only and, even on Bash, are only
+            # recognized before any single-character option (Bash manual). For a
+            # POSIX executor, or a late long option after a short flag, the shell
+            # aborts or treats the token as the script-file operand before the
+            # here-doc body runs, so never credit it.
+            if not is_bash or seen_short_option:
                 return False
-            cursor = arg_cursor + 1
+            if token in _OPTIONS_TAKING_WORD_ARG:
+                # The option needs a following word argument. Skip only an input
+                # redirection (a real `<<EOF` competing for the arg slot), never
+                # an output-redirect-shaped quoted word, which must bind as the
+                # argument itself.
+                arg_cursor = _skip_input_redirections(invocation, cursor + 1)
+                if arg_cursor >= len(invocation):
+                    return False
+                cursor = arg_cursor + 1
+                continue
+            # Any other long option (e.g. `--posix`) is a single unit, never a
+            # compact short-flag cluster, so `--posix` must not be read as `-s`.
+            cursor += 1
             continue
         if token in _BASH_SHOPT_OPTION_FLAGS:
-            arg_cursor = _skip_redirections(invocation, cursor + 1)
+            if not is_bash:
+                return False
+            seen_short_option = True
+            arg_cursor = _skip_input_redirections(invocation, cursor + 1)
             if arg_cursor >= len(invocation):
                 cursor += 1
                 continue
@@ -843,19 +892,17 @@ def _heredoc_body_is_executed_by_shell(
                 return False
             cursor = arg_cursor + 1
             continue
-        if token.startswith("--"):
-            # Any other GNU long option is a single unit, never a compact
-            # short-flag cluster, so `--posix` must not be read as `-s`.
-            cursor += 1
-            continue
         if token.startswith(("-", "+")) and token != "-":
             sign, cluster = token[0], token[1:]
+            seen_short_option = True
             if "c" in cluster:
                 return False
             if "n" in cluster:
                 noexec = sign == "-"
-            # `+s` also leaves stdin as the script; operands are positional args.
-            if "s" in cluster:
+            # `-s` forces stdin-as-script on every POSIX shell; the `+s` spelling
+            # only does so on Bash (dash/sh open the operand as a command file),
+            # so credit `+s` for an actual bash executor only.
+            if "s" in cluster and (sign == "-" or is_bash):
                 forced_stdin_script = True
             cursor += 1
             continue
