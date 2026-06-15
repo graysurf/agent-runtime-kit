@@ -52,9 +52,24 @@ archive_is_git_repo() {
   # git repository". Ask Git itself to resolve the repository; only when Git is
   # unavailable fall back to a structural check (a `.git` directory, or a `.git`
   # file whose `gitdir:` target path exists).
-  local archive="$1" marker="$1/.git" gitdir
+  #
+  # Two subtleties when asking Git: (a) `git -C "$archive" rev-parse` would
+  # succeed for a SUBDIRECTORY of an enclosing checkout by resolving the OUTER
+  # repo, but the evidence archive must be a standalone clone — so require the
+  # resolved work-tree top level to BE `$archive`; (b) an inherited `GIT_DIR` /
+  # `GIT_WORK_TREE` (e.g. a session launched from a Git context) would redirect
+  # discovery away from `$archive` — so scrub those for this probe.
+  local archive="$1" marker="$1/.git" gitdir toplevel resolved_archive
   if command -v git >/dev/null 2>&1; then
-    git -C "$archive" rev-parse --git-dir >/dev/null 2>&1
+    toplevel="$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_INDEX_FILE \
+      git -C "$archive" rev-parse --show-toplevel 2>/dev/null)" || return 1
+    [[ -n "$toplevel" ]] || return 1
+    # Compare canonical paths so a trailing slash / symlink does not spuriously
+    # differ. A linked worktree's top level is the worktree itself, so a valid
+    # worktree archive still matches.
+    resolved_archive="$(cd "$archive" 2>/dev/null && pwd -P)" || return 1
+    toplevel="$(cd "$toplevel" 2>/dev/null && pwd -P)" || return 1
+    [[ "$resolved_archive" == "$toplevel" ]]
     return
   fi
   if [[ -d "$marker" ]]; then

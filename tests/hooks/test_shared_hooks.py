@@ -2003,6 +2003,79 @@ exit 65
             self.assertEqual(code, 0, err)
             self.assertIn("evidence-archive", context_of(out))
 
+        # Case I: the archive path is a SUBDIRECTORY of an enclosing Git checkout
+        # (not a standalone clone). `git -C <archive> rev-parse` would resolve the
+        # OUTER repo and pass, but the evidence archive must be its own repo, so
+        # the healthcheck must require the resolved top level to be the archive
+        # itself and flag this.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            outer = root / "outer"
+            outer.mkdir()
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=outer, check=True)
+            archive = outer / "sub"
+            (archive / "config").mkdir(parents=True)
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertIn("evidence-archive", context_of(out))
+
+        # Case J: a non-repo archive directory, but the session inherits an
+        # exported GIT_DIR pointing at some OTHER repo. Unscrubbed, `git -C
+        # <archive> rev-parse` would validate that other repo and pass; the
+        # healthcheck must scrub Git's repo-selection env so the probe really
+        # targets the archive, and flag the non-repo archive.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            other_repo = root / "other-repo"
+            other_repo.mkdir()
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=other_repo, check=True)
+            archive = root / "archive"  # a plain directory, NOT a git repo
+            (archive / "config").mkdir(parents=True)
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                    "GIT_DIR": str(other_repo / ".git"),
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertIn("evidence-archive", context_of(out))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
