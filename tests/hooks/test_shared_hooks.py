@@ -1851,7 +1851,9 @@ exit 65
             self.assertEqual(code, 0, err)
             self.assertNotIn("evidence-archive", context_of(out))
 
-        # Case E: archive clones may be Git worktrees, where .git is a file.
+        # Case E: archive clones may be Git worktrees, where .git is a file
+        # pointing at a real gitdir. A worktree whose `gitdir:` target resolves
+        # is a healthy archive and must stay silent.
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             home = root / "home"
@@ -1863,6 +1865,9 @@ exit 65
             work.mkdir()
             archive = root / "archive"
             (archive / "config").mkdir(parents=True)
+            # The gitdir target exists -> a valid linked worktree.
+            gitdir_target = root / "repo" / ".git" / "worktrees" / "archive"
+            gitdir_target.mkdir(parents=True)
             (archive / ".git").write_text(
                 "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
             )
@@ -1882,6 +1887,42 @@ exit 65
             )
             self.assertEqual(code, 0, err)
             self.assertNotIn("evidence-archive", context_of(out))
+
+        # Case F: a stale / invalid worktree leaves a .git file behind whose
+        # `gitdir:` target no longer exists. A bare existence check would treat
+        # the archive as present and suppress the warning even though Git
+        # operations will fail; the healthcheck must instead flag it as missing.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            archive = root / "archive"
+            (archive / "config").mkdir(parents=True)
+            # The gitdir target is absent -> a stale / invalid worktree pointer.
+            (archive / ".git").write_text(
+                "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
+            )
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertIn("evidence-archive", context_of(out))
 
 
 if __name__ == "__main__":
