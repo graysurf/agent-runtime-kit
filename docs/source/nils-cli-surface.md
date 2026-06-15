@@ -1,20 +1,31 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-15 (refreshed for `v1.7.0`)
+- Snapshot date: 2026-06-15 (refreshed for `v1.7.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.7.0`
+- Active `git describe --tags` output: `v1.7.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.7.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.7.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `79cc0d7`
-  (`chore(release): bump cli versions to 1.7.0 (#868)`)
+- Head commit: `1da4d3c`
+  (`chore(release): bump cli versions to 1.7.1 (#870)`)
 - Release:
-  [`v1.7.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.7.0),
+  [`v1.7.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.7.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.7.1` is a lock-step host bump over `v1.7.0`. One consumed `evidence` fix:
+  - `evidence migrate` now home-relativizes an absolute `skill` path before it
+    is slugged, so a rollup's `id`, on-disk directory name, and `skill` field
+    no longer leak the machine home (an absolute `/Users/<user>/…/SKILL.md`
+    previously slugged to `users-<user>-…` in the committed id/dir). An absolute
+    path under `$HOME` becomes `~/…`; outside `$HOME` it redacts; a bare id or
+    relative render path is unchanged. The kit's evidence-migrate skill produces
+    the archive, so a leak-free archive requires this floor — the `evidence`
+    floor moves to `1.7.1` ([#869](https://github.com/sympoies/nils-cli/pull/869)).
+  No surface was retired or renamed; the change is internal to rollup
+  construction (no new flags), so no other floor moves.
 - `v1.7.0` is a lock-step host bump over `v1.6.1`. It extends the `evidence`
   surface the kit's evidence-migrate skill and evidence-archive policy consume,
   with one newly-required guarantee and one new retention command:
