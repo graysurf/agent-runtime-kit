@@ -34,8 +34,13 @@ Outputs:
   - `docs/source/nils-cli-pin.yaml` — `pinned_tag` and any `required_clis[]`
     floor that a newly-consumed surface raised.
   - `docs/source/nils-cli-surface.md` — header pointers (snapshot date, tag,
-    head commit, release link), new / changed crate rows, and the
-    consumed-surface notes for any binary whose surface moved.
+    head commit, release link, and the `pinned_tag:` prose cue), new / changed
+    crate rows, and the consumed-surface notes for any binary whose surface
+    moved.
+  - The `pinned_tag` prose mirrors the Position 14 baseline audit enforces: the
+    `pinned snapshot **<tag>**` line in `docs/source/harness-shape-codex.md`
+    and `harness-shape-claude.md`, and the `nils-cli` surface row in the
+    `README.md` "Version baseline" table.
   - Any SKILL body, runtime-smoke fixture, or golden snapshot that referenced
     a surface the target release retired or renamed, plus the re-rendered
     goldens.
@@ -102,15 +107,21 @@ bash scripts/ci/all.sh                                 # Position 2 now aligned
    raise only the `required_clis[]` floors that a newly-required surface moved.
    Do not float every floor to the target — floors record the minimum consumed
    surface, not the current pin.
-6. Refresh `docs/source/nils-cli-surface.md`: bump the header pointers, add or
-   edit crate rows for added / changed crates, and append the `As of <tag>`
-   note to any binary whose consumed surface moved.
+6. Refresh `docs/source/nils-cli-surface.md`: bump the header pointers
+   (including the `pinned_tag:` prose cue and `Active git describe` line), add
+   or edit crate rows for added / changed crates, and append the `As of <tag>`
+   note to any binary whose consumed surface moved. Then update the remaining
+   `pinned_tag` prose mirrors the Position 14 baseline audit enforces: the
+   `pinned snapshot **<tag>**` line in `docs/source/harness-shape-codex.md` and
+   `harness-shape-claude.md`, and the `nils-cli` surface row in the `README.md`
+   "Version baseline" table.
 7. Apply every needs-rewrite migration in the consumer it touches, then
    re-render goldens (`agent-runtime render --product codex|claude
    --update-golden`) and run `scripts/ci/skill-governance-audit.sh`.
-8. Run `scripts/ci/all.sh`. Position 2 must now report aligned; downstream
-   render / drift / runtime-smoke positions catch any consumer the rewrite
-   missed.
+8. Run `scripts/ci/all.sh`. Position 2 must now report aligned, and Position 14
+   (`version-baseline-audit.py check`) must be green — it fails closed if any
+   `pinned_tag` prose mirror still lags. Downstream render / drift /
+   runtime-smoke positions catch any consumer the rewrite missed.
 9. Deliver one bump PR through the active PR workflow
    (`pr:create-pr` / `pr:deliver-pr` / `forge-cli pr`), not raw
    `gh pr create`. Title it as a `chore` (pin + snapshot only) or `feat`
