@@ -1143,6 +1143,12 @@ class SharedHookTests(unittest.TestCase):
             f"bash --version <<'EOF'\n{validation}\nEOF",
             f"bash --help <<'EOF'\n{validation}\nEOF",
             f"bash --usage <<'EOF'\n{validation}\nEOF",
+            # Issue #381: value-suffixed metadata options also exit before
+            # reading stdin. Bash rejects them as invalid long options, so the
+            # here-doc body must not satisfy declared validation.
+            f"bash --version=1 <<'EOF'\n{validation}\nEOF",
+            f"bash --help=1 <<'EOF'\n{validation}\nEOF",
+            f"bash --usage=1 <<'EOF'\n{validation}\nEOF",
         )
         for actual in not_executed:
             with self.subTest(actual=actual):

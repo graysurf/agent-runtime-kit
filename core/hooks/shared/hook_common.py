@@ -676,8 +676,8 @@ _REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
 # here-doc body is never executed.
 _OPTIONS_TAKING_WORD_ARG = {"--init-file", "--rcfile"}
 
-# Bash invocation options that print metadata/help/usage and exit before
-# reading stdin. The here-doc body is data for these commands, not script text.
+# Bash invocation options that print metadata/help/usage or abort before reading
+# stdin. The here-doc body is data for these commands, not script text.
 _BASH_EXIT_BEFORE_STDIN_LONG_OPTIONS = {"--version", "--help", "--usage"}
 
 # zsh GNU-style `--option-name` invocation options that are valid AND still read
@@ -759,6 +759,12 @@ _BASH_SHOPT_OPTIONS = {
     "xpg_echo",
 }
 _BASH_SHOPT_OPTION_FLAGS = {"-O", "+O"}
+
+
+def _bash_exits_before_stdin_long_option(token: str) -> bool:
+    """Return true for exact and value-suffixed Bash metadata options."""
+    option, _, _ = token.partition("=")
+    return option in _BASH_EXIT_BEFORE_STDIN_LONG_OPTIONS
 
 
 def _redirect_consumes_next(token: str) -> bool:
@@ -908,7 +914,7 @@ def _heredoc_body_is_executed_by_shell(
             # operand before the here-doc body runs, so never credit it.
             if not is_bash or seen_short_option:
                 return False
-            if token in _BASH_EXIT_BEFORE_STDIN_LONG_OPTIONS:
+            if _bash_exits_before_stdin_long_option(token):
                 return False
             if token in _OPTIONS_TAKING_WORD_ARG:
                 # The option needs a following word argument. Skip an input
