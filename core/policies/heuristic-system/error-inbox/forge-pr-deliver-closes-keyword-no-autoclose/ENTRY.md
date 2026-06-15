@@ -27,6 +27,14 @@ the merge even though the rendered PR body contained `Closes #190` and GitHub's
 `closingIssuesReferences` for the PR included issue #190. The delivery closed
 #190 manually with a closeout comment plus `forge-cli issue close 190`.
 
+Third occurrence: delivering `graysurf/agent-runtime-kit` PR #388 through the
+lower-level forge-cli lifecycle after `forge-cli pr deliver` adoption failed,
+then `forge-cli pr merge 388 --method squash`, left issue #381 OPEN even though
+the GitHub-stored PR body contained `Fixes #381`. The delivery checked issue
+state immediately after merge and again about 10 seconds later; both reads
+showed OPEN. The issue was then closed manually with a closeout comment plus
+`forge-cli issue close 381`.
+
 ## Evidence
 
 - Raw record: not captured (manual diagnosis, 2026-06-14)
@@ -38,6 +46,11 @@ the merge even though the rendered PR body contained `Closes #190` and GitHub's
 - Issue: `sympoies/nils-alfredworkflow#190` — body keyword `Closes #190`
   present and `closingIssuesReferences` included #190; issue remained open
   immediately after merge and was closed manually post-merge.
+- Evidence: `evidence/pr388-no-autoclose.md`
+- PR: `graysurf/agent-runtime-kit#388` (merged `ce2c6bd`, squash).
+- Issue: `graysurf/agent-runtime-kit#381` — body keyword `Fixes #381` present,
+  still open on immediate and delayed post-merge checks; closed manually
+  post-merge.
 - Cause **unconfirmed**: either (a) `forge-cli pr create/deliver` does not
   establish the GitHub "linked issue" (Development) relationship that body
   closing-keywords drive, or (b) GitHub squash-merge auto-close timing/edge —
