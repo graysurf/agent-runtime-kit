@@ -99,13 +99,15 @@ run_heuristic_inbox_probe() {
   local shared_root="$REPO_ROOT/core/policies/heuristic-system"
   local inbox_dir="$shared_root/error-inbox"
   local archived_case="$inbox_dir/archive/2026/deliver-gitlab-mr-skipped-pipeline-and-cleanup"
-  local operation_record="$shared_root/operation-records/github-pr-required-check-gating"
+  local operation_record="$shared_root/operation-records/ci-watch-exact-commit-keying"
+  local archived_record="$shared_root/operation-records/archive/2026/github-pr-required-check-gating"
   local product out
   require_meta_bin heuristic-inbox || return 1
   test -f "$shared_root/HEURISTIC_SYSTEM.md"
   test -d "$inbox_dir"
   test -d "$archived_case"
   test -d "$operation_record"
+  test -d "$archived_record"
 
   for product in codex claude; do
     out="$META_ARTIFACTS_DIR/heuristic-inbox.${product}.json"
@@ -130,6 +132,10 @@ run_heuristic_inbox_probe() {
   heuristic-inbox verify "$operation_record" --strict --format json \
     >"$META_ARTIFACTS_DIR/heuristic-inbox.operation-record.verify.json"
   grep -q '"ok": true' "$META_ARTIFACTS_DIR/heuristic-inbox.operation-record.verify.json"
+
+  heuristic-inbox verify "$archived_record" --strict --format json \
+    >"$META_ARTIFACTS_DIR/heuristic-inbox.archived-record.verify.json"
+  grep -q '"ok": true' "$META_ARTIFACTS_DIR/heuristic-inbox.archived-record.verify.json"
 }
 
 run_heuristic_session_closeout_probe() {

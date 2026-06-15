@@ -173,16 +173,32 @@ abandoned feature branch.
      `heuristic-inbox new --from-skill-usage <record> --slug <slug> --out-dir "$root/error-inbox"`
      so the runtime evidence links forward to the curated case in the canonical
      inbox.
-   - Use an `operation-records/<slug>/RECORD.md` only when the lesson is
-     repeated, cross-skill, audit-worthy, or proves retained evidence became a
-     durable fix.
-   - Run a lightweight cluster-compression sweep, not only a this-session scan:
-     when several `promoted` or archived entries already share a root cause or
-     area, treat the cluster itself as an `operation-records/<slug>/RECORD.md`
-     candidate per the Compression Rule, even if this session created none of
-     them. Compress only resolved entries; reference still-open siblings as
-     evidence the class recurs rather than claiming them fixed. This is the
-     primary trigger that keeps the operation-records lane from going unused.
+   - Use an `operation-records/<slug>/RECORD.md` only for a cross-case
+     compression rule — one rule distilled from two or more resolved cases that
+     share a root cause — not for a single case (its archived `ENTRY.md` plus the
+     test / script / skill policy it promoted into already captures that). Set
+     the record's `Status: active`, its `Cluster:` slug, and `Enforced-by:` /
+     `Superseded-by:` when a gate or CLI already upholds the rule.
+   - Run the cluster-compression sweep from data, not memory, and not only a
+     this-session scan. Read
+     `heuristic-inbox list --inbox-dir "$root/error-inbox" --include-archived --format json`
+     and group entries by their `Cluster:` slug (fall back to a shared `Area:` /
+     root cause when slugs are unset). A group with two or more resolved
+     (`promoted` / `wontfix`) members and no operation record already covering it
+     is an `operation-records/<slug>/RECORD.md` candidate per the Compression
+     Rule, even if this session created none of them. Compress only resolved
+     members; cite still-open siblings as evidence the class recurs rather than
+     claiming them fixed. This data-driven sweep is what keeps the
+     operation-records lane from going unused.
+   - Run the reverse retirement sweep over `operation-records/`: an `active`
+     record whose rule is now mechanically enforced (an `Enforced-by:` gate or
+     CLI), whose governed surface is retired, or that a broader record
+     re-compressed is a `superseded` / `retired` archive candidate. Set its
+     `Status` and `Superseded-by:`, move it to
+     `operation-records/archive/YYYY/<slug>/` (`git mv` until `heuristic-inbox
+     archive` accepts `kind=record`), and re-run `heuristic-inbox verify
+     --strict` on the new path. This keeps the active lane to rules a future
+     agent must still apply by hand.
    - Archive entries only after they are `promoted` or `wontfix`, validated,
      and have no remaining next action.
 5. Write curated records through the narrow mechanism:

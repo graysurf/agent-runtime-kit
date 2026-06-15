@@ -52,7 +52,7 @@ explicit `--inbox-dir` or case path passed to the CLI.
 | Tests and checks | Regression protection for capabilities and workflow contracts. |
 | Runtime evidence | Redacted records of failures, waivers, validation, review, browser, or API activity. |
 | Curated inbox cases | Compact retained trackers for important unresolved workflow gaps. |
-| Operation records | Compressed proof that retained evidence became durable system behavior. |
+| Operation records | Compressed cross-case (cluster) rule, plus proof that retained evidence became durable system behavior. |
 | Runbooks | Stable operating knowledge that should outlive one session. |
 | Memory | Personal setup and recurring preferences only; not project state or factual proof. |
 
@@ -158,6 +158,12 @@ PR references, not by extra enum values. Older entries may carry legacy
 lifecycle values; the primitive reads them but does not accept them on new
 writes.
 
+An entry may carry an optional `Cluster: <kebab-slug>` field naming the
+root-cause class it belongs to. When a later entry shares that class, give it
+the same slug; once two or more such entries are resolved, the shared slug is
+what the closeout cluster sweep groups on to propose an operation record.
+Leave it unset until a sibling actually appears — a singleton cluster is noise.
+
 After a gap is fixed, validated, and has no remaining next action, keep its
 status as `promoted` or `wontfix` and move the entry under
 `error-inbox/archive/YYYY/` so the active inbox stays focused. Archiving does
@@ -178,6 +184,9 @@ curated tracker and optional redacted evidence can live together:
   `<slug>/evidence/`.
 - Operation record:
   `operation-records/<slug>/RECORD.md` plus optional `<slug>/evidence/`.
+- Archived operation record:
+  `operation-records/archive/YYYY/<slug>/RECORD.md` plus optional
+  `<slug>/evidence/`.
 
 Plans stay in `docs/plans/<slug>/` under their own lifecycle. A case folder may
 reference a plan from `ENTRY.md` or `RECORD.md`, but it does not duplicate plan
@@ -192,17 +201,48 @@ complete.
 
 ## Operation Records
 
-Use `operation-records/` for retained workflow failures important enough to
-prove the heuristic loop operated across a broader workflow surface. Keep raw
-runtime records in their evidence location; commit only the compressed record
-that names signal, evidence, diagnosis, promotion decision, durable fix,
+Use `operation-records/` for the **cross-case compression rule**: a single
+durable rule distilled from two or more resolved cases that share one root
+cause, plus the proof that retained evidence became durable system behavior.
+Keep raw runtime records in their evidence location; commit only the compressed
+record that names signal, evidence, diagnosis, promotion decision, durable fix,
 validation, and retention outcome.
 
-Operation records are not required for every promoted inbox entry. A focused
-test, script fix, runbook update, or skill policy update is enough when it
-captures the local lesson. Prefer an operation record when the signal is
-repeated, cross-skill, audit-worthy, or useful as proof that retained evidence
-became durable system behavior.
+Operation records are the narrow tip of the promotion ladder, not a per-case
+artifact. A single resolved case is already captured by its archived inbox
+`ENTRY.md` plus the test, script fix, runbook update, or skill policy it
+promoted into; a separate single-case record only duplicates that. Reserve an
+operation record for the value those cannot hold: a reusable cross-case rule a
+future agent applies when writing *new* similar code (for example
+`ci-watch-exact-commit-keying`), plus audit proof that the loop operated across
+a broader surface. When a lesson is fully enforced by one mechanical gate or
+lives inside one released CLI, prefer that gate/CLI plus an archived inbox entry
+over a new record.
+
+### Lifecycle
+
+Operation records are born resolved (the fix already landed), so they do not use
+the inbox `open → promoted` lifecycle. Their state tracks whether the rule is
+still load-bearing, recorded in the `## Status` block:
+
+- `Status: active | superseded | retired`.
+- Optional `Cluster: <kebab-slug>` names the shared root-cause class, matching
+  the `Cluster:` field on the inbox entries it compresses; it is the grouping
+  key the closeout cluster sweep reads.
+- Optional `Enforced-by: <gate/CLI>` records a mechanical enforcer — a CI gate,
+  hook, or released CLI behavior — that now upholds the rule.
+- Optional `Superseded-by: <path-or-record>` points at the gate, CLI, or broader
+  re-compressed record that replaced this one.
+
+A record stops being load-bearing — becoming a `superseded` / `retired` archive
+candidate — when its rule is mechanically enforced (an agent calls the gate/CLI
+instead of remembering the rule), its governed surface is retired, or it is
+absorbed into a broader re-compressed record. Archive retired records under
+`operation-records/archive/YYYY/<slug>/`, mirroring the inbox archive; archiving
+preserves the record as audit history and never deletes it. Until
+`heuristic-inbox archive` accepts operation records (it currently rejects
+`kind=record`), move a retired record with `git mv` and re-run
+`heuristic-inbox verify --strict` on the new path.
 
 ## Compression Rule
 

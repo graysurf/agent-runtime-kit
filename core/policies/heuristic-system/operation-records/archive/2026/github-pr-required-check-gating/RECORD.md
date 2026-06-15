@@ -3,10 +3,15 @@
 ## Status
 
 - Date: 2026-05-18
-- Status: implemented and validated
+- Status: superseded
+- Cluster: delivery-check-gating
+- Superseded-by: `forge-cli pr wait-checks` — required-vs-optional check gating
+  is now owned by the released CLI; the legacy `skills/workflows/pr` scripts
+  below were retired.
+- Archived: 2026-06-15
 - System area: GitHub PR delivery workflows
 - Migrated from: legacy agent-kit retained operation record
-- Durable fix paths:
+- Durable fix paths (retired surface, kept for history):
   - `skills/workflows/pr/github/_shared/lib/github-pr-checks.bash`
   - `skills/workflows/pr/github/deliver-github-pr/scripts/deliver-github-pr.sh`
   - `skills/workflows/pr/github/close-github-pr/scripts/close-github-pr.sh`

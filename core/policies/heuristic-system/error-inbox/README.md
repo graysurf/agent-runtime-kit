@@ -52,6 +52,7 @@ by its location under `archive/YYYY/` plus an optional `Archive` section.
 - First observed: YYYY-MM-DD
 - Area: <skill/script/runbook/tooling>
 - Severity: low | medium | high
+- Cluster: <kebab-slug>   # optional; set only when a sibling case shares this root-cause class
 
 ## Signal
 

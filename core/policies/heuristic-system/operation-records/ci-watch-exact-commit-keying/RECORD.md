@@ -3,7 +3,11 @@
 ## Status
 
 - Date: 2026-06-12
-- Status: compression record over resolved cases (cluster rule)
+- Status: active
+- Cluster: push-then-watch-stale-run
+- Kind: cross-repo compression rule over resolved cases
+- Enforced-by: none — a coding pattern for any new push-then-watch script, not
+  upholdable by a single gate, so this stays active.
 - System area: release / delivery scripts that push then watch CI
 - Durable fix paths:
   - `sympoies/nils-cli`
