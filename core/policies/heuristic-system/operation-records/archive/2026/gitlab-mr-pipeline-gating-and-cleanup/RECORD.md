@@ -3,13 +3,18 @@
 ## Status
 
 - Date: 2026-05-18
-- Status: implemented and validated
+- Status: superseded
+- Cluster: delivery-check-gating
+- Superseded-by: `forge-cli pr wait-checks` — skipped-source / non-required
+  pipeline gating is now owned by the released CLI; the legacy
+  `skills/workflows/pr` scripts were retired.
+- Archived: 2026-06-15
 - System area: GitLab MR delivery workflows
 - Migrated from: legacy agent-kit retained inbox archive
 - Source: the archived legacy agent-kit inbox case for skipped GitLab MR
   pipeline gating and close cleanup (delivery PR graysurf/agent-kit#254). The
   GitHub side of the same delivery-gate class is recorded in the GitHub PR
-  required-check gating operation record.
+  required-check gating operation record (the `delivery-check-gating` cluster).
 
 ## Signal
 

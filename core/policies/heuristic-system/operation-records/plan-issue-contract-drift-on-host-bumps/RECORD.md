@@ -3,7 +3,12 @@
 ## Status
 
 - Date: 2026-05-24
-- Status: implemented and validated (guardrail), class still open upstream
+- Status: active
+- Cluster: plan-issue-host-surface-drift
+- Kind: cross-skill compression rule (guardrail landed; class still open upstream)
+- Enforced-by: `scripts/ci/all.sh` Position 2 (`agent-runtime doctor --class
+  version-alignment`) enforces the version-drift half only; the render/contract
+  half stays a manual prevention rule, so this record stays active.
 - System area: plan-issue record contract; dispatch + pr tracking skills;
   runtime-smoke probes; nils-cli surface pinning
 - Compresses three resolved cases that are archived in the error inbox, all the
