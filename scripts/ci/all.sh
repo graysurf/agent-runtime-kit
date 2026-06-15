@@ -284,4 +284,10 @@ bash tests/projects/project-local-smoke/run.sh
 banner 13 "shared hook contract smoke"
 bash tests/hooks/run.sh
 
-printf '\nci/all.sh: positions 1-13 OK\n'
+# -----------------------------------------------------------------------------
+# Position 14 — version-baseline mirror consistency (deterministic, no network)
+# -----------------------------------------------------------------------------
+banner 14 "version-baseline mirror consistency audit"
+python3 scripts/ci/version-baseline-audit.py check
+
+printf '\nci/all.sh: positions 1-14 OK\n'

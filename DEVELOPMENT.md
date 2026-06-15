@@ -307,6 +307,13 @@ That currently performs:
 11. `bash tests/runtime-smoke/run.sh --mode deterministic`
 12. `bash tests/projects/project-local-smoke/run.sh`
 13. `bash tests/hooks/run.sh`
+14. `python3 scripts/ci/version-baseline-audit.py check` — deterministic,
+    network-free consistency gate over the version-baseline mirrors: the
+    `README.md` "Version baseline" table, each `docs/source/harness-shape-*.md`
+    "Version Floors" statement, and `docs/source/nils-cli-surface.md` must
+    agree with their sources of truth (`manifests/runtime-roots.yaml` for the
+    product floor, `docs/source/nils-cli-pin.yaml` for the surface pin). Run
+    `… report` for an advisory installed-vs-latest probe.
 
 Position 2 closes the silent-drift class identified by the inbox case
 `plan-issue-v2-marker-collapse-drift`: before this gate, a host that drifted
