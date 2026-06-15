@@ -164,10 +164,12 @@ for turning workflow failures and repeated lessons into durable knowledge.
   through `heuristic-inbox`, with version, minimal repro, upstream issue link
   when found, and the current workaround.
 - Durable, queryable retention of `skill-usage` runtime evidence is a separate
-  lane from the curated inbox: migrate records into the agent-evidence-archive
-  with the `evidence-migrate` skill (`core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`),
-  dry-run first. A record can be both archived and the source of a promoted
-  inbox case.
+  lane from the curated inbox, but `$heuristic-session-closeout` drives it for
+  you: at closeout it runs `evidence migrate` dry-run and auto-applies a clean
+  result (apply on `eligible > 0` with only expected blocks; surface anything
+  risky). Run the `evidence-migrate` skill by hand only outside closeout
+  (`core/policies/evidence-archive/EVIDENCE_ARCHIVE.md`), dry-run first. A record
+  can be both archived and the source of a promoted inbox case.
 - Reproducible product bugs get a focused test or script fix. Repeated
   cross-skill lessons belong in operation records; stable policy belongs in
   `AGENT_HOME.md`, project policy files, or the relevant skill `SKILL.md`.
