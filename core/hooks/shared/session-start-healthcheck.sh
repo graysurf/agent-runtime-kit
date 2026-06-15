@@ -35,20 +35,35 @@ evidence_config_path() {
   printf '%s\n' "${XDG_CONFIG_HOME:-$HOME/.config}/agent-evidence-archive/config.yaml"
 }
 
-archive_has_git_metadata() {
-  # A bare existence check on `.git` is not enough: a stale or invalid Git
-  # worktree leaves a regular `.git` file behind whose `gitdir:` target is gone,
-  # so it would wrongly report the archive as present and suppress the warning
-  # even though later Git operations fail. A real `.git` directory is trusted as
-  # is; a `.git` file is trusted only when its `gitdir:` target resolves.
-  local marker="$1/.git" gitdir
+archive_has_git_marker() {
+  # OPT-IN signal only: the user set up a clone here if a `.git` marker exists at
+  # all (a real `.git` directory or a worktree's `.git` file), even a stale one.
+  # Staleness/invalidity is a problem to REPORT (see `archive_is_git_repo`), not
+  # a reason to treat the user as not opted in — otherwise the very stale-archive
+  # case the report exists to surface is silently skipped.
+  [[ -d "$1/.git" || -f "$1/.git" ]]
+}
+
+archive_is_git_repo() {
+  # VALIDITY check: the path is an actual working Git checkout, not just any
+  # `.git` marker. A stale or invalid worktree leaves a `.git` file whose
+  # `gitdir:` target is gone or is not a real Git directory (e.g. an empty
+  # admin dir), so later `git -C "$archive" …` operations still fail with "not a
+  # git repository". Ask Git itself to resolve the repository; only when Git is
+  # unavailable fall back to a structural check (a `.git` directory, or a `.git`
+  # file whose `gitdir:` target path exists).
+  local archive="$1" marker="$1/.git" gitdir
+  if command -v git >/dev/null 2>&1; then
+    git -C "$archive" rev-parse --git-dir >/dev/null 2>&1
+    return
+  fi
   if [[ -d "$marker" ]]; then
     return 0
   fi
   if [[ -f "$marker" ]]; then
     gitdir="$(sed -n 's/^gitdir:[[:space:]]*//p' "$marker" | head -1)"
     [[ -n "$gitdir" ]] || return 1
-    [[ "$gitdir" == /* ]] || gitdir="$1/$gitdir"
+    [[ "$gitdir" == /* ]] || gitdir="$archive/$gitdir"
     [[ -e "$gitdir" ]] && return 0
     return 1
   fi
@@ -73,7 +88,7 @@ unquote_yaml_scalar() {
 evidence_opted_in() {
   [[ -n "${AGENT_EVIDENCE_ARCHIVE_HOME:-}" ]] && return 0
   [[ -f "$(evidence_config_path)" ]] && return 0
-  archive_has_git_metadata "${XDG_DATA_HOME:-$HOME/.local/share}/agent-evidence-archive" && return 0
+  archive_has_git_marker "${XDG_DATA_HOME:-$HOME/.local/share}/agent-evidence-archive" && return 0
   return 1
 }
 
@@ -109,8 +124,8 @@ evidence_problems() {
 "
   fi
   archive="$(resolve_archive_path)"
-  if ! archive_has_git_metadata "$archive"; then
-    out="${out}- archive clone not found at: ${archive}
+  if ! archive_is_git_repo "$archive"; then
+    out="${out}- archive clone not found or not a valid git repo at: ${archive}
 "
   else
     hosts="$archive/config/hosts.yaml"

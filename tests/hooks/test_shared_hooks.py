@@ -1852,8 +1852,9 @@ exit 65
             self.assertNotIn("evidence-archive", context_of(out))
 
         # Case E: archive clones may be Git worktrees, where .git is a file
-        # pointing at a real gitdir. A worktree whose `gitdir:` target resolves
-        # is a healthy archive and must stay silent.
+        # pointing at a real gitdir. A GENUINE linked worktree (created by
+        # `git worktree add`, so Git can resolve it) is a healthy archive and
+        # must stay silent.
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             home = root / "home"
@@ -1863,14 +1864,22 @@ exit 65
             data_home.mkdir()
             work = root / "work"
             work.mkdir()
-            archive = root / "archive"
-            (archive / "config").mkdir(parents=True)
-            # The gitdir target exists -> a valid linked worktree.
-            gitdir_target = root / "repo" / ".git" / "worktrees" / "archive"
-            gitdir_target.mkdir(parents=True)
-            (archive / ".git").write_text(
-                "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
+            repo = root / "repo"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "-c", "user.email=t@example.com", "-c", "user.name=t",
+                 "-c", "commit.gpgsign=false", "commit", "-qm", "seed", "--allow-empty"],
+                cwd=repo, check=True,
             )
+            archive = root / "archive"
+            # A real linked worktree: `archive/.git` is a file whose gitdir
+            # target is a valid worktree admin directory Git can resolve.
+            subprocess.run(
+                ["git", "-c", "commit.gpgsign=false", "worktree", "add", "-q", str(archive)],
+                cwd=repo, check=True,
+            )
+            (archive / "config").mkdir(parents=True)
             (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
             bin_dir = stub_bin(root)
             cfg_dir = cfg_home / "agent-evidence-archive"
@@ -1904,6 +1913,76 @@ exit 65
             archive = root / "archive"
             (archive / "config").mkdir(parents=True)
             # The gitdir target is absent -> a stale / invalid worktree pointer.
+            (archive / ".git").write_text(
+                "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
+            )
+            (archive / "config" / "hosts.yaml").write_text(valid_hosts, encoding="utf-8")
+            bin_dir = stub_bin(root)
+            cfg_dir = cfg_home / "agent-evidence-archive"
+            cfg_dir.mkdir(parents=True)
+            (cfg_dir / "config.yaml").write_text(
+                local_config(archive), encoding="utf-8"
+            )
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertIn("evidence-archive", context_of(out))
+
+        # Case G: opt-in is established ONLY by a default-location clone (no env,
+        # no local config), and that clone is stale (its `.git` gitfile points at
+        # a gone gitdir). Opt-in detection must be separate from metadata
+        # validity: the bare `.git` marker still means the user opted in, so the
+        # stale archive must be SURFACED, not silently skipped as "not opted in".
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            cfg_home.mkdir()
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            # The XDG-default clone location, opted in by a stale .git gitfile.
+            default_archive = data_home / "agent-evidence-archive"
+            default_archive.mkdir(parents=True)
+            (default_archive / ".git").write_text(
+                "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
+            )
+            bin_dir = stub_bin(root)
+            code, out, err = run_shell_hook(
+                "session-start-healthcheck.sh", payload, cwd=work,
+                env={
+                    **base_env(home, cfg_home, data_home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, err)
+            self.assertIn("evidence-archive", context_of(out))
+
+        # Case H: a .git gitfile whose `gitdir:` target path EXISTS but is not a
+        # real Git directory (an empty directory). The path resolves, yet
+        # `git -C <archive> …` still fails with "not a git repository"; the
+        # healthcheck must require a resolvable repo, not just any existing path,
+        # and flag it.
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            home = root / "home"
+            home.mkdir()
+            cfg_home = root / "config"
+            data_home = root / "data"
+            data_home.mkdir()
+            work = root / "work"
+            work.mkdir()
+            archive = root / "archive"
+            (archive / "config").mkdir(parents=True)
+            # The gitdir target EXISTS but is an empty dir -> not a real gitdir.
+            (root / "repo" / ".git" / "worktrees" / "archive").mkdir(parents=True)
             (archive / ".git").write_text(
                 "gitdir: ../repo/.git/worktrees/archive\n", encoding="utf-8"
             )
