@@ -681,10 +681,8 @@ _OPTIONS_TAKING_WORD_ARG = {"--init-file", "--rcfile"}
 # executing stdin. Keep this list conservative; an unlisted future shopt option
 # becomes a false negative rather than an unsafe gate credit.
 _BASH_SHOPT_OPTIONS = {
-    "array_expand_once",
     "assoc_expand_once",
     "autocd",
-    "bash_source_fullpath",
     "cdable_vars",
     "cdspell",
     "checkhash",
@@ -755,6 +753,13 @@ def _redirect_consumes_next(token: str) -> bool:
     return bool(match) and token[match.end() :] == ""
 
 
+def _skip_redirections(invocation: list[str], cursor: int) -> int:
+    """Return the next token index after any redirections at ``cursor``."""
+    while cursor < len(invocation) and _REDIRECT_TOKEN_RE.match(invocation[cursor]):
+        cursor += 2 if _redirect_consumes_next(invocation[cursor]) else 1
+    return cursor
+
+
 def _stdin_redirect_kind(token: str) -> str | None:
     """Classify how a token redirects stdin (fd 0 or unspecified).
 
@@ -811,7 +816,7 @@ def _heredoc_body_is_executed_by_shell(
     while cursor < len(invocation):
         token = invocation[cursor]
         if _REDIRECT_TOKEN_RE.match(token):
-            cursor += 2 if _redirect_consumes_next(token) else 1
+            cursor = _skip_redirections(invocation, cursor)
             continue
         if past_options:
             break  # operand after `--`: bash runs it as the script file
@@ -822,25 +827,21 @@ def _heredoc_body_is_executed_by_shell(
             cursor += 1
             continue
         if token in _OPTIONS_TAKING_WORD_ARG:
-            # This option needs a following word argument. A redirection or
-            # here-doc operator in that slot is consumed by bash as a
-            # redirection, not the argument, so bash aborts ("option requires an
-            # argument") and never runs the body.
-            if cursor + 1 >= len(invocation) or _REDIRECT_TOKEN_RE.match(
-                invocation[cursor + 1]
-            ):
+            # Redirections are not argv words. An option argument can therefore
+            # appear after a here-doc redirection on the same command line.
+            arg_cursor = _skip_redirections(invocation, cursor + 1)
+            if arg_cursor >= len(invocation):
                 return False
-            cursor += 2
+            cursor = arg_cursor + 1
             continue
         if token in _BASH_SHOPT_OPTION_FLAGS:
-            if cursor + 1 >= len(invocation) or _REDIRECT_TOKEN_RE.match(
-                invocation[cursor + 1]
-            ):
+            arg_cursor = _skip_redirections(invocation, cursor + 1)
+            if arg_cursor >= len(invocation):
                 cursor += 1
                 continue
-            if invocation[cursor + 1] not in _BASH_SHOPT_OPTIONS:
+            if invocation[arg_cursor] not in _BASH_SHOPT_OPTIONS:
                 return False
-            cursor += 2
+            cursor = arg_cursor + 1
             continue
         if token.startswith("--"):
             # Any other GNU long option is a single unit, never a compact
@@ -851,15 +852,11 @@ def _heredoc_body_is_executed_by_shell(
             sign, cluster = token[0], token[1:]
             if "c" in cluster:
                 return False
-            # `-n` is read-but-do-not-execute; the `+` form turns the flag back
-            # off, so only a `-`-sign cluster makes the body inert. `s` is gated
-            # the same way: a hypothetical `+s` must not force stdin-as-script
-            # (the unsafe direction), it only credits on the documented `-s`.
-            if sign == "-":
-                if "n" in cluster:
-                    noexec = True
-                if "s" in cluster:
-                    forced_stdin_script = True  # stdin is the script; operands are args
+            if "n" in cluster:
+                noexec = sign == "-"
+            # `+s` also leaves stdin as the script; operands are positional args.
+            if "s" in cluster:
+                forced_stdin_script = True
             cursor += 1
             continue
         break  # first non-option operand: bash runs it, the body is its stdin data

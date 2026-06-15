@@ -1132,6 +1132,12 @@ class SharedHookTests(unittest.TestCase):
             # An unknown shopt name aborts before stdin is executed.
             f"bash -O does_not_exist <<'EOF'\n{validation}\nEOF",
             f"bash +O does_not_exist <<'EOF'\n{validation}\nEOF",
+            # PR #368 follow-up: keep version-specific shopt names out of the
+            # parser's portable safe set. Bash 5.2 and older reject these names
+            # before reading stdin, so crediting them is unsafe even if a newer
+            # local bash accepts them.
+            f"bash -O array_expand_once <<'EOF'\n{validation}\nEOF",
+            f"bash -O bash_source_fullpath <<'EOF'\n{validation}\nEOF",
         )
         for actual in not_executed:
             with self.subTest(actual=actual):
@@ -1160,6 +1166,14 @@ class SharedHookTests(unittest.TestCase):
             # operand, so stdin (the body) is the executed script.
             f"bash -O extglob <<'EOF'\n{validation}\nEOF",
             f"bash +O extglob <<'EOF'\n{validation}\nEOF",
+            # PR #368 follow-up: `+s` still leaves stdin as the script; trailing
+            # operands are positional args to that script, not script files.
+            f"bash +s arg <<'EOF'\n{validation}\nEOF",
+            # A word-argument option can receive its argument after a here-doc
+            # redirection on the same shell command line. The shell removes the
+            # redirection and still passes `-s` as the option argument.
+            f"bash --rcfile <<'EOF' -s\n{validation}\nEOF",
+            f"bash --init-file <<'EOF' -s\n{validation}\nEOF",
         )
         for actual in executed:
             with self.subTest(actual=actual):
