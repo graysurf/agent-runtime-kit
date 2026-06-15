@@ -1,4 +1,4 @@
-# Tight gh CI polling loops exhaust the shared GraphQL rate limit
+# GraphQL-backed gh lookups can fail after shared quota exhaustion
 
 ## Status
 
@@ -12,8 +12,10 @@
 During a release, a 25s `gh run list` poll loop waited ~10 min for
 `release.yml`, then a resume step ran `gh release view --json assets,url`. That
 view call failed with `GraphQL: API rate limit already exceeded for user ID
-...`. The 5,000/hr GraphQL budget was exhausted by the polling loop (and shared
-across all tools/agents on the box), while the REST `core` budget still had
+...`. The installed GitHub CLI's `gh run list` path uses the REST/core Actions
+runs endpoint, so the poll loop was not the GraphQL consumer. The observed
+failure was the later GraphQL-backed release lookup hitting a shared GraphQL
+budget that was already exhausted, while the REST `core` budget still had
 ~4,800 remaining.
 
 ## Evidence
@@ -31,29 +33,31 @@ across all tools/agents on the box), while the REST `core` budget still had
 
 ## Impact
 
-A long tight `gh` poll loop can silently drain the shared GraphQL budget and
-make a subsequent GraphQL-backed call (`gh release view`, `gh pr view`,
-`gh search`) fail with a misleading "not available" / not-found error rather
-than an explicit rate-limit message — risking a wrong conclusion (e.g. "the
-release did not publish").
+A shared GraphQL budget can be exhausted by other `gh` or API consumers while
+REST/core Actions polling still has plenty of quota. A subsequent
+GraphQL-backed call (`gh release view`, `gh pr view`, `gh search`) can then fail
+with a misleading "not available" / not-found error rather than an explicit
+rate-limit message — risking a wrong conclusion (e.g. "the release did not
+publish").
 
 ## Current Workaround
 
-- Prefer the harness's background run-completion notifications over tight `gh`
-  poll loops where possible.
-- When polling is required, widen the interval and gate on the **free**
-  `gh api rate_limit` endpoint (it does not consume quota); sleep until
-  `graphql.remaining` recovers before the next GraphQL call.
+- Prefer the harness's background run-completion notifications over tight
+  command polling where possible.
+- Before GraphQL-backed `gh` calls, gate on the **free** `gh api rate_limit`
+  endpoint (it does not consume quota); sleep until `graphql.remaining`
+  recovers before the next GraphQL call.
 - Cross-check release/asset existence with REST (`gh api
   repos/<repo>/releases/tags/<tag>`, `core` budget) when GraphQL is exhausted.
 
 ## Promotion Criteria
 
-Promote when the release/CI-wait helpers either back off on the `rate_limit`
-endpoint or route existence checks through REST, so a drained GraphQL budget no
-longer surfaces as a false "not available".
+Promote when release/draft/PR lookup helpers either back off on the
+`rate_limit` endpoint before GraphQL-backed calls or route release existence
+checks through REST, so a drained GraphQL budget no longer surfaces as a false
+"not available".
 
 ## Next Action
 
-Prefer harness run-completion notifications over tight gh poll loops; when
-polling is required, gate on the free rate_limit endpoint and fall back to REST.
+Gate GraphQL-backed release/draft/PR lookups on the free rate_limit endpoint
+and fall back to REST for release asset existence checks.

@@ -1,4 +1,4 @@
-# gh GraphQL rate-limit exhaustion during release CI polling (redacted)
+# gh GraphQL rate-limit exhaustion after release CI polling (redacted)
 
 After a ~10 min 25s gh run-list poll loop on release.yml, the resume step:
 
@@ -9,6 +9,10 @@ After a ~10 min 25s gh run-list poll loop on release.yml, the resume step:
     {"core":{"remaining":4821,"reset":...},
      "graphql":{"remaining":0,"reset":<~134s out>},
      "search":{"remaining":30}}
+
+The run-list polling itself used the REST/core Actions runs endpoint; this
+record tracks the later GraphQL-backed release lookup failing against an already
+exhausted shared GraphQL quota.
 
 REST cross-check succeeded immediately (core budget, GraphQL-free):
 
