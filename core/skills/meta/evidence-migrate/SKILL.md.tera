@@ -1,7 +1,7 @@
 ---
 name: evidence-migrate
 description:
-  Migrate skill-usage evidence out of the ephemeral agent-out runtime tree into the agent-evidence-archive repository through the nils-cli `evidence migrate` command, dry-run first and apply only on explicit confirmation; redaction runs before write, and records whose repo identity is unresolvable are skipped and reported rather than aborting the batch.
+  Migrate skill-usage evidence out of the ephemeral agent-out runtime tree into the agent-evidence-archive repository through the nils-cli `evidence migrate` command, dry-run first and apply only on explicit confirmation; redaction runs before write, and records whose repo identity is unresolvable or whose resolved host is unclassified are skipped and reported rather than aborting the batch.
 ---
 
 # Evidence Migrate
@@ -41,8 +41,9 @@ Outputs:
   the prepared records (archive target id + path, files that would be
   written, per-record scrub summary, source path, warnings), the
   `already_archived` digests skipped as duplicates, and the `blocked`
-  list (records whose repo identity could not be resolved, with a
-  reason) for the user to review.
+  list (records whose repo identity could not be resolved, or whose
+  resolved host is absent from `config/hosts.yaml`, with a reason) for
+  the user to review.
 - On confirmed apply: the archive rollup + `metadata.yaml` + scrubbed
   linked-evidence + scrub-log files written under the archive, a
   regenerated `catalog.json`, and one archive commit. The CLI commits
@@ -60,9 +61,9 @@ Failure modes:
 - A `git` or `semantic-commit` subprocess fails after staging; the
   archive push is the last step, so a failure leaves the archive
   un-pushed and the agent-out source untouched.
-- Unresolvable or unreadable records are NOT a failure: they are
-  reported in `blocked` and skipped, and the rest of the batch still
-  migrates. An all-blocked run is a successful no-op.
+- Unresolvable, unclassified-host, or unreadable records are NOT a
+  failure: they are reported in `blocked` and skipped, and the rest of
+  the batch still migrates. An all-blocked run is a successful no-op.
 
 ## Entrypoint
 
@@ -97,13 +98,20 @@ evidence migrate --repo graysurf__agent-runtime-kit --host github.com --apply --
    redacts matched secrets in place and writes a scrub log alongside
    each record, but the operator should still recognize what was
    redacted. Do not bypass or disable scrubbing.
-4. Resolve `blocked` records deliberately. A record is blocked when its
-   repo identity cannot be derived — most often a slug-only agent-out
-   directory under a multi-host `config/hosts.yaml`, where the host is
-   ambiguous. Do not guess. For records the user recognizes, re-run with
-   `--host <fqdn>` (a host present in `config/hosts.yaml`) to vouch for
-   the host; leave records the user cannot vouch for blocked. An
-   all-blocked dry-run with no recognizable records is a valid stop.
+4. Resolve `blocked` records deliberately. There are two common host
+   cases:
+   - If repo identity cannot be derived — most often a slug-only
+     agent-out directory under a multi-host `config/hosts.yaml`, where
+     the host is ambiguous — do not guess. For records the user
+     recognizes, re-run with `--host <fqdn>` (a host present in
+     `config/hosts.yaml`) to vouch for the host; leave records the user
+     cannot vouch for blocked.
+   - If repo identity resolves to a concrete host but that host is
+     absent from archive `config/hosts.yaml`, do not treat it as
+     generic ambiguity and do not silently vouch around it. Ask the
+     operator to add/classify the host in `config/hosts.yaml` with the
+     correct class before re-running migration.
+   An all-blocked dry-run with no recognizable records is a valid stop.
 5. On confirmation, run the same command with `--apply`. Report the
    archive commit, the number archived vs. skipped, the still-`blocked`
    records, and the scrub-log paths. Remind the user that the CLI has
