@@ -35,3 +35,16 @@ Current workaround:
 - Verify the evidence record directly with `test-first-evidence verify`.
 - Continue with the lower-level PR lifecycle commands when the PR already exists
   and provider checks are clean.
+
+Resolution (2026-06-16):
+
+- Operator misuse, not a `forge-cli` defect. The `--test-first-evidence` flag
+  takes a DIR (clap `value_name = "DIR"`); the gate reads
+  `<dir>/test-first-evidence.json`. Above, `verify` was run with the directory
+  (`--out <evidence-dir>`) but `pr deliver` was given the JSON *file*
+  (`--test-first-evidence <test-first-evidence.json>`), so the gate read
+  `<file>/test-first-evidence.json` and returned `test_first_evidence_unreadable`
+  ("Not a directory").
+- Reproduced locally: the verify-clean directory passes the gate; the JSON file
+  fails with the exact error. Correct usage: `--test-first-evidence "$EVIDENCE_DIR"`.
+- Case resolved `wontfix`.

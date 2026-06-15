@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: wontfix
 - First observed: 2026-06-15
 - Area: forge-cli pr deliver
 - Severity: medium
@@ -29,6 +29,19 @@ delivered through lower-level `forge-cli pr checks`, `pr ready`, and `pr merge`,
 but the delivery macro no longer provides the intended single surface for
 adoption and gate execution.
 
+Update (2026-06-16): reproduced and resolved as operator misuse, not a
+`forge-cli` defect. `forge-cli pr deliver --test-first-evidence` takes a DIR
+(clap `value_name = "DIR"`, `crates/forge-cli/src/cli.rs`); the test-first gate
+calls `verify_dir(<dir>)`, which reads `<dir>/test-first-evidence.json`. The
+recorded repro passed the JSON *file* (`--test-first-evidence
+<test-first-evidence.json>`) while `verify` was run against the *directory*
+(`--out <evidence-dir>`), so the gate read `<file>/test-first-evidence.json` and
+returned exactly the observed `test_first_evidence_unreadable` ("Not a
+directory"). Verified locally: passing the verify-clean directory succeeds;
+passing the JSON file fails with that error. The correct invocation is
+`--test-first-evidence "$EVIDENCE_DIR"`. Resolved `wontfix`; no `forge-cli`
+change is warranted.
+
 ## Current Workaround
 
 Verify the record directly with `test-first-evidence verify`. If it is complete,
@@ -44,4 +57,10 @@ readability check or documenting a verified limitation in the delivery skill.
 
 ## Next Action
 
-Reproduce with a small valid test-first-evidence record passed to forge-cli pr deliver on an existing PR, then fix or clarify the evidence path/readability check.
+None — resolved as operator misuse (reproduced 2026-06-16): forge-cli --test-first-evidence takes the verify-clean DIR, not the JSON file; no forge-cli change needed.
+
+## Archive
+
+- Archived: 2026-06-16
+- Reason: operator misuse; reproduced 2026-06-16 (forge-cli --test-first-evidence takes a DIR)
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/issues/394`
