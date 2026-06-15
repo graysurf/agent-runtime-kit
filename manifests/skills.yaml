@@ -150,7 +150,7 @@ skills:
         name: heuristic-inbox
         render_to: plugins/meta/skills/heuristic-inbox/SKILL.md
     required_clis:
-      heuristic-inbox: ">=0.16.0"
+      heuristic-inbox: ">=1.8.0"
     state_out_mode: runtime
 
   - id: meta.heuristic-session-closeout
@@ -164,9 +164,9 @@ skills:
         name: heuristic-session-closeout
         render_to: plugins/meta/skills/heuristic-session-closeout/SKILL.md
     required_clis:
-      heuristic-inbox: ">=1.1.0"
+      heuristic-inbox: ">=1.8.0"
       semantic-commit: ">=0.16.0"
-      evidence: ">=1.7.1"
+      evidence: ">=1.8.0"
     state_out_mode: runtime
 
   - id: meta.create-skill
@@ -346,7 +346,7 @@ skills:
         name: evidence-migrate
         render_to: plugins/meta/skills/evidence-migrate/SKILL.md
     required_clis:
-      evidence: ">=1.7.1"
+      evidence: ">=1.8.0"
       semantic-commit: ">=0.25.0"
     state_out_mode: runtime
 

@@ -37,7 +37,7 @@ Scope rules:
   `min_version_effective_from`: **2026-06-28**; probe:
   `codex --version` (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Codex
-  surface) ships inside nils-cli; pinned snapshot **v1.7.1**
+  surface) ships inside nils-cli; pinned snapshot **v1.8.0**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
   Released subcommands consumed today: `render`, `install`, `uninstall`,
   `doctor` (including `--class skill-surface --product codex`),
@@ -326,7 +326,7 @@ a uniform shape:
 | 10 | `output-styles/<n>.md` | not-applicable | — | n/a | n/a |
 | 11 | `statusLine` / `settings.json` | not-applicable | — | n/a | n/a |
 | 12 | MCP servers | no | — | n/a | n/a |
-| 13 | Heuristic system | yes | shared policy root | 0.130.0 | v1.1.0 (heuristic-inbox) |
+| 13 | Heuristic system | yes | shared policy root | 0.130.0 | v1.8.0 (heuristic-inbox) |
 | 14 | `state_home` | yes | env var + `agent-out` allocation | 0.130.0 | v0.17.5 (`agent-out >=0.13.0` floor in skills.yaml) |
 | 15 | `$CODEX_HOME/skills/<d>/<s>/` | yes | rendered + directory symlink per skill | 0.130.0 | v0.20.0 |
 | 16 | `config.toml` hook managed block | yes | managed-block sync | 0.130.0 | v0.17.5 |
