@@ -35,6 +35,16 @@ state immediately after merge and again about 10 seconds later; both reads
 showed OPEN. The issue was then closed manually with a closeout comment plus
 `forge-cli issue close 381`.
 
+Fourth and fifth occurrences (host nils-cli **1.7.1**, much newer than the 1.3.1
+of the first observations — the behavior persists across many forge-cli
+releases): delivering `sympoies/nils-cli` PR #873 (`Closes #871`) and PR #874
+(`Closes #872`), both via `forge-cli pr deliver --kind bug` + squash merge, left
+issues #871 and #872 OPEN immediately after merge. Both PR bodies contained the
+verbatim `Closes #N` (rendered into `## Issues Found` by `agent-runtime pr-body
+render`). Both issues were closed manually with `gh issue close <N> --reason
+completed`. That the gap reproduces on forge-cli 1.7.1 across two repos argues
+against pure GitHub latency and toward a real linkage gap in API-created PRs.
+
 ## Evidence
 
 - Raw record: not captured (manual diagnosis, 2026-06-14)
@@ -51,6 +61,10 @@ showed OPEN. The issue was then closed manually with a closeout comment plus
 - Issue: `graysurf/agent-runtime-kit#381` — body keyword `Fixes #381` present,
   still open on immediate and delayed post-merge checks; closed manually
   post-merge.
+- PR: `sympoies/nils-cli#873` (merged `ea21ab2`, squash) — body `Closes #871`;
+  issue #871 OPEN immediately post-merge, closed manually. Host forge-cli 1.7.1.
+- PR: `sympoies/nils-cli#874` (merged `bb0c272`, squash) — body `Closes #872`;
+  issue #872 OPEN immediately post-merge, closed manually. Host forge-cli 1.7.1.
 - Cause **unconfirmed**: either (a) `forge-cli pr create/deliver` does not
   establish the GitHub "linked issue" (Development) relationship that body
   closing-keywords drive, or (b) GitHub squash-merge auto-close timing/edge —
