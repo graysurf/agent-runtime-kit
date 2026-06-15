@@ -1179,6 +1179,64 @@ class SharedHookTests(unittest.TestCase):
             with self.subTest(actual=actual):
                 self.assertTrue(command_matches_validation(actual, declared))
 
+    def test_command_match_non_bash_heredoc_executor_edge_cases(self) -> None:
+        # Regression for the PR #371 follow-up parser edge cases
+        # (graysurf/agent-runtime-kit#371 review threads). The earlier rewrite
+        # applied Bash-only invocation grammar uniformly to every shell in
+        # SHELL_HEREDOC_EXECUTORS, so a POSIX `sh`/`dash` invocation -- or an
+        # exotic Bash ordering -- could be credited even though the shell would
+        # never run the here-doc body as its script. The unsafe direction is a
+        # false credit, so each of these must NOT credit the gate.
+        declared = "bash scripts/ci/all.sh"
+        validation = "bash scripts/ci/all.sh"
+
+        not_executed = (
+            # `+s` only leaves stdin as the script on Bash. For dash/sh the
+            # documented stdin-script form is `-s`; `+s arg` opens `arg` as a
+            # command file and never reads stdin, so the body is data.
+            f"sh +s arg <<'EOF'\n{validation}\nEOF",
+            f"dash +s arg <<'EOF'\n{validation}\nEOF",
+            # `--rcfile` / `--init-file` are Bash-only long options. A POSIX
+            # sh/dash aborts on the unknown option before reading stdin.
+            f"sh --rcfile <<'EOF' -s\n{validation}\nEOF",
+            f"sh --init-file <<'EOF' -s\n{validation}\nEOF",
+            f"dash --rcfile <<'EOF' -s\n{validation}\nEOF",
+            # `-O` / `+O` shopt options are Bash-only; dash/sh exit on the
+            # illegal option before stdin is read.
+            f"sh -O extglob <<'EOF'\n{validation}\nEOF",
+            f"sh +O extglob <<'EOF'\n{validation}\nEOF",
+            f"dash -O extglob <<'EOF'\n{validation}\nEOF",
+            # A GNU long option after a single-character option is rejected by
+            # Bash before stdin is read (long options must precede short ones),
+            # so a late `--rcfile` must not be credited.
+            f"bash -O extglob --rcfile <<'EOF' -s\n{validation}\nEOF",
+            f"bash -e --rcfile rc <<'EOF'\n{validation}\nEOF",
+            # `shell_tokens` strips quotes, so a quoted option argument that
+            # looks like an output redirection (`'>foo'`) must still bind as the
+            # `--rcfile` argument -- leaving the trailing operand as the script
+            # file and the body as its stdin data.
+            f"bash --rcfile '>foo' <<'EOF' ./script.sh\n{validation}\nEOF",
+        )
+        for actual in not_executed:
+            with self.subTest(actual=actual):
+                self.assertFalse(command_matches_validation(actual, declared))
+
+        # Legitimate POSIX-shell here-doc scripts must still credit the gate.
+        executed = (
+            f"sh <<'EOF'\n{validation}\nEOF",
+            f"dash <<'EOF'\n{validation}\nEOF",
+            # `-s` forces stdin-as-script on every POSIX shell.
+            f"sh -s <<'EOF'\n{validation}\nEOF",
+            # A leading short flag still leaves stdin as the script.
+            f"sh -e <<'EOF'\n{validation}\nEOF",
+            # A Bash word-argument option still binds its argument after the
+            # here-doc redirection when it is the first option.
+            f"bash --rcfile <<'EOF' -s\n{validation}\nEOF",
+        )
+        for actual in executed:
+            with self.subTest(actual=actual):
+                self.assertTrue(command_matches_validation(actual, declared))
+
     def test_finish_line_gate_enforces_every_declared_validation_intent(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
