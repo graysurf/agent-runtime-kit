@@ -1,20 +1,49 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-15 (refreshed for `v1.6.1`)
+- Snapshot date: 2026-06-15 (refreshed for `v1.7.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.6.1`
+- Active `git describe --tags` output: `v1.7.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.6.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.7.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `4ab0390`
-  (`chore(release): bump cli versions to 1.6.1 (#860)`)
+- Head commit: `79cc0d7`
+  (`chore(release): bump cli versions to 1.7.0 (#868)`)
 - Release:
-  [`v1.6.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.6.1),
+  [`v1.7.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.7.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.7.0` is a lock-step host bump over `v1.6.1`. It extends the `evidence`
+  surface the kit's evidence-migrate skill and evidence-archive policy consume,
+  with one newly-required guarantee and one new retention command:
+  - `evidence migrate` now **blocks** any record whose resolved host is absent
+    from `config/hosts.yaml` (added to the dry-run `blocked` list with a
+    "classify it (personal or employer)" reason) instead of silently writing it
+    under an unclassified host. This is the implementation half of the kit's
+    gamania-safety guarantee — an employer host that has not been classified is
+    never archived — so the `evidence` floor moves to `1.7.0`
+    ([#865](https://github.com/sympoies/nils-cli/pull/865)).
+  - `evidence migrate` gains a `working_repo_roots` identity rescue: a record
+    whose recorded `cwd` no longer exists (e.g. a removed agent worktree) is
+    recovered by matching its `<owner__repo>` slug against a configured local
+    checkout and reading that checkout's `origin`. Only `Unresolvable`
+    identities are rescued; `working_repo_roots` is read from the machine-local
+    config (empty disables it) ([#866](https://github.com/sympoies/nils-cli/pull/866)).
+  - New `evidence purge` subcommand — the retention counterpart to `migrate`.
+    Deletes archived evidence for a named scope (`--host` repeatable and/or
+    `--class personal|employer`), dry-run by default; `--apply` removes the
+    `evidence/<host>/` trees, regenerates the catalog, and commits + pushes. A
+    scope is required (no implicit whole-archive purge) and `--apply` refuses a
+    dirty archive tree. The primary use is employer `delete-on-termination`
+    ([#866](https://github.com/sympoies/nils-cli/pull/866)).
+  No consumed surface was retired or renamed (all additive); the `--deep`
+  hygiene-audit / completion regen commits ([#859](https://github.com/sympoies/nils-cli/pull/859),
+  [#861](https://github.com/sympoies/nils-cli/pull/861),
+  [#862](https://github.com/sympoies/nils-cli/pull/862),
+  [#867](https://github.com/sympoies/nils-cli/pull/867)) are internal CI / asset
+  hardening with no consumer floor move.
 - `v1.6.1` is a lock-step host bump over `v1.6.0`. It hardens the
   `evidence migrate` surface the kit's evidence-migrate skill already consumes:
   - `migrate` tightens scrub/path handling and fixes query/catalog/XDG gaps, so
