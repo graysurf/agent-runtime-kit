@@ -20,12 +20,12 @@ Prereqs:
   research, review, or delivery work is intended.
 - `agent-docs` startup and project-dev preflight has passed before repository
   writes, commits, or pushes.
-- `heuristic-inbox` (nils-cli >= v1.1.0, which ships default records-slug
-  auto-suffixing for `heuristic-inbox deliver`) and `forge-cli` are available on
-  `PATH`. `deliver` drives `git`,
+- `heuristic-inbox` (nils-cli >= v1.8.0, which ships default records-slug
+  auto-suffixing for `heuristic-inbox deliver` and operation-record archival)
+  and `forge-cli` are available on `PATH`. `deliver` drives `git`,
   `semantic-commit`, and `forge-cli pr create` internally; the skill only adds
   the auto-merge step.
-- When an evidence archive is configured (step 8), `evidence` (nils-cli >= v1.7.1)
+- When an evidence archive is configured (step 8), `evidence` (nils-cli >= v1.8.0)
   is also required on `PATH`; it owns the `evidence migrate` retention mechanics.
   This dependency is declared in `manifests/skills.yaml` `required_clis`, so
   version-alignment can require the floor rather than failing only at step 8.
@@ -216,15 +216,15 @@ retention result.
      CLI), whose governed surface is retired, or that a broader record
      re-compressed is a `superseded` / `retired` archive candidate. Set its
      `Status` and `Superseded-by:`, move it to
-     `operation-records/archive/YYYY/<slug>/` (`git mv` until `heuristic-inbox
-     archive` accepts `kind=record`), and re-run `heuristic-inbox verify
-     --strict` on the new path. This keeps the active lane to rules a future
-     agent must still apply by hand.
+     `operation-records/archive/YYYY/<slug>/` with `heuristic-inbox archive`
+     against the operation-record path, and re-run `heuristic-inbox verify
+     --strict` on the archived path. This keeps the active lane to rules a
+     future agent must still apply by hand.
    - Archive entries only after they are `promoted` or `wontfix`, validated,
      and have no remaining next action.
 5. Write curated records through the narrow mechanism:
    - Prefer `heuristic-inbox new`, `set-status`, `ingest-evidence`, and
-     `archive` for case mechanics.
+     `archive` for case and operation-record mechanics.
    - Pass an explicit `$root`-derived path (or `--inbox-dir
      "$root/error-inbox"`) to every mutating `heuristic-inbox` call — `new`,
      `set-status`, `ingest-evidence`, `archive`. Never rely on the current

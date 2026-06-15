@@ -10,7 +10,8 @@ description:
 
 Prereqs:
 
-- `heuristic-inbox` is installed from the released nils-cli package and available on `PATH`.
+- `heuristic-inbox` is installed from the released nils-cli package and
+  available on `PATH` (`>= 1.8.0` for operation-record archive support).
 - For runtime-kit shared records, resolve the canonical root before mutating:
   `core/policies/heuristic-system/` in the active `agent-runtime-kit` checkout,
   or `AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT` when a workflow exports it.
@@ -25,7 +26,7 @@ Inputs:
 
 Outputs:
 
-- Case listing, verification report, new case folder, status update, archived case, or ingested evidence file.
+- Case listing, verification report, new case folder, status update, archived case or operation record, or ingested evidence file.
 
 Failure modes:
 
@@ -45,6 +46,7 @@ heuristic-inbox verify "$root/operation-records/<slug>" --strict --format json
 heuristic-inbox new --from-skill-usage out/.../skill-usage.record.json --slug pipeline-gap --out-dir "$root/error-inbox"
 heuristic-inbox set-status "$root/error-inbox/<slug>" --status promoted --link docs/plans/foo.md
 heuristic-inbox archive "$root/error-inbox/<slug>" --date 2026-05-22
+heuristic-inbox archive "$root/operation-records/<slug>" --date 2026-05-22
 heuristic-inbox ingest-evidence "$root/error-inbox/<slug>" --from validation.md
 ```
 
@@ -55,7 +57,8 @@ heuristic-inbox ingest-evidence "$root/error-inbox/<slug>" --from validation.md
 3. Use `new` only for curated findings that need durable follow-up.
 4. Use `set-status` with a link when promoting, resolving, or deferring a case.
 5. Use `ingest-evidence` for redacted evidence files instead of copying material by hand.
-6. Archive only completed cases whose retained evidence and status are coherent.
+6. Archive only completed cases or retired operation records whose retained
+   evidence and status are coherent.
 
 ## Boundary
 

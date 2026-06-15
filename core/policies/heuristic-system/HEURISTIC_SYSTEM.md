@@ -239,10 +239,9 @@ candidate — when its rule is mechanically enforced (an agent calls the gate/CL
 instead of remembering the rule), its governed surface is retired, or it is
 absorbed into a broader re-compressed record. Archive retired records under
 `operation-records/archive/YYYY/<slug>/`, mirroring the inbox archive; archiving
-preserves the record as audit history and never deletes it. Until
-`heuristic-inbox archive` accepts operation records (it currently rejects
-`kind=record`), move a retired record with `git mv` and re-run
-`heuristic-inbox verify --strict` on the new path.
+preserves the record as audit history and never deletes it. Use
+`heuristic-inbox archive` with the operation-record path and re-run
+`heuristic-inbox verify --strict` on the archived path.
 
 ## Compression Rule
 

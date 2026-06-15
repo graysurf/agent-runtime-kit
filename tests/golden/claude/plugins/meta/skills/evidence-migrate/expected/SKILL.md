@@ -11,11 +11,12 @@ description:
 Prereqs:
 
 - `evidence` is installed from the released nils-cli package and
-  available on `PATH` (`>= 1.7.1`, the floor that home-relativizes an absolute
-  skill path so a rollup's `id`, directory name, and `skill` field never leak
-  the machine home, on top of the unclassified-host block — the gamania-safety
-  guarantee — the `--host` vouch, the `working_repo_roots` identity rescue, and
-  the skip-and-report blocked-record handling).
+  available on `PATH` (`>= 1.8.0`, the floor that hardens cwd/origin and slug
+  identity matching, home-relativizes an absolute skill path so a rollup's
+  `id`, directory name, and `skill` field never leak the machine home, and
+  carries the unclassified-host block — the gamania-safety guarantee — the
+  `--host` vouch, the `working_repo_roots` identity rescue, purge apply safety,
+  and skip-and-report blocked-record handling).
 - `semantic-commit` is installed from the released nils-cli package and
   available on `PATH` (`>= 0.25.0`; the apply path commits the archive through
   it).

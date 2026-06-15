@@ -85,7 +85,10 @@ resolves the host so a record lands under the correct `evidence/<host>/...`
 path:
 
 - It derives identity from the working repo's `cwd` → `origin` remote when the
-  record's source can still be located.
+  record's source can still be located, rejecting repointed or ambiguous cwd
+  evidence instead of guessing.
+- It applies one uniform `<owner__repo>` slug match rule for direct and nested
+  source directories, so rescued old-cwd records cannot collide across repos.
 - Under a single-host `hosts.yaml`, the sole host is used.
 - Under a **multi-host** `hosts.yaml`, a slug-only record is ambiguous. Migrate
   refuses to guess: the record is reported as `blocked` and skipped. The
