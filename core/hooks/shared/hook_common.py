@@ -676,6 +676,21 @@ _REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
 # here-doc body is never executed.
 _OPTIONS_TAKING_WORD_ARG = {"--init-file", "--rcfile"}
 
+# zsh GNU-style `--option-name` invocation options that are valid AND still read
+# and run stdin as the script (verified against zsh 5.9). They only toggle
+# startup-file loading. Every OTHER zsh long option is excluded on purpose:
+# `--noexec`/`--no-exec` parse but do not run the body, `--version`/`--help`
+# exit before stdin, `--emulate <mode>` needs a word argument, and an unknown
+# name aborts zsh with "no such option" — crediting any of those would be a
+# false validation credit. An unlisted-but-valid option is a safe false
+# negative, so keep this allowlist tight.
+_ZSH_STDIN_SCRIPT_LONG_OPTIONS = {
+    "--rcs",
+    "--no-rcs",
+    "--globalrcs",
+    "--no-globalrcs",
+}
+
 # Bash's invocation-level -O/+O is special: with no shopt name, it lists shopt
 # state and continues to read stdin. With an unknown shopt name, it aborts before
 # executing stdin. Keep this list conservative; an unlisted future shopt option
@@ -766,16 +781,14 @@ _INPUT_REDIRECT_TOKEN_RE = re.compile(r"^\d*(?:<<<|<<-?|<>|<&|<)")
 
 
 def _skip_input_redirections(invocation: list[str], cursor: int) -> int:
-    """Skip stdin/input redirections only when locating an option's word argument.
+    """Skip leading stdin/input redirections when locating an option's word arg.
 
-    ``shell_tokens`` strips quotes, so a quoted option argument that merely looks
-    like an OUTPUT redirection (``--rcfile '>foo'`` tokenizes to ``>foo``) is
-    indistinguishable from a real redirection and must bind as the argument
-    rather than be skipped — otherwise the trailing operand is mistaken for the
-    argument and the body is wrongly credited. Skipping only input redirections
-    keeps the legitimate ``--rcfile <<EOF arg`` case (the option argument lands
-    after a real here-doc redirection) while refusing to skip over an
-    output-redirect-shaped word, the conservative (never over-crediting) reading.
+    This skips only input redirections (a real ``<<EOF`` / ``<`` competing for
+    the argument slot) so a later word can still bind as the option argument —
+    the legitimate ``--rcfile <<EOF arg`` case, where the argument lands after a
+    here-doc redirection. It deliberately does NOT skip output-redirect-shaped
+    tokens: the caller inspects the resulting slot and refuses to credit when it
+    is output-redirect-shaped (``--rcfile >out``), the conservative reading.
     """
     while cursor < len(invocation) and _INPUT_REDIRECT_TOKEN_RE.match(
         invocation[cursor]
@@ -818,12 +831,20 @@ def _heredoc_body_is_executed_by_shell(
     executor = PurePosixPath(invocation[0]).name
     if executor not in SHELL_HEREDOC_EXECUTORS:
         return False
-    # GNU long options (`--rcfile`/`--init-file`/`--posix`), the `-O`/`+O` shopt
-    # flags, and the `+s` stdin-as-script spelling are all Bash-specific. A POSIX
-    # `sh`/`dash`/`ksh`/`zsh` invocation aborts on (or never honours) them before
-    # the here-doc body runs, so crediting them for a non-Bash executor is a
-    # false validation credit. Gate that grammar on an actual ``bash``.
+    # The `--rcfile`/`--init-file` word-argument options, the `-O`/`+O` shopt
+    # flags, and the `+s` stdin-as-script spelling are Bash-specific. A POSIX
+    # `sh`/`dash`/`ksh` invocation aborts on (or never honours) them before the
+    # here-doc body runs, so crediting them for those executors is a false
+    # validation credit. Gate that grammar on an actual ``bash``. `zsh` is the
+    # exception for a small allowlist of GNU-style `--option-name` invocation
+    # options (the startup-file toggles in `_ZSH_STDIN_SCRIPT_LONG_OPTIONS`) that
+    # still run stdin as the script; every other zsh long option is refused
+    # below. `ksh` is intentionally folded into the POSIX reject path as the safe
+    # (never over-crediting) default; its `--option` spellings are untested here,
+    # so add an `is_ksh` branch only with cases that prove a real ksh here-doc
+    # script runs.
     is_bash = executor == "bash"
+    is_zsh = executor == "zsh"
 
     # A second stdin here-doc, a here-string, or a plain `< file` input
     # redirection supersedes or competes with this body, so it is no longer
@@ -859,20 +880,45 @@ def _heredoc_body_is_executed_by_shell(
             cursor += 1
             continue
         if token.startswith("--"):
-            # GNU long options are Bash-only and, even on Bash, are only
-            # recognized before any single-character option (Bash manual). For a
-            # POSIX executor, or a late long option after a short flag, the shell
-            # aborts or treats the token as the script-file operand before the
-            # here-doc body runs, so never credit it.
+            if is_zsh:
+                # zsh accepts GNU-style `--option-name` invocation options, but
+                # only some leave stdin as the executed script. Credit just the
+                # verified startup-file toggles, and only before any short
+                # option: some zsh short options end option processing (`-b`, or
+                # a cluster ending in `-` such as `-x-`), after which `--no-rcs`
+                # is a script-file operand and the body is its stdin DATA, not the
+                # script. Refusing a long option once a short option has been
+                # seen avoids enumerating every zsh terminator letter while never
+                # over-crediting; an unknown name aborts zsh, `--noexec` parses
+                # but does not run, `--version`/`--help` exit, and `--emulate
+                # <mode>` takes a word argument, so refusing the rest is also the
+                # safe direction.
+                if token in _ZSH_STDIN_SCRIPT_LONG_OPTIONS and not seen_short_option:
+                    cursor += 1
+                    continue
+                return False
+            # GNU long options are otherwise Bash-only and, even on Bash, are
+            # only recognized before any single-character option (Bash manual).
+            # For a POSIX sh/dash/ksh executor, or a late long option after a
+            # short flag, the shell aborts or treats the token as the script-file
+            # operand before the here-doc body runs, so never credit it.
             if not is_bash or seen_short_option:
                 return False
             if token in _OPTIONS_TAKING_WORD_ARG:
-                # The option needs a following word argument. Skip only an input
-                # redirection (a real `<<EOF` competing for the arg slot), never
-                # an output-redirect-shaped quoted word, which must bind as the
-                # argument itself.
+                # The option needs a following word argument. Skip an input
+                # redirection (a real `<<EOF` competing for the arg slot) so a
+                # later word can still bind (`--rcfile <<EOF -s`). But an
+                # output-redirect-shaped candidate is never a safe argument: an
+                # unquoted `>out` is a real redirection bash removes, leaving the
+                # option argument-less so it aborts, and a quoted `'>out'` is
+                # indistinguishable after quote stripping. Refuse both rather
+                # than wrongly credit the body. Input redirections were just
+                # consumed, so a remaining `_REDIRECT_TOKEN_RE` match here can
+                # only be an output redirection.
                 arg_cursor = _skip_input_redirections(invocation, cursor + 1)
-                if arg_cursor >= len(invocation):
+                if arg_cursor >= len(invocation) or _REDIRECT_TOKEN_RE.match(
+                    invocation[arg_cursor]
+                ):
                     return False
                 cursor = arg_cursor + 1
                 continue
