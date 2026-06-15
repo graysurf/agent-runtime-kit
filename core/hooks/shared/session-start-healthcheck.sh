@@ -36,7 +36,23 @@ evidence_config_path() {
 }
 
 archive_has_git_metadata() {
-  [[ -d "$1/.git" || -f "$1/.git" ]]
+  # A bare existence check on `.git` is not enough: a stale or invalid Git
+  # worktree leaves a regular `.git` file behind whose `gitdir:` target is gone,
+  # so it would wrongly report the archive as present and suppress the warning
+  # even though later Git operations fail. A real `.git` directory is trusted as
+  # is; a `.git` file is trusted only when its `gitdir:` target resolves.
+  local marker="$1/.git" gitdir
+  if [[ -d "$marker" ]]; then
+    return 0
+  fi
+  if [[ -f "$marker" ]]; then
+    gitdir="$(sed -n 's/^gitdir:[[:space:]]*//p' "$marker" | head -1)"
+    [[ -n "$gitdir" ]] || return 1
+    [[ "$gitdir" == /* ]] || gitdir="$1/$gitdir"
+    [[ -e "$gitdir" ]] && return 0
+    return 1
+  fi
+  return 1
 }
 
 unquote_yaml_scalar() {
