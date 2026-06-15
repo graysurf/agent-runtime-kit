@@ -30,6 +30,11 @@ budget that was already exhausted, while the REST `core` budget still had
   ~134s out) while `core.remaining = 4821`.
 - Cross-checking the release via REST (`gh api repos/<repo>/releases/tags/<tag>`)
   succeeded immediately — confirmed the release + 8 assets were present.
+- Evidence: `evidence/forge-pr-ready-graphql-rate-limit.md` — during
+  sympoies/symphony-board PR #228 delivery, `forge-cli pr ready` failed with
+  GraphQL quota exhausted while REST/core quota still had thousands of requests
+  remaining; waiting for the GraphQL reset and retrying let the PR ready/checks
+  sweep/merge path complete.
 
 ## Impact
 
@@ -44,20 +49,21 @@ publish").
 
 - Prefer the harness's background run-completion notifications over tight
   command polling where possible.
-- Before GraphQL-backed `gh` calls, gate on the **free** `gh api rate_limit`
-  endpoint (it does not consume quota); sleep until `graphql.remaining`
-  recovers before the next GraphQL call.
+- Before GraphQL-backed `gh` or forge PR lifecycle calls, gate on the **free**
+  `gh api rate_limit` endpoint (it does not consume quota); sleep until
+  `graphql.remaining` recovers before the next GraphQL-backed call.
 - Cross-check release/asset existence with REST (`gh api
   repos/<repo>/releases/tags/<tag>`, `core` budget) when GraphQL is exhausted.
 
 ## Promotion Criteria
 
-Promote when release/draft/PR lookup helpers either back off on the
-`rate_limit` endpoint before GraphQL-backed calls or route release existence
-checks through REST, so a drained GraphQL budget no longer surfaces as a false
-"not available".
+Promote when release/draft/PR lookup helpers and forge PR lifecycle helpers
+either back off on the `rate_limit` endpoint before GraphQL-backed calls or
+route release existence checks through REST, so a drained GraphQL budget no
+longer surfaces as a false "not available" or blocks ready/merge flows.
 
 ## Next Action
 
-Gate GraphQL-backed release/draft/PR lookups on the free rate_limit endpoint
-and fall back to REST for release asset existence checks.
+Gate GraphQL-backed release/draft/PR lookups and forge PR lifecycle calls on the
+free rate_limit endpoint, and fall back to REST for release asset existence
+checks.
