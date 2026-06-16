@@ -77,7 +77,7 @@ Before the merge call, sweep both merge gates and disposition what they
 surface:
 
 ```bash
-forge-cli --provider "$PROVIDER" --format json pr review-threads "$PR_NUMBER"
+forge-cli --provider "$PROVIDER" --format json pr review-threads list "$PR_NUMBER"
 forge-cli --provider "$PROVIDER" --format json pr tasks "$PR_NUMBER"
 ```
 

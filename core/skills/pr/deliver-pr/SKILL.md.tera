@@ -166,7 +166,7 @@ reviewers post asynchronously — often minutes after PR creation — so the swe
 runs at the last action before merge, not only at creation time:
 
 ```bash
-forge-cli --provider "$PROVIDER" --format json pr review-threads "$PR_NUMBER"
+forge-cli --provider "$PROVIDER" --format json pr review-threads list "$PR_NUMBER"
 ```
 
 `data.unresolved == 0` is the gate. Disposition every unresolved thread before
