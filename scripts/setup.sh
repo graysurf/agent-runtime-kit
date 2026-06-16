@@ -26,6 +26,7 @@ SKIP_CLI_TOOLS=0
 DRY_RUN=0
 BREW_PREFIX=""
 BOOTSTRAP_SURFACE="phase commands"
+CLAUDE_PLUGIN_REGISTRY_SURFACE="not-run"
 SCRIPT_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLI_TOOLS_MANIFEST="$SCRIPT_REPO_ROOT/manifests/cli-tools.yaml"
 
@@ -539,6 +540,28 @@ run_surface_bootstrap() {
   prune_products
 }
 
+sync_claude_plugin_registry_activation() {
+  local mode_flag="--apply"
+  local script="$REPO_HOME_DEFAULT/scripts/sync-runtime-surfaces.sh"
+
+  if [ "$DRY_RUN" = "1" ]; then
+    mode_flag="--dry-run"
+  elif [ ! -f "$script" ]; then
+    err "missing sync-runtime-surfaces script for Claude plugin activation: $script"
+    exit 1
+  fi
+
+  CLAUDE_PLUGIN_REGISTRY_SURFACE="sync-runtime-surfaces.sh"
+  log "activating Claude plugin registry through sync-runtime-surfaces"
+  run_cmd bash "$script" \
+    --source-root "$REPO_HOME_DEFAULT" \
+    --product claude \
+    --no-pull \
+    --no-prune \
+    --no-verify \
+    "$mode_flag"
+}
+
 run_doctor() {
   local product
   local live_home
@@ -593,6 +616,7 @@ Summary
 - codex_live_home: $(product_live_home codex)
 - claude_home_prompt: $(product_home_prompt_path claude) -> $(agent_home_source)
 - codex_home_prompt: $(product_home_prompt_path codex) -> $(agent_home_source)
+- claude_plugin_registry_activation: $CLAUDE_PLUGIN_REGISTRY_SURFACE
 - docs_audit: agent-docs audit --target all --strict --project-path $REPO_HOME_DEFAULT
 EOF
 }
@@ -616,6 +640,7 @@ main() {
   ensure_home_prompts
   run_agent_docs_audit
   run_surface_bootstrap
+  sync_claude_plugin_registry_activation
   print_summary
   set +e
   run_doctor
