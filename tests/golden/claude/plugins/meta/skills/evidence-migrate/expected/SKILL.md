@@ -1,7 +1,7 @@
 ---
 name: evidence-migrate
 description:
-  Migrate skill-usage evidence out of the ephemeral agent-out runtime tree into the agent-evidence-archive repository through the nils-cli `evidence migrate` command, dry-run first and apply only on explicit confirmation; redaction runs before write, and records whose repo identity is unresolvable or whose resolved host is unclassified are skipped and reported rather than aborting the batch.
+  Migrate skill-usage evidence out of the ephemeral agent-out runtime tree into the agent-evidence-archive repository through the nils-cli `evidence migrate` command. Direct use is dry-run first and applies only on explicit confirmation; session closeout may auto-apply its own clean dry-run. Redaction runs before write, and records whose repo identity is unresolvable or whose resolved host is unclassified are skipped and reported rather than aborting the batch.
 ---
 
 # Evidence Migrate
@@ -68,8 +68,8 @@ Failure modes:
 
 ## Entrypoint
 
-Always run the dry-run first (it is the default — no flag needed) and
-show its JSON to the user:
+When invoking this skill directly, always run the dry-run first (it is the
+default — no flag needed) and show its JSON to the user:
 
 ```bash
 evidence migrate --format json
@@ -93,8 +93,9 @@ evidence migrate --repo graysurf__agent-runtime-kit --host github.com --apply --
    counts, the prepared archive targets, the per-record scrub summary
    (`patterns_triggered` + `total_matches`), the `already_archived`
    duplicates, and the `blocked` list to the user.
-2. Stop and require explicit user confirmation before applying. Never
-   apply automatically.
+2. For direct use of this skill, stop and require explicit user confirmation
+   before applying. Never auto-apply from this skill; the only automatic apply
+   path is `heuristic-session-closeout` step 8 after its clean-dry-run checks.
 3. Review the scrub summary with the user before applying: the command
    redacts matched secrets in place and writes a scrub log alongside
    each record, but the operator should still recognize what was
@@ -129,9 +130,9 @@ evidence migrate --repo graysurf__agent-runtime-kit --host github.com --apply --
 host classification, the digest dedup, the secret scrub, the
 `metadata.yaml` payload, file staging, catalog regeneration, and the
 `git` / `semantic-commit` / push transaction on the archive. The skill
-body owns when to migrate, presenting the dry-run for review, gating the
-apply on explicit user confirmation, reviewing the scrub summary, and
-deciding when to vouch for a host with `--host`. It does not duplicate
+body owns manual migration: presenting the dry-run for review, gating the
+apply on explicit user confirmation, reviewing the scrub summary, and deciding
+when to vouch for a host with `--host`. It does not duplicate
 CLI logic, call `git` directly, or delete anything from the source tree.
 
 ## Related Skills
