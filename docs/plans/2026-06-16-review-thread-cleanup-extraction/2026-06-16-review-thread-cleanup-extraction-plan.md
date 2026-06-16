@@ -29,11 +29,15 @@ policy) already landed and is out of scope here:
   `forge-cli pr merge` (`unresolved_review_threads` gate).
 - Project-local skill to refactor:
   `sympoies/symphony-board` `.agents/skills/project-review-cleanup/`.
+- Decisions locked (2026-06-16):
+  - Go/No-Go = GO. The user elected to proceed; treat as standalone-merit GO.
+  - Sprint 3 discovery = decision B: a first-class `symphony-board`
+    `review-candidates` CLI subcommand owns discovery (not `forge-cli`, not the
+    bespoke `review-cleanup.mjs`). `forge-cli` gains only the resolve/reply
+    write surface and never learns about the board.
 - Open questions carried into execution:
-  - Whether a real second consumer of the discovery mechanics exists yet, or the
-    forge-cli write surface stands on its own merit (the Go/No-Go gate).
   - Whether to ship T3-b (forge-cli write surface) or fall back to T3-a
-    (disposition-file handoff with apply staying in the project adapter).
+    (disposition-file handoff with apply staying in the adapter).
 
 ## Scope
 
@@ -164,36 +168,55 @@ thread, provider-aware and fail-closed.
 - **Validation**:
   - `bash scripts/ci/all.sh`; `bash tests/hooks/run.sh`.
 
-## Sprint 3: board-discovery adapter (symphony-board)
+## Sprint 3: board review-candidates CLI (symphony-board)
 
-**Goal**: `project-review-cleanup` becomes a thin adapter on the shared skill.
+**Goal**: Promote discovery into a first-class `symphony-board` CLI subcommand
+(decision B) and retire the bespoke `review-cleanup.mjs` discovery path.
+`forge-cli` stays provider-agnostic and never learns about the board; discovery
+is owned by the board, which owns the data.
 
-### Task 3.1: Refactor into an adapter
+Sprint 3 splits into an independent lane (Task 3.1, depends only on the board's
+own store/contract) and an integration lane (Task 3.2, depends on Sprint 2).
+Task 3.1 has no dependency on Sprints 1-2 and can start immediately.
+
+### Task 3.1: Add the `review-candidates` CLI subcommand
+
+- **Location**:
+  - `sympoies/symphony-board: src/cli`
+- **Description**: Add a `symphony-board review-candidates --json` subcommand
+  that computes the candidate set (`open_review_threads`, `late_review`,
+  `review_on_closed_pr`) from the board's own canonical store/contract — the
+  logic currently in `review-cleanup.mjs` `buildCandidates` — and emits
+  `{ source_id, repo, pr, reasons, openThreads, ... }[]`. Capture failing-test
+  evidence first per the global test-first gate. This lane is independent of
+  Sprints 1-2.
+- **Dependencies**:
+  - Task 0.1
+- **Acceptance criteria**:
+  - `review-candidates --json` reproduces the candidate set today's
+    `buildCandidates` produces, from the board store/contract.
+  - The board, not `forge-cli`, owns this command; `forge-cli` gains no board
+    knowledge.
+- **Validation**:
+  - `pnpm run typecheck`; `pnpm test` (incl. a candidate-set test);
+    `test-first-evidence` record.
+
+### Task 3.2: Reduce project-review-cleanup to an adapter on the shared skill
 
 - **Location**:
   - `sympoies/symphony-board: .agents/skills/project-review-cleanup`
-- **Description**: Keep board-contract discovery, `late_review`, and
-  which-repos-to-sync; feed candidates into the shared skill; remove the
-  duplicated GraphQL mutation in favor of the forge-cli write surface.
+- **Description**: Point the shared `review-thread-cleanup` skill at
+  `review-candidates` for board discovery, drop the duplicated discovery and
+  resolve/reply GraphQL from `review-cleanup.mjs`, and deliver the PR.
 - **Dependencies**:
   - Task 2.2
-- **Acceptance criteria**:
-  - The adapter no longer carries its own resolve/reply GraphQL mutation.
-  - Board discovery still produces the same candidate set.
-- **Validation**:
-  - `pnpm run typecheck`; `pnpm test`; review-cleanup script tests.
-
-### Task 3.2: Deliver the adapter PR
-
-- **Location**:
-  - `sympoies/symphony-board`
-- **Description**: Deliver the adapter refactor PR with green checks.
-- **Dependencies**:
   - Task 3.1
 - **Acceptance criteria**:
-  - PR delivered; checks green.
+  - `review-cleanup.mjs` no longer carries discovery or resolve/reply GraphQL.
+  - The shared skill drives a board sweep via `review-candidates` + the
+    forge-cli read/write surfaces.
 - **Validation**:
-  - `gh pr checks` green.
+  - `pnpm run typecheck`; `pnpm test`; `gh pr checks` green.
 
 ## Sprint 4: Integration and closeout
 
