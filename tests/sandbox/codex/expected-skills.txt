@@ -58,6 +58,7 @@ pr.close-pr
 pr.create-dispatch-lane-pr
 pr.create-pr
 pr.deliver-pr
+pr.review-thread-cleanup
 reporting.daily-brief
 reporting.project-retro
 reporting.topic-radar

@@ -784,6 +784,20 @@ skills:
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
 
+  - id: pr.review-thread-cleanup
+    domain: pr
+    source: core/skills/pr/review-thread-cleanup
+    products:
+      codex:
+        name: review-thread-cleanup
+        render_to: plugins/pr/skills/review-thread-cleanup/SKILL.md
+      claude:
+        name: review-thread-cleanup
+        render_to: plugins/pr/skills/review-thread-cleanup/SKILL.md
+    required_clis:
+      forge-cli: ">=1.9.1"
+    state_out_mode: runtime
+
   - id: dispatch.create-plan-tracking-issue
     domain: dispatch
     source: core/skills/dispatch/create-plan-tracking-issue

@@ -131,6 +131,7 @@ plugins:
       - pr.create-dispatch-lane-pr
       - pr.close-pr
       - pr.deliver-pr
+      - pr.review-thread-cleanup
     product_manifests:
       codex: targets/codex/plugins/pr/.codex-plugin/plugin.json
       claude: targets/claude/plugins/pr/.claude-plugin/plugin.json
