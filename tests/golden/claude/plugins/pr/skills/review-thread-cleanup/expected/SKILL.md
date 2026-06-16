@@ -110,7 +110,14 @@ forge-cli --provider github --format json \
 5. Re-run `pr review-threads list` and confirm convergence. Stop when
    `data.unresolved == 0`, or record an explicit stop with the residual threads
    dispositioned as `follow_up` / `accepted` per the policy's stopping rule.
-6. Hand the converged PR/MR back to the delivery / close surface
+6. When retaining a `skill-usage` envelope for a real sweep, keep it compact but
+   diagnosable. Record or link: provider, repo, PR/MR number, `forge-cli`
+   version, initial and final `data.unresolved` counts, and for each unresolved
+   thread the `id`, `path`, `isOutdated`, disposition (`fix` / `stale` /
+   `follow_up` / `accepted`), and rationale or follow-up ref. Link typed child
+   evidence for large list outputs; do not paste raw provider payloads into the
+   envelope.
+7. Hand the converged PR/MR back to the delivery / close surface
    (`pr:deliver-pr` / `pr:close-pr`), whose `pr merge` gate confirms
    `unresolved_review_threads == 0` mechanically.
 
