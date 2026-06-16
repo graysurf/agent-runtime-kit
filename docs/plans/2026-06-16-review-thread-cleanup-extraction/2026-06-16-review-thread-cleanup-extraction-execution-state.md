@@ -20,7 +20,7 @@
 - Direct source-doc execution waiver: not applicable
 - Prior phase (out of scope, merged): graysurf/agent-runtime-kit#407,
   sympoies/symphony-board#229
-- Tracking issue: pending record open
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/408>
 
 ## Validation Plan
 
