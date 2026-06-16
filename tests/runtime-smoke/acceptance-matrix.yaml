@@ -222,6 +222,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.sync-runtime-surfaces.shared-cli.claude-plugin-registry
+    product: shared-cli
+    domain: meta
+    skill_id: meta.sync-runtime-surfaces
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create a temp Claude source tree/state home with a claude-kit marketplace and stub claude CLI
+    invocation: sync-runtime-surfaces Claude activation helper materializes the marketplace, refreshes installed plugins, and installs every plugin ref
+    expected_exit_code: 0
+    expected_artifacts: symlink-free materialized marketplace plus stub log with marketplace remove/add, uninstall refresh, and per-plugin install
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.bootstrap.shared-cli.project-local
     product: shared-cli
     domain: meta

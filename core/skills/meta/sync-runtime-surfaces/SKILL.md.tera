@@ -37,7 +37,8 @@ Outputs:
 - The script's stdout/stderr and exit code.
 - A concise summary of whether pull, render, install, prune, doctor, and Codex
   prompt-input verification were planned, skipped, completed, or (for prune)
-  flagged `review-needed`.
+  flagged `review-needed`, plus whether Claude plugin registry activation was
+  planned, installed, or skipped.
 - A read-only source count check before any render/install step.
 
 Failure modes:
@@ -50,6 +51,8 @@ Failure modes:
 - Active skill-count references drift from `manifests/skills.yaml`.
 - `agent-runtime render`, `install`, `prune-stale`, or
   `doctor --class skill-surface` fails.
+- Claude plugin registry activation fails when Claude is selected and the
+  `claude` binary is available.
 - Codex prompt-input verification fails when Codex is selected and available.
 
 ## Entrypoint
@@ -108,15 +111,21 @@ bash scripts/sync-runtime-surfaces.sh --apply --no-prune
    does not skip this gate because it only controls post-install verification.
 5. Before an `--apply` run, state that the command may mutate the selected
    local runtime homes (`$CODEX_HOME`/`$HOME/.codex`, `$HOME/.claude`, and
-   runtime-kit state homes). By default, `--apply` also prunes stale managed
-   skill surfaces with `agent-runtime prune-stale`; when `--no-prune` is
-   passed, warn that stale managed runtime surfaces may remain. `prune-stale`
-   only removes provably owned symlinks and empty directories, so a retired
-   recursive-file skill directory (real files / a non-empty managed dir) is
-   reported as `prune=review-needed` with the leftover paths listed; surface
-   those paths so the operator can remove the retired directories by hand.
+   runtime-kit state homes) and, when Claude is selected and `claude` is on
+   `PATH`, user-level Claude plugin settings. Claude activation materializes a
+   symlink-free marketplace copy under the Claude state home, registers that
+   copy with `claude plugin marketplace add`, and refreshes installed
+   `<plugin>@claude-kit` entries by reinstalling them from the materialized
+   marketplace. By default, `--apply` also prunes stale managed skill surfaces
+   with `agent-runtime prune-stale`; when `--no-prune` is passed, warn that
+   stale managed runtime surfaces may remain. `prune-stale` only removes
+   provably owned symlinks and empty directories, so a retired recursive-file
+   skill directory (real files / a non-empty managed dir) is reported as
+   `prune=review-needed` with the leftover paths listed; surface those paths so
+   the operator can remove the retired directories by hand.
 6. Run the script from the checkout root and let it own pull, render, install,
-   prune, doctor, and Codex prompt-input sequencing.
+   Claude hook/registry activation, prune, doctor, and Codex prompt-input
+   sequencing.
 7. Report the final summary line and the first failing command if the script
    exits non-zero.
 

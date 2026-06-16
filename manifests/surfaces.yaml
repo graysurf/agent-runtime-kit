@@ -161,17 +161,19 @@ surfaces:
           - manifests/product-capabilities.yaml
       claude:
         state: shipped
-        mechanism: "`plugin-manifest-copy` of root marketplace.json"
+        mechanism: "`plugin-manifest-copy` of root marketplace.json, then `sync-runtime-surfaces.sh --apply --product claude` materializes a symlink-free marketplace under Claude state home, registers that path as `claude-kit`, and reinstalls every `<plugin>@claude-kit` through the Claude plugin CLI; first-time `setup.sh` delegates the same activation after bootstrap"
         source_artifacts:
           - targets/claude/.claude-plugin/marketplace.json
+          - scripts/sync-runtime-surfaces.sh
+          - scripts/setup.sh
         min_product: "2.1.145"
         min_nils_cli: "v0.17.5"
         acceptance:
           - kind: ci
-            note: "gate 5 (audit-drift), gate 7"
+            note: "gate 5 (audit-drift), gate 7, gate 8 (runtime-smoke Claude materialized plugin registry and setup activation fixtures)"
             descriptive_only: true
           - kind: live
-            note: "—"
+            note: "`claude plugins list` includes the runtime-kit `<plugin>@claude-kit` entries after sync, with cache populated from the state-home materialized marketplace"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-claude.md#4-plugin-marketplace-claude-pluginmarketplacejson"

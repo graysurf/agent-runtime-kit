@@ -206,6 +206,13 @@ agent-runtime doctor \
   --state-home "$claude_state_home" \
   --class skill-surface \
   --format json
+
+if command -v claude >/dev/null 2>&1; then
+  claude plugins list
+  claude plugin details meta
+else
+  echo "Claude CLI is not on PATH; skipped claude plugins list."
+fi
 ```
 
 9. If Codex CLI is available, verify prompt input. If it is not available, report
@@ -249,6 +256,7 @@ Final report format:
 - zsh-kit smoke: pass/fail
 - Codex doctor: pass/fail
 - Claude doctor: pass/fail
+- Claude plugins list: pass/fail/skipped
 - Codex prompt-input: pass/fail/skipped
 - Optional zsh-kit tools: installed/skipped
 - Next step for the user: close and reopen Terminal
