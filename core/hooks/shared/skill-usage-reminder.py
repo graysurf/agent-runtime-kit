@@ -210,8 +210,8 @@ def emit_reminder(skills: list[str]) -> None:
     product = os.environ.get("AGENT_RUNTIME_PRODUCT", "agent-runtime")
     context = f"""[agent-runtime-kit:{product}] High-impact skill workflow detected: {skill_list}.
 If this turn actually invokes the skill and performs file edits, tool/API calls, validation, delivery, external lookup, or durable artifact creation, retain a skill-usage.record.v1 envelope:
-  agent-out project --topic skill-usage --mkdir
-  skill-usage init ...; skill-usage record-validation ...; skill-usage record-outcome ...; skill-usage verify --out <record-dir> --format json
+  record_dir="$(agent-out project --topic skill-usage --mkdir)"
+  skill-usage init --out "$record_dir" ...; skill-usage record-validation --out "$record_dir" ...; skill-usage record-outcome --out "$record_dir" ...; skill-usage verify --out "$record_dir" --format json
 Keep detailed evidence in typed child records and link them from the envelope. Curate only important unresolved or reusable workflow gaps into heuristic-inbox cases under the shared Heuristic System root. This hook is a reminder only; do not auto-generate or hand-edit records. See the rendered skill-usage skill under the active runtime home."""
     sys.stdout.write(
         json.dumps(
