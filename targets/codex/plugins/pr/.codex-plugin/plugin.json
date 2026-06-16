@@ -21,6 +21,10 @@
     {
       "id": "deliver-pr",
       "source": "core/skills/pr/deliver-pr"
+    },
+    {
+      "id": "review-thread-cleanup",
+      "source": "core/skills/pr/review-thread-cleanup"
     }
   ]
 }

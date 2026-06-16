@@ -677,6 +677,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: pr.review-thread-cleanup.shared-cli.deterministic
+    product: shared-cli
+    domain: pr
+    skill_id: pr.review-thread-cleanup
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: create temp git workspaces with pushed upstream branch metadata
+    invocation: forge-cli github pr review-threads list/resolve/reply dry-runs, gitlab resolve provider_unsupported, and shared skill surface assertions
+    expected_exit_code: 0
+    expected_artifacts: forge-cli review-threads list/resolve/reply dry-run plans and the GitLab fail-closed envelope
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: issue.issue-follow-up.shared-cli.deterministic
     product: shared-cli
     domain: issue

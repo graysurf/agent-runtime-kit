@@ -72,6 +72,14 @@
     "record_when": "The workflow marks ready, merges, closes, or cleans up a GitHub pull request or GitLab merge request."
   },
   {
+    "skill": "review-thread-cleanup",
+    "tier": "default",
+    "match_mode": "action_or_explicit",
+    "aliases": ["review-thread-cleanup", "review thread cleanup", "resolve review threads", "resolve review thread", "review thread sweep", "bot review cleanup"],
+    "reason": "Resolving or replying to review threads changes provider-side review state and applies the convergence policy's triage decisions.",
+    "record_when": "The workflow lists, triages, resolves, replies to, or defers review threads on a GitHub pull request or GitLab merge request."
+  },
+  {
     "skill": "create-dispatch-lane-pr",
     "tier": "default",
     "match_mode": "action_or_explicit",

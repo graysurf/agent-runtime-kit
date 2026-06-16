@@ -444,10 +444,90 @@ run_deliver_pr_probe() {
   return "$rc"
 }
 
+# review-thread-cleanup wraps the forge-cli `pr review-threads` group: `list`
+# (provider-aware read) plus the GitHub-only `resolve` / `reply` write surfaces.
+# The probe exercises each GitHub dry-run, asserts GitLab resolve fails closed
+# with provider_unsupported, and asserts the shared skill documents the read +
+# write invocations and cites the convergence policy as its judgment contract.
+run_review_thread_cleanup_github_probe() {
+  local workspace="$PR_WORKSPACE/review-thread-cleanup-github"
+  local list_out="$PR_ARTIFACTS_DIR/review-thread-cleanup-list.json"
+  local resolve_out="$PR_ARTIFACTS_DIR/review-thread-cleanup-resolve.json"
+  local reply_out="$PR_ARTIFACTS_DIR/review-thread-cleanup-reply.json"
+  require_pr_bin forge-cli || return 1
+  mkdir -p "$workspace"
+  cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$workspace"
+  init_pushed_branch_fixture "$workspace" "feat/runtime-smoke-review-thread-cleanup" \
+    "git@github.com:graysurf/agent-runtime-kit.git"
+  (
+    cd "$workspace"
+    forge-cli --provider github --repo graysurf/agent-runtime-kit \
+      --dry-run --format json pr review-threads list 123 >"$list_out" 2>&1
+    forge-cli --provider github --repo graysurf/agent-runtime-kit \
+      --dry-run --format json pr review-threads resolve 123 \
+      --thread PRRT_runtimesmoke --note "Resolved per convergence policy." >"$resolve_out" 2>&1
+    forge-cli --provider github --repo graysurf/agent-runtime-kit \
+      --dry-run --format json pr review-threads reply 123 \
+      --thread PRRT_runtimesmoke --body "Acknowledged." >"$reply_out" 2>&1
+  )
+  grep -q '"schema_version":"cli.forge-cli.pr.review-threads.v1"' "$list_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review-threads.resolve.v1"' "$resolve_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review-threads.reply.v1"' "$reply_out"
+  grep -q 'resolveReviewThread' "$resolve_out"
+  grep -q 'addPullRequestReviewThreadReply' "$reply_out"
+}
+
+run_review_thread_cleanup_gitlab_probe() {
+  local workspace="$PR_WORKSPACE/review-thread-cleanup-gitlab"
+  local out="$PR_ARTIFACTS_DIR/review-thread-cleanup-gitlab-resolve.json"
+  local rc
+  require_pr_bin forge-cli || return 1
+  mkdir -p "$workspace"
+  cp -R "$SCRIPT_DIR/workspaces/basic-repo/." "$workspace"
+  init_pushed_branch_fixture "$workspace" "feat/runtime-smoke-review-thread-cleanup-gitlab" \
+    "git@gitlab.com:group/project.git"
+  set +e
+  (
+    cd "$workspace"
+    forge-cli --provider gitlab --repo group/project \
+      --dry-run --format json pr review-threads resolve 123 --thread PRRT_x
+  ) >"$out" 2>&1
+  rc="$?"
+  set -e
+  [ "$rc" -ne 0 ] || return 1
+  grep -q '"code":"provider_unsupported"' "$out"
+}
+
+assert_review_thread_cleanup_skill_documents_surface() {
+  local skill="$REPO_ROOT/core/skills/pr/review-thread-cleanup/SKILL.md.tera"
+  local rc=0
+  if [ ! -f "$skill" ]; then
+    echo "runtime-smoke pr: missing $skill" >&2
+    return 1
+  fi
+  grep -q 'pr review-threads list' "$skill" || rc=1
+  grep -q 'pr review-threads resolve' "$skill" || rc=1
+  grep -q 'pr review-threads reply' "$skill" || rc=1
+  grep -q 'review-thread-convergence' "$skill" || rc=1
+  if [ "$rc" -ne 0 ]; then
+    echo "runtime-smoke pr: $skill omits read/write surface or convergence policy reference" >&2
+  fi
+  return "$rc"
+}
+
+run_review_thread_cleanup_probe() {
+  local rc=0
+  run_review_thread_cleanup_github_probe || rc=1
+  run_review_thread_cleanup_gitlab_probe || rc=1
+  assert_review_thread_cleanup_skill_documents_surface || rc=1
+  return "$rc"
+}
+
 failures=0
 record_case "pr.create-pr" "forge-cli GitHub+GitLab pr create dry-run passed" run_create_pr_probe
 record_case "pr.create-dispatch-lane-pr" "forge-cli dispatch lane pr create dry-run passed" run_create_dispatch_lane_probe
 record_case "pr.close-pr" "forge-cli GitHub+GitLab close dry-runs and optional specialist scope passed" run_close_pr_probe
 record_case "pr.deliver-pr" "forge-cli GitHub+GitLab delivery macro and mandatory specialist scope passed" run_deliver_pr_probe
+record_case "pr.review-thread-cleanup" "forge-cli review-threads list/resolve/reply dry-runs, GitLab fail-closed, and documented shared skill surface" run_review_thread_cleanup_probe
 
 exit "$failures"

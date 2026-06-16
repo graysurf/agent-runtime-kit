@@ -447,6 +447,12 @@ entries:
     destination: skills/pr/deliver-pr
     recursive: false
 
+  - id: pr.review-thread-cleanup.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/pr/skills/review-thread-cleanup
+    destination: skills/pr/review-thread-cleanup
+    recursive: false
+
   - id: dispatch.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/codex/plugins/dispatch/.codex-plugin/plugin.json
