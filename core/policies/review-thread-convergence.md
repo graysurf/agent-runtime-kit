@@ -83,17 +83,19 @@ a signal to keep fixing. Converge, then stop.
 
 Use released forge-cli surfaces, not raw `gh`/`glab`, where available:
 
-- Discover threads: `forge-cli pr review-threads list <id>` (provider-aware,
-  read). On GitHub, `forge-cli pr review-threads resolve <thread-id>` (with an
-  optional `--note` reply) and `pr review-threads reply <thread-id>` close the
-  loop on a thread; both return `provider_unsupported` on GitLab / Local.
+- Discover threads: `forge-cli pr review-threads list <pr>` (provider-aware,
+  read). Each `data.threads[]` entry carries the normalized `resolved` /
+  `outdated` booleans (not GitHub's raw `isResolved` / `isOutdated`); filter on
+  `resolved == false` (or use the `data.unresolved` count).
+- Resolve / reply (GitHub, released in forge-cli ≥ 1.9.1): reply-and-resolve in
+  one call with `forge-cli pr review-threads resolve <pr> --thread <PRRT_…>
+  [--note <reply>]`, resolve without a reply by omitting `--note`, or reply
+  without resolving via `forge-cli pr review-threads reply <pr> --thread
+  <PRRT_…> --body <text>`. All three return `provider_unsupported` on
+  GitLab / Local; converge those threads through the provider surface.
 - Merge gate: `forge-cli pr merge` fails closed on `unresolved_review_threads`;
   bypass only with `--allow-unresolved-threads` after each thread is
   dispositioned.
-- Resolving or replying to threads has no released write surface yet;
-  project-local skills (e.g. symphony-board `project-review-cleanup`) currently
-  apply resolutions through the provider API directly. A shared write surface is
-  tracked separately.
 
 ## Consumers
 
