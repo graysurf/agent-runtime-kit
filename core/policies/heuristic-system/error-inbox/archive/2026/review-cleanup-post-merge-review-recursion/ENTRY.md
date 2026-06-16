@@ -2,10 +2,12 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-16
 - Area: review-cleanup
 - Severity: low
+- Cluster: async-bot-review-fix-loop
+- Durable link: `core/policies/review-thread-convergence.md`
 
 ## Signal
 
@@ -63,8 +65,15 @@ applies it without rediscovering it.
 
 ## Next Action
 
-Document a convergence discipline in review-cleanup-type skills: expect each fix
-PR to draw a fresh post-merge bot review; converge by preferring a
-terminal/uniform design over per-case special-casing, and apply a stopping rule
-(fix genuine bugs; accept review-preference nitpicks on principled code with
-rationale).
+None. Promoted into the shared, provider-agnostic
+`core/policies/review-thread-convergence.md` policy (per-finding triage, the
+convergence/stopping rule, concentrate-vs-converge, and guard rails),
+registered as an optional `project-dev` home-scoped doc in `AGENT_DOCS.toml`
+and referenced from the symphony-board `project-review-cleanup` skill. A future
+shared review-thread-cleanup skill (tracked as the T3 extraction program) will
+embed the same policy and add a forge-cli thread-resolve write surface.
+
+## Archive
+
+- Archived: 2026-06-16
+- Reason: Completed entry archived out of the active error inbox.
