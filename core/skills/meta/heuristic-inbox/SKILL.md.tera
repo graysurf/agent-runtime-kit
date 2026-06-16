@@ -48,7 +48,7 @@ heuristic-inbox set-status "$root/error-inbox/<slug>" --status promoted --link d
 heuristic-inbox archive "$root/error-inbox/<slug>" --date 2026-05-22
 # Operation records archive only once superseded/retired with a successor link;
 # archiving an active record without it fails with archive-failed.
-heuristic-inbox set-status "$root/operation-records/<slug>" --status superseded --link <successor>
+heuristic-inbox set-status "$root/operation-records/<slug>" --status superseded --link "docs/plans/<successor>.md"
 heuristic-inbox archive "$root/operation-records/<slug>" --date 2026-05-22
 heuristic-inbox ingest-evidence "$root/error-inbox/<slug>" --from validation.md
 ```
