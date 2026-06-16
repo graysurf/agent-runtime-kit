@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli >=1.1.0`, `plan-issue >=1.1.0`, and
+- `agent-runtime`, `forge-cli >=1.9.1`, `plan-issue >=1.1.0`, and
   `review-specialists` are installed from the released nils-cli package and
   available on `PATH`. The `code-review-pre-merge-gate` workflow uses
   `review-specialists`; the review-thread sweep and merge gate need
@@ -170,9 +170,11 @@ forge-cli --provider "$PROVIDER" --format json pr review-threads list "$PR_NUMBE
 ```
 
 `data.unresolved == 0` is the gate. Disposition every unresolved thread before
-merge: repair it in this workflow, reply and resolve it as an accepted
-tradeoff, or convert it to a follow-up issue and resolve the thread with the
-link. `forge-cli pr merge` (and the `pr deliver` merge step) also enforces
+merge per `core/policies/review-thread-convergence.md` (the per-finding triage
+table and the convergence/stopping rule): repair it in this workflow, reply and
+resolve it as an accepted tradeoff, or convert it to a follow-up issue and
+resolve the thread with the link. `forge-cli pr merge` (and the `pr deliver`
+merge step) also enforces
 this mechanically — merging with unresolved threads fails closed with
 `unresolved_review_threads` (sympoies/nils-cli#808, shipped in v1.0.16). Never
 pass `--allow-unresolved-threads` to silence the gate without dispositioning

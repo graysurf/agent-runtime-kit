@@ -764,7 +764,7 @@ skills:
         name: close-pr
         render_to: plugins/pr/skills/close-pr/SKILL.md
     required_clis:
-      forge-cli: ">=1.0.14"
+      forge-cli: ">=1.9.1"
     state_out_mode: runtime
 
   - id: pr.deliver-pr
@@ -778,7 +778,7 @@ skills:
         name: deliver-pr
         render_to: plugins/pr/skills/deliver-pr/SKILL.md
     required_clis:
-      forge-cli: ">=1.1.0"
+      forge-cli: ">=1.9.1"
       agent-runtime: ">=0.19.0"
       plan-issue: ">=1.1.0"
       review-specialists: ">=0.17.1"
