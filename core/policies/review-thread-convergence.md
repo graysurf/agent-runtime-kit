@@ -83,7 +83,10 @@ a signal to keep fixing. Converge, then stop.
 
 Use released forge-cli surfaces, not raw `gh`/`glab`, where available:
 
-- Discover threads: `forge-cli pr review-threads <id>` (provider-aware, read).
+- Discover threads: `forge-cli pr review-threads list <id>` (provider-aware,
+  read). On GitHub, `forge-cli pr review-threads resolve <thread-id>` (with an
+  optional `--note` reply) and `pr review-threads reply <thread-id>` close the
+  loop on a thread; both return `provider_unsupported` on GitLab / Local.
 - Merge gate: `forge-cli pr merge` fails closed on `unresolved_review_threads`;
   bypass only with `--allow-unresolved-threads` after each thread is
   dispositioned.
