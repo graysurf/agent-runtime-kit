@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `review-evidence` is installed from the released nils-cli package and available on `PATH`.
+- `review-evidence` and `agent-out` are installed from the released nils-cli package and available on `PATH`.
 - The review subject and output directory are explicit.
 - When no workflow-specific artifact directory already exists, allocate the
   record directory with `agent-out project --topic review-evidence --mkdir`; do
@@ -49,6 +49,9 @@ review-evidence record-validation --out "$review_dir" --command "cargo test" --s
 review-evidence verify --out "$review_dir" --format json
 ```
 
+After verification, `$review_dir/review-evidence.json` is the child record path
+that other evidence tools may link.
+
 ## Workflow
 
 1. Allocate the record directory through `agent-out` unless the workflow already
@@ -59,7 +62,8 @@ review-evidence verify --out "$review_dir" --format json
    as an evidence source; the caller still owns judgment, severity mapping, and
    whether each item blocks delivery.
 5. Record validation that proves fixes or review completion.
-6. Verify before linking the review record from PR, issue, or closeout evidence.
+6. Verify before another PR, issue, closeout, or `skill-usage` record links
+   `$review_dir/review-evidence.json`.
 
 ## Boundary
 

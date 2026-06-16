@@ -565,6 +565,7 @@ skills:
         name: review-evidence
         render_to: plugins/evidence/skills/review-evidence/SKILL.md
     required_clis:
+      agent-out: ">=0.16.0"
       review-evidence: ">=0.16.0"
     state_out_mode: runtime
 
@@ -579,6 +580,7 @@ skills:
         name: skill-usage
         render_to: plugins/evidence/skills/skill-usage/SKILL.md
     required_clis:
+      agent-out: ">=0.16.0"
       skill-usage: ">=0.16.0"
     state_out_mode: runtime
 

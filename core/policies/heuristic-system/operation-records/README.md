@@ -48,10 +48,11 @@ broader record. Archive retired records under
 preserves the record as audit history and never deletes it. Use
 `heuristic-inbox archive` against the operation-record path, passing the
 operation-records directory explicitly when needed so the destination stays in
-the operation-records archive:
+the operation-records archive. In noninteractive agent shells, pass `--yes`;
+omit it only when intentionally answering the prompt interactively:
 
 ```bash
 heuristic-inbox set-status core/policies/heuristic-system/operation-records/<slug> --status superseded --link <successor>
-heuristic-inbox archive core/policies/heuristic-system/operation-records/<slug> --inbox-dir core/policies/heuristic-system/operation-records --date YYYY-MM-DD
+heuristic-inbox archive core/policies/heuristic-system/operation-records/<slug> --inbox-dir core/policies/heuristic-system/operation-records --date YYYY-MM-DD --yes
 heuristic-inbox verify core/policies/heuristic-system/operation-records/archive/YYYY/<slug> --strict --format json
 ```

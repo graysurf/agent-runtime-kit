@@ -10,11 +10,13 @@ description:
 
 Prereqs:
 
-- `skill-usage` is installed from the released nils-cli package and available on `PATH`.
+- `skill-usage` and `agent-out` are installed from the released nils-cli package and available on `PATH`.
 - The skill identity, user-request summary, and output directory are explicit.
 - When no workflow-specific artifact directory already exists, allocate the
   record directory with `agent-out project --topic skill-usage --mkdir`; do not
   handwrite `/tmp` paths.
+- Linked child evidence records already exist and have passed their owning
+  tool's verify step before they are linked.
 - Writes to a given record directory are serialized by the caller.
 - Raw `skill-usage` records are runtime evidence with two distinct
   dispositions: durable retention into the agent-evidence-archive via the
@@ -28,7 +30,7 @@ Inputs:
 
 - Skill path or identity.
 - User request summary and invocation intent.
-- Linked child evidence records.
+- Existing linked child evidence records.
 - Failure, validation, and outcome entries.
 
 Outputs:
@@ -38,17 +40,19 @@ Outputs:
 Failure modes:
 
 - The record is missing intent, outcome, or required validation.
-- Linked child records are absent or unreadable.
+- Linked child record paths are absent, unreadable, or not verified by their
+  owning evidence tool.
 - Concurrent writes corrupt or race the same output directory.
 
 ## Entrypoint
 
-Use the released CLI directly:
+Use the released CLI directly. Set `REVIEW_EVIDENCE_RECORD` to an existing
+`review-evidence.json` that has already passed `review-evidence verify`;
+`skill-usage` links child records, it does not create them.
 
 ```bash
 skill_dir="$(agent-out project --topic skill-usage --mkdir)"
-review_dir="$(agent-out project --topic review-evidence --mkdir)"
-review_record="$review_dir/review-evidence.json"
+review_record="${REVIEW_EVIDENCE_RECORD:?set to an existing verified review-evidence.json}"
 
 skill-usage init --out "$skill_dir" --skill evidence.review-evidence --intent "record review evidence" --user-request-summary "Review PR #12"
 skill-usage link-record --out "$skill_dir" --type review-evidence --path "$review_record"
@@ -62,8 +66,8 @@ skill-usage verify --out "$skill_dir" --format json
 1. Allocate the record directory through `agent-out` unless the workflow already
    owns a project-defined output path.
 2. Initialize the record before the skill performs meaningful work.
-3. Link child evidence records with an explicit `--type` instead of duplicating
-   their content.
+3. Link only existing child evidence records with an explicit `--type`; verify
+   the child record with its owning tool before linking it.
 4. Record failures when they affect outcome, repair, or future maintainability.
 5. Record final outcome and verify the record before using it as durable evidence.
 6. When verified evidence exposes an important unresolved or reusable
