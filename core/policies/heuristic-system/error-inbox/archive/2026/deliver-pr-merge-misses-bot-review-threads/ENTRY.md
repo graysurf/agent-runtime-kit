@@ -6,6 +6,7 @@
 - First observed: 2026-06-11
 - Area: pr-delivery
 - Severity: medium
+- Cluster: async-bot-review-fix-loop
 - Durable link: `https://github.com/sympoies/nils-cli/pull/809`
 - Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/305`
 

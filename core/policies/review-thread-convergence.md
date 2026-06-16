@@ -1,0 +1,100 @@
+# Review Thread Convergence Policy
+
+Portable, provider-agnostic policy for handling provider review threads — most
+acutely the asynchronous bot reviewers (code-quality bots, the Codex connector,
+and similar) that post review threads minutes after a PR/MR opens, and that
+review *every* fix PR you open, including the fix PRs opened to clear earlier
+threads.
+
+## Read This When
+
+Read this before or while dispositioning provider review threads: during a
+`deliver-pr` pre-merge thread sweep, a review-cleanup sweep over already-merged
+PRs, or any follow-up that opens fix PRs in response to review feedback. This is
+the source of truth that review-cleanup-type skills reference — keep the rule
+here and link to it rather than re-deriving it per skill.
+
+## The Hazard
+
+Fixing a review thread opens a fix PR. The async bot reviews that fix PR too. On
+principled-but-imperfect code — especially an inherently-ambiguous heuristic
+where no single special-case is fully sound — a mechanical "fix every new
+thread" loop recurses across generations and may never converge; or it stops
+early and leaves a genuine bug. The discipline below decides what to fix, how to
+fix it so it converges, and when the sweep is done.
+
+## Per-Finding Triage
+
+Disposition every thread; classify each on two axes.
+
+- Correctness: a genuine defect (wrong behavior, data loss, security, contract
+  or schema break, a real edge-case bug that can actually occur), or a
+  preference/structure/style remark on already-correct code?
+- Relevance: does it touch business logic / observable behavior, or only
+  internal mechanics or an inherently-ambiguous heuristic?
+
+Route by classification:
+
+| Classification | Disposition |
+| --- | --- |
+| Genuine defect | `fix` — make the repair and link the fix PR. Major/high-risk (security, data loss, contract break, destructive migration, cross-repo architecture) → stop and ask the user first. |
+| No longer applies to the merged code | resolve as `stale`. |
+| Real but out of scope for this pass | `follow_up` — open/link a tracking issue. |
+| Preference/style on principled, correct, business-logic-irrelevant code | `accepted` with recorded rationale. Do **not** open a fix PR. |
+| Inherently-ambiguous edge case (e.g. a placeholder indistinguishable from real data) | pick the conservative/safe branch **once, uniformly**, document the tradeoff; do not chase per-case heuristics. |
+| Several threads clustered on one mechanism | replace per-case special-casing with a single terminal/uniform rule, rather than patching each edge. |
+
+## Convergence / Stopping Rule
+
+The sweep is a loop over per-finding triage. It converges when the
+genuine-defect set is empty:
+
+1. Fix genuine defects (and escalate major/high-risk to the user).
+2. When threads cluster on one mechanism, prefer a terminal/uniform design over
+   per-case special-casing — converge the code instead of patching each edge.
+3. Once only preference or inherently-ambiguous threads on principled code
+   remain, resolve them as `accepted` with rationale and **stop** — do not open
+   another fix PR that would only draw another review.
+
+Expect each fix PR to draw a fresh post-merge review. That is normal; it is not
+a signal to keep fixing. Converge, then stop.
+
+## Concentrate vs Converge
+
+- Concentrate (disposition every thread, fix every genuine defect): the
+  pre-merge sweep of any PR with business-behavior, security, contract, or
+  migration surface; and the *first* review generation of any fix PR, which can
+  surface a real regression the fix introduced.
+- Converge / stop (accept-with-rationale, do not recurse): Nth-generation
+  post-merge reviews where the genuine-defect set is empty and only preference
+  or inherently-ambiguous threads on principled code remain.
+
+## Guard Rails
+
+- `accepted` requires a recorded rationale and is reserved for *verified*
+  preference or genuine ambiguity. It must never be used to silence an unverified
+  or unread finding just to end the loop.
+- Major/high-risk findings always escalate to the user; the stopping rule never
+  overrides that.
+- `safe_to_resolve` (mechanical safety of the provider mutation) is not a
+  disposition. A safe thread still needs an explicit triage decision.
+
+## Mechanics
+
+Use released forge-cli surfaces, not raw `gh`/`glab`, where available:
+
+- Discover threads: `forge-cli pr review-threads <id>` (provider-aware, read).
+- Merge gate: `forge-cli pr merge` fails closed on `unresolved_review_threads`;
+  bypass only with `--allow-unresolved-threads` after each thread is
+  dispositioned.
+- Resolving or replying to threads has no released write surface yet;
+  project-local skills (e.g. symphony-board `project-review-cleanup`) currently
+  apply resolutions through the provider API directly. A shared write surface is
+  tracked separately.
+
+## Consumers
+
+Skills that drive a thread sweep should reference this policy rather than
+restating it: the runtime-kit `deliver-pr` pre-merge thread sweep, the
+`code-review-follow-up` re-check pass, and project-local review-cleanup skills
+such as symphony-board `project-review-cleanup`.

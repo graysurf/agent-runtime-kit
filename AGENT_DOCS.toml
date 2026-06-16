@@ -67,6 +67,14 @@ required = false
 when = "always"
 notes = "Downgrade / coupled-dev / pin-bump workflows for running a non-pinned nils-cli surface (scripts/dev/with-nils-version.sh) without relaxing the version-alignment gate."
 
+[[document]]
+context = "project-dev"
+scope = "home"
+path = "core/policies/review-thread-convergence.md"
+required = false
+when = "always"
+notes = "Provider-agnostic discipline for dispositioning provider review threads and converging post-merge bot-review fix loops: per-finding triage, the convergence/stopping rule, and concentrate-vs-converge. Home-scoped and optional — referenced by review-cleanup-type skills (deliver-pr, code-review-follow-up, project-local review-cleanup) when a thread sweep is active, not force-injected for every project-dev task."
+
 # task-tools intent: external-fact awareness plus optional CLI-tooling catalog.
 # Docs-only (no [[validation]] contract); the UserPromptSubmit cue surfaces
 # required docs alongside project-dev because the hook enumerates every declared
