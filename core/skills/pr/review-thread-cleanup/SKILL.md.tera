@@ -68,8 +68,9 @@ forge-cli --provider "$PROVIDER" --format json pr review-threads list "$PR_NUMBE
 ```
 
 `data.unresolved == 0` is the convergence target. Each `data.threads[]` entry
-carries the thread `id` (`PRRT_…`), `path`, `isOutdated`, and the first comment
-— the inputs the convergence policy triages on.
+carries the thread `id` (`PRRT_…`), `path`, the normalized `resolved` /
+`outdated` booleans (not GitHub's raw `isResolved` / `isOutdated`), and the
+first comment — the inputs the convergence policy triages on.
 
 For each thread that triage says to close on GitHub, reply-and-resolve in one
 call (the `--note` reply is posted before the thread is resolved), or resolve
@@ -97,8 +98,8 @@ forge-cli --provider github --format json \
    contract: the per-finding triage table, the convergence/stopping rule, and
    the concentrate-vs-converge guidance.
 2. Run `pr review-threads list "$PR_NUMBER"` and enumerate every
-   `isResolved == false` thread. If `data.unresolved == 0`, there is nothing to
-   sweep — stop.
+   `resolved == false` thread (the envelope's normalized field; `data.unresolved`
+   is the same count). If `data.unresolved == 0`, there is nothing to sweep — stop.
 3. Triage each unresolved thread against the policy table: `fix` (repair the
    code), `stale` (already addressed / outdated), `follow_up` (defer with a
    ref), or `accepted` (won't-do with a recorded rationale). Always escalate
@@ -113,7 +114,7 @@ forge-cli --provider github --format json \
 6. When retaining a `skill-usage` envelope for a real sweep, keep it compact but
    diagnosable. Record or link: provider, repo, PR/MR number, `forge-cli`
    version, initial and final `data.unresolved` counts, and for each unresolved
-   thread the `id`, `path`, `isOutdated`, disposition (`fix` / `stale` /
+   thread the `id`, `path`, `outdated`, disposition (`fix` / `stale` /
    `follow_up` / `accepted`), and rationale or follow-up ref. Link typed child
    evidence for large list outputs; do not paste raw provider payloads into the
    envelope.
