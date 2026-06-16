@@ -20,6 +20,7 @@ NO_PRUNE=0
 SOURCE_ROOT=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_PROMPT_STATUS="not-run"
+CLAUDE_PLUGIN_STATUS="not-run"
 PRUNE_SKIPPED_TOTAL=0
 PRUNE_LAST_SKIPPED=0
 
@@ -524,14 +525,267 @@ print(f"claude settings hooks synced: managed_hooks={managed_count} target={sett
 PY
 }
 
+claude_marketplace_json_path() {
+  local live_home="$1"
+  local live_marketplace="$live_home/.claude-plugin/marketplace.json"
+  local source_marketplace="$SOURCE_ROOT/targets/claude/.claude-plugin/marketplace.json"
+
+  if [ -f "$source_marketplace" ]; then
+    printf '%s\n' "$source_marketplace"
+    return 0
+  fi
+
+  if [ -f "$live_marketplace" ]; then
+    printf '%s\n' "$live_marketplace"
+    return 0
+  fi
+
+  err "missing Claude marketplace manifest: $live_marketplace (or source fallback $source_marketplace)"
+  return 1
+}
+
+claude_marketplace_name() {
+  local marketplace_json="$1"
+  python3 - "$marketplace_json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+name = data.get("name")
+if not isinstance(name, str) or not name:
+    raise SystemExit(f"Claude marketplace manifest missing non-empty name: {sys.argv[1]}")
+print(name)
+PY
+}
+
+claude_marketplace_plugins() {
+  local marketplace_json="$1"
+  python3 - "$marketplace_json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+plugins = data.get("plugins")
+if not isinstance(plugins, list):
+    raise SystemExit(f"Claude marketplace manifest plugins must be a list: {sys.argv[1]}")
+for entry in plugins:
+    if not isinstance(entry, dict):
+        raise SystemExit(f"Claude marketplace plugin entry must be an object: {sys.argv[1]}")
+    name = entry.get("name")
+    if not isinstance(name, str) or not name:
+        raise SystemExit(f"Claude marketplace plugin entry missing non-empty name: {sys.argv[1]}")
+    print(name)
+PY
+}
+
+claude_materialized_marketplace_home() {
+  local state_home="$1"
+  local marketplace="$2"
+
+  case "$marketplace" in
+    "" | *[!A-Za-z0-9._-]*)
+      err "unsafe Claude marketplace name for state path: $marketplace"
+      return 1
+      ;;
+  esac
+
+  printf '%s\n' "$state_home/plugin-marketplaces/$marketplace"
+}
+
+materialize_claude_plugin_marketplace() {
+  local marketplace_json="$1"
+  local materialized_home="$2"
+
+  log "materializing Claude plugin marketplace source=$marketplace_json target=$materialized_home"
+  print_cmd python3 - "$SOURCE_ROOT" "$marketplace_json" "$materialized_home" "$APPLY"
+  python3 - "$SOURCE_ROOT" "$marketplace_json" "$materialized_home" "$APPLY" <<'PY'
+import json
+import os
+import shutil
+import sys
+
+source_root, marketplace_json, materialized_home, apply_flag = sys.argv[1:5]
+
+
+def load_marketplace(path):
+    with open(path, encoding="utf-8") as handle:
+        data = json.load(handle)
+    plugins = data.get("plugins")
+    if not isinstance(plugins, list):
+        raise SystemExit(f"Claude marketplace manifest plugins must be a list: {path}")
+    names = []
+    for entry in plugins:
+        if not isinstance(entry, dict):
+            raise SystemExit(f"Claude marketplace plugin entry must be an object: {path}")
+        name = entry.get("name")
+        if not isinstance(name, str) or not name:
+            raise SystemExit(f"Claude marketplace plugin entry missing non-empty name: {path}")
+        if any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for ch in name):
+            raise SystemExit(f"Claude marketplace plugin entry has unsafe name: {name}")
+        names.append(name)
+    return names
+
+
+plugin_names = load_marketplace(marketplace_json)
+if apply_flag != "1":
+    print(f"claude plugin marketplace materialize dry-run: target={materialized_home} plugins={len(plugin_names)}")
+    raise SystemExit(0)
+
+tmp_home = materialized_home + ".tmp"
+if os.path.exists(tmp_home):
+    shutil.rmtree(tmp_home)
+os.makedirs(os.path.join(tmp_home, ".claude-plugin"), exist_ok=True)
+os.makedirs(os.path.join(tmp_home, "plugins"), exist_ok=True)
+shutil.copy2(marketplace_json, os.path.join(tmp_home, ".claude-plugin", "marketplace.json"))
+
+for plugin in plugin_names:
+    build_plugin = os.path.join(source_root, "build", "claude", "plugins", plugin)
+    target_manifest = os.path.join(source_root, "targets", "claude", "plugins", plugin, ".claude-plugin")
+    dest_plugin = os.path.join(tmp_home, "plugins", plugin)
+    dest_manifest = os.path.join(dest_plugin, ".claude-plugin")
+
+    if not os.path.isdir(build_plugin):
+        raise SystemExit(f"missing rendered Claude plugin tree: {build_plugin}")
+    if not os.path.isdir(target_manifest):
+        raise SystemExit(f"missing Claude plugin manifest tree: {target_manifest}")
+
+    shutil.copytree(build_plugin, dest_plugin, symlinks=False)
+    if os.path.exists(dest_manifest):
+        shutil.rmtree(dest_manifest)
+    shutil.copytree(target_manifest, dest_manifest, symlinks=False)
+
+for root, dirs, files in os.walk(tmp_home):
+    for name in dirs + files:
+        path = os.path.join(root, name)
+        if os.path.islink(path):
+            raise SystemExit(f"materialized Claude marketplace contains symlink: {path}")
+
+os.makedirs(os.path.dirname(materialized_home), exist_ok=True)
+if os.path.exists(materialized_home):
+    shutil.rmtree(materialized_home)
+os.replace(tmp_home, materialized_home)
+print(f"claude plugin marketplace materialized: target={materialized_home} plugins={len(plugin_names)}")
+PY
+}
+
+claude_marketplace_registered() {
+  local marketplaces_json="$1"
+  local marketplace="$2"
+
+  python3 - "$marketplaces_json" "$marketplace" <<'PY'
+import json
+import sys
+
+try:
+    data = json.loads(sys.argv[1])
+except json.JSONDecodeError:
+    raise SystemExit(1)
+marketplace = sys.argv[2]
+for entry in data:
+    if isinstance(entry, dict) and entry.get("name") == marketplace:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+claude_plugin_installed() {
+  local installed_json="$1"
+  local plugin_ref="$2"
+
+  python3 - "$installed_json" "$plugin_ref" <<'PY'
+import json
+import sys
+
+try:
+    data = json.loads(sys.argv[1])
+except json.JSONDecodeError:
+    raise SystemExit(1)
+plugin_ref = sys.argv[2]
+for entry in data:
+    if isinstance(entry, dict) and entry.get("id") == plugin_ref and entry.get("scope") == "user":
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+sync_claude_plugin_registry() {
+  local live_home="$1"
+  local state_home="$2"
+  local marketplace_json
+  local marketplace
+  local materialized_home
+  local marketplaces_json=""
+  local installed_json=""
+  local plugin_ref
+  local plugin
+  local plugin_count=0
+  local refresh_count=0
+
+  marketplace_json="$(claude_marketplace_json_path "$live_home")"
+  marketplace="$(claude_marketplace_name "$marketplace_json")"
+  materialized_home="$(claude_materialized_marketplace_home "$state_home" "$marketplace")"
+
+  if [ "$APPLY" = "1" ] && ! command -v claude >/dev/null 2>&1; then
+    CLAUDE_PLUGIN_STATUS="skipped"
+    log "claude plugin registry skipped (claude binary not on PATH)"
+    return 0
+  fi
+
+  materialize_claude_plugin_marketplace "$marketplace_json" "$materialized_home"
+
+  log "syncing Claude plugin registry marketplace=$marketplace source=$materialized_home"
+  if [ "$APPLY" = "1" ]; then
+    installed_json="$(claude plugins list --json)"
+    while IFS= read -r plugin; do
+      [ -n "$plugin" ] || continue
+      plugin_ref="$plugin@$marketplace"
+      if claude_plugin_installed "$installed_json" "$plugin_ref"; then
+        run_cmd claude plugin uninstall "$plugin_ref" --scope user --keep-data
+        refresh_count=$((refresh_count + 1))
+      fi
+    done <<EOF_REFRESH_PLUGINS
+$(claude_marketplace_plugins "$marketplace_json")
+EOF_REFRESH_PLUGINS
+
+    marketplaces_json="$(claude plugin marketplace list --json)"
+    if claude_marketplace_registered "$marketplaces_json" "$marketplace"; then
+      run_cmd claude plugin marketplace remove "$marketplace" --scope user
+    fi
+  else
+    run_cmd claude plugin marketplace remove "$marketplace" --scope user
+  fi
+  run_cmd claude plugin marketplace add "$materialized_home" --scope user
+
+  while IFS= read -r plugin; do
+    [ -n "$plugin" ] || continue
+    plugin_ref="$plugin@$marketplace"
+    run_cmd claude plugin install "$plugin_ref" --scope user
+    plugin_count=$((plugin_count + 1))
+  done <<EOF_PLUGINS
+$(claude_marketplace_plugins "$marketplace_json")
+EOF_PLUGINS
+
+  if [ "$APPLY" = "1" ]; then
+    CLAUDE_PLUGIN_STATUS="installed"
+  else
+    CLAUDE_PLUGIN_STATUS="planned"
+  fi
+  log "claude plugin registry ${CLAUDE_PLUGIN_STATUS}: marketplace=$marketplace source=$materialized_home plugins=$plugin_count refreshed=$refresh_count"
+}
+
 sync_product_activation() {
   local product="$1"
   local live_home
+  local state_home
 
   case "$product" in
     claude)
       live_home="$(product_live_home "$product")"
+      state_home="$(product_state_home "$product")"
       sync_claude_settings_hooks "$live_home"
+      sync_claude_plugin_registry "$live_home" "$state_home"
       ;;
     codex) ;;
     *)
@@ -740,7 +994,7 @@ print_summary() {
     doctor_status="skipped"
   fi
 
-  log "summary: synced surfaces for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS"
+  log "summary: synced surfaces for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS; claude plugins=$CLAUDE_PLUGIN_STATUS"
 
   if [ "$prune_status" = "review-needed" ]; then
     log "note: prune-stale could not auto-remove $PRUNE_SKIPPED_TOTAL stale candidate(s) (real files / non-empty managed dirs). Review the paths above and remove any retired managed skill directories by hand. Tracked in core/policies/heuristic-system/error-inbox/sync-runtime-surfaces-prune-stale-dir-gap."
@@ -770,8 +1024,8 @@ main() {
   for product in $(selected_products); do
     render_product "$product"
     install_product "$product"
-    sync_product_activation "$product"
     prune_product "$product"
+    sync_product_activation "$product"
   done
   run_verification
   print_summary

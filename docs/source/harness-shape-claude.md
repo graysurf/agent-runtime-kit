@@ -102,17 +102,29 @@ a uniform shape:
 
 ### 4. Plugin marketplace (`.claude-plugin/marketplace.json`)
 
-- Claude reads from: `$HOME/.claude/.claude-plugin/marketplace.json` for
-  marketplace-managed plugin discovery
-  (`manifests/product-capabilities.yaml`).
+- Claude reads marketplace-managed plugins after the marketplace is registered
+  in user settings and each plugin is installed/enabled. The managed
+  marketplace source is `$HOME/.claude/.claude-plugin/marketplace.json`
+  (`manifests/product-capabilities.yaml`), but the file alone is not enough for
+  live skill visibility.
 - Source: `targets/claude/.claude-plugin/marketplace.json` (lists all 10
   plugins; `claude-kit` namespace).
-- Install mechanism: `plugin-manifest-copy`
-  (`targets/claude/link-map.yaml`, `id: claude-kit.marketplace`).
-- Acceptance lane: drift audit checks the file; sandbox install
-  rehearsal indirectly validates load.
-- Support today: **shipped (rendered + copy-installed)**. Codex has no
-  analogue (`manifests/product-capabilities.yaml`).
+- Install / activation mechanism: `agent-runtime install` copy-installs the
+  root marketplace file (`targets/claude/link-map.yaml`,
+  `id: claude-kit.marketplace`); then
+  `scripts/sync-runtime-surfaces.sh --apply --product claude` materializes a
+  symlink-free marketplace copy under the Claude state home, registers that
+  copy with `claude plugin marketplace add`, and reinstalls each
+  `<plugin>@claude-kit` entry so Claude's plugin cache refreshes even while the
+  manifests carry explicit `0.1.0` versions. First-time `scripts/setup.sh`
+  delegates the same activation after its bootstrap phase.
+- Acceptance lane: drift audit checks the file; sandbox install rehearsal
+  validates the file surface; runtime-smoke covers the `claude` CLI registry
+  activation that makes plugin skills visible.
+- Support today: **shipped (rendered, copy-installed, materialized into state
+  home, registered, and installed through Claude's plugin registry when
+  `claude` is on PATH)**.
+  Codex has no analogue (`manifests/product-capabilities.yaml`).
 
 ### 5. Plugin-scoped skills (`<plugin>/skills/<skill>/SKILL.md`)
 

@@ -392,6 +392,11 @@ bootstrap_lines = [
     for idx, line in enumerate(lines, 1)
     if line.startswith("+ agent-runtime bootstrap-host ")
 ]
+sync_lines = [
+    (idx, line)
+    for idx, line in enumerate(lines, 1)
+    if line.startswith("+ bash ") and "scripts/sync-runtime-surfaces.sh" in line
+]
 link_lines = [
     (idx, line)
     for idx, line in enumerate(lines, 1)
@@ -405,6 +410,13 @@ audit_lines = [
 
 assert len(link_lines) == 2, link_lines
 assert len(audit_lines) == 1, audit_lines
+assert len(sync_lines) == 1, sync_lines
+sync_line = sync_lines[0][1]
+assert "--product claude" in sync_line, sync_line
+assert "--no-pull" in sync_line, sync_line
+assert "--no-prune" in sync_line, sync_line
+assert "--no-verify" in sync_line, sync_line
+assert "--dry-run" in sync_line, sync_line
 assert max(idx for idx, _ in link_lines) < audit_lines[0][0], lines
 if bootstrap_lines:
     assert len(bootstrap_lines) == 1, bootstrap_lines
@@ -414,6 +426,7 @@ if bootstrap_lines:
     assert "--skip-homebrew-install" in bootstrap_line, bootstrap_line
     assert "--skip-cli-tools" in bootstrap_line, bootstrap_line
     assert audit_lines[0][0] < bootstrap_lines[0][0], lines
+    assert bootstrap_lines[0][0] < sync_lines[0][0], lines
 else:
     assert len(render_lines) == 2, render_lines
     assert len(install_lines) == 2, install_lines
@@ -421,10 +434,16 @@ else:
     assert any("--product claude" in line for _, line in render_lines), render_lines
     assert audit_lines[0][0] < min(idx for idx, _ in render_lines), lines
     assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
+    assert max(idx for idx, _ in install_lines) < sync_lines[0][0], lines
 PY
 
-  mkdir -p "$stub_bin" "$source_root/.git"
+  mkdir -p "$stub_bin" "$source_root/.git" "$source_root/scripts"
   printf '# AGENT_HOME fixture\n' >"$source_root/AGENT_HOME.md"
+  cat >"$source_root/scripts/sync-runtime-surfaces.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'sync-runtime-surfaces %s\n' "$*"
+SH
   cat >"$stub_bin/brew" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -529,8 +548,11 @@ SH
   assert_symlink_target "$apply_home/.codex/AGENTS.md" "$source_root/AGENT_HOME.md"
   assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/AGENT_HOME.md"
   grep -q "+ agent-docs audit --target all --strict --project-path" "$apply_out"
+  grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
+  grep -q "sync-runtime-surfaces --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
   grep -q "codex_home_prompt:" "$apply_out"
   grep -q "claude_home_prompt:" "$apply_out"
+  grep -q "claude_plugin_registry_activation: sync-runtime-surfaces.sh" "$apply_out"
 
   python3 - "$apply_out" <<'PY'
 import sys
@@ -787,6 +809,86 @@ assert len(commands) == len(set(commands)), commands
 assert "UserPromptSubmit" in settings["hooks"], settings["hooks"]
 PY
   grep -q "claude settings hooks synced" "$out"
+}
+
+run_sync_runtime_surfaces_claude_plugin_registry_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.claude-plugin-registry.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+  local claude_home="$TMP_ROOT/sync-claude-plugin-registry/claude-home"
+  local source_root="$TMP_ROOT/sync-claude-plugin-registry/source"
+  local state_home="$TMP_ROOT/sync-claude-plugin-registry/state"
+  local materialized_home="$state_home/plugin-marketplaces/claude-kit"
+  local stub_bin="$TMP_ROOT/sync-claude-plugin-registry/bin"
+  local stub_log="$TMP_ROOT/sync-claude-plugin-registry/claude.log"
+
+  rm -rf "$TMP_ROOT/sync-claude-plugin-registry"
+  mkdir -p "$claude_home" "$source_root/targets/claude/.claude-plugin" \
+    "$source_root/targets/claude/plugins/meta/.claude-plugin" \
+    "$source_root/targets/claude/plugins/evidence/.claude-plugin" \
+    "$source_root/build/claude/plugins/meta/skills/demo-symlink" \
+    "$source_root/build/claude/plugins/evidence/skills/demo" \
+    "$stub_bin"
+  cat >"$source_root/targets/claude/.claude-plugin/marketplace.json" <<'JSON'
+{
+  "name": "claude-kit",
+  "plugins": [
+    {
+      "name": "meta",
+      "version": "0.1.0",
+      "source": "./plugins/meta"
+    },
+    {
+      "name": "evidence",
+      "version": "0.1.0",
+      "source": "./plugins/evidence"
+    }
+  ]
+}
+JSON
+  cat >"$source_root/targets/claude/plugins/meta/.claude-plugin/plugin.json" <<'JSON'
+{"name":"meta","version":"0.1.0","description":"meta fixture"}
+JSON
+  cat >"$source_root/targets/claude/plugins/evidence/.claude-plugin/plugin.json" <<'JSON'
+{"name":"evidence","version":"0.1.0","description":"evidence fixture"}
+JSON
+  printf '# Demo symlink skill\n' >"$source_root/meta-skill.md"
+  ln -s "$source_root/meta-skill.md" "$source_root/build/claude/plugins/meta/skills/demo-symlink/SKILL.md"
+  printf '# Demo evidence skill\n' >"$source_root/build/claude/plugins/evidence/skills/demo/SKILL.md"
+  cat >"$stub_bin/claude" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$CLAUDE_STUB_LOG"
+case "$*" in
+  "plugin marketplace list --json")
+    printf '[{"name":"claude-kit","source":"directory","path":"/old-live-home"}]\n'
+    ;;
+  "plugins list --json")
+    printf '[{"id":"meta@claude-kit","scope":"user","enabled":true}]\n'
+    ;;
+esac
+SH
+  chmod +x "$stub_bin/claude"
+
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    APPLY=1
+    SOURCE_ROOT="$source_root"
+    PATH="$stub_bin:$PATH" CLAUDE_STUB_LOG="$stub_log" \
+      sync_claude_plugin_registry "$claude_home" "$state_home"
+  ) >"$out" 2>&1
+
+  grep -q "materializing Claude plugin marketplace" "$out"
+  grep -q "syncing Claude plugin registry marketplace=claude-kit source=$materialized_home" "$out"
+  grep -q "plugin marketplace remove claude-kit --scope user" "$stub_log"
+  grep -q "plugin marketplace add $materialized_home --scope user" "$stub_log"
+  grep -q "plugin uninstall meta@claude-kit --scope user --keep-data" "$stub_log"
+  grep -q "plugin install meta@claude-kit --scope user" "$stub_log"
+  grep -q "plugin install evidence@claude-kit --scope user" "$stub_log"
+  test -f "$materialized_home/plugins/meta/skills/demo-symlink/SKILL.md"
+  test ! -L "$materialized_home/plugins/meta/skills/demo-symlink/SKILL.md"
+  test -f "$materialized_home/plugins/meta/.claude-plugin/plugin.json"
+  test -f "$materialized_home/.claude-plugin/marketplace.json"
 }
 
 run_project_local_shim_probe() {
@@ -1136,7 +1238,7 @@ record_case "meta.plan-archive-discover" "plan-archive discover JSON probe class
 record_case "meta.evidence-migrate" "evidence migrate dry-run JSON probe resolved an archive target and reported a blocked malformed record" run_evidence_migrate_probe
 record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe
 record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe
-record_case "meta.setup" "setup dry-run renders codex and claude before install" run_setup_render_before_install_probe
+record_case "meta.setup" "setup dry-run renders codex and claude before install and delegates Claude plugin activation" run_setup_render_before_install_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned codex refresh without mutation" run_sync_runtime_surfaces_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe
@@ -1144,5 +1246,6 @@ record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture re
 record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-file managed skill directory (upstream gap characterization)" run_sync_runtime_surfaces_prune_recursive_stale_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Claude plugins for skill visibility" run_sync_runtime_surfaces_claude_plugin_registry_probe
 
 exit "$failures"

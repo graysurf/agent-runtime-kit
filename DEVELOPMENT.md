@@ -66,7 +66,10 @@ feature-detects `agent-runtime bootstrap-host`. When the installed nils-cli
 surface provides that command, setup delegates runtime surface bootstrap to it
 for render, install, prune-stale, and skill-surface verification. When the host
 is still on an older pinned release, setup stays compatible by running the same
-manual phases directly.
+manual phases directly. In both paths, setup then invokes
+`scripts/sync-runtime-surfaces.sh --product claude --no-pull --no-prune
+--no-verify` so Claude's local `claude-kit` marketplace is materialized into
+state home, registered, and installed when the Claude CLI is available.
 
 Manual phase recovery remains supported:
 
@@ -87,6 +90,9 @@ agent-runtime prune-stale --source-root "$HOME/.config/agent-runtime-kit" \
   --product codex --live-home "${CODEX_HOME:-$HOME/.codex}" --apply
 agent-runtime prune-stale --source-root "$HOME/.config/agent-runtime-kit" \
   --product claude --live-home "$HOME/.claude" --apply
+bash "$HOME/.config/agent-runtime-kit/scripts/sync-runtime-surfaces.sh" \
+  --source-root "$HOME/.config/agent-runtime-kit" \
+  --product claude --no-pull --no-prune --no-verify --apply
 agent-docs audit --target all --strict \
   --project-path "$HOME/.config/agent-runtime-kit"
 agent-runtime doctor --source-root "$HOME/.config/agent-runtime-kit" \
@@ -140,9 +146,12 @@ PR as obsolete if the issue closeout already superseded the branch contents.
 After managed runtime surface changes land, use
 `scripts/sync-runtime-surfaces.sh` for the daily refresh path. It pulls the
 active checkout, renders Codex and Claude targets, installs the rendered
-surfaces into the runtime homes, and runs the skill-surface doctor probes; it
-is dry-run by default and writes only with `--apply`. Keep `scripts/setup.sh`
-for first-time host bootstrap and CLI tool installation.
+surfaces into the runtime homes, registers/installs the local `claude-kit`
+plugin marketplace from a symlink-free state-home copy when Claude is
+available, and runs the skill-surface doctor probes; it is dry-run by default
+and writes only with `--apply`. Keep
+`scripts/setup.sh` for first-time host bootstrap and CLI tool installation; it
+delegates the same Claude plugin registry activation after bootstrap.
 
 For non-technical operators setting up another Mac through an agent, use the
 copyable clean-reinstall prompt in
