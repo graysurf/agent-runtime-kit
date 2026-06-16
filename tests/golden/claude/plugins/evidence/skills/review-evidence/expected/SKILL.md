@@ -44,7 +44,7 @@ Use the released CLI directly:
 ```bash
 review_dir="$(agent-out project --topic review-evidence --mkdir)"
 review-evidence init --out "$review_dir" --subject "PR #12"
-review-evidence record-finding --out "$review_dir" --severity medium --path src/lib.rs --line 42 --summary "missing error path"
+review-evidence record-finding --out "$review_dir" --severity medium --path src/lib.rs --line 42 --summary "missing error path" --status fixed
 review-evidence record-validation --out "$review_dir" --command "cargo test" --status pass
 review-evidence verify --out "$review_dir" --format json
 ```
