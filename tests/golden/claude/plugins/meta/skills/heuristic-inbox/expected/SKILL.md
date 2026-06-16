@@ -46,6 +46,9 @@ heuristic-inbox verify "$root/operation-records/<slug>" --strict --format json
 heuristic-inbox new --from-skill-usage out/.../skill-usage.record.json --slug pipeline-gap --out-dir "$root/error-inbox"
 heuristic-inbox set-status "$root/error-inbox/<slug>" --status promoted --link docs/plans/foo.md
 heuristic-inbox archive "$root/error-inbox/<slug>" --date 2026-05-22
+# Operation records archive only once superseded/retired with a successor link;
+# archiving an active record without it fails with archive-failed.
+heuristic-inbox set-status "$root/operation-records/<slug>" --status superseded --link <successor>
 heuristic-inbox archive "$root/operation-records/<slug>" --date 2026-05-22
 heuristic-inbox ingest-evidence "$root/error-inbox/<slug>" --from validation.md
 ```

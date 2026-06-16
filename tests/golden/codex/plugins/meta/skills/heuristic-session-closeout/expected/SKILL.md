@@ -82,7 +82,11 @@ here:
 root="${AGENT_RUNTIME_HEURISTIC_SYSTEM_ROOT:-$PWD/core/policies/heuristic-system}"
 heuristic-inbox list --inbox-dir "$root/error-inbox" --include-archived --format json
 # Author / verify / archive records under $root (see Workflow). Pass an explicit
-# --inbox-dir "$root/error-inbox" to every mutating heuristic-inbox call.
+# --inbox-dir matching the record's own tree: "$root/error-inbox" for inbox
+# cases, "$root/operation-records" for operation records. `archive` derives the
+# destination from --inbox-dir, so archiving an operation record with
+# --inbox-dir "$root/error-inbox" would move it under error-inbox/archive/
+# instead of the required operation-records/archive/.
 heuristic-inbox verify "$root/error-inbox/<slug>" --strict --format json
 heuristic-inbox verify "$root/operation-records/<slug>" --strict --format json
 ```

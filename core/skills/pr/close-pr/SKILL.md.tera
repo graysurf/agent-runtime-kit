@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `forge-cli >=1.0.17` is installed from the released nils-cli package and
+- `forge-cli >=1.9.1` is installed from the released nils-cli package and
   available on `PATH`; its `pr merge` enforces the review-thread
   (`unresolved_review_threads`) and task-list (`unchecked_task_items`)
   fail-closed gates.

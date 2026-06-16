@@ -82,7 +82,9 @@ review-specialists scope \
 5. Rerun affected specialist lenses or focused validation when the original
    finding depended on that lens.
 6. Classify each item as `resolved`, `unresolved`, `accepted-risk`,
-   `not-reproducible`, or `residual-risk` with concrete evidence.
+   `not-reproducible`, or `residual-risk` with concrete evidence. For provider
+   review threads (async bot reviewers), apply the per-finding triage and the
+   convergence/stopping rule in `core/policies/review-thread-convergence.md`.
 7. If retained evidence is required, record the final disposition through
    `review-evidence`. The caller still owns whether unresolved items block
    delivery.
@@ -103,3 +105,5 @@ decisions, issue closeout, or the durable evidence schema.
   `skills/code-review/code-review-focused-lens/SKILL.md`
 - Review evidence tool:
   `skills/evidence/review-evidence/SKILL.md`
+- Provider review-thread triage / convergence policy:
+  `core/policies/review-thread-convergence.md`

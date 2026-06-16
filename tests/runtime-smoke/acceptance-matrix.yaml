@@ -684,9 +684,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp git workspaces with pushed upstream branch metadata
-    invocation: forge-cli github pr review-threads list/resolve/reply dry-runs, gitlab resolve provider_unsupported, and shared skill surface assertions
+    invocation: forge-cli github pr review-threads resolve/reply offline dry-runs, gitlab resolve provider_unsupported, and shared skill surface assertions (list dry-run is not probed; it issues a live gh call in v1.9.1 — tracked in sympoies/nils-cli#887)
     expected_exit_code: 0
-    expected_artifacts: forge-cli review-threads list/resolve/reply dry-run plans and the GitLab fail-closed envelope
+    expected_artifacts: forge-cli review-threads resolve/reply dry-run plans and the GitLab fail-closed envelope
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
