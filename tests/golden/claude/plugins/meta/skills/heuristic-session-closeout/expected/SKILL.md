@@ -229,11 +229,13 @@ retention result.
 5. Write curated records through the narrow mechanism:
    - Prefer `heuristic-inbox new`, `set-status`, `ingest-evidence`, and
      `archive` for case and operation-record mechanics.
-   - Pass an explicit `$root`-derived path (or `--inbox-dir
-     "$root/error-inbox"`) to every mutating `heuristic-inbox` call — `new`,
-     `set-status`, `ingest-evidence`, `archive`. Never rely on the current
-     working directory, or `archive` can write a stray cwd-relative
-     `./heuristic-system/` tree instead of the canonical root.
+   - Pass explicit `$root`-derived record paths to mutating `heuristic-inbox`
+     calls. When a command accepts `--inbox-dir`, match it to the record tree:
+     `"$root/error-inbox"` for inbox cases and `"$root/operation-records"` for
+     operation records. `archive` derives its destination from that directory,
+     so never reuse the error-inbox dir for operation-record archives. Never
+     rely on the current working directory, or `archive` can write a stray
+     cwd-relative `./heuristic-system/` tree instead of the canonical root.
    - Keep retained prose compact: signal, evidence pointer, impact,
      workaround, promotion criteria, and next action.
    - Redact home paths to `<workspace>/...` or `$HOME/...` before retaining
