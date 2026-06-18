@@ -1,20 +1,31 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-16 (refreshed for `v1.9.1`)
+- Snapshot date: 2026-06-18 (refreshed for `v1.9.5`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.9.1`
+- Active `git describe --tags` output: `v1.9.5`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.9.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.9.5`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `674a237`
-  (`chore(release): bump cli versions to 1.9.1 (#886)`)
+- Head commit: `819b174`
+  (`chore(release): bump cli versions to 1.9.5 (#899)`)
 - Release:
-  [`v1.9.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.9.1),
+  [`v1.9.5`](https://github.com/sympoies/nils-cli/releases/tag/v1.9.5),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.9.5` is a lock-step host bump over `v1.9.1` (covers `v1.9.2`–`v1.9.5`).
+  No consumed flag or JSON envelope was retired or renamed, so no
+  `required_clis[]` floor moves — the exact `pinned_tag` gate (now `v1.9.5`)
+  covers the `agent-runtime` host. Consumer-visible changes across the span:
+  - `v1.9.2`: `forge-cli` review-thread commands hardened (behavioral; the
+    `pr review-threads list` / `resolve` / `reply` shape from `v1.9.1` is
+    unchanged, so the `forge-cli` floor stays `>= 1.9.1`). `codex-cli auth`
+    auto-refresh is now gated behind an env opt-in (`CODEX_AUTO_REFRESH_ENABLED`).
+  - `v1.9.3`: `codex-cli auth` gains remote pull over SSH (additive subcommand).
+  - `v1.9.4`: `codex-cli auth` remote-pull JSON-error hardening.
+  - `v1.9.5`: docs-only (genericize example fixtures); no surface change.
 - `v1.9.1` is a lock-step host bump over `v1.8.0`. It restructures one surface
   this repo consumes:
   - `forge-cli pr review-threads` becomes a subcommand group. The read surface
