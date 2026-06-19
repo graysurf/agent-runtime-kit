@@ -52,6 +52,7 @@ plan-tooling validate --format text --explain
 bash scripts/ci/skill-governance-audit.sh
 bash scripts/ci/skill-governance-audit.sh --fixture count-refresh
 bash scripts/ci/skill-governance-audit.sh --fixture codex-plugin
+bash scripts/ci/skill-governance-audit.sh --fixture description-limit
 bash scripts/ci/skill-governance-audit.sh --fixture create
 bash scripts/ci/skill-governance-audit.sh --fixture remove
 

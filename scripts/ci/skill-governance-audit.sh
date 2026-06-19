@@ -11,7 +11,7 @@ SHAPE_PATHS=()
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh|codex-plugin] [--shape-only [paths...]]
+Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh|codex-plugin|description-limit] [--shape-only [paths...]]
 
 Checks:
   default                   Validate active repo source/manifests/plugins/reminders/counts.
@@ -23,6 +23,7 @@ Checks:
   --fixture remove-project  Validate the remove-project-skill dry-run fixture coverage.
   --fixture count-refresh   Validate stale count detection and whitelist updates.
   --fixture codex-plugin    Validate Codex plugin skill-list drift detection.
+  --fixture description-limit  Validate the >240-char and missing-description hard-fail paths.
   --shape-only [paths...]   Lint H2 section shape on the given SKILL.md.tera paths
                             (fast pre-commit gate; consumes all remaining args).
 USAGE
@@ -40,7 +41,7 @@ while [ "$#" -gt 0 ]; do
       ;;
     --fixture)
       if [ "$#" -lt 2 ]; then
-        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh|codex-plugin" >&2
+        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh|codex-plugin|description-limit" >&2
         exit 2
       fi
       case "$2" in
@@ -52,6 +53,9 @@ while [ "$#" -gt 0 ]; do
           ;;
         codex-plugin)
           MODE="codex-plugin-fixture"
+          ;;
+        description-limit)
+          MODE="description-limit-fixture"
           ;;
         *)
           echo "skill-governance-audit: unsupported fixture: $2" >&2
@@ -561,6 +565,48 @@ def validate_descriptions(root: Path) -> tuple[int, int, int]:
     return longest, over_120, over_220
 
 
+def validate_description_limit_fixture() -> None:
+    # Negative coverage for validate_descriptions(): a synthetic catalog drives
+    # both hard-fail branches (>240 chars and a missing description) and the
+    # happy path, asserting the gate exits non-zero only on the violations.
+    def run(frontmatter: str) -> int:
+        with tempfile.TemporaryDirectory(prefix="desc-limit-") as tmp:
+            skill_dir = Path(tmp) / "core" / "skills" / "fixture" / "sample"
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md.tera").write_text(
+                f"---\nname: sample\n{frontmatter}---\n\n# Sample\n",
+                encoding="utf-8",
+            )
+            saved_stderr = sys.stderr
+            sys.stderr = open(os.devnull, "w")  # suppress expected fail() output
+            try:
+                validate_descriptions(Path(tmp))
+            except SystemExit as exc:
+                return int(exc.code or 0)
+            finally:
+                sys.stderr.close()
+                sys.stderr = saved_stderr
+        return 0
+
+    over_block = "description:\n  " + ("X" * 250) + "\n"
+    if run(over_block) == 0:
+        fail("description-limit fixture: a >240-char description did not hard-fail")
+
+    if run("description:\n  \n") == 0:
+        fail("description-limit fixture: an empty description did not hard-fail")
+
+    if run("") == 0:
+        fail("description-limit fixture: a missing description key did not hard-fail")
+
+    if run("description:\n  A short valid description.\n") != 0:
+        fail("description-limit fixture: a valid description unexpectedly failed")
+
+    print(
+        "skill-governance-audit: description-limit fixture OK "
+        f"ceiling={DESCRIPTION_MAX_CHARS} over_detected=true missing_detected=true"
+    )
+
+
 def validate_repo() -> None:
     skills = parse_skills(ROOT / "manifests" / "skills.yaml")
     plugins = parse_plugins(ROOT / "manifests" / "plugins.yaml")
@@ -941,6 +987,8 @@ elif MODE == "count-refresh-fixture":
     validate_count_refresh_fixture()
 elif MODE == "codex-plugin-fixture":
     validate_codex_plugin_fixture()
+elif MODE == "description-limit-fixture":
+    validate_description_limit_fixture()
 else:
     fail(f"unknown mode: {MODE}")
 PY
