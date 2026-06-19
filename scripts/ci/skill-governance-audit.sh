@@ -567,9 +567,13 @@ def validate_descriptions(root: Path) -> tuple[int, int, int]:
 
 def validate_description_limit_fixture() -> None:
     # Negative coverage for validate_descriptions(): a synthetic catalog drives
-    # both hard-fail branches (>240 chars and a missing description) and the
-    # happy path, asserting the gate exits non-zero only on the violations.
-    def run(frontmatter: str) -> int:
+    # both hard-fail branches (over the ceiling and a missing description), the
+    # exact ceiling boundary (240 passes, 241 fails), and the happy path. Each
+    # run captures the fail() message so the assertion pins WHICH branch fired,
+    # not just the exit sign.
+    import io
+
+    def run(frontmatter: str) -> tuple[int, str]:
         with tempfile.TemporaryDirectory(prefix="desc-limit-") as tmp:
             skill_dir = Path(tmp) / "core" / "skills" / "fixture" / "sample"
             skill_dir.mkdir(parents=True)
@@ -577,33 +581,48 @@ def validate_description_limit_fixture() -> None:
                 f"---\nname: sample\n{frontmatter}---\n\n# Sample\n",
                 encoding="utf-8",
             )
+            captured = io.StringIO()
             saved_stderr = sys.stderr
-            sys.stderr = open(os.devnull, "w")  # suppress expected fail() output
+            sys.stderr = captured  # capture the expected fail() message
             try:
                 validate_descriptions(Path(tmp))
             except SystemExit as exc:
-                return int(exc.code or 0)
+                return int(exc.code or 0), captured.getvalue()
             finally:
-                sys.stderr.close()
                 sys.stderr = saved_stderr
-        return 0
+        return 0, captured.getvalue()
 
-    over_block = "description:\n  " + ("X" * 250) + "\n"
-    if run(over_block) == 0:
-        fail("description-limit fixture: a >240-char description did not hard-fail")
+    def block(text: str) -> str:
+        return "description:\n  " + text + "\n"
 
-    if run("description:\n  \n") == 0:
-        fail("description-limit fixture: an empty description did not hard-fail")
+    # Boundary inputs are literal 240 / 241 so they pin the documented ceiling
+    # itself: a 241-char input that stops failing (ceiling widened) trips this,
+    # as does a 240-char input that starts failing (`>` regressed to `>=`). If
+    # the rubric ceiling ever moves, update these literals deliberately.
+    over_code, over_msg = run(block("X" * 241))
+    if over_code == 0 or "exceeds 240 chars" not in over_msg:
+        fail("description-limit fixture: a 241-char description did not hard-fail with the over-limit message")
 
-    if run("") == 0:
-        fail("description-limit fixture: a missing description key did not hard-fail")
+    boundary_code, _ = run(block("X" * 240))
+    if boundary_code != 0:
+        fail("description-limit fixture: a 240-char description (at the ceiling) unexpectedly failed")
 
-    if run("description:\n  A short valid description.\n") != 0:
+    empty_code, empty_msg = run(block(""))
+    if empty_code == 0 or "missing frontmatter description" not in empty_msg:
+        fail("description-limit fixture: an empty description did not hard-fail with the missing-description message")
+
+    missing_code, missing_msg = run("")
+    if missing_code == 0 or "missing frontmatter description" not in missing_msg:
+        fail("description-limit fixture: a missing description key did not hard-fail with the missing-description message")
+
+    valid_code, _ = run(block("A short valid description."))
+    if valid_code != 0:
         fail("description-limit fixture: a valid description unexpectedly failed")
 
     print(
         "skill-governance-audit: description-limit fixture OK "
-        f"ceiling={DESCRIPTION_MAX_CHARS} over_detected=true missing_detected=true"
+        f"ceiling={DESCRIPTION_MAX_CHARS} over_exit={over_code} "
+        f"boundary_exit={boundary_code} missing_exit={missing_code}"
     )
 
 
