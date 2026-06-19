@@ -1,7 +1,10 @@
 ---
 name: test-first-evidence
 description:
-  Govern an implementation change with failing-test evidence — classify the change, capture a failing test (or an explicit waiver) before editing production code, keep the change scoped, re-run final validation, and record it all through the nils-cli `test-first-evidence` command. Use when work should be governed by failing-test evidence before production changes, or when a repo / user-global `[test_first].require` gate needs a verified record.
+  Govern an implementation change with failing-test discipline — failing test
+  or waiver before production edits, then final validation — through the
+  nils-cli `test-first-evidence` command; the record the forge-cli test-first
+  gate verifies.
 ---
 
 # Test First Evidence

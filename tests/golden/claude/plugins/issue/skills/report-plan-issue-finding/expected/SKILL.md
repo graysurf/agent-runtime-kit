@@ -2,13 +2,9 @@
 name: report-plan-issue-finding
 description:
   File a plan-issue / plan-tracking family finding (skill, CLI, driver, or
-  catalog drift or bug) as a structured, labeled GitHub issue in the canonical
-  tracker via forge-cli, and close it when the upstream fix lands. Trigger
-  whenever a create/execute/deliver/closeout plan-tracking skill run, a
-  plan-issue / plan-tooling / forge-cli command, or a test-plan-tracking driver
-  assert surfaces a problem worth tracking. Fixes land upstream
-  (agent-runtime-kit skill bodies or nils-cli CLIs); this skill only files and
-  maintains the finding record.
+  catalog drift) as a labeled issue in the canonical tracker via forge-cli,
+  and close it when the upstream fix lands. Files and tracks only — never
+  fixes.
 ---
 
 # Report Plan Issue Finding

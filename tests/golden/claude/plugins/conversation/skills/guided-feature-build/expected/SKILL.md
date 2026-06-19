@@ -1,6 +1,8 @@
 ---
 name: guided-feature-build
-description: Use when the user wants a guided, in-session build of a feature on an existing codebase — explore, clarify, design options, implement after approval, then review — without opening issue-backed plan tracking.
+description:
+  Run a guided, in-session feature build on an existing codebase — explore,
+  design, implement, review — without opening issue-backed plan tracking.
 ---
 
 # Guided Feature Build

@@ -1,10 +1,9 @@
 ---
 name: handoff-session-prompt
 description:
-  Generate a generic next-session initialization prompt from the user's instruction, current conversation context, and any
-  user-specified reference files. Use when the user asks to carry conclusions, constraints, documents, or next steps into a
-  new session, produce a handoff prompt, or create a session init prompt without embedding project-specific defaults. If the user needs a
-  durable review/improvement record or implementation-readiness document first, write that artifact before generating the handoff.
+  Generate a generic next-session initialization prompt from the current
+  conversation context and any user-specified reference files; if a durable
+  record is needed first, write that artifact before the handoff.
 ---
 
 # Handoff Session Prompt

@@ -1,7 +1,9 @@
 ---
 name: review-thread-cleanup
 description:
-  Drive a PR/MR review-thread sweep to convergence — discover unresolved threads, triage each against the shared convergence policy, then resolve, reply, or defer through the released nils-cli `forge-cli pr review-threads` surfaces.
+  Drive a PR/MR review-thread sweep to convergence — discover unresolved
+  threads, triage each against the shared convergence policy, then resolve,
+  reply, or defer through `forge-cli pr review-threads`.
 ---
 
 # Review Thread Cleanup

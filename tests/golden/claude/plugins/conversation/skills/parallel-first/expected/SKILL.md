@@ -1,8 +1,8 @@
 ---
 name: parallel-first
 description:
-  Use when the user wants a parallel-first policy for safely parallelizable work through the shared parallel delegation protocol when
-  appropriate.
+  Execution mode that parallelizes safely independent work across subagents
+  through the shared parallel delegation protocol.
 ---
 
 # Parallel First

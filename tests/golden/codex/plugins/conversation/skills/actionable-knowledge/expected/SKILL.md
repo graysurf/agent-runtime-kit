@@ -1,6 +1,8 @@
 ---
 name: actionable-knowledge
-description: Use when the user wants to learn a concept or resolve confusion with multiple lenses, assumptions, and one recommended next step.
+description:
+  Explain a concept or resolve confusion through multiple lenses, with stated
+  assumptions and one recommended next step.
 ---
 
 # Actionable Knowledge

@@ -1,7 +1,8 @@
 ---
 name: issue-follow-up
 description:
-  Use when the user wants to open or continue a GitHub or GitLab issue as the durable timeline for a discovered problem, investigation, blocker, implementation handoff, or unresolved follow-up loop.
+  Open or continue a GitHub or GitLab issue as the durable timeline for a
+  discovered problem, investigation, blocker, or implementation handoff.
 ---
 
 # Issue Follow-Up

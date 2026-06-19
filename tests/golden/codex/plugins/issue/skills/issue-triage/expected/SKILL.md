@@ -1,9 +1,9 @@
 ---
 name: issue-triage
 description:
-  Analyze open GitHub or GitLab issues from `forge-cli inbox`, classify which
-  are ready now or blocked, and recommend an execution order without mutating
-  provider state unless the user explicitly asks for follow-up or implementation.
+  Analyze open GitHub or GitLab issues from `forge-cli inbox`, classify
+  readiness versus blockers, and recommend an execution order; read-only
+  unless the user explicitly asks for follow-up.
 ---
 
 # Issue Triage

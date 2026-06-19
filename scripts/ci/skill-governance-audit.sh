@@ -99,6 +99,11 @@ SHAPE_ARG_PATHS = sys.argv[3:]
 
 CANONICAL_SECTIONS = ("Contract", "Entrypoint", "Workflow", "Boundary")
 
+# Frontmatter `description` is always-loaded context (every session, both
+# products). Keep it minimal per core/skills/README.md "Skill Description
+# Rubric"; this hard ceiling backstops the rubric against trigger-phrase bloat.
+DESCRIPTION_MAX_CHARS = 240
+
 
 COUNT_TARGETS = [
     {
@@ -494,6 +499,68 @@ def validate_shape_only(raw_paths: list[str]) -> None:
     print(f"skill-governance-audit: shape OK files_checked={checked}")
 
 
+# Folds a SKILL.md.tera frontmatter `description` back into a single string for
+# length measurement. Assumes the repo's actual frontmatter shape: a `name`
+# then `description` key, plain or block scalars only, and no blank line inside
+# the value. A `\n`-join matches YAML folded-scalar semantics under those
+# conditions. If a future renderer emits a different shape, tighten this parser
+# rather than trusting its measurement.
+def skill_description(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    match = re.match(r"^---\n(.*?)\n---", text, re.S)
+    if match is None:
+        return ""
+    lines = match.group(1).split("\n")
+    for index, line in enumerate(lines):
+        head = re.match(r"^description:\s*(.*)$", line)
+        if head is None:
+            continue
+        parts: list[str] = []
+        inline = head.group(1).strip()
+        # Skip a block-scalar header (`>`, `|`, with optional indentation /
+        # chomping indicators like `|-`, `>+`, `|2-`); anything else on the
+        # `description:` line is real inline content.
+        if inline and not re.match(r"^[>|][1-9+-]*$", inline):
+            parts.append(strip_quotes(inline))
+        for cont in lines[index + 1 :]:
+            if re.match(r"^[A-Za-z_]", cont):  # next top-level key
+                break
+            if cont.strip():
+                parts.append(cont.strip())
+        return " ".join(parts).strip()
+    return ""
+
+
+# Returns (longest, over_120, over_220). Only `> DESCRIPTION_MAX_CHARS` (240) is
+# a hard fail; 120 / 220 are the README's advisory authoring targets, surfaced
+# as non-blocking counts so drift toward the ceiling stays visible.
+def validate_descriptions(root: Path) -> tuple[int, int, int]:
+    longest = 0
+    over_120 = 0
+    over_220 = 0
+    violations: list[str] = []
+    for path in sorted((root / "core" / "skills").glob("*/*/SKILL.md.tera")):
+        skill_id = f"{path.parent.parent.name}.{path.parent.name}"
+        desc = skill_description(path)
+        if not desc:
+            fail(f"{skill_id} missing frontmatter description")
+        length = len(desc)
+        longest = max(longest, length)
+        if length > 120:
+            over_120 += 1
+        if length > 220:
+            over_220 += 1
+        if length > DESCRIPTION_MAX_CHARS:
+            violations.append(f"{skill_id} ({length} chars)")
+    if violations:
+        fail(
+            f"skill description exceeds {DESCRIPTION_MAX_CHARS} chars "
+            "(see core/skills/README.md 'Skill Description Rubric'): "
+            + "; ".join(violations)
+        )
+    return longest, over_120, over_220
+
+
 def validate_repo() -> None:
     skills = parse_skills(ROOT / "manifests" / "skills.yaml")
     plugins = parse_plugins(ROOT / "manifests" / "plugins.yaml")
@@ -504,6 +571,8 @@ def validate_repo() -> None:
         missing = sorted(source_ids - set(by_id))
         stale = sorted(set(by_id) - source_ids)
         fail(f"source/manifest mismatch missing={missing} stale={stale}")
+
+    desc_max, desc_over_120, desc_over_220 = validate_descriptions(ROOT)
 
     contained_counts: dict[str, int] = {}
     plugin_domains: dict[str, str] = {}
@@ -609,7 +678,9 @@ def validate_repo() -> None:
     print(
         "skill-governance-audit: repo OK "
         f"skills={len(skills)} plugins={len(plugins)} lifecycle={len(lifecycle_ids)} "
-        f"count_targets={len(COUNT_TARGETS)} active_count={count}"
+        f"count_targets={len(COUNT_TARGETS)} active_count={count} "
+        f"desc_max={desc_max}/{DESCRIPTION_MAX_CHARS} "
+        f"desc_over120={desc_over_120} desc_over220={desc_over_220}"
     )
 
 
