@@ -27,7 +27,7 @@ auth, sessions, logs, caches, generated backups, or secrets.
 |---|---|---|
 | Codex CLI (`codex --version`) | `0.139.0` (effective 2026-06-28) | `manifests/runtime-roots.yaml` |
 | Claude Code (`claude --version`) | `2.1.177` (effective 2026-06-30) | `manifests/runtime-roots.yaml` |
-| `nils-cli` surface (`agent-runtime --version`) | `v1.9.6` | `docs/source/nils-cli-surface.md` |
+| `nils-cli` surface (`agent-runtime --version`) | `v1.10.0` | `docs/source/nils-cli-surface.md` |
 
 Per-skill `nils-cli` floors live in `manifests/skills.yaml` `required_clis`
 and are tighter than the surface-level pin.
