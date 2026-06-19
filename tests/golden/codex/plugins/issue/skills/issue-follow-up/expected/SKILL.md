@@ -17,7 +17,7 @@ Prereqs:
 
 - Run inside the target provider-backed git repository, or pass an explicit
   `--repo` and `--provider` to `forge-cli`.
-- `forge-cli >=1.0.11` is installed from the released nils-cli package and
+- `forge-cli >=1.11.2` is installed from the released nils-cli package and
   available on `PATH`.
 - Shared label, comment, and close rules in
   `core/skills/issue/issue-lifecycle/README.md` are satisfied.

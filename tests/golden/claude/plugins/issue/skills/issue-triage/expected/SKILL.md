@@ -17,7 +17,7 @@ Prereqs:
 
 - Run inside the target provider-backed git repository, or pass explicit
   `--repo` and `--provider` options to `forge-cli`.
-- `forge-cli` is installed from the released nils-cli package and available on
+- `forge-cli >=1.11.2` is installed from the released nils-cli package and available on
   `PATH`.
 - Provider authentication is available for non-dry-run inbox and issue reads.
 - For implementation handoff, the normal implementation, issue follow-up, or
