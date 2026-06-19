@@ -246,7 +246,14 @@ JSON
   [ "$rc" -ne 0 ] || return 1
   assert_provider_payload_home_path_gate "$out" "$raw_path" || return 1
   ! grep -q 'Could not resolve to a Repository' "$out" || return 1
-  ! grep -q 'issue comment 0' "$out" || return 1
+  # As of nils-cli v1.11.0 plan-issue routes `record post` through forge-cli, so
+  # the local-path guard fires inside forge-cli (code `local_path_present`)
+  # before any provider/network call. Assert that gateway guard fired rather
+  # than the absence of the now-legitimately-echoed `issue comment 0` command
+  # string (the consolidated error surfaces the failed forge-cli command line).
+  # Match the bare code: the forge-cli error is nested inside plan-issue's
+  # record-post error message, so its quotes arrive backslash-escaped.
+  grep -q 'local_path_present' "$out" || return 1
 }
 
 write_validation_payload() {
