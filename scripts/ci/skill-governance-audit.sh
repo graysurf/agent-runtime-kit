@@ -11,7 +11,7 @@ SHAPE_PATHS=()
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh|codex-plugin] [--shape-only [paths...]]
+Usage: bash scripts/ci/skill-governance-audit.sh [--check-counts|--update-counts] [--fixture create|remove|create-project|remove-project|count-refresh|codex-plugin|description-limit] [--shape-only [paths...]]
 
 Checks:
   default                   Validate active repo source/manifests/plugins/reminders/counts.
@@ -23,6 +23,7 @@ Checks:
   --fixture remove-project  Validate the remove-project-skill dry-run fixture coverage.
   --fixture count-refresh   Validate stale count detection and whitelist updates.
   --fixture codex-plugin    Validate Codex plugin skill-list drift detection.
+  --fixture description-limit  Validate the >240-char and missing-description hard-fail paths.
   --shape-only [paths...]   Lint H2 section shape on the given SKILL.md.tera paths
                             (fast pre-commit gate; consumes all remaining args).
 USAGE
@@ -40,7 +41,7 @@ while [ "$#" -gt 0 ]; do
       ;;
     --fixture)
       if [ "$#" -lt 2 ]; then
-        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh|codex-plugin" >&2
+        echo "skill-governance-audit: --fixture requires create|remove|create-project|remove-project|count-refresh|codex-plugin|description-limit" >&2
         exit 2
       fi
       case "$2" in
@@ -52,6 +53,9 @@ while [ "$#" -gt 0 ]; do
           ;;
         codex-plugin)
           MODE="codex-plugin-fixture"
+          ;;
+        description-limit)
+          MODE="description-limit-fixture"
           ;;
         *)
           echo "skill-governance-audit: unsupported fixture: $2" >&2
@@ -561,6 +565,67 @@ def validate_descriptions(root: Path) -> tuple[int, int, int]:
     return longest, over_120, over_220
 
 
+def validate_description_limit_fixture() -> None:
+    # Negative coverage for validate_descriptions(): a synthetic catalog drives
+    # both hard-fail branches (over the ceiling and a missing description), the
+    # exact ceiling boundary (240 passes, 241 fails), and the happy path. Each
+    # run captures the fail() message so the assertion pins WHICH branch fired,
+    # not just the exit sign.
+    import io
+
+    def run(frontmatter: str) -> tuple[int, str]:
+        with tempfile.TemporaryDirectory(prefix="desc-limit-") as tmp:
+            skill_dir = Path(tmp) / "core" / "skills" / "fixture" / "sample"
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md.tera").write_text(
+                f"---\nname: sample\n{frontmatter}---\n\n# Sample\n",
+                encoding="utf-8",
+            )
+            captured = io.StringIO()
+            saved_stderr = sys.stderr
+            sys.stderr = captured  # capture the expected fail() message
+            try:
+                validate_descriptions(Path(tmp))
+            except SystemExit as exc:
+                return int(exc.code or 0), captured.getvalue()
+            finally:
+                sys.stderr = saved_stderr
+        return 0, captured.getvalue()
+
+    def block(text: str) -> str:
+        return "description:\n  " + text + "\n"
+
+    # Boundary inputs are literal 240 / 241 so they pin the documented ceiling
+    # itself: a 241-char input that stops failing (ceiling widened) trips this,
+    # as does a 240-char input that starts failing (`>` regressed to `>=`). If
+    # the rubric ceiling ever moves, update these literals deliberately.
+    over_code, over_msg = run(block("X" * 241))
+    if over_code == 0 or "exceeds 240 chars" not in over_msg:
+        fail("description-limit fixture: a 241-char description did not hard-fail with the over-limit message")
+
+    boundary_code, _ = run(block("X" * 240))
+    if boundary_code != 0:
+        fail("description-limit fixture: a 240-char description (at the ceiling) unexpectedly failed")
+
+    empty_code, empty_msg = run(block(""))
+    if empty_code == 0 or "missing frontmatter description" not in empty_msg:
+        fail("description-limit fixture: an empty description did not hard-fail with the missing-description message")
+
+    missing_code, missing_msg = run("")
+    if missing_code == 0 or "missing frontmatter description" not in missing_msg:
+        fail("description-limit fixture: a missing description key did not hard-fail with the missing-description message")
+
+    valid_code, _ = run(block("A short valid description."))
+    if valid_code != 0:
+        fail("description-limit fixture: a valid description unexpectedly failed")
+
+    print(
+        "skill-governance-audit: description-limit fixture OK "
+        f"ceiling={DESCRIPTION_MAX_CHARS} over_exit={over_code} "
+        f"boundary_exit={boundary_code} missing_exit={missing_code}"
+    )
+
+
 def validate_repo() -> None:
     skills = parse_skills(ROOT / "manifests" / "skills.yaml")
     plugins = parse_plugins(ROOT / "manifests" / "plugins.yaml")
@@ -941,6 +1006,8 @@ elif MODE == "count-refresh-fixture":
     validate_count_refresh_fixture()
 elif MODE == "codex-plugin-fixture":
     validate_codex_plugin_fixture()
+elif MODE == "description-limit-fixture":
+    validate_description_limit_fixture()
 else:
     fail(f"unknown mode: {MODE}")
 PY
