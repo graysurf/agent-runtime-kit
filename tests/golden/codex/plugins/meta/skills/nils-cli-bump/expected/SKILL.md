@@ -1,7 +1,9 @@
 ---
 name: nils-cli-bump
 description:
-  Propose one PR that bumps the pinned nils-cli surface and refreshes every consumer when a new nils-cli release ships; uses `agent-runtime doctor --class version-alignment` and the GitHub compare API for the mechanical diff and owns the surface-refresh judgement.
+  Propose one PR that bumps the pinned nils-cli surface and refreshes every
+  consumer when a new nils-cli release ships; owns the surface-refresh
+  judgement over the mechanical version-alignment diff.
 ---
 
 # nils-cli Bump

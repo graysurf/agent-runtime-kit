@@ -1,7 +1,8 @@
 ---
 name: discussion-to-implementation-doc
 description:
-  Convert completed requirements, design, feasibility, review/improvement, or customer-facing discussion into an implementation-readiness source document.
+  Convert a completed requirements, design, feasibility, or review discussion
+  into an implementation-readiness source document.
 ---
 
 # Discussion To Implementation Doc

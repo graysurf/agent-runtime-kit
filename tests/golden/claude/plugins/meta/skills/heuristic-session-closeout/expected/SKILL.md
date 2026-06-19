@@ -1,13 +1,10 @@
 ---
 name: heuristic-session-closeout
 description:
-  Use when this session's goal has been achieved and the agent needs to surface
-  the session's skill-usage records, review available session evidence for
-  Heuristic System updates, write curated retained records when warranted, land
-  them on `main` through the `heuristic-inbox deliver` records-branch PR
-  (auto-merged), and drive durable evidence retention into the
-  agent-evidence-archive (dry-run `evidence migrate`, apply when clean, surface
-  when risky).
+  Close out a session after its goal is met — surface skill-usage records,
+  write warranted retained records and land them on `main` via
+  `heuristic-inbox deliver`, then drive durable evidence retention into the
+  agent-evidence-archive.
 ---
 
 # Heuristic Session Closeout
@@ -16,7 +13,7 @@ description:
 
 Prereqs:
 
-- This session's goal is achieved; no further in-session implementation,
+- This session's goal has been achieved; no further in-session implementation,
   research, review, or delivery work is intended.
 - `agent-docs` startup and project-dev preflight has passed before repository
   writes, commits, or pushes.

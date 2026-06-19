@@ -1,10 +1,9 @@
 ---
 name: daily-brief
 description:
-  Prepare a source-grounded daily information brief for recurring AI/technology or user-selected topics. Use as the default
-  daily entrypoint when the user asks for today's news, this week's signals, a morning brief, "what should I know", or a
-  personalized synthesis; orchestrates topic-radar JSON output with stable preferences and does not implement its own source
-  fetchers.
+  Prepare a source-grounded daily information brief for recurring or
+  user-selected topics; orchestrates `topic-radar` JSON output and does not
+  implement its own source fetchers.
 ---
 
 # Daily Brief

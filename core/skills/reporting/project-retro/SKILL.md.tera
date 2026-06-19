@@ -1,8 +1,8 @@
 ---
 name: project-retro
 description:
-  Generate a repo-local project implementation retrospective by consuming the released nils-cli `repo-retro` command; use when the user asks
-  for project retrospectives, weekly repo reviews, implementation trend snapshots, or local engineering review agendas without remote API
+  Generate a repo-local project implementation retrospective by consuming the
+  nils-cli `repo-retro` command — local git history only, no remote API
   enrichment.
 ---
 

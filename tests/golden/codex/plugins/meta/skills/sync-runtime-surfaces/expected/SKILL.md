@@ -1,10 +1,9 @@
 ---
 name: sync-runtime-surfaces
 description:
-  Refresh the active agent-runtime-kit managed runtime surfaces into local Codex
-  and Claude runtime homes by running `scripts/sync-runtime-surfaces.sh`. Use
-  when the user asks to sync, update, refresh, or make newly merged runtime-kit
-  surfaces visible to live agent sessions.
+  Refresh the active agent-runtime-kit managed runtime surfaces into the local
+  Codex and Claude runtime homes by running
+  `scripts/sync-runtime-surfaces.sh`.
 ---
 
 # Sync Runtime Surfaces

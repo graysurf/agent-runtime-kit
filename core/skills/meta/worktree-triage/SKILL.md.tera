@@ -1,7 +1,9 @@
 ---
 name: worktree-triage
 description:
-  Read-only scan of one repo's git worktrees, or every repo represented under the managed agent worktree root, that classifies each branch against a base ref (default `origin/main`) as safe-to-prune (fully merged or patch-equivalent), a rescue-candidate carrying unique commits, dirty, or locked; then, only on explicit confirmation, prunes the safe worktrees and opens draft PRs for genuinely unmerged work. Use it when agent-spawned worktrees pile up and you need to (1) clean stale worktrees and (2) find commits that never made it back to the base branch.
+  Read-only scan of git worktrees against a base ref, classifying each branch
+  as safe-to-prune, rescue-candidate, dirty, or locked; prunes safe ones and
+  opens draft PRs for unmerged work only on explicit confirmation.
 ---
 
 # Worktree Triage

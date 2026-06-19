@@ -99,6 +99,11 @@ SHAPE_ARG_PATHS = sys.argv[3:]
 
 CANONICAL_SECTIONS = ("Contract", "Entrypoint", "Workflow", "Boundary")
 
+# Frontmatter `description` is always-loaded context (every session, both
+# products). Keep it minimal per core/skills/README.md "Skill Description
+# Rubric"; this hard ceiling backstops the rubric against trigger-phrase bloat.
+DESCRIPTION_MAX_CHARS = 240
+
 
 COUNT_TARGETS = [
     {
@@ -494,6 +499,49 @@ def validate_shape_only(raw_paths: list[str]) -> None:
     print(f"skill-governance-audit: shape OK files_checked={checked}")
 
 
+def skill_description(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    match = re.match(r"^---\n(.*?)\n---", text, re.S)
+    if match is None:
+        return ""
+    lines = match.group(1).split("\n")
+    for index, line in enumerate(lines):
+        head = re.match(r"^description:\s*(.*)$", line)
+        if head is None:
+            continue
+        parts: list[str] = []
+        inline = head.group(1).strip()
+        if inline and inline not in (">", "|", ">-", "|-"):
+            parts.append(strip_quotes(inline))
+        for cont in lines[index + 1 :]:
+            if re.match(r"^[A-Za-z_]", cont):  # next top-level key
+                break
+            if cont.strip():
+                parts.append(cont.strip())
+        return " ".join(parts).strip()
+    return ""
+
+
+def validate_descriptions(root: Path) -> int:
+    longest = 0
+    violations: list[str] = []
+    for path in sorted((root / "core" / "skills").glob("*/*/SKILL.md.tera")):
+        skill_id = f"{path.parent.parent.name}.{path.parent.name}"
+        desc = skill_description(path)
+        if not desc:
+            fail(f"{skill_id} missing frontmatter description")
+        longest = max(longest, len(desc))
+        if len(desc) > DESCRIPTION_MAX_CHARS:
+            violations.append(f"{skill_id} ({len(desc)} chars)")
+    if violations:
+        fail(
+            f"skill description exceeds {DESCRIPTION_MAX_CHARS} chars "
+            "(see core/skills/README.md 'Skill Description Rubric'): "
+            + "; ".join(violations)
+        )
+    return longest
+
+
 def validate_repo() -> None:
     skills = parse_skills(ROOT / "manifests" / "skills.yaml")
     plugins = parse_plugins(ROOT / "manifests" / "plugins.yaml")
@@ -504,6 +552,8 @@ def validate_repo() -> None:
         missing = sorted(source_ids - set(by_id))
         stale = sorted(set(by_id) - source_ids)
         fail(f"source/manifest mismatch missing={missing} stale={stale}")
+
+    desc_max = validate_descriptions(ROOT)
 
     contained_counts: dict[str, int] = {}
     plugin_domains: dict[str, str] = {}
@@ -609,7 +659,8 @@ def validate_repo() -> None:
     print(
         "skill-governance-audit: repo OK "
         f"skills={len(skills)} plugins={len(plugins)} lifecycle={len(lifecycle_ids)} "
-        f"count_targets={len(COUNT_TARGETS)} active_count={count}"
+        f"count_targets={len(COUNT_TARGETS)} active_count={count} "
+        f"desc_max={desc_max}/{DESCRIPTION_MAX_CHARS}"
     )
 
 

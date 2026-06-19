@@ -45,6 +45,35 @@ without local differences, explains history that no longer affects decisions,
 or expands optional branches into long examples. Shared rules belong in the
 narrowest domain reference folder, not copied across every sibling skill.
 
+## Skill Description Rubric
+
+The frontmatter `description` is always-loaded context: every skill's `name` +
+`description` sits in the system prompt of every session, for both products,
+before any skill is invoked. The body loads only on invocation. So keep the
+description minimal and *distinctive*, not comprehensive.
+
+Keep:
+
+- Sentence 1 — identity: verb + object + via-what (the CLI or mechanism). One
+  line.
+- At most one more clause, and only if it carries one of: the disambiguator
+  that separates this skill from its siblings (e.g. `create-pr` vs `deliver-pr`
+  vs `close-pr`), or a hard invoke/skip guard (destructive, dry-run-first, or a
+  read-vs-write boundary).
+
+Cut (it belongs in the body, not the always-loaded description):
+
+- Trigger enumeration — `Use when the user asks "…"`, `Trigger whenever …`, and
+  lists of example phrasings. Explicit invocation and skill-to-skill handoff do
+  not read these; only naive auto-routing does.
+- Restatements of the body, optional branches, and history.
+- Safety-mechanic narration (e.g. "dry-run first, applies only when clean") —
+  state the guard in one clause; the mechanics live in the body.
+
+Target: a leaf skill is ~1 line (≤120 chars); a family member or safety-gated
+skill may keep a second clause (≤220 chars). `scripts/ci/skill-governance-audit.sh`
+hard-fails any description over 240 chars.
+
 ## Browser
 
 | Series | Skill | Purpose |
