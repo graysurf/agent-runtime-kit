@@ -1,9 +1,9 @@
 ---
 name: topic-radar
 description:
-  Aggregate read-only AI and technology trend signals from Polymarket, Hacker News, GitHub, arXiv, Hugging Face, official
-  sources, and news search into source-grounded Markdown or JSON digests. Use directly for source-level radar scans,
-  machine-consumable output, source tuning, or as the lower-level data engine for daily-brief.
+  Aggregate read-only AI and technology trend signals (Polymarket, Hacker
+  News, GitHub, arXiv, Hugging Face, news search) into source-grounded
+  Markdown or JSON; the lower-level data engine behind `daily-brief`.
 ---
 
 # Topic Radar

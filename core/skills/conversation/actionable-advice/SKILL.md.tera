@@ -1,6 +1,8 @@
 ---
 name: actionable-advice
-description: Use when the user asks for actionable engineering advice with clarifying questions, options, tradeoffs, assumptions, and one recommendation.
+description:
+  Structure actionable engineering advice — clarifying questions, options with
+  tradeoffs, stated assumptions, and one recommendation.
 ---
 
 # Actionable Advice

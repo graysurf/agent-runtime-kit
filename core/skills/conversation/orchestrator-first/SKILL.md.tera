@@ -1,6 +1,8 @@
 ---
 name: orchestrator-first
-description: Use when the user wants the main agent to own scope, dispatch, integration, validation, and final synthesis while subagents own implementation lanes.
+description:
+  Execution mode where the main agent owns scope, dispatch, integration,
+  validation, and final synthesis while subagents own implementation lanes.
 ---
 
 # Orchestrator First

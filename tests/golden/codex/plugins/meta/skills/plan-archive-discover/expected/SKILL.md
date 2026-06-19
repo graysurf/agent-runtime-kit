@@ -1,7 +1,9 @@
 ---
 name: plan-archive-discover
 description:
-  Read-only scan of a working repo's plan folders for archive candidates through the nils-cli `plan-archive discover` command; presents eligible / blocked / unknown candidates and hands selected folders to `plan-archive-migrate` for dry-run-first review.
+  Read-only scan of a working repo's plan folders for archive candidates
+  through the nils-cli `plan-archive discover` command; classifies eligible /
+  blocked / unknown and hands selected folders to `plan-archive-migrate`.
 ---
 
 # Plan Archive Discover
