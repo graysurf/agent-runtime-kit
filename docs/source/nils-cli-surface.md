@@ -1,23 +1,37 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-19 (refreshed for `v1.11.1`)
+- Snapshot date: 2026-06-19 (refreshed for `v1.11.2`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.11.1`
+- Active `git describe --tags` output: `v1.11.2`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.11.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.11.2`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `9fae56b`
-  (`chore(release): bump cli versions to 1.11.1 (#911)`)
+- Head commit: `71eaaf3`
+  (`chore(release): bump cli versions to 1.11.2 (#913)`)
 - Release:
-  [`v1.11.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.11.1),
+  [`v1.11.2`](https://github.com/sympoies/nils-cli/releases/tag/v1.11.2),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.11.2` is a lock-step patch over `v1.11.1`. No consumed flag or JSON
+  envelope changed, so no `required_clis[]` floor moves — the exact
+  `pinned_tag` gate (now `v1.11.2`) covers the `agent-runtime` host.
+  Consumer-visible change:
+  - `v1.11.2`: `forge-cli` now derives the repo slug from the detected remote
+    and pins `--repo <owner/name>` on backend calls by default
+    ([#912](https://github.com/sympoies/nils-cli/pull/912)). Previously it
+    omitted `--repo`, letting `gh`/`glab` re-derive the repo from the cwd, which
+    silently retargeted a fork clone to its upstream parent. An explicit
+    `--repo` still wins. Side effect: GitLab `pr checks` for a branch now prefers
+    the structured `glab api` merge-requests path (fork-safe) over the text
+    `glab ci status` parser, falling back to text when no MR exists. The
+    `forge-cli` floor stays `>= 1.9.1` (no consumer requires the new behavior;
+    the JSON envelopes are unchanged).
 - `v1.11.1` is a lock-step patch over `v1.11.0`. No consumed flag or JSON
   envelope changed, so no `required_clis[]` floor moves — the exact
-  `pinned_tag` gate (now `v1.11.1`) covers the `agent-runtime` host.
+  `pinned_tag` gate (was `v1.11.1`) covers the `agent-runtime` host.
   Consumer-visible change:
   - `v1.11.1`: `github-app-cli token` regression fix,
     [#910](https://github.com/sympoies/nils-cli/pull/910). jsonwebtoken 10's
