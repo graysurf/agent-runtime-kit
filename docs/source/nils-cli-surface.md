@@ -1,20 +1,40 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-19 (refreshed for `v1.10.0`)
+- Snapshot date: 2026-06-19 (refreshed for `v1.11.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.10.0`
+- Active `git describe --tags` output: `v1.11.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.10.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.11.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `442bd38`
-  (`chore(release): bump cli versions to 1.10.0 (#907)`)
+- Head commit: `56799e2`
+  (`chore(release): bump cli versions to 1.11.0 (#909)`)
 - Release:
-  [`v1.10.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.10.0),
+  [`v1.11.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.11.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.11.0` is a lock-step host bump over `v1.10.0`. No consumed flag or JSON
+  envelope was retired or renamed, so no `required_clis[]` floor moves — the
+  exact `pinned_tag` gate (now `v1.11.0`) covers the `agent-runtime` host.
+  Consumer-visible changes:
+  - `v1.11.0`: `forge-cli issue close` gains an optional
+    `--reason completed|"not planned"` flag (GitHub backend; GitLab / Local
+    ignore it), [#908](https://github.com/sympoies/nils-cli/pull/908). Purely
+    additive — it closes the `deliver-closeout-cli-surface-drift` inbox gap
+    where `forge-cli issue close` lacked `--reason` and closeout fell back to
+    `gh issue close --reason`. The `forge-cli` floor stays `>= 1.9.1` (no
+    consumer requires the new flag yet).
+  - `v1.11.0`: `plan-issue` consolidated all GitHub provider ops onto
+    `forge-cli`, retiring its in-crate `gh` client
+    (`crates/plan-issue/src/github.rs`). `forge-cli` is now the single
+    provider gateway for GitHub, GitLab, and Local. plan-issue's external CLI
+    surface (`record` / `tracking` / `start-*` commands) is unchanged, so the
+    `plan-issue` floor stays `>= 1.1.0`. One behavior change: plan-issue
+    `--force` no longer bypasses the escaped-control markdown guard on the
+    GitHub write path (stricter, not looser); the never-bypassed local-path
+    guard is unchanged.
 - `v1.10.0` is a lock-step host bump over `v1.9.6`. It adds one new crate and
   carries the routine all-crates version bump; no consumed flag or JSON
   envelope was retired or renamed, so no `required_clis[]` floor moves — the
