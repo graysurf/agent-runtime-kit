@@ -12,7 +12,7 @@ Prereqs:
 
 - Profile: helper (no plan-issue profile attached; the caller carries
   the dispatch profile).
-- CLI floors: `forge-cli >=1.0.11`.
+- CLI floors: `forge-cli >=1.11.2`.
 - Shared provider and branch rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.
 - Lane precondition: the lane has an assigned `BRANCH` (pushed),

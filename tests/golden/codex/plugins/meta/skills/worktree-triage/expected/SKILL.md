@@ -19,7 +19,7 @@ Prereqs:
   (`${AGENT_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit}/worktrees`).
 - `git` and `git-cli` are on `PATH`; Python 3.11+ is available (the bundled
   `worktree_triage.py` helper is stdlib-only).
-- `forge-cli` is installed from the released nils-cli package for the
+- `forge-cli >=1.11.2` is installed from the released nils-cli package for the
   draft-PR rescue path. The scan itself needs no provider access.
 - The base ref the work should have landed on is fetched and current in every
   scanned repo. The helper is **read-only and never fetches** — run

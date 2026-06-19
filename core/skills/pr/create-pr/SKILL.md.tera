@@ -10,7 +10,7 @@ description:
 
 Prereqs:
 
-- `agent-runtime` and `forge-cli >=1.0.11` are installed from the released
+- `agent-runtime` and `forge-cli >=1.11.2` are installed from the released
   nils-cli package and available on `PATH`.
 - Shared provider, branch, body, and label rules in
   `core/skills/pr/pr-lifecycle/README.md` are satisfied.

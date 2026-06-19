@@ -12,7 +12,7 @@ description:
 
 Prereqs:
 
-- `forge-cli >=1.9.1` is installed from the released nils-cli package and on
+- `forge-cli >=1.11.2` is installed from the released nils-cli package and on
   `PATH`. It exposes the `pr review-threads` group: `list` (provider-aware
   read) plus the GitHub-only `resolve` and `reply` write subcommands.
 - The triage and stopping discipline is governed by

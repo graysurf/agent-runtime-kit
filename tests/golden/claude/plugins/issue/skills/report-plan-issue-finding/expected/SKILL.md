@@ -25,7 +25,7 @@ the finding's issue record: open, dedup, comment, and close.
 
 Prereqs:
 
-- `forge-cli >=1.0.11` is installed from the released nils-cli package and on
+- `forge-cli >=1.11.2` is installed from the released nils-cli package and on
   `PATH`. All issue mutation goes through it, never raw `gh issue create`.
 - `jq` is available for parsing `forge-cli ... --format json` output.
 - Provider authentication is available for non-dry-run issue reads/writes.

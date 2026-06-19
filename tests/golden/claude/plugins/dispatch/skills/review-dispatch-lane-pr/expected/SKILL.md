@@ -11,7 +11,7 @@ description:
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.13`, `forge-cli >=1.0.11`,
+- CLI floors: `plan-issue >=1.0.13`, `forge-cli >=1.11.2`,
   `review-evidence`.
 - Issue precondition: the shared dispatch issue exists and the lane PR
   has been created by `execute-dispatch-lane` /
