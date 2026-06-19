@@ -1,23 +1,35 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-19 (refreshed for `v1.11.0`)
+- Snapshot date: 2026-06-19 (refreshed for `v1.11.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.11.0`
+- Active `git describe --tags` output: `v1.11.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.11.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.11.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `56799e2`
-  (`chore(release): bump cli versions to 1.11.0 (#909)`)
+- Head commit: `9fae56b`
+  (`chore(release): bump cli versions to 1.11.1 (#911)`)
 - Release:
-  [`v1.11.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.11.0),
+  [`v1.11.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.11.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.11.1` is a lock-step patch over `v1.11.0`. No consumed flag or JSON
+  envelope changed, so no `required_clis[]` floor moves — the exact
+  `pinned_tag` gate (now `v1.11.1`) covers the `agent-runtime` host.
+  Consumer-visible change:
+  - `v1.11.1`: `github-app-cli token` regression fix,
+    [#910](https://github.com/sympoies/nils-cli/pull/910). jsonwebtoken 10's
+    split crypto backend left RS256 App-JWT signing with no provider selected
+    (`default-features = false`), so `github-app-cli token` panicked at runtime
+    on `v1.11.0` and every bot-routed forge-cli op silently fell back to the
+    user. Enabling the `rust_crypto` backend restores App installation-token
+    minting. `github-app-cli` is not a `required_clis[]` entry (the bot
+    identity layer lives in local-scripts, not this kit), so no floor moves.
 - `v1.11.0` is a lock-step host bump over `v1.10.0`. No consumed flag or JSON
   envelope was retired or renamed, so no `required_clis[]` floor moves — the
-  exact `pinned_tag` gate (now `v1.11.0`) covers the `agent-runtime` host.
+  exact `pinned_tag` gate (was `v1.11.0`) covers the `agent-runtime` host.
   Consumer-visible changes:
   - `v1.11.0`: `forge-cli issue close` gains an optional
     `--reason completed|"not planned"` flag (GitHub backend; GitLab / Local
