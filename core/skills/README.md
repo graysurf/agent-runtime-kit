@@ -71,8 +71,12 @@ Cut (it belongs in the body, not the always-loaded description):
   state the guard in one clause; the mechanics live in the body.
 
 Target: a leaf skill is ~1 line (≤120 chars); a family member or safety-gated
-skill may keep a second clause (≤220 chars). `scripts/ci/skill-governance-audit.sh`
-hard-fails any description over 240 chars.
+skill may keep a second clause (≤220 chars). Those two numbers are **advisory
+authoring targets, not gates** — the only mechanically enforced limit is the
+hard fail `scripts/ci/skill-governance-audit.sh` raises on any description over
+**240 chars**. Each audit run reports `desc_max=N/240` plus advisory
+`desc_over120` / `desc_over220` counts, so drift toward the ceiling stays
+visible without blocking.
 
 ## Browser
 
