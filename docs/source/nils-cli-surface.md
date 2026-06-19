@@ -1,23 +1,23 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-18 (refreshed for `v1.9.5`)
+- Snapshot date: 2026-06-19 (refreshed for `v1.9.6`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.9.5`
+- Active `git describe --tags` output: `v1.9.6`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.9.5`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.9.6`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `819b174`
-  (`chore(release): bump cli versions to 1.9.5 (#899)`)
+- Head commit: `d591ed8`
+  (`chore(release): bump cli versions to 1.9.6 (#905)`)
 - Release:
-  [`v1.9.5`](https://github.com/sympoies/nils-cli/releases/tag/v1.9.5),
+  [`v1.9.6`](https://github.com/sympoies/nils-cli/releases/tag/v1.9.6),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- `v1.9.5` is a lock-step host bump over `v1.9.1` (covers `v1.9.2`–`v1.9.5`).
+- `v1.9.6` is a lock-step host bump over `v1.9.1` (covers `v1.9.2`–`v1.9.6`).
   No consumed flag or JSON envelope was retired or renamed, so no
-  `required_clis[]` floor moves — the exact `pinned_tag` gate (now `v1.9.5`)
+  `required_clis[]` floor moves — the exact `pinned_tag` gate (now `v1.9.6`)
   covers the `agent-runtime` host. Consumer-visible changes across the span:
   - `v1.9.2`: `forge-cli` review-thread commands hardened (behavioral; the
     `pr review-threads list` / `resolve` / `reply` shape from `v1.9.1` is
@@ -26,6 +26,11 @@
   - `v1.9.3`: `codex-cli auth` gains remote pull over SSH (additive subcommand).
   - `v1.9.4`: `codex-cli auth` remote-pull JSON-error hardening.
   - `v1.9.5`: docs-only (genericize example fixtures); no surface change.
+  - `v1.9.6`: adds the `github-app-cli` binary (new `nils-github-app-cli`
+    crate, [#903](https://github.com/sympoies/nils-cli/pull/903)) for minting
+    GitHub App installation access tokens. Not consumed by any runtime-kit
+    skill flow — used out-of-band by a local `forge-cli` bot-identity wrapper —
+    so no `required_clis[]` floor moves.
 - `v1.9.1` is a lock-step host bump over `v1.8.0`. It restructures one surface
   this repo consumes:
   - `forge-cli pr review-threads` becomes a subcommand group. The read surface
@@ -671,7 +676,7 @@ keeps both in sync on a release bump.
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (41 entries).
+  `crates/` in the source repo (42 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -705,6 +710,7 @@ Notes on derivation:
 | `git-lock`                  | `git-lock`                                                                                                          | git lock helper.                                                                                                                                                                                                                                                       |
 | `git-scope`                 | `git-scope`                                                                                                         | git scope summariser. Alias family `gs*` ships in `aliases.zsh` / `aliases.bash`. As of `v1.0.10`, `git-scope` renders directory trees internally and no longer depends on an external `tree` binary. Additive ergonomic fix; no runtime-kit `required_clis[]` floor moves. |
 | `git-summary`               | `git-summary`                                                                                                       | git diff summariser.                                                                                                                                                                                                                                                   |
+| `github-app-cli`            | `github-app-cli`                                                                                                    | GitHub App installation-token minter (`token`, `installations`, `completion`). Signs the App JWT in-process (`jsonwebtoken`, RS256) and calls the GitHub REST API directly (`reqwest`); text mode prints only the raw `ghs_` token for `GH_TOKEN=$(github-app-cli token …)`, JSON mode emits non-secret metadata only and never the token. New crate as of `v1.9.6` ([#903](https://github.com/sympoies/nils-cli/pull/903)). Not consumed by this repo's runtime surfaces; used out-of-band by a local `forge-cli` bot-identity wrapper, so it never appears in `required_clis`. |
 | `image-processing`          | `image-processing`                                                                                                  | User-facing image-processing CLI.                                                                                                                                                                                                                                      |
 | `macos-agent`               | `macos-agent`                                                                                                       | macOS automation helper (AX, app intents).                                                                                                                                                                                                                             |
 | `memo`                  | `memo`                                                                                                          | Memo storage CLI.                                                                                                                                                                                                                                                      |
