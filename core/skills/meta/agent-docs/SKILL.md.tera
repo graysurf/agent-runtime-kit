@@ -49,12 +49,17 @@ Failure modes:
 
 ## Entrypoint
 
-Use the released CLI directly. docs-home is normally auto-derived from the
-install symlink; pass `--docs-home` only to override it.
+Use the released CLI directly. In this repo, manual checks should select the
+source checkout as docs-home because live home prompts point at rendered
+`build/<product>/AGENT_HOME.md` files. Repo-owned hooks do this fallback
+automatically only when the active repo is the runtime-kit source checkout;
+ordinary project catalogs inherit the active managed docs-home. `DEVELOPMENT.md`
+keeps the exact source-checkout commands. The examples below show generic CLI
+shapes and assume docs-home already points at the intended source root.
 
 ```bash
-agent-docs audit --target all --strict
 agent-docs preflight --intent project-dev --format json
+agent-docs audit --target project --strict
 agent-docs explain --intent project-dev
 agent-docs list
 ```

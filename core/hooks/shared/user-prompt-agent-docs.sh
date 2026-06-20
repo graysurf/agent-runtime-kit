@@ -30,6 +30,15 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -z "$repo_root" ]] && exit 0
 [[ -f "$repo_root/AGENT_DOCS.toml" ]] || exit 0
 
+runtime_kit_source_checkout() {
+  local root="$1"
+  [[ -f "$root/AGENT_DOCS.toml" &&
+    -f "$root/AGENT_HOME.md" &&
+    -f "$root/manifests/skills.yaml" &&
+    -f "$root/scripts/sync-runtime-surfaces.sh" &&
+    -d "$root/core/policies" ]]
+}
+
 payload="$(cat)"
 
 # Dedupe: at most one cue per session per repo (fall back to per-day when no
@@ -62,6 +71,9 @@ stamp="$stamp_dir/preflight-cue-${stamp_product}-${repo_hash}-${key}.stamp"
 [[ -f "$stamp" ]] && exit 0
 
 docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
+if [[ -z "$docs_home" ]] && runtime_kit_source_checkout "$repo_root"; then
+  docs_home="$repo_root"
+fi
 dh_args=()
 [[ -n "$docs_home" ]] && dh_args=(--docs-home "$docs_home")
 

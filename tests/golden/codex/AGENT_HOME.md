@@ -31,10 +31,11 @@
     `project-dev`, `task-tools`, resolved via `agent-docs preflight --intent
     <intent>`) plus the declared validation commands; read those docs before
     writing.
-  - Repo health — install-symlink wiring, declared-doc presence and validity,
-    and catalog validity — is checked by `agent-docs audit` in the daily
-    SessionStart healthcheck; CI separately asserts the declared docs resolve
-    via `agent-docs preflight --intent <intent> --strict`.
+  - The daily SessionStart healthcheck runs strict `agent-docs preflight` for
+    every declared intent in the active repo catalog. Runtime-kit source
+    checkouts self-anchor docs-home; other project catalogs inherit the active
+    managed docs-home. CI/manual repo-health checks still use `agent-docs audit`
+    for install wiring, declared doc validity, and catalog validity.
 - Before declaring a code-editing task done, run the validation the active
   intent declares (surfaced in the injected cue). The finish-line gate blocks a
   stop when code was edited but the declared validation did not run; state an
@@ -43,9 +44,11 @@
   <intent>` or `agent-docs explain --intent <intent>`; manage a project-local
   catalog with `agent-docs init` / `list` / `remove`.
 
-- docs-home is derived from the install symlink (`~/.codex/AGENTS.md`); pass
-  `--docs-home` only to override it. Do not use the `AGENT_HOME` environment
-  variable as docs-home — that is the `agent-out` artifact root.
+- Repo-owned hooks pass this runtime-kit source checkout as docs-home only when
+  the active repo is the runtime-kit source checkout; other project catalogs
+  inherit the active managed docs-home. For manual `agent-docs` checks in this
+  checkout, use the source checkout as docs-home. Do not use the `AGENT_HOME`
+  environment variable as docs-home — that is the `agent-out` artifact root.
 
 
 ## Work Mode

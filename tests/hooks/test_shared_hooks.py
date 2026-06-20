@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -717,6 +718,17 @@ class SharedHookTests(unittest.TestCase):
         script.write_text(body, encoding="utf-8")
         script.chmod(0o755)
 
+    @staticmethod
+    def _mark_runtime_kit_source_checkout(repo: Path) -> None:
+        (repo / "AGENT_HOME.md").write_text("# Home\n", encoding="utf-8")
+        (repo / "manifests").mkdir(exist_ok=True)
+        (repo / "manifests" / "skills.yaml").write_text("skills: []\n", encoding="utf-8")
+        (repo / "core" / "policies").mkdir(parents=True, exist_ok=True)
+        (repo / "scripts").mkdir(exist_ok=True)
+        (repo / "scripts" / "sync-runtime-surfaces.sh").write_text(
+            "#!/usr/bin/env bash\n", encoding="utf-8"
+        )
+
     def test_finish_line_gate_blocks_unvalidated_edit_then_releases(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
@@ -1406,6 +1418,117 @@ exit 65
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "scripts/ci/all.sh")
 
+    def test_finish_line_defaults_docs_home_to_runtime_kit_source_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            self._mark_runtime_kit_source_checkout(repo)
+            expected_repo = repo.resolve()
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            log_path = repo / "agent-docs.args"
+            self._write_fake_agent_docs(
+                bin_dir,
+                f"""#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+printf '%s\\n' "$args" >> {shlex.quote(str(log_path))}
+if [[ "$args" != *"--docs-home {expected_repo}"* ]]; then
+  echo "missing repo-root docs-home" >&2
+  exit 64
+fi
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{{"intents":["project-dev"]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  printf '%s\\n' '{{"intent":"project-dev","documents":[],"validation":{{"context":"project-dev","declared":true,"commands":["bash scripts/ci/all.sh"],"marker":".cache/agent-validation/project-dev.ok"}}}}'
+  exit 0
+fi
+exit 65
+""",
+            )
+            env = {
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+            self.assertIn(
+                f"--docs-home {expected_repo}", log_path.read_text(encoding="utf-8")
+            )
+
+    def test_finish_line_does_not_default_project_catalog_to_docs_home(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            expected_repo = repo.resolve()
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            log_path = repo / "agent-docs.args"
+            self._write_fake_agent_docs(
+                bin_dir,
+                f"""#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+printf '%s\\n' "$args" >> {shlex.quote(str(log_path))}
+if [[ "$args" == *"--docs-home {expected_repo}"* ]]; then
+  echo "repo-local catalog must not replace inherited docs-home" >&2
+  exit 64
+fi
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{{"intents":["project-dev"]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  printf '%s\\n' '{{"intent":"project-dev","documents":[],"validation":{{"context":"project-dev","declared":true,"commands":["bash scripts/ci/all.sh"],"marker":".cache/agent-validation/project-dev.ok"}}}}'
+  exit 0
+fi
+exit 65
+""",
+            )
+            env = {
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py", {}, cwd=repo, env=env
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "scripts/ci/all.sh")
+            self.assertNotIn(
+                f"--docs-home {expected_repo}", log_path.read_text(encoding="utf-8")
+            )
+
     def test_finish_line_forwards_product_and_scopes_contract_cache(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = self._init_contract_repo(tmp)
@@ -1529,6 +1652,7 @@ exit 65
     def test_finish_line_gate_noops_without_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
+            expected_repo = repo.resolve()
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
             run_hook(
                 "finish-line-record.py",
@@ -1543,6 +1667,7 @@ exit 65
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
+            expected_repo = repo.resolve()
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
             (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
             (repo / "core" / "policies").mkdir(parents=True)
@@ -1653,11 +1778,133 @@ exit 65
             self.assertNotIn("CLAUDE.md", ctx)
             self.assertNotIn("unfiltered.sh", ctx)
 
+    def test_preflight_cue_defaults_docs_home_to_runtime_kit_source_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            expected_repo = repo.resolve()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            self._mark_runtime_kit_source_checkout(repo)
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            log_path = repo / "agent-docs.args"
+            self._write_fake_agent_docs(
+                bin_dir,
+                f"""#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+printf '%s\\n' "$args" >> {shlex.quote(str(log_path))}
+if [[ "$args" != *"--docs-home {expected_repo}"* ]]; then
+  echo "missing repo-root docs-home" >&2
+  exit 64
+fi
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{{"intents":["project-dev"]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  printf '%s\\n' '{{"intent":"project-dev","documents":[{{"path":"DEV.md","required":true}}],"validation":{{"declared":true,"commands":["bash scripts/ci/all.sh"]}}}}'
+  exit 0
+fi
+exit 65
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "HOME": str(home),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-docs.sh",
+                {"session_id": "cue-default-docs-home-test", "prompt": "hello"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            self.assertIn(
+                f"--docs-home {expected_repo}", log_path.read_text(encoding="utf-8")
+            )
+
+    def test_preflight_cue_does_not_default_project_catalog_to_docs_home(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            expected_repo = repo.resolve()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            log_path = repo / "agent-docs.args"
+            self._write_fake_agent_docs(
+                bin_dir,
+                f"""#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+printf '%s\\n' "$args" >> {shlex.quote(str(log_path))}
+if [[ "$args" == *"--docs-home {expected_repo}"* ]]; then
+  echo "repo-local catalog must not replace inherited docs-home" >&2
+  exit 64
+fi
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{{"intents":["project-dev"]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  printf '%s\\n' '{{"intent":"project-dev","documents":[{{"path":"DEV.md","required":true}}],"validation":{{"declared":true,"commands":["bash scripts/ci/all.sh"]}}}}'
+  exit 0
+fi
+exit 65
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "HOME": str(home),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-docs.sh",
+                {"session_id": "cue-project-catalog-test", "prompt": "hello"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            self.assertNotIn(
+                f"--docs-home {expected_repo}", log_path.read_text(encoding="utf-8")
+            )
+
     def test_preflight_cue_fails_closed_for_undeclared_intent_when_guarded(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
+            expected_repo = repo.resolve()
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
             (repo / "AGENT_DOCS.toml").write_text(
                 '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
@@ -1721,6 +1968,7 @@ exit 65
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
+            expected_repo = repo.resolve()
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
             docs = repo / "docs"
             docs.mkdir()
@@ -1831,6 +2079,238 @@ exit 65
             encoding="utf-8"
         )
         self.assertEqual(source_block, codex_link_map_hook_body())
+
+    def test_session_start_healthcheck_defaults_docs_home_to_runtime_kit_source_root(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            expected_repo = repo.resolve()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            self._mark_runtime_kit_source_checkout(repo)
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            log_path = repo / "agent-docs.args"
+            self._write_fake_agent_docs(
+                bin_dir,
+                f"""#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+printf '%s\\n' "$args" >> {shlex.quote(str(log_path))}
+if [[ "$args" != *"--docs-home {expected_repo}"* ]]; then
+  echo "missing repo-root docs-home" >&2
+  exit 64
+fi
+if [[ "$args" != *"--project-path {expected_repo}"* ]]; then
+  echo "missing project path" >&2
+  exit 64
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{{"intents":["project-dev"]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  printf '%s\\n' 'ok'
+  exit 0
+fi
+exit 65
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "HOME": str(home),
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "AGENT_EVIDENCE_ARCHIVE_HOME": "",
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "session-start-healthcheck.sh",
+                {"hook_event_name": "SessionStart"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNone(decision)
+            log = log_path.read_text(encoding="utf-8")
+            self.assertIn(f"--docs-home {expected_repo}", log)
+            self.assertIn(f"--project-path {expected_repo}", log)
+
+    def test_session_start_healthcheck_does_not_default_project_catalog_to_docs_home(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            expected_repo = repo.resolve()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            log_path = repo / "agent-docs.args"
+            self._write_fake_agent_docs(
+                bin_dir,
+                f"""#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+printf '%s\\n' "$args" >> {shlex.quote(str(log_path))}
+if [[ "$args" == *"--docs-home {expected_repo}"* ]]; then
+  echo "repo-local catalog must not replace inherited docs-home" >&2
+  exit 64
+fi
+if [[ "$args" != *"--project-path {expected_repo}"* ]]; then
+  echo "missing project path" >&2
+  exit 64
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{{"intents":["project-dev"]}}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  printf '%s\\n' 'ok'
+  exit 0
+fi
+exit 65
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "HOME": str(home),
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "AGENT_EVIDENCE_ARCHIVE_HOME": "",
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "session-start-healthcheck.sh",
+                {"hook_event_name": "SessionStart"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNone(decision)
+            log = log_path.read_text(encoding="utf-8")
+            self.assertNotIn(f"--docs-home {expected_repo}", log)
+            self.assertIn(f"--project-path {expected_repo}", log)
+
+    def test_session_start_healthcheck_blocks_when_agent_docs_list_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            self._write_fake_agent_docs(
+                bin_dir,
+                """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"list --format json"* ]]; then
+  echo "catalog parse failed" >&2
+  exit 65
+fi
+printf '%s\\n' 'unexpected agent-docs invocation' >&2
+exit 66
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "HOME": str(home),
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "AGENT_EVIDENCE_ARCHIVE_HOME": "",
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "session-start-healthcheck.sh",
+                {"hook_event_name": "SessionStart"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            assert decision is not None
+            context = decision.get("hookSpecificOutput", {}).get("additionalContext", "")
+            self.assertIn("agent-docs list failed", str(context))
+
+    def test_session_start_healthcheck_blocks_when_preflight_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "AGENT_DOCS.toml").write_text(
+                '[[document]]\ncontext = "project-dev"\nscope = "project"\n'
+                'path = "DEV.md"\nrequired = true\nwhen = "always"\n',
+                encoding="utf-8",
+            )
+            (repo / "DEV.md").write_text("# Dev\n", encoding="utf-8")
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            self._write_fake_agent_docs(
+                bin_dir,
+                """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\\n' '{"intents":["project-dev","task-tools"]}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  [[ "$args" == *"--strict"* ]] || exit 64
+  printf '%s\\n' 'project-dev ok'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent task-tools"* ]]; then
+  [[ "$args" == *"--strict"* ]] || exit 64
+  printf '%s\\n' 'task-tools missing docs'
+  exit 65
+fi
+printf '%s\\n' 'unexpected agent-docs invocation' >&2
+exit 66
+""",
+            )
+            home = repo / "home"
+            home.mkdir()
+            env = {
+                "HOME": str(home),
+                "AGENT_DOCS_HOME": "",
+                "AGENT_RUNTIME_DOCS_HOME": "",
+                "AGENT_EVIDENCE_ARCHIVE_HOME": "",
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, decision, stderr = run_shell_hook(
+                "session-start-healthcheck.sh",
+                {"hook_event_name": "SessionStart"},
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            assert decision is not None
+            context = decision.get("hookSpecificOutput", {}).get("additionalContext", "")
+            self.assertIn("intent task-tools", str(context))
+            self.assertIn("task-tools missing docs", str(context))
 
     def test_session_start_healthcheck_evidence_archive_optin(self) -> None:
         # The SessionStart healthcheck must validate evidence-archive wiring only
