@@ -347,8 +347,19 @@ product_state_home() {
   esac
 }
 
-agent_home_source() {
+agent_home_raw_source() {
   printf '%s\n' "$REPO_HOME_DEFAULT/AGENT_HOME.md"
+}
+
+agent_home_source() {
+  case "$1" in
+    claude | codex) printf '%s\n' "$REPO_HOME_DEFAULT/build/$1/AGENT_HOME.md" ;;
+    neutral) printf '%s\n' "$REPO_HOME_DEFAULT/build/neutral/AGENT_HOME.md" ;;
+    *)
+      err "unknown product: $1"
+      exit 2
+      ;;
+  esac
 }
 
 product_home_prompt_path() {
@@ -407,11 +418,13 @@ ensure_home_prompt() {
   local target
   local target_dir
   local expected
+  local old_expected
   local existing
 
   target="$(product_home_prompt_path "$product")"
   target_dir="$(dirname "$target")"
-  expected="$(canonical_path "$(agent_home_source)")"
+  expected="$(canonical_path "$(agent_home_source "$product")")"
+  old_expected="$(canonical_path "$(agent_home_raw_source)")"
 
   if [ "$DRY_RUN" = "0" ] && [ ! -f "$expected" ]; then
     err "missing home policy source: $expected"
@@ -422,6 +435,12 @@ ensure_home_prompt() {
     existing="$(resolve_symlink_target "$target")"
     if [ "$existing" = "$expected" ]; then
       log "home prompt already wired product=$product target=$target"
+      return 0
+    fi
+    if [ "$existing" = "$old_expected" ]; then
+      log "rewiring managed home prompt product=$product target=$target"
+      run_cmd rm "$target"
+      run_cmd ln -s "$expected" "$target"
       return 0
     fi
     if [ "$DRY_RUN" = "1" ]; then
@@ -444,6 +463,21 @@ ensure_home_prompt() {
   log "wiring home prompt product=$product target=$target"
   run_cmd mkdir -p "$target_dir"
   run_cmd ln -s "$expected" "$target"
+}
+
+render_home_prompts() {
+  log "rendering home prompts"
+  run_cmd agent-runtime render \
+    --source-root "$REPO_HOME_DEFAULT" \
+    --target home-prompt
+  run_cmd agent-runtime render \
+    --source-root "$REPO_HOME_DEFAULT" \
+    --target home-prompt \
+    --product codex
+  run_cmd agent-runtime render \
+    --source-root "$REPO_HOME_DEFAULT" \
+    --target home-prompt \
+    --product claude
 }
 
 ensure_home_prompts() {
@@ -636,8 +670,8 @@ Summary
 - runtime_surface_bootstrap: $BOOTSTRAP_SURFACE
 - claude_live_home: $(product_live_home claude)
 - codex_live_home: $(product_live_home codex)
-- claude_home_prompt: $(product_home_prompt_path claude) -> $(agent_home_source)
-- codex_home_prompt: $(product_home_prompt_path codex) -> $(agent_home_source)
+- claude_home_prompt: $(product_home_prompt_path claude) -> $(agent_home_source claude)
+- codex_home_prompt: $(product_home_prompt_path codex) -> $(agent_home_source codex)
 - claude_plugin_registry_activation: $CLAUDE_PLUGIN_REGISTRY_SURFACE
 - codex_plugin_registry_activation: $CODEX_PLUGIN_REGISTRY_SURFACE
 - docs_audit: agent-docs audit --target all --strict --project-path $REPO_HOME_DEFAULT
@@ -660,6 +694,7 @@ main() {
   tap_and_install_nils_cli
   install_cli_tools_profile
   ensure_repo_clone
+  render_home_prompts
   ensure_home_prompts
   run_agent_docs_audit
   run_surface_bootstrap

@@ -4,41 +4,19 @@
 
 - This file defines shared home-scope defaults for the local agent runtime
   layer.
-{% if product == "codex" %}
+
 - It is git-managed in `agent-runtime-kit` and loaded through
   `$CODEX_HOME/AGENTS.md` (normally `$HOME/.codex/AGENTS.md`), which should
   symlink to `build/codex/AGENT_HOME.md`.
-{% elif product == "claude" %}
-- It is git-managed in `agent-runtime-kit` and loaded through
-  `$HOME/.claude/CLAUDE.md`, which should symlink to
-  `build/claude/AGENT_HOME.md`.
-{% else %}
-- It is git-managed in `agent-runtime-kit` and can render product-specific
-  home prompts for:
-  - `$CODEX_HOME/AGENTS.md` (normally `$HOME/.codex/AGENTS.md`)
-  - `$HOME/.claude/CLAUDE.md`
-  Both should symlink to the matching rendered home prompt under
-  `build/<product>/AGENT_HOME.md`.
-{% endif %}
-{% if product == "codex" %}
+
+
 - The filename is intentionally not `AGENTS.md`, so this source repo can also
   keep project-local policy without double-loading the same defaults.
-{% elif product == "claude" %}
-- The filename is intentionally not `CLAUDE.md`, so this source repo can also
-  keep project-local policy without double-loading the same defaults.
-{% else %}
-- The filename is intentionally not `AGENTS.md` or `CLAUDE.md`, so this source
-  repo can also keep project-local policy without double-loading the same
-  defaults.
-{% endif %}
+
 - This must be safe fallback policy for unrelated workspaces. A closer project
-{% if product == "codex" %}
+
   or directory `AGENTS.md` can override or extend it.
-{% elif product == "claude" %}
-  or directory `CLAUDE.md` can override or extend it.
-{% else %}
-  or directory `AGENTS.md` / `CLAUDE.md` can override or extend it.
-{% endif %}
+
 - Keep this file concise. Detailed workflows belong in docs resolved by
   `agent-docs`.
 
@@ -64,19 +42,11 @@
 - Inspect a repo's requirements on demand with `agent-docs preflight --intent
   <intent>` or `agent-docs explain --intent <intent>`; manage a project-local
   catalog with `agent-docs init` / `list` / `remove`.
-{% if product == "codex" %}
+
 - docs-home is derived from the install symlink (`~/.codex/AGENTS.md`); pass
   `--docs-home` only to override it. Do not use the `AGENT_HOME` environment
   variable as docs-home — that is the `agent-out` artifact root.
-{% elif product == "claude" %}
-- docs-home is derived from the install symlink (`~/.claude/CLAUDE.md`); pass
-  `--docs-home` only to override it. Do not use the `AGENT_HOME` environment
-  variable as docs-home — that is the `agent-out` artifact root.
-{% else %}
-- docs-home is derived from the install symlink; pass `--docs-home` only to
-  override it. Do not use the `AGENT_HOME` environment variable as docs-home —
-  that is the `agent-out` artifact root.
-{% endif %}
+
 
 ## Work Mode
 
@@ -106,7 +76,7 @@
   technical terms, standards, APIs, commands, and proper nouns in English when
   clearer.
 
-{% if product == "codex" %}
+
 ## Code Review Delegation
 
 - This policy is Codex-only. Other runtimes should continue using their normal
@@ -122,7 +92,7 @@
 - If subagent dispatch is unavailable or blocked by the active Codex runtime,
   run the same review inline and state that fallback.
 
-{% endif %}
+
 ## Work Tier Levels
 
 - Classify every substantive work request into the lowest applicable tier and

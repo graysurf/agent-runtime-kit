@@ -20,7 +20,7 @@ schema_version: 1
 
 nils_cli:
   # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
-  pinned_tag: "v1.12.0"
+  pinned_tag: "v1.12.1"
 
 # Optional per-binary floors for the downstream-consumed CLIs. nils-cli
 # ships every crate in lock-step, so the exact `pinned_tag` above is the
@@ -37,8 +37,8 @@ required_clis:
     min: "1.11.2"
   - bin: plan-archive     # discover / migrate / refresh / query
     min: "0.25.5"
-  - bin: agent-docs       # data-driven catalog + declared-intent preflight guard
-    min: "0.31.6"
+  - bin: agent-docs       # data-driven catalog + declared-intent preflight guard + product-scoped document/validation filtering (`--product`) with `agent-docs.preflight.v2`
+    min: "1.12.1"
   - bin: evidence         # durable skill-usage evidence archive surface: migrate (--host + blocked-record handling), unclassified-host block (a resolved host absent from hosts.yaml is blocked, not written — the kit's gamania-safety guarantee), working_repo_roots identity rescue, cwd/origin + slug identity hardening, the purge retention command (--host/--class delete-on-termination) with apply safety, skill-path home-relativization so rollup ids / dir names / the skill field never leak the machine home, and prune-source --archived-only source cleanup after archive catalog digest match
     min: "1.12.0"
   - bin: git-cli          # managed worktree add/list/remove/prune surface
@@ -47,3 +47,5 @@ required_clis:
     min: "1.8.0"
   - bin: zsh-kit          # runtime shell setup entrypoint + managed zshenv bootstrap for operator-supplied Zsh repos
     min: "1.0.9"
+  - bin: agent-runtime    # home-prompt render target for per-product AGENT_HOME output (`render --target home-prompt`)
+    min: "1.12.1"

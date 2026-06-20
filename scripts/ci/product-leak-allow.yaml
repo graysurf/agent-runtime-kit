@@ -1,0 +1,61 @@
+# Product leakage audit allowlist.
+#
+# Each entry must carry a reason. `path` uses fnmatch-style globs relative to the
+# repository root. `sentinel` narrows an entry to one foreign-product sentinel;
+# omit it only for files whose purpose is cross-product capability prose.
+allow:
+  - product: codex
+    path: build/codex/plugins/code-review/skills/code-review-*.md
+    sentinel: Claude
+    reason: Code-review skills intentionally explain reviewer behavior across host capability classes.
+  - product: codex
+    path: build/codex/plugins/meta/skills/sync-runtime-surfaces/SKILL.md
+    reason: This skill operates on both runtime homes and reports both plugin registries.
+  - product: codex
+    path: build/codex/plugins/meta/skills/nils-cli-bump/SKILL.md
+    sentinel: Claude
+    reason: The bump skill references refreshing both product surfaces after a host upgrade.
+  - product: codex
+    path: build/codex/plugins/meta/skills/create-project-skill/SKILL.md
+    sentinel: Claude
+    reason: Project-local skill scaffolding documents the Claude bridge and rejected Claude-only modes.
+  - product: codex
+    path: build/codex/plugins/meta/skills/create-project-skill/scripts/create-project-skill.sh
+    sentinel: Claude
+    reason: The helper writes project-local Claude bridge comments when requested.
+  - product: codex
+    path: build/codex/plugins/meta/skills/setup-project/SKILL.md
+    sentinel: Claude
+    reason: Project setup explicitly refuses global runtime-home mutation for either product.
+  - product: codex
+    path: build/codex/plugins/meta/skills/remove-project-skill/SKILL.md
+    sentinel: Claude
+    reason: Project-local removal describes the Claude bridge surface it may inspect.
+  - product: codex
+    path: build/codex/plugins/meta/skills/heuristic-inbox/SKILL.md
+    sentinel: Claude
+    reason: Heuristic-system records are intentionally shared across runtime products.
+
+  - product: claude
+    path: build/claude/plugins/code-review/skills/code-review-*.md
+    sentinel: Codex
+    reason: Code-review skills intentionally explain reviewer behavior across host capability classes.
+  - product: claude
+    path: build/claude/plugins/meta/skills/sync-runtime-surfaces/SKILL.md
+    reason: This skill operates on both runtime homes and reports both plugin registries.
+  - product: claude
+    path: build/claude/plugins/meta/skills/nils-cli-bump/SKILL.md
+    sentinel: Codex
+    reason: The bump skill references refreshing both product surfaces after a host upgrade.
+  - product: claude
+    path: build/claude/plugins/meta/skills/create-project-skill/SKILL.md
+    sentinel: Codex
+    reason: Project-local skill scaffolding documents Codex-style source consumers and Codex-only modes.
+  - product: claude
+    path: build/claude/plugins/meta/skills/setup-project/SKILL.md
+    sentinel: Codex
+    reason: Project setup explicitly refuses global runtime-home mutation for either product.
+  - product: claude
+    path: build/claude/plugins/meta/skills/heuristic-inbox/SKILL.md
+    sentinel: Codex
+    reason: Heuristic-system records are intentionally shared across runtime products.

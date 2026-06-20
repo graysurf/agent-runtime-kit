@@ -33,7 +33,7 @@ Scope rules:
   `min_version_effective_from`: **2026-06-30**; probe: `claude --version`
   (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Claude
-  surface) ships inside nils-cli; pinned snapshot **v1.12.0**
+  surface) ships inside nils-cli; pinned snapshot **v1.12.1**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
   Released subcommands consumed today: `render`, `install`, `uninstall`,
   `doctor`, `audit-drift`, `gc-backups`, `restore-backups`,
@@ -60,15 +60,16 @@ a uniform shape:
 ### 1. Home-scope prompt (`CLAUDE.md`)
 
 - Claude reads from: `$HOME/.claude/CLAUDE.md` on every session start.
-- Source: root `AGENT_HOME.md` (shared with Codex
-  `$CODEX_HOME/AGENTS.md`); see `DEVELOPMENT.md`.
-- Install mechanism: symlink `$HOME/.claude/CLAUDE.md →
-  <source_root>/AGENT_HOME.md`. Filename is deliberately distinct from
-  project-local `CLAUDE.md` so Claude does not load duplicate policy in
+- Source: root `AGENT_HOME.md`, rendered per product to
+  `build/claude/AGENT_HOME.md`; see `DEVELOPMENT.md`.
+- Install mechanism: `agent-runtime render --target home-prompt --product
+  claude` writes the rendered file, and `$HOME/.claude/CLAUDE.md` symlinks to
+  `<source_root>/build/claude/AGENT_HOME.md`. Filename is deliberately distinct
+  from project-local `CLAUDE.md` so Claude does not load duplicate policy in
   this repo.
 - Acceptance lane: covered by the cross-product home-policy cutover
   plans; no dedicated CI gate diffs the link target.
-- Support today: **shipped (linked)**.
+- Support today: **shipped (rendered + linked)**.
 
 ### 2. Project-scope prompt (`./CLAUDE.md`)
 
@@ -279,7 +280,7 @@ a uniform shape:
 
 | # | Surface | runtime-kit ships | Mechanism | Min Claude | Min nils-cli |
 |---|---|---|---|---|---|
-| 1 | `CLAUDE.md` (home) | yes | symlink to `AGENT_HOME.md` | 2.1.145 | n/a |
+| 1 | `CLAUDE.md` (home) | yes | rendered home prompt symlink to `build/claude/AGENT_HOME.md` | 2.1.145 | v1.12.1 |
 | 2 | `./CLAUDE.md` (repo-local) | yes | symlink to `./AGENTS.md` | 2.1.145 | n/a |
 | 3 | `.claude-plugin/plugin.json` | yes | rendered + copy-install | 2.1.145 | v0.17.5 |
 | 4 | `.claude-plugin/marketplace.json` | yes | rendered + copy-install | 2.1.145 | v0.17.5 |

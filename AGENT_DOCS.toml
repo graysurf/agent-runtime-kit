@@ -75,6 +75,15 @@ required = false
 when = "always"
 notes = "Provider-agnostic discipline for dispositioning provider review threads and converging post-merge bot-review fix loops: per-finding triage, the convergence/stopping rule, and concentrate-vs-converge. Home-scoped and optional — referenced by review-cleanup-type skills (deliver-pr, code-review-follow-up, project-local review-cleanup) when a thread sweep is active, not force-injected for every project-dev task."
 
+[[document]]
+context = "project-dev"
+scope = "project"
+path = "core/policies/code-review-delegation-codex.md"
+required = true
+when = "always"
+product = "codex"
+notes = "Codex-only reviewer delegation authorization; rendered into the Codex home prompt and omitted from Claude."
+
 # task-tools intent: external-fact awareness plus optional CLI-tooling catalog.
 # Docs-only (no [[validation]] contract); the UserPromptSubmit cue surfaces
 # required docs alongside project-dev because the hook enumerates every declared
