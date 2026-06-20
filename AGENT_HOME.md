@@ -19,29 +19,29 @@
 
 ## Required Preflight
 
-- `agent-docs` is no longer a manual per-task step. Required-doc and validation
-  policy is data each repository declares in its `AGENT_DOCS.toml` catalog
-  (`[[document]]` + `[[validation]]`); the harness delivers it:
+- Required-doc and validation policy is data each repository declares in its
+  `AGENT_DOCS.toml` catalog (`[[document]]` + `[[validation]]`); the harness
+  delivers it:
   - Always-on home policy is auto-loaded (this file).
-  - Per-intent docs (for example `project-dev`, `task-tools`) are injected by
-    the UserPromptSubmit hook via `agent-docs preflight --intent <intent>`;
-    read them before writing.
+  - The UserPromptSubmit hook injects a start-of-session cue (at most once per
+    session/day) naming the required per-intent docs (for example
+    `project-dev`, `task-tools`, resolved via `agent-docs preflight --intent
+    <intent>`) plus the declared validation commands; read those docs before
+    writing.
   - Repo health — install-symlink wiring, declared-doc presence and validity,
-    and catalog validity — is checked by `agent-docs audit` in CI and the daily
-    SessionStart healthcheck.
+    and catalog validity — is checked by `agent-docs audit` in the daily
+    SessionStart healthcheck; CI separately asserts the declared docs resolve
+    via `agent-docs preflight --intent <intent> --strict`.
 - Before declaring a code-editing task done, run the validation the active
-  intent declares (surfaced in the injected preflight). The finish-line gate
-  blocks a stop when code was edited but the declared validation did not run;
-  state an explicit waiver to release it.
+  intent declares (surfaced in the injected cue). The finish-line gate blocks a
+  stop when code was edited but the declared validation did not run; state an
+  explicit waiver to release it.
 - Inspect a repo's requirements on demand with `agent-docs preflight --intent
   <intent>` or `agent-docs explain --intent <intent>`; manage a project-local
   catalog with `agent-docs init` / `list` / `remove`.
 - docs-home is derived from the install symlink (`~/.claude/CLAUDE.md` /
   `~/.codex/AGENTS.md`); pass `--docs-home` only to override it. Do not use
-  `$HOME/.agents` or `$AGENT_HOME` as docs-home (`$AGENT_HOME` is for
-  `agent-out` runtime artifacts; `$HOME/.agents` is retired).
-- The `resolve` / `baseline` / `scaffold-*` / `add` / `contexts` commands and
-  the `startup` per-task context were retired in the engine redesign.
+  `$AGENT_HOME` as docs-home — that is the `agent-out` artifact root.
 
 ## Work Mode
 
