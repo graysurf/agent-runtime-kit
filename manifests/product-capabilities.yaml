@@ -4,18 +4,21 @@
 #
 # This is settled architecture: the capability matrix changes only when a
 # product itself changes (e.g. Codex publishes a real plugin loader). Skill and
-# plugin entries live in their own manifests. Resolved Decision #10 governs the
-# Codex side.
+# plugin entries live in their own manifests.
 #
-# NOTE (2026-06): that trigger has now fired — Codex shipped a real plugin
-# loader + marketplace (`codex plugin marketplace add`;
-# developers.openai.com/codex/plugins/build). The Codex `loaded_at_runtime` and
-# `marketplace_concept` values below still encode the pre-2026 baseline, because
-# runtime-kit has NOT adopted Codex's plugin surface (it still installs Codex
-# skills via the flat `$CODEX_HOME/skills` root). Flipping them reverses Resolved
-# Decision #10 and pulls in the install/marketplace activation work, so they are
-# intentionally left unchanged here; the capability-model correction + adoption
-# is a separate tracked change.
+# Codex adoption (2026-06, issue #435): Codex shipped a real plugin loader +
+# marketplace (`codex plugin marketplace add`;
+# developers.openai.com/codex/plugins/build), and runtime-kit now ships a Codex
+# marketplace (`targets/codex/.agents/plugins/marketplace.json`, registered via
+# `scripts/sync-runtime-surfaces.sh`). This SUPERSEDES Resolved Decision #10
+# ("Codex `.codex-plugin/plugin.json` is audit-only; Codex does not load it"):
+# the manifest is now a real plugin manifest that Codex's loader reads at
+# runtime. A spike (issue #435) confirmed Codex discovers each plugin's bundled
+# `skills/<skill>/SKILL.md` directly and IGNORES the manifest `skills` field, so
+# that field is retained as source-organisation audit metadata rather than
+# rewritten to a loader pointer. Live activation is gated
+# (CODEX_PLUGIN_ACTIVATION); the flat `$CODEX_HOME/skills` root stays the
+# default discovery path until cut-over, to avoid listing every skill twice.
 schema_version: 1
 
 products:
@@ -29,15 +32,14 @@ products:
     # discovery surface.
     nested_skill_support: true
     plugin_manifest:
-      # runtime-kit does not install Codex skills as a plugin, so this
-      # `.codex-plugin/plugin.json` is not loaded at runtime here — install
-      # exposes runtime-kit skills through `$CODEX_HOME/skills` and keeps this
-      # manifest for audit only. NOTE: Codex itself CAN load
-      # `.codex-plugin/plugin.json` as of 2026; `loaded_at_runtime: false`
-      # reflects runtime-kit's non-adoption, not a product limitation (see the
-      # top-of-file NOTE).
+      # Codex loads `.codex-plugin/plugin.json` at runtime through its plugin
+      # marketplace (`codex plugin add <plugin>@codex-kit`). Codex discovers the
+      # plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the
+      # manifest `skills` field, which runtime-kit keeps as audit metadata.
+      # Live activation is gated (CODEX_PLUGIN_ACTIVATION); the flat skill root
+      # stays the default discovery path until cut-over.
       path_pattern: "$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json"
-      loaded_at_runtime: false
+      loaded_at_runtime: true
       schema_ref: "core/docs/schemas/codex-plugin.schema.json"
     hooks_model:
       config_surface: "$CODEX_HOME/config.toml (agent-runtime-kit managed block)"
@@ -51,9 +53,10 @@ products:
     runtime_state:
       state_home_env: "CODEX_AGENT_STATE_HOME"
       default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex"
-    # NOTE: stale baseline — Codex shipped an upstream plugin marketplace in
-    # 2026. Left false pending the capability-model correction (see top NOTE).
-    marketplace_concept: false
+    # runtime-kit ships a Codex marketplace (`codex-kit`) registered via
+    # `codex plugin marketplace add`. Live activation is gated
+    # (CODEX_PLUGIN_ACTIVATION) — the surface is shipped, not yet the default.
+    marketplace_concept: true
 
   claude:
     nested_skill_support: true
@@ -90,9 +93,10 @@ plugin_manifest_diff:
     - "description"
     - "author"
   codex_only_fields:
-    # Codex `.codex-plugin/plugin.json` is source-organisation only; the
-    # `skills` array is a co-located inventory for audit-drift's
-    # source-manifest class and is NOT loaded by Codex at runtime.
+    # Codex's plugin loader discovers each plugin's bundled
+    # `skills/<skill>/SKILL.md` directly and IGNORES the manifest `skills`
+    # field, so runtime-kit keeps the array as a co-located audit inventory for
+    # audit-drift's source-manifest / plugin-manifest-skills classes.
     - "skills"
   claude_only_fields:
     # `homepage` points at the published plugin repo for Claude's plugin
