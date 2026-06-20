@@ -1659,6 +1659,111 @@ exit 65
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "claude.sh")
 
+    def test_finish_line_invalidates_contract_cache_after_agent_docs_upgrade(
+        self,
+    ) -> None:
+        legacy_agent_docs = """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\n' '      --require-declared-intent'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\n' '{"intents":["project-dev"]}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  if [[ "$args" != *"--require-declared-intent"* ]]; then
+    echo "missing declared-intent guard" >&2
+    exit 64
+  fi
+  printf '%s\n' '{"intent":"project-dev","documents":[],"validation":{"context":"project-dev","declared":true,"commands":["bash unfiltered.sh"],"marker":".cache/agent-validation/project-dev.ok"}}'
+  exit 0
+fi
+exit 65
+"""
+        upgraded_agent_docs = """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\n' '      --require-declared-intent'
+  printf '%s\n' '      --product <PRODUCT>'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\n' '{"intents":["project-dev"]}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  if [[ "$args" != *"--require-declared-intent"* ]]; then
+    echo "missing declared-intent guard" >&2
+    exit 64
+  fi
+  if [[ "$args" == *"--product codex"* ]]; then
+    printf '%s\n' '{"intent":"project-dev","documents":[],"validation":{"context":"project-dev","declared":true,"commands":["bash codex.sh"],"marker":".cache/agent-validation/project-dev.ok"}}'
+    exit 0
+  fi
+  printf '%s\n' '{"intent":"project-dev","documents":[],"validation":{"context":"project-dev","declared":true,"commands":["bash unfiltered.sh"],"marker":".cache/agent-validation/project-dev.ok"}}'
+  exit 0
+fi
+exit 65
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            home = repo / "home"
+            home.mkdir()
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            base_env = {
+                "AGENT_RUNTIME_DOCS_HOME": str(repo),
+                "HOME": str(home),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            # 1. Legacy agent-docs has no `--product` support. With a product
+            #    set, contract resolution falls back to the unfiltered contract
+            #    and caches it.
+            self._write_fake_agent_docs(bin_dir, legacy_agent_docs)
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_PRODUCT": "codex"},
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py",
+                {},
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_PRODUCT": "codex"},
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "unfiltered.sh")
+
+            # 2. Upgrade agent-docs in place to a build that supports
+            #    `--product`, without touching AGENT_DOCS.toml. Bump the binary
+            #    mtime forward so the upgrade is detected regardless of
+            #    filesystem timestamp resolution.
+            self._write_fake_agent_docs(bin_dir, upgraded_agent_docs)
+            script = bin_dir / "agent-docs"
+            future = script.stat().st_mtime + 10
+            os.utime(script, (future, future))
+
+            # 3. The gate must now require the product-filtered command, not the
+            #    stale cached unfiltered contract.
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py",
+                {},
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_PRODUCT": "codex"},
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "codex.sh")
+            assert decision is not None
+            self.assertNotIn("unfiltered.sh", str(decision.get("reason", "")))
+
     def test_finish_line_gate_waiver_and_suppress_release(self) -> None:
         self._require_agent_docs()
         with tempfile.TemporaryDirectory() as tmp:
