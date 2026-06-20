@@ -21,6 +21,11 @@ Prereqs:
 - The requested lens or lenses are explicit before review begins.
 - Keep this workflow read-only: it does not fix code, post PR/MR comments,
   merge, close issues, or write provider state.
+- Dispatch the matching managed `reviewer-<lens>` subagents whenever the active
+  host exposes subagent dispatch. In Codex sessions, if
+  `multi_agent_v1.spawn_agent` or an equivalent dispatch tool is exposed, Codex
+  must dispatch the requested reviewers; inline review is only the fallback when
+  dispatch is unavailable or blocked, and the fallback must be stated.
 
 Inputs:
 
@@ -73,22 +78,31 @@ review-specialists merge --input focused-findings.jsonl --summary-out focused-re
 2. Establish the review target and base ref. For a PR/MR, use the actual
    PR/MR base or merge-base.
 3. Run `review-specialists scope` with the forced lens flags.
-4. Read only the relevant prompt files under
-   `skills/code-review/code-review-specialists/references/specialists/`.
-5. Review the diff, nearby definitions, tests, and supplied validation evidence
+4. Dispatch the matching managed reviewer subagent for each requested lens
+   (`reviewer-testing`, `reviewer-security`, `reviewer-performance`,
+   `reviewer-data-migration`, `reviewer-api-contract`,
+   `reviewer-maintainability`, or `reviewer-red-team`) whenever subagent
+   dispatch is available. In Codex, use `multi_agent_v1.spawn_agent` when it is
+   available.
+5. If dispatch is unavailable or blocked, state the fallback reason, read only
+   the relevant prompt files under
+   `skills/code-review/code-review-specialists/references/specialists/`, and run
+   the same lens inline.
+6. Review the diff, nearby definitions, tests, and supplied validation evidence
    from the requested angle.
-6. Write findings using the specialist review contract when JSONL output is
+7. Write findings using the specialist review contract when JSONL output is
    needed. Otherwise provide a compact human report with the same evidence
    discipline.
-7. Escalate to `code-review-specialists` when multiple lenses become necessary
+8. Escalate to `code-review-specialists` when multiple lenses become necessary
    or to `code-review-pre-merge-gate` when the review is a delivery-blocking
    merge gate.
 
 ## Boundary
 
-`code-review-focused-lens` owns narrow, user-selected review lenses. It does not
-own broad specialist selection, delivery gate policy, provider comments, merge
-decisions, evidence record structure, or code repairs.
+`code-review-focused-lens` owns narrow, user-selected review lenses,
+reviewer-subagent dispatch, and fallback justification. It does not own broad
+specialist selection, delivery gate policy, provider comments, merge decisions,
+evidence record structure, or code repairs.
 
 ## References
 

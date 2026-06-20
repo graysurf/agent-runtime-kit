@@ -156,11 +156,12 @@ PR as obsolete if the issue closeout already superseded the branch contents.
 
 After managed runtime surface changes land, use
 `scripts/sync-runtime-surfaces.sh` for the daily refresh path. It pulls the
-active checkout, renders Codex and Claude targets, installs the rendered
-surfaces into the runtime homes, registers/installs the local `codex-kit` and
-`claude-kit` plugin marketplaces from symlink-free state-home copies when the
-product CLIs are available, and runs the skill-surface doctor probes; it is
-dry-run by default and writes only with `--apply`. Keep
+active checkout, renders and wires the per-product home prompts, renders Codex
+and Claude targets, installs the rendered surfaces into the runtime homes,
+registers/installs the local `codex-kit` and `claude-kit` plugin marketplaces
+from symlink-free state-home copies when the product CLIs are available, and
+runs the skill-surface doctor probes; it is dry-run by default and writes only
+with `--apply`. Keep
 `scripts/setup.sh` for first-time host bootstrap and CLI tool installation; it
 delegates the same plugin registry activation after bootstrap.
 

@@ -20,6 +20,7 @@ NO_PRUNE=0
 SOURCE_ROOT=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_PROMPT_STATUS="not-run"
+HOME_PROMPT_STATUS="not-run"
 CLAUDE_PLUGIN_STATUS="not-run"
 CODEX_PLUGIN_STATUS="not-run"
 PRUNE_SKIPPED_TOTAL=0
@@ -38,9 +39,9 @@ and Claude runtime homes. This is the daily runtime surface refresh entrypoint
 after source changes land. For first-time host setup, run scripts/setup.sh
 first.
 
-By default, this command is a dry-run: it prints the pull, render, install,
-prune, doctor, and optional Codex prompt-input commands without mutating runtime
-homes. Pass --apply to run the commands.
+By default, this command is a dry-run: it prints the pull, home-prompt render /
+rewire, product render, install, prune, doctor, and optional Codex prompt-input
+commands without mutating runtime homes. Pass --apply to run the commands.
 
 Options:
   --apply
@@ -71,6 +72,7 @@ EOF
 # -----------------------------------------------------------------------------
 
 log() { printf '%s\n' "$*"; }
+warn() { printf 'warn: %s\n' "$*" >&2; }
 err() { printf 'error: %s\n' "$*" >&2; }
 
 print_cmd() {
@@ -332,6 +334,72 @@ product_state_home() {
   esac
 }
 
+agent_home_raw_source() {
+  printf '%s\n' "$SOURCE_ROOT/AGENT_HOME.md"
+}
+
+agent_home_source() {
+  case "$1" in
+    claude | codex) printf '%s\n' "$SOURCE_ROOT/build/$1/AGENT_HOME.md" ;;
+    neutral) printf '%s\n' "$SOURCE_ROOT/build/neutral/AGENT_HOME.md" ;;
+    *)
+      err "unknown product: $1"
+      exit 2
+      ;;
+  esac
+}
+
+product_home_prompt_path() {
+  case "$1" in
+    claude) printf '%s\n' "$HOME/.claude/CLAUDE.md" ;;
+    codex) printf '%s\n' "${CODEX_HOME:-$HOME/.codex}/AGENTS.md" ;;
+    *)
+      err "unknown product: $1"
+      exit 2
+      ;;
+  esac
+}
+
+canonical_path() {
+  local path="$1"
+  local dir
+  local base
+  dir="$(dirname "$path")"
+  base="$(basename "$path")"
+  if (
+    cd "$dir" 2>/dev/null &&
+      printf '%s/%s\n' "$(pwd -P)" "$base"
+  ); then
+    return 0
+  fi
+  printf '%s\n' "$path"
+}
+
+resolve_symlink_target() {
+  local link_path="$1"
+  local raw_target
+  local link_dir
+  local target_dir
+  local target_base
+
+  raw_target="$(readlink "$link_path")" || return 1
+  case "$raw_target" in
+    /*)
+      canonical_path "$raw_target"
+      ;;
+    *)
+      link_dir="$(dirname "$link_path")"
+      target_dir="$(dirname "$raw_target")"
+      target_base="$(basename "$raw_target")"
+      (
+        cd "$link_dir" &&
+          cd "$target_dir" 2>/dev/null &&
+          printf '%s/%s\n' "$(pwd -P)" "$target_base"
+      ) || printf '%s/%s\n' "$link_dir" "$raw_target"
+      ;;
+  esac
+}
+
 # -----------------------------------------------------------------------------
 # Refresh steps
 # -----------------------------------------------------------------------------
@@ -355,6 +423,94 @@ check_source_counts() {
   log "checking source skill counts"
   print_cmd bash "$audit_script" --check-counts
   bash "$audit_script" --check-counts
+}
+
+render_home_prompt_base() {
+  log "rendering home prompt product=neutral"
+  if [ "$APPLY" = "1" ]; then
+    HOME_PROMPT_STATUS="rendered"
+  else
+    HOME_PROMPT_STATUS="planned"
+  fi
+  run_cmd agent-runtime render \
+    --source-root "$SOURCE_ROOT" \
+    --target home-prompt
+}
+
+render_home_prompt_product() {
+  local product="$1"
+
+  log "rendering home prompt product=$product"
+  if [ "$APPLY" = "1" ]; then
+    HOME_PROMPT_STATUS="rendered"
+  else
+    HOME_PROMPT_STATUS="planned"
+  fi
+  run_cmd agent-runtime render \
+    --source-root "$SOURCE_ROOT" \
+    --target home-prompt \
+    --product "$product"
+}
+
+ensure_home_prompt() {
+  local product="$1"
+  local target
+  local target_dir
+  local expected
+  local old_expected
+  local existing
+
+  target="$(product_home_prompt_path "$product")"
+  target_dir="$(dirname "$target")"
+  expected="$(canonical_path "$(agent_home_source "$product")")"
+  old_expected="$(canonical_path "$(agent_home_raw_source)")"
+
+  if [ "$APPLY" = "1" ] && [ ! -f "$expected" ]; then
+    err "missing home policy source: $expected"
+    exit 1
+  fi
+
+  if [ -L "$target" ]; then
+    existing="$(resolve_symlink_target "$target")"
+    if [ "$existing" = "$expected" ]; then
+      log "home prompt already wired product=$product target=$target"
+      if [ "$APPLY" = "1" ]; then
+        HOME_PROMPT_STATUS="wired"
+      fi
+      return 0
+    fi
+    if [ "$existing" = "$old_expected" ]; then
+      log "rewiring managed home prompt product=$product target=$target"
+      run_cmd rm "$target"
+      run_cmd ln -s "$expected" "$target"
+      if [ "$APPLY" = "1" ]; then
+        HOME_PROMPT_STATUS="wired"
+      fi
+      return 0
+    fi
+    if [ "$APPLY" = "0" ]; then
+      warn "$target is a symlink to $existing; apply would require $expected"
+      return 0
+    fi
+    err "$target is a symlink to $existing; expected $expected"
+    exit 1
+  fi
+
+  if [ -e "$target" ]; then
+    if [ "$APPLY" = "0" ]; then
+      warn "$target exists and is not a symlink to $expected; apply would refuse to overwrite"
+      return 0
+    fi
+    err "$target exists and is not a symlink to $expected; refusing to overwrite"
+    exit 1
+  fi
+
+  log "wiring home prompt product=$product target=$target"
+  run_cmd mkdir -p "$target_dir"
+  run_cmd ln -s "$expected" "$target"
+  if [ "$APPLY" = "1" ]; then
+    HOME_PROMPT_STATUS="wired"
+  fi
 }
 
 render_product() {
@@ -1394,7 +1550,7 @@ print_summary() {
     doctor_status="skipped"
   fi
 
-  log "summary: synced surfaces for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS; codex plugins=$CODEX_PLUGIN_STATUS; claude plugins=$CLAUDE_PLUGIN_STATUS"
+  log "summary: synced surfaces for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS; codex plugins=$CODEX_PLUGIN_STATUS; claude plugins=$CLAUDE_PLUGIN_STATUS; home-prompt=$HOME_PROMPT_STATUS"
 
   if [ "$prune_status" = "review-needed" ]; then
     log "note: prune-stale could not auto-remove $PRUNE_SKIPPED_TOTAL stale candidate(s) (real files / non-empty managed dirs). Review the paths above and remove any retired managed skill directories by hand. Tracked in core/policies/heuristic-system/error-inbox/sync-runtime-surfaces-prune-stale-dir-gap."
@@ -1421,7 +1577,10 @@ main() {
 
   pull_source
   check_source_counts
+  render_home_prompt_base
   for product in $(selected_products); do
+    render_home_prompt_product "$product"
+    ensure_home_prompt "$product"
     render_product "$product"
     install_product "$product"
     prune_product "$product"

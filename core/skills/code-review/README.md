@@ -8,11 +8,11 @@ risk, or delivery policy requires it.
 
 | Situation | Use | Notes |
 | --- | --- | --- |
-| Small, routine, docs-only, or ordinary diff | `code-review-quick-pass` | Lightweight read-only review. Dispatches `reviewer-quick` by default only on hosts that support subagent dispatch without an explicit per-run request; explicit-only hosts such as Codex review inline by default with no waiver. Escalates when scope or confidence requires a stronger workflow. |
-| Explicit review lens requested, such as testing, security, performance, data migration, API contract, maintainability, or red-team | `code-review-focused-lens` | Runs one or more named lenses without invoking the full specialist bundle. Escalates if the selected lens exposes broader risk. |
-| PR/MR is close to merge and needs the shared delivery gate | `code-review-pre-merge-gate` | Mandatory delivery gate. Forces at least `testing` and `maintainability`, produces a delivery outcome, and leaves provider comments/merge decisions to the owning delivery workflow. |
-| Previous review findings were repaired and need disposition evidence | `code-review-follow-up` | Re-checks prior findings after fixes. It does not start a fresh broad review unless new concrete risk appears. |
-| Broad, risky, security-sensitive, migration-heavy, API-contract-heavy, or otherwise full-bundle review | `code-review-specialists` | Full specialist review bundle. Uses the matching managed `reviewer-<lens>` subagents by default only on hosts that support subagent dispatch without an explicit per-run request; explicit-only hosts review lenses inline unless the user opts into subagents. Avoid for tiny diffs, ordinary implementation work, pure formatting, docs-only changes, or CI repair loops unless explicitly requested. |
+| Small, routine, docs-only, or ordinary diff | `code-review-quick-pass` | Lightweight read-only review. Dispatches `reviewer-quick` whenever the active host exposes subagent dispatch; Codex must use `multi_agent_v1.spawn_agent` when available. Escalates when scope or confidence requires a stronger workflow. |
+| Explicit review lens requested, such as testing, security, performance, data migration, API contract, maintainability, or red-team | `code-review-focused-lens` | Runs one or more named lenses without invoking the full specialist bundle. Dispatches the matching `reviewer-<lens>` subagents when dispatch is available. Escalates if the selected lens exposes broader risk. |
+| PR/MR is close to merge and needs the shared delivery gate | `code-review-pre-merge-gate` | Mandatory delivery gate. Forces at least `testing` and `maintainability`, dispatches the matching reviewers when dispatch is available, produces a delivery outcome, and leaves provider comments/merge decisions to the owning delivery workflow. |
+| Previous review findings were repaired and need disposition evidence | `code-review-follow-up` | Re-checks prior findings after fixes. Reruns affected reviewers through subagents when dispatch is available. It does not start a fresh broad review unless new concrete risk appears. |
+| Broad, risky, security-sensitive, migration-heavy, API-contract-heavy, or otherwise full-bundle review | `code-review-specialists` | Full specialist review bundle. Uses the matching managed `reviewer-<lens>` subagents whenever the active host exposes subagent dispatch; Codex must use `multi_agent_v1.spawn_agent` when available. Avoid for tiny diffs, ordinary implementation work, pure formatting, docs-only changes, or CI repair loops unless explicitly requested. |
 
 ## Reviewer Subagents
 
@@ -29,11 +29,11 @@ managed reviewers render from `core/agents/code-review/` into each product home
   specialist review contract.
 
 The parent agent always owns base-ref selection, lens / scope selection,
-dispatch when used, inline lens execution when required by the host, validation
-and merge of returned findings, synthesis, and every provider / merge action; a
-subagent owns only its read-only inspection lens. On explicit-only hosts such as
-Codex, inline review is the default path and needs no waiver. Record a waiver
-only when an intended dispatch genuinely fails.
+dispatch, fallback justification, validation and merge of returned findings,
+synthesis, and every provider / merge action; a subagent owns only its read-only
+inspection lens. Inline review is only the fallback when the active host lacks
+subagent dispatch or a dispatch attempt is blocked; state that fallback
+explicitly.
 
 ## Current Callers
 
