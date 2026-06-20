@@ -88,14 +88,34 @@ plan-issue --format json tracking checkpoint \
   --live \
   --post review --repair-dashboard
 
-forge-cli pr review "$PR_NUMBER" \
-  --repo "$OWNER_REPO" \
-  --decision "$DECISION" \
-  --comment-file "$REVIEW_COMMENT_FILE" \
-  --lens "$REVIEW_LENS" \
-  --issue "$ISSUE" \
-  --mirror-issue \
-  --format json
+case "$REVIEW_LENS" in
+  red-team) REVIEW_BOT_PROFILE=review-red-team ;;
+  testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
+  maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
+  performance) REVIEW_BOT_PROFILE=review-performance ;;
+  *) unset REVIEW_BOT_PROFILE ;;
+esac
+
+if [ -n "${REVIEW_BOT_PROFILE:-}" ]; then
+  FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" \
+    forge-cli pr review "$PR_NUMBER" \
+      --repo "$OWNER_REPO" \
+      --decision "$DECISION" \
+      --comment-file "$REVIEW_COMMENT_FILE" \
+      --lens "$REVIEW_LENS" \
+      --issue "$ISSUE" \
+      --mirror-issue \
+      --format json
+else
+  forge-cli pr review "$PR_NUMBER" \
+    --repo "$OWNER_REPO" \
+    --decision "$DECISION" \
+    --comment-file "$REVIEW_COMMENT_FILE" \
+    --lens "$REVIEW_LENS" \
+    --issue "$ISSUE" \
+    --mirror-issue \
+    --format json
+fi
 ```
 
 ## Workflow
@@ -115,7 +135,11 @@ forge-cli pr review "$PR_NUMBER" \
    implementation, also post `state,session` for the lane scope.
 5. **Provider review outcome** — `forge-cli pr review` records the
    decision as provider-visible outcome metadata and mirrors the review URL to
-   the shared issue.
+   the shared issue. When the lane review represents one known lens, set the
+   matching `FORGE_BOT_PROFILE` so the GitHub App author identifies the
+   reviewer family: `review-red-team`, `review-testing-bot`,
+   `review-maintainability`, or `review-performance`. Leave it unset for a
+   combined or unknown-lens owner summary so the default `dobi-bot` posts it.
 6. **Read-back** — confirm the dispatch dashboard reflects the lane
    review status and the lane PR carries the review comment.
 7. **Stop** on any Failure mode code; do not implement fixes unless
