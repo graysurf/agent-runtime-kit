@@ -44,6 +44,7 @@ plugins:
       - meta.plan-archive-query
       - meta.plan-archive-discover
       - meta.evidence-migrate
+      - meta.evidence-prune-source
       - meta.nils-cli-bump
       - meta.worktree-triage
     product_manifests:

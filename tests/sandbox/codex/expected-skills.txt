@@ -39,6 +39,7 @@ meta.create-project-skill
 meta.create-skill
 meta.deploy
 meta.evidence-migrate
+meta.evidence-prune-source
 meta.heuristic-inbox
 meta.heuristic-session-closeout
 meta.nils-cli-bump

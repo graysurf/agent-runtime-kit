@@ -52,8 +52,9 @@ Outputs:
   regenerated `catalog.json`, and one archive commit. The CLI commits
   AND pushes the archive repository as part of its transaction. The
   agent-out source tree is left intact — migration is copy-only and
-  idempotent (re-runs dedup by digest), so there is no source-deletion
-  step and no working-repo push to perform.
+  idempotent (re-runs dedup by digest). Source deletion is a separate
+  `evidence-prune-source` cleanup step, never part of migration; there is no
+  working-repo push to perform.
 
 Failure modes:
 
@@ -120,7 +121,8 @@ evidence migrate --repo graysurf__agent-runtime-kit --host github.com --apply --
    archive commit, the number archived vs. skipped, the still-`blocked`
    records, and the scrub-log paths. Remind the user that the CLI has
    already pushed the archive and that the agent-out source is left in
-   place (copy-only; no working-repo push is needed).
+   place by migration (copy-only; no working-repo push is needed). Use
+   `evidence-prune-source` only after archive retention is confirmed.
 6. On any failure, surface the error code and message; do not retry a
    step that may have partially written. The archive push is the final
    transaction step, so a mid-apply failure leaves the archive
@@ -136,16 +138,22 @@ body owns manual migration: presenting the dry-run for review, gating the
 apply on explicit user confirmation, reviewing the scrub summary, and deciding
 when to vouch for a host with `--host`. It does not duplicate
 CLI logic, call `git` directly, or delete anything from the source tree.
+Source cleanup is delegated to the `evidence-prune-source` skill and
+`evidence prune-source --archived-only`.
 
 ## Related Skills
 
 - `heuristic-session-closeout` — enumerates the session's skill-usage
   records and flags non-pass outcomes for promotion, then **drives this
   skill's CLI as its retention step**: it runs the `evidence migrate`
-  dry-run and auto-applies a clean result (surfacing a risky one instead).
-  So at session end retention is usually hands-off; invoke this skill
+  dry-run and auto-applies a clean result (surfacing a risky one instead),
+  then runs `evidence-prune-source` to clean already-archived local source
+  records. So at session end retention is usually hands-off; invoke this skill
   directly only for out-of-closeout drains or to re-review a dry-run the
   closeout surfaced rather than applied.
+- `evidence-prune-source` — the source-cleanup counterpart to this copy-only
+  migration. It deletes local agent-out run directories only when their raw
+  record digest already exists in the archive catalog.
 - The read-only archive surfaces — `evidence discover` (scan archivable
   candidates), `evidence query` / `evidence search` / `evidence catalog`
   (read past archived rollups) — are documented in the

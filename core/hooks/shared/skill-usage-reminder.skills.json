@@ -294,5 +294,13 @@
     "aliases": ["evidence-migrate", "evidence migrate", "migrate evidence", "archive skill-usage evidence"],
     "reason": "Migrating evidence copies skill-usage records into the durable agent-evidence-archive and commits + pushes them — a durable retention step (copy-only, so the source is left intact).",
     "record_when": "The workflow runs evidence migrate --apply or commits archived skill-usage evidence."
+  },
+  {
+    "skill": "evidence-prune-source",
+    "tier": "exact-only",
+    "match_mode": "action_or_explicit",
+    "aliases": ["evidence-prune-source", "evidence prune-source", "prune evidence source", "clean archived skill-usage evidence"],
+    "reason": "Pruning evidence source deletes local agent-out run directories after the archive catalog already contains their raw record digest.",
+    "record_when": "The workflow runs evidence prune-source --apply or deletes archived local skill-usage source records."
   }
 ]

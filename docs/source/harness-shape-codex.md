@@ -37,7 +37,7 @@ Scope rules:
   `min_version_effective_from`: **2026-06-28**; probe:
   `codex --version` (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Codex
-  surface) ships inside nils-cli; pinned snapshot **v1.11.2**
+  surface) ships inside nils-cli; pinned snapshot **v1.12.0**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
   Released subcommands consumed today: `render`, `install`, `uninstall`,
   `doctor` (including `--class skill-surface --product codex`),
@@ -265,7 +265,7 @@ a uniform shape:
   `$HOME/.codex/skills` as the runtime-kit skill root
   (`manifests/product-capabilities.yaml`).
 - Source: `core/skills/<domain>/<skill>/`, rendered to
-  `build/codex/plugins/<domain>/skills/<skill>/`; 64 Codex skill
+  `build/codex/plugins/<domain>/skills/<skill>/`; 65 Codex skill
   entries are declared in `manifests/skills.yaml` (count auto-maintained
   by `scripts/ci/skill-governance-audit.sh --update-counts`).
 - Install mechanism: one non-recursive directory symlink per active
@@ -277,7 +277,7 @@ a uniform shape:
   `tests/sandbox/codex/expected-skills.txt`; runtime-smoke deterministic
   mode exercises representative skills; live Codex Desktop acceptance
   requires `codex debug prompt-input` (`DEVELOPMENT.md`,
-  `tests/sandbox/codex/expected-skills.txt:1-64`,
+  `tests/sandbox/codex/expected-skills.txt:1-65`,
   `docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`).
 - Support today: **shipped (rendered + directory symlink)**.
 

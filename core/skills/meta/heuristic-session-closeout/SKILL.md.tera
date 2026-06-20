@@ -1,10 +1,8 @@
 ---
 name: heuristic-session-closeout
 description:
-  Close out a session after its goal is met — surface skill-usage records,
-  write warranted retained records and land them on `main` via
-  `heuristic-inbox deliver`, then drive durable evidence retention into the
-  agent-evidence-archive.
+  Close out a completed session: review skill-usage records, deliver warranted
+  heuristic records, then archive and prune retained evidence.
 ---
 
 # Heuristic Session Closeout
@@ -22,8 +20,9 @@ Prereqs:
   and `forge-cli` are available on `PATH`. `deliver` drives `git`,
   `semantic-commit`, and `forge-cli pr create` internally; the skill only adds
   the auto-merge step.
-- When an evidence archive is configured (step 8), `evidence` (nils-cli >= v1.8.0)
-  is also required on `PATH`; it owns the `evidence migrate` retention mechanics.
+- When an evidence archive is configured (step 8), `evidence` (nils-cli >= v1.12.0)
+  is also required on `PATH`; it owns the `evidence migrate` retention mechanics
+  and `evidence prune-source --archived-only` source cleanup.
   This dependency is declared in `manifests/skills.yaml` `required_clis`, so
   version-alignment can require the floor rather than failing only at step 8.
 - The shared Heuristic System root can be resolved from
@@ -52,7 +51,8 @@ Outputs:
   `origin/main` (never a commit on the current feature branch and never a direct
   push to `main`), followed by the auto-merge that lands the records on `main`.
 - A concise final summary naming what was retained, skipped, the records branch,
-  and the merged PR, or the exact blocker.
+  the merged PR, the evidence archive result, and the source-pruning result, or
+  the exact blocker.
 
 Failure modes:
 
@@ -160,8 +160,9 @@ retention result.
      records here. Surfacing routes non-pass outcomes toward curated promotion
      in step 4; durable retention of the raw records themselves is a separate
      lane this skill *triggers* (does not re-implement) in step 8, via the
-     `evidence-migrate` skill / `evidence migrate` CLI (the `evidence-archive`
-     policy owns the mechanics).
+     `evidence-migrate` skill / `evidence migrate` CLI and the
+     `evidence-prune-source` skill / `evidence prune-source` CLI (the
+     `evidence-archive` policy owns the mechanics).
    - Review the conversation's concrete outcomes, repairs, failures, retries,
      validation results, and current diff.
    - Inspect existing active and archived Heuristic System cases before adding
@@ -276,16 +277,20 @@ retention result.
      NOT skip the rest of closeout. Still run the independent evidence-retention
      lane (step 8, a different repository) before the final response, then report
      the blocker alongside the retention result.
-8. Retain raw `skill-usage` evidence to the archive (the durability lane):
+8. Retain raw `skill-usage` evidence to the archive, then prune archived local
+   source records (the durability lane):
    - Run this even when step 7 blocked: it commits to a different repository and
      does not depend on the curated-records PR landing, so a stuck `deliver` /
      auto-merge must not skip retention.
    - Distinct from the curated-case lanes above. This durably stores the raw
      `skill-usage` rollups for future query through the `evidence-migrate`
-     skill / `evidence migrate` CLI; the `evidence-archive` policy owns the
-     mechanics (scrub, host classification, dedup, commit, push) — this skill
-     only triggers them. It is whole-tree, not session-scoped: it drains every
-     not-yet-archived record, not only this session's.
+     skill / `evidence migrate` CLI, then prunes local source records that are
+     already present in the archive catalog through `evidence-prune-source` /
+     `evidence prune-source --archived-only`. The `evidence-archive` policy owns
+     the mechanics (scrub, host classification, dedup, archive commit/push, and
+     source-digest cleanup) — this skill only triggers them. It is whole-tree,
+     not session-scoped: it drains and cleans every eligible record, not only
+     this session's.
    - Skip entirely when no archive is configured (no `$AGENT_EVIDENCE_ARCHIVE_HOME`,
      no machine-local `agent-evidence-archive/config.yaml`, no resolvable clone).
      Produce stays a local breadcrumb; retention is simply inactive on that host.
@@ -301,12 +306,26 @@ retention result.
    - This commits and pushes the archive repository directly (the CLI owns that);
      it is independent of the curated-records `heuristic-inbox deliver` above and
      touches a different repository, so neither blocks the other.
+   - After migration is clean/applied or the migrate dry-run reports nothing
+     pending, run the source-cleanup dry-run:
+     `evidence prune-source --archived-only --format json`. Review `scanned`,
+     `prunable`, `kept`, and the `pruned[]` / `retained[]` reasons.
+   - Apply pruning automatically only when the prune-source dry-run is clean:
+     the command succeeded, every `pruned[]` row is expected, and no surprising
+     source path is present. Then run
+     `evidence prune-source --archived-only --apply --format json` and report
+     `deleted` / `kept`.
+   - Do NOT auto-apply pruning — surface the dry-run and hand the decision to the
+     user — when there is any surprising path, an unexpected retained reason, a
+     dry-run error, or uncertainty about the source tree. Never delete source
+     directories manually; always keep the `--archived-only` scope.
 9. Final response:
    - Name every case created, updated, promoted, archived, or skipped.
    - Include verification commands and the records branch / merged PR when
      completed.
-   - Report the evidence retention result from step 8: the archive commit when
-     migration applied, "surfaced for review" when it was withheld, or "no
+   - Report the evidence retention and pruning result from step 8: the archive
+     commit when migration applied, the source records deleted when pruning
+     applied, "surfaced for review" when either dry-run was withheld, or "no
      archive configured" / "nothing pending" when it was a no-op.
    - If no durable record was warranted, say that explicitly and summarize the
      no-op rationale.
@@ -317,12 +336,14 @@ This skill owns session-level Heuristic System closeout judgment, curated
 retention routing, and the merge policy for landing retained records on `main`
 (auto-merge the `heuristic-inbox deliver` docs PR). It also *triggers* the
 durable evidence-retention lane (step 8) — dry-run `evidence migrate`, apply
-when clean, surface when risky — but delegates the migration mechanics (scrub,
-host classification, dedup, archive commit/push) to the `evidence-migrate` skill
-and `evidence migrate` CLI and does not re-encode them. It delegates the
-curated-record delivery mechanics — worktree, staging guard, commit, push,
-PR-open — to `heuristic-inbox deliver`, and does not re-encode them. It does not
-replace `heuristic-inbox` case mechanics, `skill-usage` runtime evidence, the
-`evidence migrate` implementation itself, project implementation workflows,
-general PR/MR delivery, raw
-session-log archiving, or memory updates.
+when clean, dry-run `evidence prune-source --archived-only`, prune when clean,
+surface when risky — but delegates the migration mechanics (scrub, host
+classification, dedup, archive commit/push) to the `evidence-migrate` skill and
+`evidence migrate` CLI, and delegates source cleanup to the
+`evidence-prune-source` skill and `evidence prune-source` CLI. It does not
+re-encode them. It delegates the curated-record delivery mechanics — worktree,
+staging guard, commit, push, PR-open — to `heuristic-inbox deliver`, and does not
+re-encode them. It does not replace `heuristic-inbox` case mechanics,
+`skill-usage` runtime evidence, the `evidence migrate` or
+`evidence prune-source` implementations themselves, project implementation
+workflows, general PR/MR delivery, raw session-log archiving, or memory updates.

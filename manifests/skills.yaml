@@ -166,7 +166,7 @@ skills:
     required_clis:
       heuristic-inbox: ">=1.8.0"
       semantic-commit: ">=0.16.0"
-      evidence: ">=1.8.0"
+      evidence: ">=1.12.0"
     state_out_mode: runtime
 
   - id: meta.create-skill
@@ -348,6 +348,20 @@ skills:
     required_clis:
       evidence: ">=1.8.0"
       semantic-commit: ">=0.25.0"
+    state_out_mode: runtime
+
+  - id: meta.evidence-prune-source
+    domain: meta
+    source: core/skills/meta/evidence-prune-source
+    products:
+      codex:
+        name: evidence-prune-source
+        render_to: plugins/meta/skills/evidence-prune-source/SKILL.md
+      claude:
+        name: evidence-prune-source
+        render_to: plugins/meta/skills/evidence-prune-source/SKILL.md
+    required_clis:
+      evidence: ">=1.12.0"
     state_out_mode: runtime
 
   - id: meta.nils-cli-bump

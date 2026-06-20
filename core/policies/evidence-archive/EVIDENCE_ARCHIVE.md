@@ -9,7 +9,7 @@ the machine-emitted `skill-usage` records those lessons are drawn from.
 
 ## Lifecycle
 
-Evidence moves through five stages. Each stage is owned by one surface; this
+Evidence moves through six stages. Each stage is owned by one surface; this
 policy is the map, not a re-implementation of any of them.
 
 1. **Produce** — skills emit `skill-usage.record.v1` envelopes into the
@@ -40,7 +40,14 @@ policy is the map, not a re-implementation of any of them.
 4. **Store** — the archive repository holds the rollups, their `metadata.yaml`,
    scrubbed linked evidence, scrub logs, and a derived `catalog.json` (see
    Layout).
-5. **Query** — `evidence discover` / `query` / `search` / `catalog` read the
+5. **Prune source** — `evidence prune-source --archived-only` (the
+   `evidence-prune-source` skill) removes local agent-out source run directories
+   only after their raw `skill-usage.record.json` digest already exists in the
+   archive `catalog.json`. Dry-run is the default; direct use requires explicit
+   confirmation before `--apply`. `heuristic-session-closeout` drives this after
+   migration and auto-applies only when the dry-run is clean and every prunable
+   source path is expected. The archive remains read-only for this command.
+6. **Query** — `evidence discover` / `query` / `search` / `catalog` read the
    archive. These are read-only and are driven directly from the CLI.
 
 ## Archive repository
@@ -112,14 +119,20 @@ scrub log alongside each record so a reviewer can see what was redacted. The
 never disabled. A working directory outside `$HOME` is itself redacted to
 `[REDACTED]` rather than archived as an absolute path.
 
-## Idempotency and copy-only semantics
+## Idempotency, copy-only migration, and source cleanup
 
 Migration is **copy-only**: the agent-out source tree is left intact (migrate
-never deletes from it; the source is cleaned manually via `agent-out`). Records
-dedup by content digest,
-so re-running migrate is safe — already-archived records are reported in
-`already_archived` and skipped. There is no source-deletion step and no
-working-repo push to perform; the CLI commits and pushes only the archive.
+never deletes from it). Records dedup by content digest, so re-running migrate is
+safe — already-archived records are reported in `already_archived` and skipped.
+There is no source-deletion step in migration and no working-repo push to
+perform; the CLI commits and pushes only the archive.
+
+Source cleanup is deliberately separate. `evidence prune-source --archived-only`
+reads the archive catalog's `source_digest` values, computes each local source
+record digest, and prunes only matching local run directories. Unarchived,
+unreadable, or non-record directories are retained and reported. This keeps the
+durability boundary unambiguous: migration proves archive retention first;
+pruning later bounds local runtime state without deleting archive evidence.
 
 ## Promotion linkage
 
@@ -138,15 +151,18 @@ motivated it, and vice versa.
 ## When to migrate
 
 The default trigger is `heuristic-session-closeout` step 8: after a session's
-goal is achieved, the closeout drives a dry-run and auto-applies it when clean
-(see the Migrate stage above). So under normal operation migration is hands-off
-and the archive tracks the runtime tree session by session.
+goal is achieved, the closeout drives a migration dry-run and auto-applies it
+when clean, then runs a prune-source dry-run and auto-applies source cleanup only
+when that dry-run is clean (see the Migrate and Prune source stages above). So
+under normal operation retention and already-archived source cleanup are
+hands-off, and the archive tracks the runtime tree session by session without
+leaving archived source records to accumulate forever.
 
-Run `evidence migrate` **manually** only outside that flow — to drain the tree
-between closeouts, to re-review after the closeout surfaced (rather than applied)
-a risky dry-run, or on a host where closeout has not run. The tree is not
-auto-reaped — records persist until manually cleaned — so migration timing is
-not load-bearing: nothing is lost by migrating later, and draining mainly keeps
-the tree bounded. Migration is not a per-task step. Whether driven by closeout
-or run by hand, always review the dry-run — counts, prepared targets, scrub
-summary, and the `blocked` list — before `--apply`.
+Run `evidence migrate` or `evidence prune-source` **manually** only outside that
+flow — to drain or clean the tree between closeouts, to re-review after the
+closeout surfaced (rather than applied) a risky dry-run, or on a host where
+closeout has not run. The tree is not auto-reaped until prune-source applies, so
+timing is not load-bearing: nothing is lost by migrating or pruning later, and
+draining/cleaning mainly keeps the tree bounded. Migration and pruning are not
+per-task steps. Whether driven by closeout or run by hand, always review the
+dry-run before `--apply`; for pruning, always keep `--archived-only`.

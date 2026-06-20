@@ -17,7 +17,7 @@ human routing index for choosing the right meta skill without scanning every
 | Repo operation dispatchers | 5 | Running repo-owned bootstrap, deploy, pre-PR, release, or adoption workflows |
 | Skill lifecycle | 4 | Creating or removing managed runtime-kit skills or consuming-repo project skills |
 | Plan archive | 3 | Querying, discovering, or migrating completed plan bundles |
-| Evidence archive | 1 | Migrating durable, scrubbed skill-usage evidence into the agent-evidence-archive |
+| Evidence archive | 2 | Migrating durable, scrubbed skill-usage evidence into the agent-evidence-archive and pruning archived source records |
 | Heuristic system | 2 | Recording unresolved workflow gaps or session closeout lessons |
 | Delivery and repo maintenance | 4 | Committing, worktree triage, CLI pin bumps, or local retrospectives |
 
@@ -62,6 +62,7 @@ human routing index for choosing the right meta skill without scanning every
 | Skill | Purpose |
 | --- | --- |
 | [evidence-migrate](./evidence-migrate/) | Migrates skill-usage evidence out of the ephemeral agent-out tree into the agent-evidence-archive, dry-run first and apply only on explicit confirmation; the read surfaces (`evidence discover` / `query` / `search` / `catalog`) are driven directly per the evidence-archive policy. |
+| [evidence-prune-source](./evidence-prune-source/) | Prunes local agent-out skill-usage source run directories only after their raw record digest is already present in the archive catalog; dry-run first, direct apply only on explicit confirmation. |
 
 ## Heuristic System
 
