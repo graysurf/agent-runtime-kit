@@ -1,16 +1,18 @@
 # Delivery Review Outcome Comment
 
-Use this shared comment contract after the delivery specialist review gate has
+Use this shared outcome contract after the delivery specialist review gate has
 enough information to decide whether delivery can merge, must stop, or can
 continue with an accepted residual risk. The owning delivery workflow posts the
-comment; `code-review-specialists` stays read-only.
+outcome through `forge-cli pr review`; `code-review-specialists` stays
+read-only.
 
 Disposition vocabulary and reason/evidence rules are canonical in
 `references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`.
 
 ## Ownership
 
-- `deliver-pr` posts the outcome on the PR/MR before merging.
+- `deliver-pr` posts the outcome on the PR/MR before merging through
+  `forge-cli pr review`.
 - `deliver-plan-tracking-issue` records the PR/MR outcome comment URL in
   issue-hosted session or validation evidence instead of duplicating the full
   report.
@@ -25,28 +27,30 @@ Disposition vocabulary and reason/evidence rules are canonical in
   provider auth and permissions allow it.
 - Do not post every intermediate specialist finding or repair iteration unless
   the user explicitly asks for verbose audit comments.
-- If comment posting fails, stop before merge and report the provider command,
+- If outcome posting fails, stop before merge and report the provider command,
   exit status, and retry action. A delivery that requires this contract is not
-  complete without the outcome comment.
+  complete without the outcome.
 
-## Provider Commands
+## Provider Command
 
-GitHub:
-
-```bash
-forge-cli --provider github pr comment "$PR_NUMBER" --body-file comment.md
-```
-
-GitLab:
+Use the provider-aware primitive for GitHub and GitLab:
 
 ```bash
-forge-cli --provider gitlab pr comment "$MR_NUMBER" --body-file comment.md
+forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+  --decision "$REVIEW_DECISION" \
+  --comment-file comment.md \
+  --lens testing \
+  --lens maintainability
 ```
 
-Use provider repository flags when local remotes are ambiguous. Prefer creating
-an append-only outcome comment; edit or replace an existing comment only when
-the workflow has explicitly identified the previous
-`agent-kit:delivery-review-outcome:v1` comment from the same delivery attempt.
+Set `REVIEW_DECISION=approve` for `proceed-to-merge` or
+`proceed-with-accepted-residual`, `request-changes` for `blocked`, and
+`comments-only` for non-decisional review notes. Add `--issue "$ISSUE"
+--mirror-issue` when an owning tracking or dispatch issue should show a compact
+activity breadcrumb with the PR/MR review URL. Use provider repository flags
+when local remotes are ambiguous. The decision is outcome metadata for the
+comment; this primitive does not mutate native provider approval or
+request-changes state.
 
 ## Required Comment Shape
 

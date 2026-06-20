@@ -983,9 +983,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: render review evidence and shared dispatch issue body
-    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr comment dry-run plus dispatch review comment render
+    invocation: review-specialists scope plus review-evidence verify plus forge-cli pr review dry-run with issue mirror plus dispatch review comment render
     expected_exit_code: 0
-    expected_artifacts: specialist scope JSON, PR comment plan, and dispatch review comment render
+    expected_artifacts: specialist scope JSON, PR review outcome plan, and dispatch review comment render
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none

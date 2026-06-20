@@ -1027,8 +1027,8 @@ run_deliver_tracking_issue_probe() {
 
 run_dispatch_pr_review_probe() {
   local verify_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-verify.json"
-  local comment_body="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-comment.md"
-  local comment_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-comment.json"
+  local review_body="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-review.md"
+  local provider_review_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-provider-review.json"
   local review_md="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr.md"
   local review_payload="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-payload.json"
   local review_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-record-comment.json"
@@ -1042,11 +1042,16 @@ run_dispatch_pr_review_probe() {
     "feat/review-dispatch-lane-pr-specialist" \
     "$specialist_out"
   write_review_evidence "$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-evidence" "$verify_out"
-  printf 'Runtime smoke review evidence.\n' >"$comment_body"
+  printf 'Runtime smoke review evidence.\n' >"$review_body"
   forge-cli --provider github --repo graysurf/agent-runtime-kit \
     --dry-run --format json \
-    pr comment 123 \
-    --body-file "$comment_body" >"$comment_out" 2>&1
+    pr review 123 \
+    --decision approve \
+    --comment-file "$review_body" \
+    --lens testing \
+    --lens maintainability \
+    --issue 2 \
+    --mirror-issue >"$provider_review_out" 2>&1
   write_record_content "$review_md" dispatch
   write_review_payload "$review_payload"
   plan-issue record post \
@@ -1060,7 +1065,9 @@ run_dispatch_pr_review_probe() {
 
   grep -q '"schema_version": "cli.review-evidence.verify.v1"' "$verify_out"
   grep -q '"suggested_specialists"' "$specialist_out"
-  grep -q '"schema_version":"cli.forge-cli.pr.comment.v1"' "$comment_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$provider_review_out"
+  grep -q '"decision":"approve"' "$provider_review_out"
+  grep -q '"mirror_issue":true' "$provider_review_out"
   grep -q 'plan-issue.record.post.v2' "$review_out"
   grep -q 'Decision: approve' "$review_out"
   grep -q 'testing, maintainability' "$review_out"
@@ -1127,7 +1134,7 @@ record_case "dispatch.plan-tracking-closeout-gate-ledger-pending" "tracking clos
 record_case "dispatch.plan-tracking-closeout-gate-ledger-clean" "tracking close-ready returns ready=true with no ledger blocker when every ledger row is done with non-empty evidence" run_tracking_closeout_gate_ledger_clean_probe
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe
 record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe
-record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR comment, and dispatch review post probes passed" run_dispatch_pr_review_probe
+record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR review outcome, and dispatch review post probes passed" run_dispatch_pr_review_probe
 record_case "dispatch.execute-dispatch-lane" "execute dispatch lane PR create and dispatch session post probes passed" run_dispatch_subagent_pr_probe
 
 exit "$failures"
