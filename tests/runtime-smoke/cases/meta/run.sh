@@ -896,6 +896,51 @@ SH
   test -f "$materialized_home/.claude-plugin/marketplace.json"
 }
 
+run_sync_runtime_surfaces_codex_marketplace_shape_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.codex-marketplace-shape.txt"
+  local marketplace="$REPO_ROOT/targets/codex/.agents/plugins/marketplace.json"
+
+  python3 - "$marketplace" >"$out" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+plugins = data.get("plugins")
+if not isinstance(plugins, list) or not plugins:
+    raise SystemExit(f"Codex marketplace manifest plugins must be a non-empty list: {path}")
+
+for entry in plugins:
+    if not isinstance(entry, dict):
+        raise SystemExit(f"Codex marketplace plugin entry must be an object: {path}")
+    name = entry.get("name")
+    if not isinstance(name, str) or not name:
+        raise SystemExit(f"Codex marketplace plugin entry missing non-empty name: {path}")
+
+    source = entry.get("source")
+    if not isinstance(source, dict):
+        raise SystemExit(f"Codex marketplace plugin {name} source must be an object")
+    if source.get("source") != "local":
+        raise SystemExit(f"Codex marketplace plugin {name} source.source must be local")
+    if source.get("path") != f"./plugins/{name}":
+        raise SystemExit(f"Codex marketplace plugin {name} source.path must be ./plugins/{name}")
+
+    policy = entry.get("policy")
+    if not isinstance(policy, dict):
+        raise SystemExit(f"Codex marketplace plugin {name} policy must be an object")
+    if policy.get("installation") != "AVAILABLE":
+        raise SystemExit(f"Codex marketplace plugin {name} policy.installation must be AVAILABLE")
+    if policy.get("authentication") != "ON_INSTALL":
+        raise SystemExit(f"Codex marketplace plugin {name} policy.authentication must be ON_INSTALL")
+    if not isinstance(entry.get("category"), str) or not entry["category"]:
+        raise SystemExit(f"Codex marketplace plugin {name} category must be a non-empty string")
+
+print(f"validated {len(plugins)} Codex marketplace plugin entries")
+PY
+}
+
 run_sync_runtime_surfaces_codex_plugin_registry_probe() {
   local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.codex-plugin-registry.txt"
   local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
@@ -917,8 +962,20 @@ run_sync_runtime_surfaces_codex_plugin_registry_probe() {
 {
   "name": "codex-kit",
   "plugins": [
-    { "name": "meta", "version": "0.1.0", "source": "./plugins/meta" },
-    { "name": "evidence", "version": "0.1.0", "source": "./plugins/evidence" }
+    {
+      "name": "meta",
+      "version": "0.1.0",
+      "source": { "source": "local", "path": "./plugins/meta" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    },
+    {
+      "name": "evidence",
+      "version": "0.1.0",
+      "source": { "source": "local", "path": "./plugins/evidence" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
   ]
 }
 JSON
@@ -937,7 +994,7 @@ set -euo pipefail
 printf '%s\n' "$*" >>"$CODEX_STUB_LOG"
 case "$*" in
   "plugin list --json")
-    printf '{"installed":[{"pluginId":"meta@codex-kit"}],"available":[]}\n'
+    printf '{"installed":[{"pluginId":"meta@codex-kit"},{"pluginId":"legacy@codex-kit"},{"pluginId":"outside@other-kit"}],"available":[]}\n'
     ;;
   "plugin marketplace list --json")
     printf '{"marketplaces":[{"name":"codex-kit","root":"/old-state-home"}]}\n'
@@ -961,12 +1018,18 @@ SH
   grep -q "plugin marketplace remove codex-kit" "$stub_log"
   grep -q "plugin marketplace add $materialized_home" "$stub_log"
   grep -q "plugin remove meta@codex-kit" "$stub_log"
+  grep -q "plugin remove legacy@codex-kit" "$stub_log"
   grep -q "plugin add meta@codex-kit" "$stub_log"
   grep -q "plugin add evidence@codex-kit" "$stub_log"
-  # The installed-guard must NOT remove a plugin the stub reports as not installed
-  # (only meta@codex-kit is installed; evidence@codex-kit must be added, never removed).
+  # The refresh removes installed codex-kit entries, including stale ones, but
+  # must not remove plugins from other marketplaces or plugins that are not
+  # installed.
   if grep -q "plugin remove evidence@codex-kit" "$stub_log"; then
     echo "refresh removed evidence@codex-kit which was not installed" >&2
+    exit 1
+  fi
+  if grep -q "plugin remove outside@other-kit" "$stub_log"; then
+    echo "refresh removed an unrelated marketplace plugin" >&2
     exit 1
   fi
   test -f "$materialized_home/plugins/meta/skills/demo-symlink/SKILL.md"
@@ -990,7 +1053,15 @@ run_sync_runtime_surfaces_codex_plugin_registry_gated_probe() {
   cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
 {
   "name": "codex-kit",
-  "plugins": [ { "name": "meta", "version": "0.1.0", "source": "./plugins/meta" } ]
+  "plugins": [
+    {
+      "name": "meta",
+      "version": "0.1.0",
+      "source": { "source": "local", "path": "./plugins/meta" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
 }
 JSON
   cat >"$stub_bin/codex" <<'SH'
@@ -1038,7 +1109,15 @@ run_sync_runtime_surfaces_codex_plugin_registry_planned_probe() {
   cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
 {
   "name": "codex-kit",
-  "plugins": [ { "name": "meta", "version": "0.1.0", "source": "./plugins/meta" } ]
+  "plugins": [
+    {
+      "name": "meta",
+      "version": "0.1.0",
+      "source": { "source": "local", "path": "./plugins/meta" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
 }
 JSON
   cat >"$stub_bin/codex" <<'SH'
@@ -1465,6 +1544,7 @@ record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-fi
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Claude plugins for skill visibility" run_sync_runtime_surfaces_claude_plugin_registry_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces ships Codex marketplace entries with required policy metadata" run_sync_runtime_surfaces_codex_marketplace_shape_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Codex plugins when activation is gated on" run_sync_runtime_surfaces_codex_plugin_registry_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces leaves the Codex plugin marketplace inert when activation is gated off" run_sync_runtime_surfaces_codex_plugin_registry_gated_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prints a Codex activation plan without executing it when gated on under dry-run" run_sync_runtime_surfaces_codex_plugin_registry_planned_probe

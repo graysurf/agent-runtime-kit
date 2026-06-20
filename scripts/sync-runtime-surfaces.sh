@@ -844,6 +844,24 @@ for entry in plugins:
     name = entry.get("name")
     if not isinstance(name, str) or not name:
         raise SystemExit(f"Codex marketplace plugin entry missing non-empty name: {sys.argv[1]}")
+    source = entry.get("source")
+    if not isinstance(source, dict):
+        raise SystemExit(f"Codex marketplace plugin {name} source must be an object: {sys.argv[1]}")
+    if source.get("source") != "local":
+        raise SystemExit(f"Codex marketplace plugin {name} source.source must be local: {sys.argv[1]}")
+    expected_path = f"./plugins/{name}"
+    if source.get("path") != expected_path:
+        raise SystemExit(f"Codex marketplace plugin {name} source.path must be {expected_path}: {sys.argv[1]}")
+    policy = entry.get("policy")
+    if not isinstance(policy, dict):
+        raise SystemExit(f"Codex marketplace plugin {name} policy must be an object: {sys.argv[1]}")
+    if policy.get("installation") != "AVAILABLE":
+        raise SystemExit(f"Codex marketplace plugin {name} policy.installation must be AVAILABLE: {sys.argv[1]}")
+    if policy.get("authentication") != "ON_INSTALL":
+        raise SystemExit(f"Codex marketplace plugin {name} policy.authentication must be ON_INSTALL: {sys.argv[1]}")
+    category = entry.get("category")
+    if not isinstance(category, str) or not category:
+        raise SystemExit(f"Codex marketplace plugin {name} category must be a non-empty string: {sys.argv[1]}")
     print(name)
 PY
 }
@@ -892,6 +910,24 @@ def load_marketplace(path):
             raise SystemExit(f"Codex marketplace plugin entry missing non-empty name: {path}")
         if any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for ch in name):
             raise SystemExit(f"Codex marketplace plugin entry has unsafe name: {name}")
+        source = entry.get("source")
+        if not isinstance(source, dict):
+            raise SystemExit(f"Codex marketplace plugin {name} source must be an object: {path}")
+        if source.get("source") != "local":
+            raise SystemExit(f"Codex marketplace plugin {name} source.source must be local: {path}")
+        expected_path = f"./plugins/{name}"
+        if source.get("path") != expected_path:
+            raise SystemExit(f"Codex marketplace plugin {name} source.path must be {expected_path}: {path}")
+        policy = entry.get("policy")
+        if not isinstance(policy, dict):
+            raise SystemExit(f"Codex marketplace plugin {name} policy must be an object: {path}")
+        if policy.get("installation") != "AVAILABLE":
+            raise SystemExit(f"Codex marketplace plugin {name} policy.installation must be AVAILABLE: {path}")
+        if policy.get("authentication") != "ON_INSTALL":
+            raise SystemExit(f"Codex marketplace plugin {name} policy.authentication must be ON_INSTALL: {path}")
+        category = entry.get("category")
+        if not isinstance(category, str) or not category:
+            raise SystemExit(f"Codex marketplace plugin {name} category must be a non-empty string: {path}")
         names.append(name)
     return names
 
@@ -959,11 +995,11 @@ raise SystemExit(1)
 PY
 }
 
-codex_plugin_installed() {
+codex_installed_plugin_refs_for_marketplace() {
   local installed_json="$1"
-  local plugin_ref="$2"
+  local marketplace="$2"
 
-  python3 - "$installed_json" "$plugin_ref" <<'PY'
+  python3 - "$installed_json" "$marketplace" <<'PY'
 import json
 import sys
 
@@ -971,12 +1007,17 @@ try:
     data = json.loads(sys.argv[1])
 except json.JSONDecodeError:
     raise SystemExit(1)
-plugin_ref = sys.argv[2]
+marketplace = sys.argv[2]
+suffix = "@" + marketplace
 entries = data.get("installed", []) if isinstance(data, dict) else []
 for entry in entries:
-    if isinstance(entry, dict) and entry.get("pluginId") == plugin_ref:
-        raise SystemExit(0)
-raise SystemExit(1)
+    if not isinstance(entry, dict):
+        continue
+    plugin_id = entry.get("pluginId")
+    if not isinstance(plugin_id, str):
+        plugin_id = entry.get("plugin_id")
+    if isinstance(plugin_id, str) and plugin_id.endswith(suffix) and plugin_id != suffix:
+        print(plugin_id)
 PY
 }
 
@@ -1022,15 +1063,12 @@ sync_codex_plugin_registry() {
   log "syncing Codex plugin registry marketplace=$marketplace source=$materialized_home"
   if [ "$APPLY" = "1" ]; then
     installed_json="$(codex plugin list --json)"
-    while IFS= read -r plugin; do
-      [ -n "$plugin" ] || continue
-      plugin_ref="$plugin@$marketplace"
-      if codex_plugin_installed "$installed_json" "$plugin_ref"; then
-        run_cmd codex plugin remove "$plugin_ref"
-        refresh_count=$((refresh_count + 1))
-      fi
+    while IFS= read -r plugin_ref; do
+      [ -n "$plugin_ref" ] || continue
+      run_cmd codex plugin remove "$plugin_ref"
+      refresh_count=$((refresh_count + 1))
     done <<EOF_REFRESH_CODEX_PLUGINS
-$(codex_marketplace_plugins "$marketplace_json")
+$(codex_installed_plugin_refs_for_marketplace "$installed_json" "$marketplace")
 EOF_REFRESH_CODEX_PLUGINS
 
     marketplaces_json="$(codex plugin marketplace list --json)"
