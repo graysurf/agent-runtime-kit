@@ -3,7 +3,7 @@
 ## Execution State
 
 - Source document: docs/plans/2026-06-20-codex-plugin-marketplace-adoption/2026-06-20-codex-plugin-marketplace-adoption-plan.md
-- Tracking issue: <pending — record open writes this back>
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/435>
 - Current sprint: Sprint 1 (not started)
 - Status: not-started
 - Branch: chore/codex-plugin-marketplace-adoption
