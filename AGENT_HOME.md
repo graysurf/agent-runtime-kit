@@ -71,6 +71,21 @@
   technical terms, standards, APIs, commands, and proper nouns in English when
   clearer.
 
+## Code Review Delegation
+
+- This policy is Codex-only. Claude Code should continue using its normal
+  subagent reviewer defaults.
+- For code-review requests in Codex sessions, the user authorizes Codex to use
+  subagent reviewers by default when the active Codex host exposes subagent
+  tools.
+- Prefer `reviewer-quick` for small routine diffs and focused
+  `reviewer-<lens>` agents for broad or risky diffs.
+- The parent agent still owns base-ref selection, lens selection, synthesis,
+  validation, and any follow-up code or PR action; reviewer subagents inspect
+  read-only and report findings.
+- If subagent dispatch is unavailable or blocked by the active Codex runtime,
+  run the same review inline and state that fallback.
+
 ## Work Tier Levels
 
 - Classify every substantive work request into the lowest applicable tier and
