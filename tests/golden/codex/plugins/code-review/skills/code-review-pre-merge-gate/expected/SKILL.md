@@ -131,6 +131,8 @@ merge/close calls, issue closeout, and repair execution.
   `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`
 - Delivery review outcome comment:
   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`
+- Review outcome posting contract:
+  `skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`
 - Delivery review outcome schema:
   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`
 - PR/MR delivery workflow:

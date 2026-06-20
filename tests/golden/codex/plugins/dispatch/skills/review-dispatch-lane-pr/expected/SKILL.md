@@ -30,7 +30,7 @@ Inputs:
 - `OWNER_REPO`, `ISSUE` (shared dispatch issue), `RUN_STATE`.
 - `LANE_PR` reference and `PR_NUMBER`.
 - Reviewer decision (`approve` / `request-changes` /
-  `comments-only`), lenses, finding dispositions, and the
+  `comments-only`), `REVIEW_LENSES` array, finding dispositions, and the
   retained-evidence path produced by `review-evidence`.
 
 Outputs:
@@ -43,8 +43,10 @@ Outputs:
   checkpoint --live --post state,session` when the review outcome flips
   the lane back to implementation.
 - `forge-cli pr review` posts provider-visible review outcome metadata and
-  mirrors a compact progress breadcrumb to the shared dispatch issue. It does
-  not mutate native provider approval or request-changes state.
+  mirrors a compact progress breadcrumb to the shared dispatch issue. Set a
+  reviewer bot profile only for single mapped specialist lenses; leave it unset
+  for combined or unknown-lens owner summaries.
+  It does not mutate native provider approval or request-changes state.
 - `review-evidence` produces a retained findings artifact path or
   URL.
 
@@ -76,9 +78,19 @@ plan-issue --format json tracking status \
 review-evidence --plan "$PLAN" --pr "$LANE_PR" --format json \
   >"$REVIEW_EVIDENCE"
 
+REVIEW_LENS_ARGS=()
+for lens in "${REVIEW_LENSES[@]}"; do
+  REVIEW_LENS_ARGS+=(--review-lens "$lens")
+done
+
+FORGE_LENS_ARGS=()
+for lens in "${REVIEW_LENSES[@]}"; do
+  FORGE_LENS_ARGS+=(--lens "$lens")
+done
+
 plan-issue --format json tracking run update \
   --run-state "$RUN_STATE" --review-decision "$DECISION" \
-  --review-lens "$REVIEW_LENS" \
+  "${REVIEW_LENS_ARGS[@]}" \
   --review-outcome-comment "$REVIEW_EVIDENCE" \
   --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
@@ -88,13 +100,15 @@ plan-issue --format json tracking checkpoint \
   --live \
   --post review --repair-dashboard
 
-case "$REVIEW_LENS" in
-  red-team) REVIEW_BOT_PROFILE=review-red-team ;;
-  testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
-  maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
-  performance) REVIEW_BOT_PROFILE=review-performance ;;
-  *) unset REVIEW_BOT_PROFILE ;;
-esac
+unset REVIEW_BOT_PROFILE
+if [ -n "${REVIEW_LENSES[0]:-}" ] && [ -z "${REVIEW_LENSES[1]:-}" ]; then
+  case "${REVIEW_LENSES[0]}" in
+    red-team) REVIEW_BOT_PROFILE=review-red-team ;;
+    testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
+    maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
+    performance) REVIEW_BOT_PROFILE=review-performance ;;
+  esac
+fi
 
 if [ -n "${REVIEW_BOT_PROFILE:-}" ]; then
   FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" \
@@ -102,16 +116,16 @@ if [ -n "${REVIEW_BOT_PROFILE:-}" ]; then
       --repo "$OWNER_REPO" \
       --decision "$DECISION" \
       --comment-file "$REVIEW_COMMENT_FILE" \
-      --lens "$REVIEW_LENS" \
+      "${FORGE_LENS_ARGS[@]}" \
       --issue "$ISSUE" \
       --mirror-issue \
       --format json
 else
-  forge-cli pr review "$PR_NUMBER" \
+  env -u FORGE_BOT_PROFILE forge-cli pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
     --decision "$DECISION" \
     --comment-file "$REVIEW_COMMENT_FILE" \
-    --lens "$REVIEW_LENS" \
+    "${FORGE_LENS_ARGS[@]}" \
     --issue "$ISSUE" \
     --mirror-issue \
     --format json
@@ -135,11 +149,11 @@ fi
    implementation, also post `state,session` for the lane scope.
 5. **Provider review outcome** — `forge-cli pr review` records the
    decision as provider-visible outcome metadata and mirrors the review URL to
-   the shared issue. When the lane review represents one known lens, set the
-   matching `FORGE_BOT_PROFILE` so the GitHub App author identifies the
-   reviewer family: `review-red-team`, `review-testing-bot`,
-   `review-maintainability`, or `review-performance`. Leave it unset for a
-   combined or unknown-lens owner summary so the default `dobi-bot` posts it.
+   the shared issue. The parent workflow, not the reviewer subagent, owns
+   provider writes. Map `red-team`, `testing`, `maintainability`, and
+   `performance` to their reviewer bot profiles only when exactly one lens is
+   present; clear inherited `FORGE_BOT_PROFILE` for combined or unknown-lens
+   owner summaries so the default `dobi-bot` posts it.
 6. **Read-back** — confirm the dispatch dashboard reflects the lane
    review status and the lane PR carries the review comment.
 7. **Stop** on any Failure mode code; do not implement fixes unless

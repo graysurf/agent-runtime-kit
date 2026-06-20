@@ -8,6 +8,8 @@ read-only.
 
 Disposition vocabulary and reason/evidence rules are canonical in
 `references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`.
+Provider posting ownership, bot identity, and optional issue mirroring are
+canonical in `references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ## Ownership
 
@@ -33,35 +35,21 @@ Disposition vocabulary and reason/evidence rules are canonical in
 
 ## Provider Command
 
-Use the provider-aware primitive for GitHub and GitLab:
+Use the provider-aware primitive for GitHub and GitLab. Follow
+`references/REVIEW_OUTCOME_POSTING_CONTRACT.md` for the parent-owned posting
+flow, the lens-to-`FORGE_BOT_PROFILE` table, and optional issue mirroring:
 
 ```bash
-forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+env -u FORGE_BOT_PROFILE forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
   --decision "$REVIEW_DECISION" \
   --comment-file comment.md \
   --lens testing \
   --lens maintainability
 ```
 
-When the comment represents one reviewer lens, set the matching GitHub App
-profile before `forge-cli pr review` so provider activity shows the specialist
-identity:
-
-```bash
-FORGE_BOT_PROFILE=review-red-team forge-cli pr review ...
-FORGE_BOT_PROFILE=review-testing-bot forge-cli pr review ...
-FORGE_BOT_PROFILE=review-maintainability forge-cli pr review ...
-FORGE_BOT_PROFILE=review-performance forge-cli pr review ...
-```
-
-For a combined delivery-owner outcome that summarizes multiple lenses, leave
-`FORGE_BOT_PROFILE` unset and let the default `dobi-bot` author the comment.
-
 Set `REVIEW_DECISION=approve` for `proceed-to-merge` or
 `proceed-with-accepted-residual`, `request-changes` for `blocked`, and
-`comments-only` for non-decisional review notes. Add `--issue "$ISSUE"
---mirror-issue` when an owning tracking or dispatch issue should show a compact
-activity breadcrumb with the PR/MR review URL. Use provider repository flags
+`comments-only` for non-decisional review notes. Use provider repository flags
 when local remotes are ambiguous. The decision is outcome metadata for the
 comment; this primitive does not mutate native provider approval or
 request-changes state.
