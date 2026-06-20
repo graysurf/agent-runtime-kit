@@ -6,6 +6,14 @@
   unified Codex × Claude long-format table, see [`SUPPORT_MATRIX.md`](../../SUPPORT_MATRIX.md).
 - Companion doc:
   `docs/source/harness-shape-claude.md`.
+- Update (2026-06): Codex shipped a real plugin loader + plugin marketplace
+  (`codex plugin marketplace add`;
+  <https://developers.openai.com/codex/plugins/build>). Surfaces 3–5 below
+  describe runtime-kit's current **non-adoption** of that surface, not a Codex
+  product limitation: runtime-kit still installs Codex skills via the flat
+  `$CODEX_HOME/skills` root (surface 15). Adopting Codex's plugin/marketplace
+  surface — and the `manifests/product-capabilities.yaml` capability flip it
+  implies — is a separate tracked change, not yet done.
 
 ## Purpose
 
@@ -25,9 +33,10 @@ Scope rules:
   artifact (`targets/codex/...`, `core/...`, manifest entry, link-map
   entry). A primitive with no source artifact yet is
   `planned-not-shipped`.
-- `.codex-plugin/plugin.json` is source-organisation / audit metadata
-  only. Codex does not load it at runtime
-  (`manifests/product-capabilities.yaml`).
+- `.codex-plugin/plugin.json` is source-organisation / audit metadata in
+  this kit; runtime-kit does not install Codex skills as a plugin, so it is
+  not loaded here (`manifests/product-capabilities.yaml`). Codex itself can
+  load it as of 2026 — see the Update note above.
 - Cite file paths (not line numbers — they rot); this doc must stay
   verifiable.
 
@@ -96,48 +105,58 @@ a uniform shape:
 
 ### 3. Plugin manifest (`.codex-plugin/plugin.json`)
 
-- Codex reads from: **nowhere**. Codex never opens
-  `.codex-plugin/plugin.json` at runtime
-  (`manifests/product-capabilities.yaml`).
+- Codex reads from: not on a live load path in the runtime-kit surface.
+  Codex itself added a plugin loader that reads `.codex-plugin/plugin.json`
+  in 2026, but runtime-kit does not install Codex skills as a plugin, so this
+  manifest is not loaded here (`manifests/product-capabilities.yaml`).
 - Source: `targets/codex/plugins/<plugin>/.codex-plugin/plugin.json`
   exists for all 10 plugin domains (`manifests/plugins.yaml`); the
   reporting artifact shows the local audit schema shape
-  (`targets/codex/plugins/reporting/.codex-plugin/plugin.json`).
+  (`targets/codex/plugins/reporting/.codex-plugin/plugin.json`). Note the
+  kit's `skills: [{id, source}]` shape predates — and does not match —
+  Codex's current `plugin.json` schema (`skills: "./skills/"` plus
+  `interface` / `mcpServers` / `apps` / `hooks`).
 - Install mechanism: `plugin-manifest-copy` into
   `$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json`, retained for
   audit / compatibility only (`targets/codex/link-map.yaml`).
-- Acceptance lane: drift audit validates local schema only; there is no
-  upstream Codex registry to compare against.
-- Support today: **not-applicable (metadata shipped; no Codex runtime
-  loader)**.
+- Acceptance lane: drift audit validates local schema only; runtime-kit does
+  not yet register a Codex plugin against Codex's loader.
+- Support today: **not-applicable on the pre-2026 baseline** — Codex now has
+  a plugin loader; runtime-kit has not adopted it (tracked separately).
 
 ### 4. Plugin marketplace (`.codex-plugin/marketplace.json`)
 
-- Codex reads from: **nowhere**. Codex has no plugin marketplace API
+- Codex reads from: not shipped by runtime-kit. Codex added a plugin
+  marketplace in 2026 (`codex plugin marketplace add`, sourcing
+  `.agents/plugins/marketplace.json` and reading
+  `.claude-plugin/marketplace.json` as a legacy source), but runtime-kit does
+  not generate or register a Codex marketplace
   (`manifests/product-capabilities.yaml`).
-- Source: **none**.
+- Source: **none** — runtime-kit ships only the Claude
+  `.claude-plugin/marketplace.json` today.
 - Install mechanism: not installed.
-- Acceptance lane: none; PR review must not flag a missing Codex
-  marketplace entry as a defect.
-- Support today: **not-applicable**.
+- Acceptance lane: none yet on the Codex side.
+- Support today: **not-applicable on the pre-2026 baseline** — Codex now has
+  a marketplace; adopting it for the Codex surface is tracked separately.
 
 ### 5. Plugin-scoped skills (`<plugin>/skills/<skill>/SKILL.md`)
 
-- Codex reads from: **not** plugin roots. Codex local skills are exposed
-  through `$CODEX_HOME/skills/<domain>/<skill>/SKILL.md`; plugin-scoped
-  discovery through `$CODEX_HOME/plugins/<domain>/skills` is not the
-  runtime discovery surface.
+- Codex reads from: the flat skill root, not plugin roots, in the
+  runtime-kit surface. Active Codex skills are exposed through
+  `$CODEX_HOME/skills/<domain>/<skill>/SKILL.md` (surface 15). Codex does
+  support plugin-bundled `skills/<skill>/SKILL.md` discovery as of 2026;
+  runtime-kit has not switched its active discovery to it.
 - Source: `build/codex/plugins/<domain>/skills/<skill>/` exists as the
-  rendered symlink target, but that tree is not loaded as a
-  plugin-scoped runtime root (`targets/codex/link-map.yaml`).
+  rendered symlink target, but that tree is linked for audit only, not as
+  the active plugin-scoped runtime root (`targets/codex/link-map.yaml`).
 - Install mechanism: plugin skills trees are recursively linked under
   `$CODEX_HOME/plugins/<domain>/skills` for audit / compatibility, while
   active skill folders are installed separately under `$CODEX_HOME/skills`
   (see surface 15).
 - Acceptance lane: none for plugin-scoped discovery; the active Codex
   skill-root acceptance is surface 15.
-- Support today: **not-applicable (Codex has no plugin-scoped skill
-  discovery)**.
+- Support today: **not-applicable on the pre-2026 baseline** — Codex now has
+  plugin-scoped skill discovery; runtime-kit keeps the flat root (surface 15).
 
 ### 6. Slash command files (`commands/<name>.md` outside skills)
 
@@ -316,9 +335,9 @@ a uniform shape:
 |---|---|---|---|---|---|
 | 1 | `AGENTS.md` (home) | yes | symlink to `AGENT_HOME.md` | 0.130.0 | n/a |
 | 2 | `./AGENTS.md` (repo-local) | yes | repo working tree | 0.130.0 | n/a |
-| 3 | `.codex-plugin/plugin.json` | not-applicable | metadata copy for audit only; no loader | n/a | v0.17.5 |
-| 4 | `.codex-plugin/marketplace.json` | not-applicable | — | n/a | n/a |
-| 5 | `plugins/<p>/skills/<s>/` discovery | not-applicable | active Codex skill root is row 15 | n/a | n/a |
+| 3 | `.codex-plugin/plugin.json` | not-applicable | audit-only metadata; Codex loader exists (2026) but kit hasn't adopted it | n/a | v0.17.5 |
+| 4 | `.codex-plugin/marketplace.json` | not-applicable | Codex marketplace exists (2026); kit ships none | n/a | n/a |
+| 5 | `plugins/<p>/skills/<s>/` discovery | not-applicable | active Codex skill root is row 15; plugin-scoped discovery exists (2026), not adopted | n/a | n/a |
 | 6 | `commands/<n>.md` | not-applicable | — | n/a | n/a |
 | 7 | `agents/<n>.toml` | yes | rendered + directory symlink into `$CODEX_HOME/agents` | 0.139.0 | v1.3.0 |
 | 8 | `hooks/<n>.*` scripts | yes | shared scripts symlinked to `$CODEX_HOME/hooks` | 0.130.0 | v0.17.5 |
@@ -342,7 +361,10 @@ Status legend:
 - **no** — Codex-capable or adjacent primitive that runtime-kit does not
   target; not on the current roadmap unless added explicitly.
 - **not-applicable** — Claude harness primitive or local metadata row
-  with no Codex runtime loader.
+  with no Codex runtime loader. (Rows 3–5 keep this label on the pre-2026
+  baseline; Codex has since shipped a plugin loader + marketplace, so those
+  rows are pending re-classification once runtime-kit adopts that surface —
+  see the Update note at the top of this file.)
 
 ## Acceptance Lanes (Codex-Relevant CI Gates)
 

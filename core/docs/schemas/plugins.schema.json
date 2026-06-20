@@ -45,7 +45,7 @@
         },
         "product_manifests": {
           "type": "object",
-          "description": "Per-product manifest paths. Codex `.codex-plugin/plugin.json` is source-organisation only (Codex does not load it at runtime — see Resolved Decision #10); Claude `.claude-plugin/plugin.json` IS loaded.",
+          "description": "Per-product manifest paths. runtime-kit treats Codex `.codex-plugin/plugin.json` as source-organisation / audit only and does not install Codex skills as a loadable plugin (Resolved Decision #10). Codex itself added a plugin loader in 2026, so this is non-adoption rather than a product gap. Claude `.claude-plugin/plugin.json` IS loaded.",
           "additionalProperties": false,
           "properties": {
             "codex": {
