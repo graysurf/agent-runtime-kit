@@ -1,6 +1,6 @@
 ---
 name: dispatch-plan-closeout
-description:
+description: >
   Close a shared dispatch plan issue after lane PRs, review, validation, integration, approval, and the strict dispatch close-ready audit pass.
 ---
 

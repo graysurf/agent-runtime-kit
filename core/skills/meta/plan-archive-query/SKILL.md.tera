@@ -1,6 +1,6 @@
 ---
 name: plan-archive-query
-description:
+description: >
   Read and refresh the agent-plan-archive work-history cache through the
   nils-cli `plan-archive query` and `refresh` commands; hold any refresh
   commit until the scrub log is reviewed.

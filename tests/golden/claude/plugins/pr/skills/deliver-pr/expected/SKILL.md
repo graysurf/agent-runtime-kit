@@ -1,6 +1,6 @@
 ---
 name: deliver-pr
-description:
+description: >
   Deliver GitHub pull requests or GitLab merge requests end to end through the released nils-cli `forge-cli pr deliver` macro.
 ---
 

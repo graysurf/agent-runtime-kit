@@ -1,6 +1,6 @@
 ---
 name: close-pr
-description:
+description: >
   Close or merge GitHub pull requests or GitLab merge requests through the released nils-cli `forge-cli pr` lifecycle surfaces.
 ---
 

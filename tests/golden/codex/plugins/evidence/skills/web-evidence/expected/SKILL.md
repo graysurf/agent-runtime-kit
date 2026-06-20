@@ -1,6 +1,6 @@
 ---
 name: web-evidence
-description:
+description: >
   Capture redacted HTTP metadata, previews, and manifests through the nils-cli `web-evidence` command.
 ---
 

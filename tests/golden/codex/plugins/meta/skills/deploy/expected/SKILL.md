@@ -1,6 +1,6 @@
 ---
 name: deploy
-description:
+description: >
   Dispatch deploy requests to a repository-owned `.agents/scripts/deploy.sh`
   implementation.
 ---

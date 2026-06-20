@@ -1,6 +1,6 @@
 ---
 name: model-cross-check
-description:
+description: >
   Record primary and checker model observations through the nils-cli `model-cross-check` command without owning provider calls.
 ---
 

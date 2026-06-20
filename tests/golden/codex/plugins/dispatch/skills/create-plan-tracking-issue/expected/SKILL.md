@@ -1,6 +1,6 @@
 ---
 name: create-plan-tracking-issue
-description:
+description: >
   Open or preview one lightweight issue-backed plan tracker with frozen source / plan snapshots and an initial state checkpoint.
 ---
 

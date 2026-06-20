@@ -1,6 +1,6 @@
 ---
 name: release
-description:
+description: >
   Dispatch release requests to a repository-owned `.agents/scripts/release.sh`
   implementation.
 ---

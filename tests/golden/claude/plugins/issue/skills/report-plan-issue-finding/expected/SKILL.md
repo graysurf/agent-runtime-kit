@@ -1,6 +1,6 @@
 ---
 name: report-plan-issue-finding
-description:
+description: >
   File a plan-issue / plan-tracking family finding (skill, CLI, driver, or
   catalog drift) as a labeled issue in the canonical tracker via forge-cli,
   and close it when the upstream fix lands. Files and tracks only — never

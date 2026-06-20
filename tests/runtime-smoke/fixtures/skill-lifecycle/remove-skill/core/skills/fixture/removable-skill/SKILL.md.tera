@@ -1,6 +1,6 @@
 ---
 name: removable-skill
-description:
+description: >
   Fixture skill used to prove remove-skill dry-run reference coverage.
 ---
 

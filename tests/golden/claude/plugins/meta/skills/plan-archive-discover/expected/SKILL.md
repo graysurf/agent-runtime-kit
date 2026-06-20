@@ -1,6 +1,6 @@
 ---
 name: plan-archive-discover
-description:
+description: >
   Read-only scan of a working repo's plan folders for archive candidates
   through the nils-cli `plan-archive discover` command; classifies eligible /
   blocked / unknown and hands selected folders to `plan-archive-migrate`.

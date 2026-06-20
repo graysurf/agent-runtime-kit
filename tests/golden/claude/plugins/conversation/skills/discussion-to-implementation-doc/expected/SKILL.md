@@ -1,6 +1,6 @@
 ---
 name: discussion-to-implementation-doc
-description:
+description: >
   Convert a completed requirements, design, feasibility, or review discussion
   into an implementation-readiness source document.
 ---

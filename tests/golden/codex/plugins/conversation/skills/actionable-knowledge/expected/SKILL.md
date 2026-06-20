@@ -1,6 +1,6 @@
 ---
 name: actionable-knowledge
-description:
+description: >
   Explain a concept or resolve confusion through multiple lenses, with stated
   assumptions and one recommended next step.
 ---

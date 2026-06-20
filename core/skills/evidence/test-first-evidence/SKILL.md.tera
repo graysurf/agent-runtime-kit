@@ -1,6 +1,6 @@
 ---
 name: test-first-evidence
-description:
+description: >
   Govern an implementation change with failing-test discipline — failing test
   or waiver before production edits, then final validation — through the
   nils-cli `test-first-evidence` command; the record the forge-cli test-first

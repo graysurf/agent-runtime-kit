@@ -1,6 +1,6 @@
 ---
 name: remove-skill
-description:
+description: >
   Remove a repo-owned runtime-kit skill with a dry-run-first active reference
   audit and retained historical plan records.
 ---

@@ -1,6 +1,6 @@
 ---
 name: nils-cli-bump
-description:
+description: >
   Propose one PR that bumps the pinned nils-cli surface and refreshes every
   consumer when a new nils-cli release ships; owns the surface-refresh
   judgement over the mechanical version-alignment diff.

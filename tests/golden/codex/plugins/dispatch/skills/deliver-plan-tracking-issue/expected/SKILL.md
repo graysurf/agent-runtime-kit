@@ -1,6 +1,6 @@
 ---
 name: deliver-plan-tracking-issue
-description:
+description: >
   Carry one lightweight issue-backed plan tracker through implementation, validation, review, PR delivery, final state, and non-mutating close-ready handoff.
 ---
 

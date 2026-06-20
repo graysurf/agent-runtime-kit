@@ -1,6 +1,6 @@
 ---
 name: skill-usage
-description:
+description: >
   Record skill invocation intent, linked evidence, validation, failures, and outcomes through the nils-cli `skill-usage` command.
 ---
 

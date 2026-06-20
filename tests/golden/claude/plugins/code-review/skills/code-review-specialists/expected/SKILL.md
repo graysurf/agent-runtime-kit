@@ -1,6 +1,6 @@
 ---
 name: code-review-specialists
-description:
+description: >
   Decompose risky or broad diffs into read-only specialist review passes and merge normalized findings.
 ---
 

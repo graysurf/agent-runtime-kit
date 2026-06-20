@@ -1,6 +1,6 @@
 ---
 name: plan-archive-migrate
-description:
+description: >
   Migrate a closed plan folder out of a working repo into the agent-plan-archive repository through the nils-cli `plan-archive migrate` command, dry-run first and apply only on explicit confirmation.
 ---
 

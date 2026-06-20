@@ -1,6 +1,6 @@
 ---
 name: evidence-migrate
-description:
+description: >
   Migrate skill-usage evidence from the ephemeral agent-out runtime tree into
   the agent-evidence-archive repository through the nils-cli `evidence
   migrate` command; dry-run first, applies only on explicit confirmation.

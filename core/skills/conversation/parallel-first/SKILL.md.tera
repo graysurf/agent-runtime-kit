@@ -1,6 +1,6 @@
 ---
 name: parallel-first
-description:
+description: >
   Execution mode that parallelizes safely independent work across subagents
   through the shared parallel delegation protocol.
 ---

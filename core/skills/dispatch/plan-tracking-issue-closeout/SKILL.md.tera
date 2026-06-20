@@ -1,6 +1,6 @@
 ---
 name: plan-tracking-issue-closeout
-description:
+description: >
   Close a lightweight plan-tracking issue after the strict close-ready audit, optional dashboard repair, and the canonical closeout post pass.
 ---
 

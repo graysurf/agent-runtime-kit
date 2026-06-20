@@ -1,6 +1,6 @@
 ---
 name: code-review-pre-merge-gate
-description:
+description: >
   Run the shared read-only specialist review gate before PR or MR merge decisions.
 ---
 

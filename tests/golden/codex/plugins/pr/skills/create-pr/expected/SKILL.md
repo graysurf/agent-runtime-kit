@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description:
+description: >
   Create a GitHub pull request or GitLab merge request through the released nils-cli `forge-cli pr create` surface.
 ---
 

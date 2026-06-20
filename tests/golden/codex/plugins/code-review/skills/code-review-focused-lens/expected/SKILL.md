@@ -1,6 +1,6 @@
 ---
 name: code-review-focused-lens
-description:
+description: >
   Run one or more explicitly requested specialist review lenses without invoking the full specialist bundle.
 ---
 

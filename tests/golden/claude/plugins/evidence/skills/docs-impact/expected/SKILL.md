@@ -1,6 +1,6 @@
 ---
 name: docs-impact
-description:
+description: >
   Scan Git changes for documentation impact through the nils-cli `docs-impact` command.
 ---
 

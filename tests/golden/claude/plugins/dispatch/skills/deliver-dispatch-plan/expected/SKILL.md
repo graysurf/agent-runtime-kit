@@ -1,6 +1,6 @@
 ---
 name: deliver-dispatch-plan
-description:
+description: >
   Open or resume one shared dispatch plan issue, dispatch task lanes, coordinate lane PRs and reviews, and hand off to dispatch closeout.
 ---
 

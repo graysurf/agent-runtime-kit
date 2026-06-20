@@ -1,6 +1,6 @@
 ---
 name: canary-check
-description:
+description: >
   Run a local canary command, persist redacted evidence, and verify status through the nils-cli `canary-check` command.
 ---
 

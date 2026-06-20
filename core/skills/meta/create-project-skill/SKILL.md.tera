@@ -1,6 +1,6 @@
 ---
 name: create-project-skill
-description:
+description: >
   Scaffold a project-local skill under a consuming repo's `.agents/skills`
   tree for Codex and Claude by default, with Codex-only and bridge-only modes.
 ---

@@ -1,6 +1,6 @@
 ---
 name: execute-dispatch-lane
-description:
+description: >
   Execute one assigned dispatch task lane, drive its PR through forge-cli, and post lane-scoped state / session / validation back to the shared dispatch issue.
 ---
 

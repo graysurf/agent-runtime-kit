@@ -1,6 +1,6 @@
 ---
 name: sync-runtime-surfaces
-description:
+description: >
   Refresh the active agent-runtime-kit managed runtime surfaces into the local
   Codex and Claude runtime homes by running
   `scripts/sync-runtime-surfaces.sh`.

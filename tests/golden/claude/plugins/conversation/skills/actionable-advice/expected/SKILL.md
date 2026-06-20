@@ -1,6 +1,6 @@
 ---
 name: actionable-advice
-description:
+description: >
   Structure actionable engineering advice — clarifying questions, options with
   tradeoffs, stated assumptions, and one recommendation.
 ---

@@ -1,6 +1,6 @@
 ---
 name: create-dispatch-lane-pr
-description:
+description: >
   Create one provider PR / MR for an assigned dispatch lane through forge-cli pr create. Returns the PR ref for the caller's tracking run update; never posts plan-issue lifecycle comments.
 ---
 

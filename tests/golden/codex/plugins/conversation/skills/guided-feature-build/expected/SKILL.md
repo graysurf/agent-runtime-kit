@@ -1,6 +1,6 @@
 ---
 name: guided-feature-build
-description:
+description: >
   Run a guided, in-session feature build on an existing codebase — explore,
   design, implement, review — without opening issue-backed plan tracking.
 ---

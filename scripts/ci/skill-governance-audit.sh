@@ -505,8 +505,8 @@ def validate_shape_only(raw_paths: list[str]) -> None:
 
 # Folds a SKILL.md.tera frontmatter `description` back into a single string for
 # length measurement. Assumes the repo's actual frontmatter shape: a `name`
-# then `description` key, plain or block scalars only, and no blank line inside
-# the value. A `\n`-join matches YAML folded-scalar semantics under those
+# then `description` key, inline or YAML block scalars only, and no blank line
+# inside the value. A `\n`-join matches YAML folded-scalar semantics under those
 # conditions. If a future renderer emits a different shape, tighten this parser
 # rather than trusting its measurement.
 def skill_description(path: Path) -> str:
@@ -526,6 +526,16 @@ def skill_description(path: Path) -> str:
         # `description:` line is real inline content.
         if inline and not re.match(r"^[>|][1-9+-]*$", inline):
             parts.append(strip_quotes(inline))
+        if not inline:
+            for cont in lines[index + 1 :]:
+                if not cont.strip():
+                    continue
+                if re.match(r"^[A-Za-z_]", cont):  # next top-level key
+                    break
+                fail(
+                    f"{path}: frontmatter description must be inline or use "
+                    "a YAML block scalar marker (`>` or `|`)"
+                )
         for cont in lines[index + 1 :]:
             if re.match(r"^[A-Za-z_]", cont):  # next top-level key
                 break
@@ -592,8 +602,15 @@ def validate_description_limit_fixture() -> None:
                 sys.stderr = saved_stderr
         return 0, captured.getvalue()
 
-    def block(text: str) -> str:
+    def plain_continuation(text: str) -> str:
         return "description:\n  " + text + "\n"
+
+    def block(text: str) -> str:
+        return "description: >\n  " + text + "\n"
+
+    invalid_yaml_code, invalid_yaml_msg = run(plain_continuation("Invalid YAML plain continuation."))
+    if invalid_yaml_code == 0 or "YAML block scalar marker" not in invalid_yaml_msg:
+        fail("description-limit fixture: plain continuation description did not hard-fail")
 
     # Boundary inputs are literal 240 / 241 so they pin the documented ceiling
     # itself: a 241-char input that stops failing (ceiling widened) trips this,

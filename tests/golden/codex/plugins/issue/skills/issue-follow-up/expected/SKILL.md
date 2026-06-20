@@ -1,6 +1,6 @@
 ---
 name: issue-follow-up
-description:
+description: >
   Open or continue a GitHub or GitLab issue as the durable timeline for a
   discovered problem, investigation, blocker, or implementation handoff.
 ---

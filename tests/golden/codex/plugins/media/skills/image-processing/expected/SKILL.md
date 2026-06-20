@@ -1,6 +1,6 @@
 ---
 name: image-processing
-description:
+description: >
   Validate SVG inputs and convert SVG, PNG, JPEG, or WebP files through the nils-cli `image-processing` command.
 ---
 

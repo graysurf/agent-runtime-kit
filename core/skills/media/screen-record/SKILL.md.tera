@@ -1,6 +1,6 @@
 ---
 name: screen-record
-description:
+description: >
   Capture screenshots or recordings from windows or displays through the nils-cli `screen-record` command.
 ---
 

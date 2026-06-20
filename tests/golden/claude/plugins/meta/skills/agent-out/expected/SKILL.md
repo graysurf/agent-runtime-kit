@@ -1,6 +1,6 @@
 ---
 name: agent-out
-description:
+description: >
   Allocate canonical project-scoped output directories and audit workflow artifacts through the nils-cli `agent-out` command.
 ---
 

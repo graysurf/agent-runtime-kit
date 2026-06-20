@@ -1,6 +1,6 @@
 ---
 name: agent-docs
-description:
+description: >
   Audit repository doc health and resolve the per-intent document set and validation contract a repo declares in AGENT_DOCS.toml, through the nils-cli `agent-docs` command.
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: sample-prose
-description:
+description: >
   Fixture prose skill used to prove create-skill governance coverage.
 ---
 

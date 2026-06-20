@@ -1,6 +1,6 @@
 ---
 name: heuristic-session-closeout
-description:
+description: >
   Close out a completed session: review skill-usage records, deliver warranted
   heuristic records, then archive and prune retained evidence.
 ---

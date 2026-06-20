@@ -1,6 +1,6 @@
 ---
 name: orchestrator-first
-description:
+description: >
   Execution mode where the main agent owns scope, dispatch, integration,
   validation, and final synthesis while subagents own implementation lanes.
 ---

@@ -1,6 +1,6 @@
 ---
 name: evidence-prune-source
-description:
+description: >
   Prune local agent-out skill-usage source records already present in the
   agent-evidence-archive through nils-cli `evidence prune-source`.
 ---

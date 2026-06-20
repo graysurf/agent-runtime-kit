@@ -1,6 +1,6 @@
 ---
 name: heuristic-inbox
-description:
+description: >
   Manage curated heuristic-system inbox cases and operation records through the nils-cli `heuristic-inbox` command.
 ---
 

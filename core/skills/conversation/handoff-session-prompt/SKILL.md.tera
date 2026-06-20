@@ -1,6 +1,6 @@
 ---
 name: handoff-session-prompt
-description:
+description: >
   Generate a generic next-session initialization prompt from the current
   conversation context and any user-specified reference files; if a durable
   record is needed first, write that artifact before the handoff.

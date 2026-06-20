@@ -1,6 +1,6 @@
 ---
 name: create-skill
-description:
+description: >
   Add a repo-owned runtime-kit skill with source, manifests, product render
   surfaces, acceptance coverage, and governance validation.
 ---

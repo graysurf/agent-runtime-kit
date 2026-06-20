@@ -1,6 +1,6 @@
 ---
 name: remove-project-skill
-description:
+description: >
   Remove a project-local `.agents/skills` skill with dry-run-first reference
   inventory and explicit approval for wrappers or historical cleanup.
 ---

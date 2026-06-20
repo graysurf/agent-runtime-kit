@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description:
+description: >
   Dispatch project bootstrap requests to a repository-owned
   `.agents/scripts/bootstrap.sh` implementation.
 ---

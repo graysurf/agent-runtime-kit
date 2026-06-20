@@ -1,6 +1,6 @@
 ---
 name: execute-plan-tracking-issue
-description:
+description: >
   Resume a lightweight issue-backed plan tracker, reconcile run state with provider evidence, and post state / session / validation checkpoints.
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description:
+description: >
   Guide a repository into the project-local `.agents/` conventions used by
   retained runtime-kit dispatcher skills.
 ---

@@ -1,6 +1,6 @@
 ---
 name: code-review-quick-pass
-description:
+description: >
   Run a lightweight read-only review for small or ordinary diffs before escalating to specialist review.
 ---
 

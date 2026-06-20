@@ -1,6 +1,6 @@
 ---
 name: review-dispatch-lane-pr
-description:
+description: >
   Review one dispatch lane PR with retained evidence, post provider review comments, and update the shared dispatch issue with the review decision.
 ---
 

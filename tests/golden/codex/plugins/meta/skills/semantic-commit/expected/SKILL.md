@@ -1,6 +1,6 @@
 ---
 name: semantic-commit
-description:
+description: >
   Commit, amend, or create cleanup commits through the nils-cli `semantic-commit` command while preserving agent-owned staged-change boundaries.
 ---
 

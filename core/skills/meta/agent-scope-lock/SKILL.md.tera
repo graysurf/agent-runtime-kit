@@ -1,6 +1,6 @@
 ---
 name: agent-scope-lock
-description:
+description: >
   Create, read, validate, and clear edit-scope locks through the nils-cli `agent-scope-lock` command.
 ---
 

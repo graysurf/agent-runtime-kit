@@ -1,6 +1,6 @@
 ---
 name: repo-retro
-description:
+description: >
   Generate local repository retrospective data through the nils-cli `repo-retro` command.
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pre-pr
-description:
+description: >
   Dispatch pre-PR validation requests to a repository-owned
   `.agents/scripts/pre-pr.sh` implementation.
 ---

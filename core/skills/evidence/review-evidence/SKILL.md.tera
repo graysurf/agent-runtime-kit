@@ -1,6 +1,6 @@
 ---
 name: review-evidence
-description:
+description: >
   Persist review findings, validation commands, artifacts, and verification status through the nils-cli `review-evidence` command.
 ---
 

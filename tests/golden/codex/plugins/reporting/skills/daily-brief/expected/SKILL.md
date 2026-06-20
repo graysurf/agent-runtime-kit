@@ -1,6 +1,6 @@
 ---
 name: daily-brief
-description:
+description: >
   Prepare a source-grounded daily information brief for recurring or
   user-selected topics; orchestrates `topic-radar` JSON output and does not
   implement its own source fetchers.

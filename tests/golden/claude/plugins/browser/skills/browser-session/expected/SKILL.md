@@ -1,6 +1,6 @@
 ---
 name: browser-session
-description:
+description: >
   Record browser-session goals, steps, artifacts, and verification status through the nils-cli `browser-session` command.
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: worktree-triage
-description:
+description: >
   Read-only scan of git worktrees against a base ref, classifying each branch
   as safe-to-prune, rescue-candidate, dirty, or locked; prunes safe ones and
   opens draft PRs for unmerged work only on explicit confirmation.

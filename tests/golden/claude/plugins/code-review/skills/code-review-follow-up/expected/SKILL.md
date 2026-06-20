@@ -1,6 +1,6 @@
 ---
 name: code-review-follow-up
-description:
+description: >
   Re-check previous review findings after fixes and classify each item as resolved, unresolved, accepted, or residual risk.
 ---
 
