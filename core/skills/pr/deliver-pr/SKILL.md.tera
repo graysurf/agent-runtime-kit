@@ -51,7 +51,9 @@ Outputs:
 - A `code-review-pre-merge-gate` result completed before merge with at least
   `testing` and `maintainability`.
 - A delivery review outcome posted to the PR/MR before merge through
-  `forge-cli pr review`.
+  `forge-cli pr review`; combined owner outcomes use the default `dobi-bot`,
+  while intentionally posted single-lens outcomes may set the matching reviewer
+  bot profile.
 - A provider review-thread sweep completed immediately before merge, with
   every unresolved thread (bot or human) dispositioned: repaired, resolved as
   accepted, or converted to a follow-up issue.
@@ -157,7 +159,7 @@ review-specialists scope \
   --testing \
   --maintainability \
   --format json
-forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+env -u FORGE_BOT_PROFILE forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
   --decision "$REVIEW_DECISION" \
   --comment-file "$DELIVERY_REVIEW_OUTCOME" \
   --lens testing \
@@ -170,9 +172,16 @@ when the review blocks, and `comments-only` when posting non-decisional review
 notes. This decision is outcome metadata for the comment; `forge-cli pr review`
 does not mutate native provider approval or request-changes state.
 
-When the PR/MR is linked to a tracking or dispatch issue and the issue number is
-available, add `--issue "$ISSUE" --mirror-issue` so the issue activity shows the
-review progress without duplicating the full outcome body.
+For bot identity and issue mirroring: combined delivery-owner outcomes normally
+clear `FORGE_BOT_PROFILE` so the default `dobi-bot` authors them. If you
+intentionally post a single-lens reviewer outcome, set the matching profile for
+that one command only:
+`red-team` -> `review-red-team`, `testing` -> `review-testing-bot`,
+`maintainability` -> `review-maintainability`, and `performance` ->
+`review-performance`. When the PR/MR is linked to a tracking or dispatch issue
+and the issue number is available, add `--issue "$ISSUE" --mirror-issue` so the
+issue activity shows the review progress without duplicating the full outcome
+body.
 
 Immediately before the merge call, sweep provider review threads. Bot
 reviewers post asynchronously — often minutes after PR creation — so the sweep
@@ -272,11 +281,9 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    lenses.
 9. Post the delivery review outcome body produced by
    `code-review-pre-merge-gate` with `forge-cli pr review` before merge.
-   A combined owner outcome normally leaves `FORGE_BOT_PROFILE` unset so the
-   default `dobi-bot` authors it. If you intentionally post a single-lens
-   reviewer outcome instead, set the matching profile:
-   `review-red-team`, `review-testing-bot`, `review-maintainability`, or
-   `review-performance`.
+   Clear inherited `FORGE_BOT_PROFILE` for combined delivery-owner outcomes so
+   they stay on the default `dobi-bot`; set a reviewer bot profile only for
+   intentionally posted single-lens outcomes.
 10. Sweep provider review threads immediately before merge with
     `forge-cli pr review-threads` (see Entrypoint) — bot reviewers post
     asynchronously, so this runs as the last gate, not only at creation.

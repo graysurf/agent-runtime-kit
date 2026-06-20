@@ -185,6 +185,8 @@ or `review-evidence`.
   `references/DELIVERY_SPECIALIST_REVIEW_GATE.md`
 - Delivery review outcome comment:
   `references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`
+- Review outcome posting contract:
+  `references/REVIEW_OUTCOME_POSTING_CONTRACT.md`
 - Delivery review outcome schema:
   `references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`
 - PR decision workflow:
