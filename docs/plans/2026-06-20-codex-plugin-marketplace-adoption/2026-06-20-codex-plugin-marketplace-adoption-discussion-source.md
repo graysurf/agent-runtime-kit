@@ -61,6 +61,25 @@ skills the same way.
 2. **Marketplace path**: render a native `.agents/plugins/marketplace.json`, or
    reuse the legacy `.claude-plugin/marketplace.json` interop path (Task 2.1).
 
+## Execution outcome (2026-06-20)
+
+- **Decision #10 reversal: CONFIRMED** by the maintainer; capability model flipped
+  (`marketplace_concept` / `plugin_manifest.loaded_at_runtime` → `true`).
+- **Marketplace path: canonical `.agents/plugins/marketplace.json`** (proven with
+  `codex plugin marketplace add` against an isolated `CODEX_HOME`).
+- **Spike result (decisive):** Codex auto-discovers each plugin's bundled
+  `skills/<skill>/SKILL.md` and IGNORES the manifest `skills` field — array,
+  `"./skills/"` pointer, and absent all discover identically as `<plugin>:<skill>`.
+  Tasks **1.2** (rewrite the array to a pointer) and **1.3** (author
+  `codex-plugin.schema.json`) are therefore **deferred as unnecessary**: the
+  rewrite would break the in-repo governance + audit-drift `plugin-manifest-skills`
+  gates for no functional gain, and `schema_ref` is dormant. The audit array is
+  kept as source-organisation metadata. This avoids all nils-cli engine coupling.
+- **Flat-root transition: ship + gate activation.** Codex lists flat-root skills
+  as bare `<skill>` and plugin skills as `<plugin>:<skill>` with no dedup, so the
+  live `codex plugin marketplace add` is gated behind `CODEX_PLUGIN_ACTIVATION`;
+  the flat `$CODEX_HOME/skills` root stays the default until a follow-up cut-over.
+
 ## Scope summary
 
 In scope: Codex `plugin.json` schema alignment, `codex-plugin.schema.json`,

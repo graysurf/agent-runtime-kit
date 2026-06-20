@@ -15,6 +15,7 @@ The flat skills root stays as a fallback until the plugin path is proven live.
 - Primary source: `docs/plans/2026-06-20-codex-plugin-marketplace-adoption/2026-06-20-codex-plugin-marketplace-adoption-discussion-source.md`
 - Source type: discussion-to-implementation-doc
 - Open questions carried into execution: whether to reverse Resolved Decision #10 (Task 1.1 decision gate); marketplace path choice `.agents/plugins/marketplace.json` vs legacy `.claude-plugin/marketplace.json` (Task 2.1)
+- Execution note (2026-06-20): both resolved — #10 reversal confirmed, canonical `.agents/plugins/marketplace.json` chosen. A spike showed Codex auto-discovers bundled `skills/` and ignores the manifest `skills` field, so Tasks 1.2/1.3 were deferred (no array rewrite / schema needed) and activation is gated behind `CODEX_PLUGIN_ACTIVATION`. See the discussion-source "Execution outcome" and the execution-state Session Notes.
 
 ## Scope
 - In scope: Codex `plugin.json` schema alignment; `core/docs/schemas/codex-plugin.schema.json`; Codex marketplace render; `sync-runtime-surfaces.sh` Codex activation branch; capability-model flip (`marketplace_concept` / `loaded_at_runtime`) + matrix `state` enums + Resolved Decision #10 reversal; removing the PR #434 "pending" notes; acceptance lanes (golden, drift, sandbox, runtime-smoke).
