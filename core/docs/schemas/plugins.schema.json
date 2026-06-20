@@ -45,7 +45,7 @@
         },
         "product_manifests": {
           "type": "object",
-          "description": "Per-product manifest paths. Both Codex `.codex-plugin/plugin.json` and Claude `.claude-plugin/plugin.json` are loaded by their product's plugin loader at runtime (the kit ships a marketplace for each). Codex discovers each plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the manifest `skills` array, which is kept as source-organisation audit metadata (issue #435 supersedes Resolved Decision #10; Codex live activation is gated).",
+          "description": "Per-product manifest paths. Both Codex `.codex-plugin/plugin.json` and Claude `.claude-plugin/plugin.json` are loaded by their product's plugin loader at runtime (the kit ships a marketplace for each). Codex discovers each plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the manifest `skills` array, which is kept as source-organisation audit metadata (issue #435 supersedes Resolved Decision #10; issue #437 cut over Codex to default plugin activation).",
           "additionalProperties": false,
           "properties": {
             "codex": {

@@ -16,28 +16,22 @@
 # runtime. A spike (issue #435) confirmed Codex discovers each plugin's bundled
 # `skills/<skill>/SKILL.md` directly and IGNORES the manifest `skills` field, so
 # that field is retained as source-organisation audit metadata rather than
-# rewritten to a loader pointer. Live activation is gated
-# (CODEX_PLUGIN_ACTIVATION); the flat `$CODEX_HOME/skills` root stays the
-# default discovery path until cut-over, to avoid listing every skill twice.
+# rewritten to a loader pointer. Issue #437 cut over Codex skill discovery to
+# this plugin marketplace and retired the flat `$CODEX_HOME/skills` root.
 schema_version: 1
 
 products:
   codex:
-    # Local skills are discovered from skill folders under
-    # `$CODEX_HOME/skills/<domain>/<skill>/SKILL.md`. Runtime-kit uses
-    # directory symlinks for this surface; individual `SKILL.md` symlinks are
-    # not a valid Codex discovery contract.
-    # `.codex-plugin` plugin trees are retained for source organization,
-    # manifests, and audit-drift only; they are not the active Codex skill
-    # discovery surface.
+    # Local skills are discovered from installed `codex-kit` plugin bundles as
+    # `<plugin>:<skill>`. The retired flat
+    # `$CODEX_HOME/skills/<domain>/<skill>/SKILL.md` root is no longer installed
+    # by runtime-kit.
     nested_skill_support: true
     plugin_manifest:
       # Codex loads `.codex-plugin/plugin.json` at runtime through its plugin
       # marketplace (`codex plugin add <plugin>@codex-kit`). Codex discovers the
       # plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the
       # manifest `skills` field, which runtime-kit keeps as audit metadata.
-      # Live activation is gated (CODEX_PLUGIN_ACTIVATION); the flat skill root
-      # stays the default discovery path until cut-over.
       path_pattern: "$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json"
       loaded_at_runtime: true
       schema_ref: "core/docs/schemas/codex-plugin.schema.json"
@@ -47,15 +41,15 @@ products:
       supports_inline_python: false
     config_activation:
       - "$CODEX_HOME/AGENTS.md"
-      - "$CODEX_HOME/skills/<domain>/<skill>/SKILL.md"
+      - "$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json"
+      - "$CODEX_HOME/plugins/<domain>/skills/<skill>/SKILL.md"
       - "$CODEX_HOME/config.toml (managed block only)"
       - "$CODEX_HOME/hooks/<name>/ (scripts referenced from managed block)"
     runtime_state:
       state_home_env: "CODEX_AGENT_STATE_HOME"
       default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex"
-    # runtime-kit ships a Codex marketplace (`codex-kit`) registered via
-    # `codex plugin marketplace add`. Live activation is gated
-    # (CODEX_PLUGIN_ACTIVATION) — the surface is shipped, not yet the default.
+    # runtime-kit ships and activates a Codex marketplace (`codex-kit`)
+    # registered via `codex plugin marketplace add`.
     marketplace_concept: true
 
   claude:

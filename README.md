@@ -177,7 +177,7 @@ and coupled nils-cli debug-build guidance.
 
 ## Skills
 
-Ten skill domains are currently rendered into Codex entries and Claude plugins:
+Ten skill domains are currently rendered into Codex and Claude plugins:
 
 `browser` · `code-review` · `conversation` · `dispatch` · `evidence` ·
 `issue` · `media` · `meta` · `pr` · `reporting`

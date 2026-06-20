@@ -104,8 +104,8 @@ surfaces:
     name: "plugin manifest (`.codex-plugin` / `.claude-plugin` `plugin.json`)"
     products:
       codex:
-        state: partial
-        mechanism: "`plugin-manifest-copy` per plugin into `$CODEX_HOME/plugins/<p>/.codex-plugin/plugin.json`; Codex's plugin loader reads it once the plugin is registered through the `codex-kit` marketplace. Codex discovers the plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the manifest `skills` array (kept as audit metadata). Live activation is gated (CODEX_PLUGIN_ACTIVATION); the flat skill root (surface 15) stays the default"
+        state: shipped
+        mechanism: "`plugin-manifest-copy` per plugin into `$CODEX_HOME/plugins/<p>/.codex-plugin/plugin.json`; Codex's plugin loader reads it through the installed `codex-kit` marketplace. Codex discovers the plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the manifest `skills` array (kept as audit metadata)."
         source_artifacts:
           - "targets/codex/plugins/<plugin>/.codex-plugin/plugin.json"
         min_product: "0.141.0"
@@ -145,8 +145,8 @@ surfaces:
     name: "plugin marketplace (`.claude-plugin/marketplace.json`)"
     products:
       codex:
-        state: partial
-        mechanism: "`plugin-manifest-copy` of the canonical `.agents/plugins/marketplace.json`, then `CODEX_PLUGIN_ACTIVATION=1 sync-runtime-surfaces.sh --apply --product codex` materializes a symlink-free marketplace under the Codex state home, registers that path as `codex-kit` (`codex plugin marketplace add`), and installs every `<plugin>@codex-kit` (`codex plugin add`). Activation is gated by default so it does not double the flat skill root (surface 15)"
+        state: shipped
+        mechanism: "`plugin-manifest-copy` of the canonical `.agents/plugins/marketplace.json`, then `sync-runtime-surfaces.sh --apply --product codex` materializes a symlink-free marketplace under the Codex state home, registers that path as `codex-kit` (`codex plugin marketplace add`), and installs every `<plugin>@codex-kit` (`codex plugin add`). First-time `setup.sh` delegates the same activation after bootstrap."
         source_artifacts:
           - targets/codex/.agents/plugins/marketplace.json
           - scripts/sync-runtime-surfaces.sh
@@ -154,10 +154,10 @@ surfaces:
         min_nils_cli: "v0.17.5"
         acceptance:
           - kind: ci
-            note: "gate 8 (runtime-smoke codex plugin-registry probes: gated default stays inert; a gated-on dry-run prints the activation plan without executing it; a stubbed gated-on apply registers codex-kit and installs each <plugin>@codex-kit)"
+            note: "gate 8 (runtime-smoke codex plugin-registry probes: default dry-run prints the activation plan without executing it; stubbed apply registers codex-kit and installs each <plugin>@codex-kit)"
             descriptive_only: true
           - kind: live
-            note: "`CODEX_PLUGIN_ACTIVATION=1 sync-runtime-surfaces.sh --apply --product codex` then `codex plugin list` includes `<plugin>@codex-kit`; `codex debug prompt-input` lists skills as `<plugin>:<skill>`"
+            note: "`sync-runtime-surfaces.sh --apply --product codex` then `codex plugin list` includes `<plugin>@codex-kit`; `codex debug prompt-input` lists skills as `<plugin>:<skill>`"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-codex.md#4-plugin-marketplace-agentspluginsmarketplacejson"
@@ -189,8 +189,8 @@ surfaces:
     name: "plugin-scoped skill discovery (`plugins/<p>/skills/<s>/`)"
     products:
       codex:
-        state: partial
-        mechanism: "rendered to `build/codex/plugins/<p>/skills/<s>/`, copied symlink-free into the materialized `codex-kit` marketplace; once a plugin is installed, Codex discovers each bundled `skills/<skill>/SKILL.md` as `<plugin>:<skill>`. Gated by CODEX_PLUGIN_ACTIVATION; the flat skill root (surface 15) stays the default discovery path"
+        state: shipped
+        mechanism: "rendered to `build/codex/plugins/<p>/skills/<s>/`, copied symlink-free into the materialized `codex-kit` marketplace; once a plugin is installed, Codex discovers each bundled `skills/<skill>/SKILL.md` as `<plugin>:<skill>`. The retired flat skill root (surface 15) is no longer installed."
         source_artifacts:
           - "core/skills/<domain>/<skill>/ -> build/codex/plugins/<p>/skills/<s>/"
           - scripts/sync-runtime-surfaces.sh
@@ -201,7 +201,7 @@ surfaces:
             note: "gate 3 (render), gate 4 (golden), gate 5 (drift), gate 8 (runtime-smoke codex plugin-registry probe)"
             descriptive_only: true
           - kind: live
-            note: "`codex debug prompt-input` lists `<plugin>:<skill>` skills after `CODEX_PLUGIN_ACTIVATION=1` activation"
+            note: "`codex debug prompt-input` lists `<plugin>:<skill>` skills after default activation"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-codex.md#5-plugin-scoped-skills-pluginskillsskillskillmd"
@@ -571,23 +571,22 @@ surfaces:
     name: "Codex local skill root (`$CODEX_HOME/skills/<d>/<s>/`)"
     products:
       codex:
-        state: shipped
-        mechanism: "one directory symlink per active skill folder under `$CODEX_HOME/skills/<d>/<s>/`"
-        source_artifacts:
-          - "core/skills/<domain>/<skill>/ -> build/codex/plugins/<d>/skills/<s>/"
-        min_product: "0.130.0"
-        min_nils_cli: "v0.20.0"
+        state: not-applicable
+        mechanism: "Retired for runtime-kit-managed Codex skills; Codex now uses plugin-scoped skill discovery through the installed `codex-kit` marketplace (surface 5)."
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
         acceptance:
           - kind: ci
-            note: "gate 3 (render), gate 5 (golden), gate 6 (drift), gate 7 (`doctor --class skill-surface --product codex`), gate 8 (sandbox), gate 9 (runtime-smoke)"
+            note: "—"
             descriptive_only: true
           - kind: live
-            note: "`codex debug prompt-input` fresh session"
+            note: "—"
             descriptive_only: true
         source_manifest:
           - "docs/source/harness-shape-codex.md#15-codex-local-skill-root-skillsdomainskillskillmd"
           - targets/codex/link-map.yaml
-          - manifests/skills.yaml
+          - manifests/product-capabilities.yaml
       claude:
         state: not-applicable
         mechanism: "Claude uses plugin-scoped skill discovery (surface 5) instead"
