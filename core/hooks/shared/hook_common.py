@@ -258,11 +258,30 @@ def _runtime_cache_dir() -> str:
     return os.path.join(os.path.expanduser("~"), ".cache", "agent-runtime-kit")
 
 
-def _docs_home() -> str | None:
+def _is_runtime_kit_source_checkout(repo_root: str | None) -> bool:
+    if not repo_root:
+        return False
+    required_files = (
+        "AGENT_DOCS.toml",
+        "AGENT_HOME.md",
+        os.path.join("manifests", "skills.yaml"),
+        os.path.join("scripts", "sync-runtime-surfaces.sh"),
+    )
+    required_dirs = (os.path.join("core", "policies"),)
+    return all(
+        os.path.isfile(os.path.join(repo_root, path)) for path in required_files
+    ) and all(os.path.isdir(os.path.join(repo_root, path)) for path in required_dirs)
+
+
+def _docs_home(repo_root: str | None = None) -> str | None:
     docs_home = os.environ.get("AGENT_RUNTIME_DOCS_HOME") or os.environ.get(
         "AGENT_DOCS_HOME"
     )
-    return docs_home or None
+    if docs_home:
+        return docs_home
+    if _is_runtime_kit_source_checkout(repo_root):
+        return repo_root
+    return None
 
 
 def _runtime_product() -> str | None:
@@ -271,7 +290,7 @@ def _runtime_product() -> str | None:
 
 
 def _agent_docs_base_args(repo_root: str) -> list[str]:
-    docs_home = _docs_home()
+    docs_home = _docs_home(repo_root)
     args = ["agent-docs"]
     if docs_home:
         args += ["--docs-home", docs_home]
@@ -422,7 +441,7 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
     except OSError:
         catalog_mtime = 0.0
 
-    docs_home = _docs_home()
+    docs_home = _docs_home(repo_root)
     product = _runtime_product()
     cache_key = "\0".join([repo_root, docs_home or "", product or ""])
     digest = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:16]

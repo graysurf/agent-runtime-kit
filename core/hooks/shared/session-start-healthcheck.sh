@@ -3,8 +3,10 @@
 # SessionStart hook: surface health problems once per day.
 #
 # Two independent, opt-in-aware checks share one daily nudge:
-#   1. agent-docs repo health (when `agent-docs` is installed): install-symlink
-#      wiring, declared-doc presence and validity, and catalog validity.
+#   1. agent-docs repo preflight health (when `agent-docs` is installed and the
+#      current repo declares `AGENT_DOCS.toml`): strict preflight for every
+#      declared intent. Runtime-kit source checkouts self-anchor docs-home;
+#      other project catalogs inherit the active managed docs-home.
 #   2. evidence-archive wiring (only when the user has opted in via
 #      $AGENT_EVIDENCE_ARCHIVE_HOME, a machine-local config, or a default clone):
 #      clone presence, local config validity, and hosts.yaml validity.
@@ -28,6 +30,7 @@ product="${AGENT_RUNTIME_PRODUCT:-agent-runtime}"
 stamp_dir="$HOME/.cache/agent-runtime-kit"
 stamp="$stamp_dir/health-${product}-$(date +%Y%m%d).stamp"
 [[ -f "$stamp" ]] && exit 0
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 
 # --- opt-in detection for the evidence-archive lane -------------------------
 
@@ -83,6 +86,15 @@ archive_is_git_repo() {
     return 1
   fi
   return 1
+}
+
+runtime_kit_source_checkout() {
+  local root="$1"
+  [[ -f "$root/AGENT_DOCS.toml" &&
+    -f "$root/AGENT_HOME.md" &&
+    -f "$root/manifests/skills.yaml" &&
+    -f "$root/scripts/sync-runtime-surfaces.sh" &&
+    -d "$root/core/policies" ]]
 }
 
 unquote_yaml_scalar() {
@@ -173,21 +185,83 @@ mkdir -p "$stamp_dir"
 # --- lane 1: agent-docs repo health -----------------------------------------
 
 docs_block=""
-if [[ "$have_agent_docs" -eq 1 ]]; then
-  # docs-home is derived from the install symlink by agent-docs; only pass an
-  # explicit override when the environment provides one.
+if [[ "$have_agent_docs" -eq 1 && -n "$repo_root" && -f "$repo_root/AGENT_DOCS.toml" ]]; then
+  # Prefer an explicit docs-home override. The runtime-kit source checkout
+  # self-anchors so rendered home-prompt symlinks cannot resolve home-scoped
+  # docs under build/<product>/. Other project catalogs inherit docs-home.
   docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
+  if [[ -z "$docs_home" ]] && runtime_kit_source_checkout "$repo_root"; then
+    docs_home="$repo_root"
+  fi
   dh_args=()
   [[ -n "$docs_home" ]] && dh_args=(--docs-home "$docs_home")
-  audit_output="$(
-    agent-docs ${dh_args[@]+"${dh_args[@]}"} audit --target all --strict --format text 2>&1 || true
-  )"
-  # `problems: N` counts wiring, declared-doc, and catalog issues; only nudge
-  # when there is at least one.
-  if [[ -n "$audit_output" ]] && printf '%s\n' "$audit_output" | grep -Eq '^problems: [1-9][0-9]*'; then
-    docs_block="agent-docs audit found repo-health problems in the current workspace:
+  project_args=()
+  project_args=(--project-path "$repo_root")
+  product_args=()
+  if [[ "$product" == "codex" || "$product" == "claude" ]]; then
+    if agent-docs ${dh_args[@]+"${dh_args[@]}"} ${project_args[@]+"${project_args[@]}"} \
+      preflight --help 2>/dev/null | grep -q -- "--product"; then
+      product_args=(--product "$product")
+    fi
+  fi
 
-${audit_output}"
+  list_output="$(
+    agent-docs ${dh_args[@]+"${dh_args[@]}"} ${project_args[@]+"${project_args[@]}"} list --format json 2>&1
+  )"
+  list_status=$?
+  intents=""
+  parse_status=0
+  if [[ "$list_status" -eq 0 ]]; then
+    intents="$(printf '%s\n' "$list_output" | "$python_bin" -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    raise SystemExit(2)
+for intent in data.get("intents", []):
+    if isinstance(intent, str) and intent:
+        print(intent)
+' 2>/dev/null)"
+    parse_status=$?
+  fi
+  preflight_output=""
+  preflight_failed=0
+  if [[ "$list_status" -ne 0 ]]; then
+    preflight_failed=1
+    preflight_output="agent-docs list failed:
+${list_output}
+"
+  elif [[ "$parse_status" -ne 0 ]]; then
+    preflight_failed=1
+    preflight_output="agent-docs list returned invalid JSON:
+${list_output}
+"
+  elif [[ -z "$intents" ]]; then
+    preflight_failed=1
+    preflight_output="agent-docs list returned no declared intents for ${repo_root}.
+"
+  else
+    while IFS= read -r intent; do
+      [[ -z "$intent" ]] && continue
+      out="$(
+        agent-docs ${dh_args[@]+"${dh_args[@]}"} ${project_args[@]+"${project_args[@]}"} \
+          preflight --intent "$intent" ${product_args[@]+"${product_args[@]}"} --strict --format text 2>&1
+      )"
+      status=$?
+      preflight_output="${preflight_output}intent ${intent}:
+${out}
+
+"
+      if [[ "$status" -ne 0 ]]; then
+        preflight_failed=1
+      fi
+    done <<<"$intents"
+  fi
+
+  if [[ "$preflight_failed" -ne 0 ]]; then
+    docs_block="agent-docs preflight found repo-health problems in the current workspace:
+
+${preflight_output}"
   fi
 fi
 

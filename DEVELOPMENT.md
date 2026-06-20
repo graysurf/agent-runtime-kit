@@ -40,17 +40,24 @@ plan-tooling --version
 ```
 
 Required-doc policy is data this repo declares in `AGENT_DOCS.toml`; the harness
-delivers it (home policy auto-loaded, per-intent docs hook-injected, repo health
-checked by `agent-docs audit`), so there is no manual per-task preflight. To
-inspect what this repo requires, or to audit its health:
+delivers it (home policy auto-loaded, per-intent docs hook-injected, and
+SessionStart strict preflight for each declared intent). CI/manual health checks
+still use `agent-docs audit` for install wiring, declared-doc validity, and
+catalog validity. To inspect what this repo requires, or to audit its health:
 
 ```bash
-agent-docs audit --target all --strict
-agent-docs preflight --intent project-dev --format json
+agent-docs preflight --docs-home "$PWD" --intent project-dev --strict
+agent-docs preflight --docs-home "$PWD" --intent task-tools --strict
+agent-docs audit --docs-home "$PWD" --target project --strict
 ```
 
-docs-home is derived from the install symlink; pass `--docs-home "$PWD"` to
-point at this checkout explicitly.
+Rendered home prompts live under `build/<product>/AGENT_HOME.md`, so manual
+checks in this checkout should pass `--docs-home "$PWD"` explicitly and prefer
+strict preflight for home-scoped docs until the released `agent-docs audit`
+wiring check understands rendered home prompt symlinks. Repo-owned hooks do the
+same docs-home fallback automatically only when the active repo is the
+runtime-kit source checkout; other project catalogs inherit the active managed
+docs-home.
 
 For a first-time host or clean reinstall, prefer the setup wrapper and preview
 it first. If Homebrew is already present or managed by the operator, keep
@@ -104,8 +111,12 @@ bash "$HOME/.config/agent-runtime-kit/scripts/sync-runtime-surfaces.sh" \
 bash "$HOME/.config/agent-runtime-kit/scripts/sync-runtime-surfaces.sh" \
   --source-root "$HOME/.config/agent-runtime-kit" \
   --product codex --no-pull --no-verify --apply
-agent-docs audit --target all --strict \
-  --project-path "$HOME/.config/agent-runtime-kit"
+agent-docs preflight --docs-home "$HOME/.config/agent-runtime-kit" \
+  --project-path "$HOME/.config/agent-runtime-kit" \
+  --intent project-dev --strict
+agent-docs preflight --docs-home "$HOME/.config/agent-runtime-kit" \
+  --project-path "$HOME/.config/agent-runtime-kit" \
+  --intent task-tools --strict
 agent-runtime doctor --source-root "$HOME/.config/agent-runtime-kit" \
   --product codex --live-home "${CODEX_HOME:-$HOME/.codex}" \
   --state-home \

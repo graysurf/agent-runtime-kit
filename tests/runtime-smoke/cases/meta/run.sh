@@ -614,14 +614,14 @@ link_lines = [
     for idx, line in enumerate(lines, 1)
     if line.startswith("+ ln -s ")
 ]
-audit_lines = [
+preflight_lines = [
     (idx, line)
     for idx, line in enumerate(lines, 1)
-    if line.startswith("+ agent-docs audit --target all --strict --project-path ")
+    if line.startswith("+ agent-docs preflight --docs-home ")
 ]
 
 assert len(link_lines) == 2, link_lines
-assert len(audit_lines) == 1, audit_lines
+assert len(preflight_lines) == 2, preflight_lines
 assert len(sync_lines) == 2, sync_lines
 sync_products = []
 for _, sync_line in sync_lines:
@@ -639,7 +639,7 @@ for _, sync_line in sync_lines:
     assert "--no-verify" in sync_line, sync_line
     assert "--dry-run" in sync_line, sync_line
 assert sync_products == ["claude", "codex"], sync_products
-assert max(idx for idx, _ in link_lines) < audit_lines[0][0], lines
+assert max(idx for idx, _ in link_lines) < min(idx for idx, _ in preflight_lines), lines
 if bootstrap_lines:
     assert len(bootstrap_lines) == 1, bootstrap_lines
     bootstrap_line = bootstrap_lines[0][1]
@@ -647,7 +647,7 @@ if bootstrap_lines:
     assert "--dry-run" in bootstrap_line, bootstrap_line
     assert "--skip-homebrew-install" in bootstrap_line, bootstrap_line
     assert "--skip-cli-tools" in bootstrap_line, bootstrap_line
-    assert audit_lines[0][0] < bootstrap_lines[0][0], lines
+    assert max(idx for idx, _ in preflight_lines) < bootstrap_lines[0][0], lines
     assert bootstrap_lines[0][0] < min(idx for idx, _ in sync_lines), lines
 else:
     home_render_lines = [
@@ -664,7 +664,7 @@ else:
     assert any("--product codex" in line for _, line in product_render_lines), product_render_lines
     assert any("--product claude" in line for _, line in product_render_lines), product_render_lines
     assert max(idx for idx, _ in home_render_lines) < min(idx for idx, _ in link_lines), lines
-    assert audit_lines[0][0] < min(idx for idx, _ in product_render_lines), lines
+    assert max(idx for idx, _ in preflight_lines) < min(idx for idx, _ in product_render_lines), lines
     assert max(idx for idx, _ in product_render_lines) < min(idx for idx, _ in install_lines), lines
     assert max(idx for idx, _ in install_lines) < min(idx for idx, _ in sync_lines), lines
 PY
@@ -761,8 +761,11 @@ command_name="${1:-}"
 shift || true
 
 case "$command_name" in
-  audit)
-    printf 'agent-docs audit %s\n' "$*"
+  list)
+    printf '%s\n' '{"intents":["project-dev","task-tools","setup-extra"]}'
+    ;;
+  preflight)
+    printf 'agent-docs preflight %s\n' "$*"
     ;;
   *)
     printf 'unexpected agent-docs command: %s\n' "$command_name" >&2
@@ -783,7 +786,11 @@ SH
 
   assert_symlink_target "$apply_home/.codex/AGENTS.md" "$source_root/build/codex/AGENT_HOME.md"
   assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/build/claude/AGENT_HOME.md"
-  grep -q "+ agent-docs audit --target all --strict --project-path" "$apply_out"
+  grep -q "+ agent-docs preflight --docs-home $source_root --project-path $source_root --intent project-dev --strict" "$apply_out"
+  grep -q "+ agent-docs preflight --docs-home $source_root --project-path $source_root --intent task-tools --strict" "$apply_out"
+  grep -q "+ agent-docs preflight --docs-home $source_root --project-path $source_root --intent setup-extra --strict" "$apply_out"
+  grep -q "docs_audit: not-run (legacy key retained; rendered home prompts use source-root docs_preflight)" "$apply_out"
+  grep -q "docs_preflight: .*--intent setup-extra --strict" "$apply_out"
   grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
   grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product codex --no-pull --no-verify --apply" "$apply_out"
   grep -q "sync-runtime-surfaces --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
