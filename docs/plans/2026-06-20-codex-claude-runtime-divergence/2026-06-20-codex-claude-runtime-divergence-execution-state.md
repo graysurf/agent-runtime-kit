@@ -3,7 +3,7 @@
 ## Execution State
 
 - Source document: docs/plans/2026-06-20-codex-claude-runtime-divergence/2026-06-20-codex-claude-runtime-divergence-plan.md
-- Tracking issue: not yet opened — run `create-plan-tracking-issue` at the start of execution
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/438>
 - Current sprint: Sprint 1 (not started)
 - Status: planned; awaiting execution
 - Branch: not yet created — use `feat/codex-claude-runtime-divergence`
