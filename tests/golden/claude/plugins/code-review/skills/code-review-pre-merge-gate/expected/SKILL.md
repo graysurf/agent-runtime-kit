@@ -26,8 +26,11 @@ Prereqs:
 - The PR/MR base branch or merge-base is known.
 - Local validation and provider check evidence are available or explicitly
   marked pending by the owning delivery workflow.
-- Keep this workflow read-only: it does not fix code, post PR/MR comments,
-  mark reviewables ready, merge, close issues, or clean branches.
+- Keep this workflow read-only: it does not fix code, mark reviewables ready,
+  merge, close issues, or clean branches. When it runs under an owning delivery
+  workflow with provider write access, the owning parent may post compact
+  single-lens progress outcomes through `forge-cli pr review`; reviewer
+  subagents never post directly.
 
 Inputs:
 
@@ -49,6 +52,8 @@ Outputs:
 - Concrete findings, accepted tradeoffs, residual risks, and validation gaps.
 - A delivery review outcome body suitable for the owning PR/MR delivery
   workflow to post.
+- Single-lens progress outcome recommendations for the owning delivery workflow
+  to post as each reviewer lens returns and after any focused follow-up rerun.
 
 Failure modes:
 
@@ -57,8 +62,8 @@ Failure modes:
   acceptable.
 - Concrete specialist findings remain unresolved and are not explicitly
   accepted by the owning delivery workflow.
-- Caller tries to use this workflow to merge, close, post provider comments, or
-  replace `deliver-pr` or `review-dispatch-lane-pr`.
+- Caller tries to use this workflow to merge, close, let reviewer subagents post
+  provider comments, or replace `deliver-pr` or `review-dispatch-lane-pr`.
 
 ## Entrypoint
 
@@ -104,18 +109,28 @@ review-specialists scope \
    and classify each item using the shared delivery outcome vocabulary. In Codex,
    use `multi_agent_v1.spawn_agent` when it is available; if dispatch is
    unavailable or blocked, state the fallback reason and review the lenses inline.
+   When an owning delivery workflow has provider write access, have it post one
+   compact single-lens outcome for each returned lens before repair work starts.
+   The parent posts with the mapped reviewer bot profile; the reviewer subagent
+   stays read-only.
 6. Dispatch `reviewer-red-team` only after the first-wave lenses, and only when
    the scope warrants it. If dispatch is unavailable or blocked, state the
    fallback reason and run the same red-team lens inline from
    `references/specialists/red-team.md`. Hand it the merged first-wave findings so
    it can probe cross-cutting failure modes, then validate its JSONL and merge the
    combined first-wave plus red-team JSONL before folding it into the result.
+   When red-team returns, have the owning delivery workflow post the red-team
+   single-lens outcome before any red-team repair loop starts.
 7. Classify every meaningful first-wave and red-team item using the shared
    delivery outcome vocabulary.
 8. Treat evidence-backed concrete findings as blocking until repaired, accepted
    by the owner, or converted into an explicit follow-up.
-9. Produce a compact gate result and delivery review outcome body. The owning
-   delivery skill posts comments, reruns checks, merges, or stops.
+9. After repairs, rerun focused validation and affected lenses; have the owning
+   delivery workflow post a follow-up single-lens outcome with the same mapped
+   reviewer bot profile for each rerun.
+10. Produce a compact gate result and final delivery review outcome body. The
+    owning delivery skill posts the final combined outcome, reruns checks,
+    merges, or stops.
 
 ## Boundary
 
@@ -123,7 +138,9 @@ review-specialists scope \
 reviewer-subagent dispatch, fallback justification, and the review outcome
 recommendation. Each dispatched reviewer subagent owns only its read-only lens.
 Provider delivery skills own PR/MR comments, ready transitions, checks,
-merge/close calls, issue closeout, and repair execution.
+merge/close calls, issue closeout, and repair execution. This gate may
+recommend single-lens progress comments, but the provider write remains in the
+owning delivery workflow.
 
 ## References
 

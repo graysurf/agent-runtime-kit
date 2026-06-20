@@ -44,8 +44,8 @@ Outputs:
   the lane back to implementation.
 - `forge-cli pr review` posts provider-visible review outcome metadata and
   mirrors a compact progress breadcrumb to the shared dispatch issue. Set a
-  reviewer bot profile only for single mapped specialist lenses; leave it unset
-  for combined or unknown-lens owner summaries.
+  reviewer bot profile only for single mapped specialist lenses; set
+  `FORGE_BOT_PROFILE=dobi` for combined or unknown-lens owner summaries.
   It does not mutate native provider approval or request-changes state.
 - `review-evidence` produces a retained findings artifact path or
   URL.
@@ -121,7 +121,7 @@ if [ -n "${REVIEW_BOT_PROFILE:-}" ]; then
       --mirror-issue \
       --format json
 else
-  env -u FORGE_BOT_PROFILE forge-cli pr review "$PR_NUMBER" \
+  FORGE_BOT_PROFILE=dobi forge-cli pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
     --decision "$DECISION" \
     --comment-file "$REVIEW_COMMENT_FILE" \
@@ -152,8 +152,8 @@ fi
    the shared issue. The parent workflow, not the reviewer subagent, owns
    provider writes. Map `red-team`, `testing`, `maintainability`, and
    `performance` to their reviewer bot profiles only when exactly one lens is
-   present; clear inherited `FORGE_BOT_PROFILE` for combined or unknown-lens
-   owner summaries so the default `dobi-bot` posts it.
+   present; set `FORGE_BOT_PROFILE=dobi` for combined or unknown-lens owner
+   summaries so `dobi-bot` posts it.
 6. **Read-back** — confirm the dispatch dashboard reflects the lane
    review status and the lane PR carries the review comment.
 7. **Stop** on any Failure mode code; do not implement fixes unless

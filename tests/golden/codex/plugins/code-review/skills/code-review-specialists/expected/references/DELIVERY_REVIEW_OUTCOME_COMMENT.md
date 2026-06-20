@@ -23,12 +23,17 @@ canonical in `references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ## Timing
 
-- Post one final outcome comment after the review and repair pass, before final
-  merge/close.
+- Post one compact single-lens outcome comment after each reviewer lens returns.
+  Use the matching reviewer bot profile for that lens. If the lens blocks
+  delivery, repair and commit first, then post the focused follow-up outcome
+  after the affected lens is rerun.
+- Post one final combined outcome comment after the review and repair pass,
+  before final merge/close. Use `FORGE_BOT_PROFILE=dobi` for the combined owner
+  outcome.
 - If review blocks delivery, post a blocked outcome comment before stopping when
   provider auth and permissions allow it.
-- Do not post every intermediate specialist finding or repair iteration unless
-  the user explicitly asks for verbose audit comments.
+- Keep progress comments compact: one outcome per lens pass or follow-up pass,
+  not one provider comment per raw finding.
 - If outcome posting fails, stop before merge and report the provider command,
   exit status, and retry action. A delivery that requires this contract is not
   complete without the outcome.
@@ -40,7 +45,7 @@ Use the provider-aware primitive for GitHub and GitLab. Follow
 flow, the lens-to-`FORGE_BOT_PROFILE` table, and optional issue mirroring:
 
 ```bash
-env -u FORGE_BOT_PROFILE forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
   --decision "$REVIEW_DECISION" \
   --comment-file comment.md \
   --lens testing \
@@ -79,7 +84,8 @@ Required fields:
 - Reviewable identifier: PR number/URL or MR number/URL.
 - Decision: `proceed-to-merge`, `blocked`, or
   `proceed-with-accepted-residual`.
-- Lenses used, including forced minimum lenses.
+- Lenses used. Single-lens progress outcomes list one lens; final combined
+  outcomes list the full selected lens set, including forced minimum lenses.
 - Validation and provider check or pipeline status.
 - Findings table. Use a single `none` row when there were no findings or
   residual risks to report.
