@@ -1,28 +1,31 @@
 # Review Outcome Posting Contract
 
-Use this contract when a review workflow has a finalized review outcome body and
-needs provider-visible PR/MR activity. `forge-cli pr review` is the only provider
-primitive for this path.
+Use this contract when a review workflow needs provider-visible PR/MR review
+activity for either a single-lens specialist report or a combined delivery-owner
+outcome. `forge-cli pr review` is the only provider primitive for this path.
 
 Reviewer subagents remain read-only. The owning parent, dispatch, or delivery
-workflow writes every provider-visible outcome comment after it has received
-subagent output, synthesized findings, dispositioned them, and chosen the review
+workflow writes every provider-visible comment. Specialist review comments are
+pre-disposition `comments-only` reports posted after one lens returns. Combined
+delivery-owner outcomes are post-disposition comments posted after the owner has
+synthesized findings, decided repairs or tradeoffs, and chosen the final review
 decision.
 
 For delivery review gates, the default provider-visible progress model is:
 
 1. After each reviewer lens returns, the parent posts a compact single-lens
-   outcome with that lens's bot profile.
+   specialist review comment with that lens's bot profile.
 2. If the lens blocks delivery, the parent repairs in the delivery branch,
    commits, reruns validation, and reruns the affected lens.
-3. The parent posts the follow-up single-lens outcome with the same lens bot
-   profile.
+3. The parent posts the follow-up specialist review comment with the same lens
+   bot profile.
 4. After all selected lenses pass or are explicitly dispositioned, the parent
-   posts one combined owner outcome with `FORGE_BOT_PROFILE=dobi`.
+   posts one combined delivery-owner outcome with `FORGE_BOT_PROFILE=dobi`.
 
 The subagent never calls the provider. This keeps provider credentials in the
 parent workflow while still making review progress visible in PR/MR and optional
-issue activity.
+issue activity. Specialist comments report findings and evidence only; the
+combined delivery-owner outcome records final dispositions.
 
 ## Inputs
 
@@ -32,10 +35,14 @@ issue activity.
 - `OWNER_REPO`: provider repository slug such as `owner/name`.
 - `PR_NUMBER`: numeric PR/MR id.
 - `REVIEW_DECISION`: `comments-only`, `approve`, or `request-changes`.
-- `REVIEW_COMMENT_FILE`: compact outcome comment body.
-- `REVIEW_LENS`: the single specialist lens for a lens progress outcome. For
-  combined owner outcomes, pass repeated `--lens` flags from the selected lens
-  list.
+  Specialist review comments use `comments-only`; combined owner outcomes map
+  the final delivery decision to `approve` or `request-changes`.
+- `REVIEW_COMMENT_FILE`: compact comment body. Use
+  `SPECIALIST_REVIEW_COMMENT.md` for specialist reports and
+  `DELIVERY_REVIEW_OUTCOME_COMMENT.md` for combined owner outcomes.
+- `REVIEW_LENS`: the single specialist lens for a specialist review comment.
+  For combined owner outcomes, pass repeated `--lens` flags from the selected
+  lens list.
 - `REVIEW_BOT_PROFILE`: shell variable resolved from the table below when
   posting exactly one mapped specialist lens. Use `dobi` for combined owner
   outcomes.
@@ -46,7 +53,8 @@ issue activity.
 
 Set `FORGE_BOT_PROFILE` on every `forge-cli pr review` post. Use `dobi` for
 combined owner outcomes or unknown-lens owner summaries, and use the mapped
-reviewer profile only when the outcome represents exactly one specialist lens:
+reviewer profile only when the comment represents exactly one mapped specialist
+lens:
 
 | Lens | `FORGE_BOT_PROFILE` |
 | --- | --- |
@@ -63,9 +71,14 @@ case "$REVIEW_LENS" in
   testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
   maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
   performance) REVIEW_BOT_PROFILE=review-performance ;;
-  *) unset REVIEW_BOT_PROFILE ;;
+  *) REVIEW_BOT_PROFILE=dobi ;;
 esac
 ```
+
+Unmapped specialist lenses such as `api-contract`, `security`, or
+`data-migration` still use the specialist report body and `comments-only`; they
+are authored by `dobi-bot` as owner summaries because no dedicated reviewer bot
+profile exists for those lenses.
 
 Do not wrap `forge-cli` with `env`, `command`, or `exec`; those forms bypass the
 local forge-cli shell wrapper that mints the GitHub App token. Pass identity
@@ -77,7 +90,7 @@ provider error instead of retrying as the user.
 
 ## Command
 
-Single known specialist lens progress outcome:
+Single known specialist lens report:
 
 ```bash
 case "$REVIEW_LENS" in
@@ -85,19 +98,19 @@ case "$REVIEW_LENS" in
   testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
   maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
   performance) REVIEW_BOT_PROFILE=review-performance ;;
-  *) unset REVIEW_BOT_PROFILE ;;
+  *) REVIEW_BOT_PROFILE=dobi ;;
 esac
 
 FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" \
   forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
-    --decision "$REVIEW_DECISION" \
+    --decision comments-only \
     --comment-file "$REVIEW_COMMENT_FILE" \
     --lens "$REVIEW_LENS" \
     --format json
 ```
 
-Combined owner outcome after all lens progress outcomes are resolved:
+Combined owner outcome after all specialist reports are resolved:
 
 ```bash
 FORGE_BOT_PROFILE=dobi \
@@ -117,8 +130,8 @@ compact activity breadcrumb:
 --issue "$ISSUE" --mirror-issue
 ```
 
-The issue mirror records the PR/MR review URL and metadata. It does not duplicate
-the full review body.
+The issue mirror records the PR/MR review URL and metadata. It does not
+duplicate the full review body.
 
 Always set `FORGE_BOT_PROFILE=dobi` for combined or default-owner posts. Only
 the single-lens branch should set a reviewer profile for one command.

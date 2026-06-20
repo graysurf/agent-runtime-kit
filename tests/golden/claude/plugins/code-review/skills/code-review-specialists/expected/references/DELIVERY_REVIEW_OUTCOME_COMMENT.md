@@ -10,6 +10,8 @@ Disposition vocabulary and reason/evidence rules are canonical in
 `references/DELIVERY_REVIEW_OUTCOME_SCHEMA.md`.
 Provider posting ownership, bot identity, and optional issue mirroring are
 canonical in `references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
+Single-lens reviewer bot progress comments use
+`references/SPECIALIST_REVIEW_COMMENT.md` instead.
 
 ## Ownership
 
@@ -23,17 +25,14 @@ canonical in `references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ## Timing
 
-- Post one compact single-lens outcome comment after each reviewer lens returns.
-  Use the matching reviewer bot profile for that lens. If the lens blocks
-  delivery, repair and commit first, then post the focused follow-up outcome
-  after the affected lens is rerun.
 - Post one final combined outcome comment after the review and repair pass,
   before final merge/close. Use `FORGE_BOT_PROFILE=dobi` for the combined owner
   outcome.
 - If review blocks delivery, post a blocked outcome comment before stopping when
   provider auth and permissions allow it.
-- Keep progress comments compact: one outcome per lens pass or follow-up pass,
-  not one provider comment per raw finding.
+- Do not use this format for individual reviewer bot reports. Those comments
+  report findings only; the parent/main agent owns the dispositions recorded
+  here.
 - If outcome posting fails, stop before merge and report the provider command,
   exit status, and retry action. A delivery that requires this contract is not
   complete without the outcome.
@@ -53,11 +52,11 @@ FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
 ```
 
 Set `REVIEW_DECISION=approve` for `proceed-to-merge` or
-`proceed-with-accepted-residual`, `request-changes` for `blocked`, and
-`comments-only` for non-decisional review notes. Use provider repository flags
-when local remotes are ambiguous. The decision is outcome metadata for the
-comment; this primitive does not mutate native provider approval or
-request-changes state.
+`proceed-with-accepted-residual`, and `request-changes` for `blocked`. Use
+provider repository flags when local remotes are ambiguous. The decision is
+outcome metadata for the comment; this primitive does not mutate native provider
+approval or request-changes state. Use `SPECIALIST_REVIEW_COMMENT.md` with
+`--decision comments-only` for non-decisional specialist notes.
 
 ## Required Comment Shape
 
@@ -84,8 +83,7 @@ Required fields:
 - Reviewable identifier: PR number/URL or MR number/URL.
 - Decision: `proceed-to-merge`, `blocked`, or
   `proceed-with-accepted-residual`.
-- Lenses used. Single-lens progress outcomes list one lens; final combined
-  outcomes list the full selected lens set, including forced minimum lenses.
+- Lenses used, including the full selected lens set and forced minimum lenses.
 - Validation and provider check or pipeline status.
 - Findings table. Use a single `none` row when there were no findings or
   residual risks to report.

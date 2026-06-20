@@ -50,13 +50,14 @@ Outputs:
 - Required checks / pipeline state waited through `forge-cli pr wait-checks`.
 - A `code-review-pre-merge-gate` result completed before merge with at least
   `testing` and `maintainability`.
-- Compact single-lens review outcomes posted to the PR/MR as each reviewer lens
-  returns, authored by the matching reviewer bot profile when one exists. If a
-  linked tracking or dispatch issue is present, mirror the compact review URL
-  breadcrumb to that issue.
+- Compact specialist review comments posted to the PR/MR as each reviewer lens
+  returns. Mapped lenses use their reviewer bot profile; unmapped specialist
+  lenses use `FORGE_BOT_PROFILE=dobi`. These comments use `comments-only` and
+  report findings and evidence only. If a linked tracking or dispatch issue is
+  present, mirror the compact review URL breadcrumb to that issue.
 - A delivery review outcome posted to the PR/MR before merge through
   `forge-cli pr review`; combined owner outcomes set `FORGE_BOT_PROFILE=dobi`,
-  while single-lens progress outcomes set the matching reviewer bot profile.
+  and own final finding dispositions.
 - A provider review-thread sweep completed immediately before merge, with
   every unresolved thread (bot or human) dispositioned: repaired, resolved as
   accepted, or converted to a follow-up issue.
@@ -170,19 +171,22 @@ FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
 forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER" --method squash
 ```
 
-Map the gate result to `approve` when delivery may merge, `request-changes`
-when the review blocks, and `comments-only` when posting non-decisional review
-notes. This decision is outcome metadata for the comment; `forge-cli pr review`
-does not mutate native provider approval or request-changes state.
+Map the final delivery review outcome to `approve` when delivery may merge and
+`request-changes` when the review blocks. Use `comments-only` only for
+specialist review comments or other non-decisional notes, not for the final
+combined delivery-owner outcome. This decision is outcome metadata for the
+comment; `forge-cli pr review` does not mutate native provider approval or
+request-changes state.
 
-For bot identity and issue mirroring: post a compact single-lens outcome after
-each reviewer lens returns and after each focused follow-up rerun. Set the
-matching profile for that one command only:
+For bot identity and issue mirroring: post a compact specialist review comment
+after each reviewer lens returns and after each focused follow-up rerun. Set the
+matching profile for that one command only when the lens is mapped:
 `red-team` -> `review-red-team`, `testing` -> `review-testing-bot`,
 `maintainability` -> `review-maintainability`, and `performance` ->
-`review-performance`. For the final combined delivery-owner outcome, set
-`FORGE_BOT_PROFILE=dobi` so `dobi-bot` authors it. When the PR/MR is linked to a
-tracking or dispatch issue and the issue number is available, add
+`review-performance`. Unmapped specialist lenses use `FORGE_BOT_PROFILE=dobi`
+with `--decision comments-only`. For the final combined delivery-owner outcome,
+set `FORGE_BOT_PROFILE=dobi` so `dobi-bot` authors it. When the PR/MR is linked
+to a tracking or dispatch issue and the issue number is available, add
 `--issue "$ISSUE" --mirror-issue` so the issue activity shows review progress
 without duplicating full outcome bodies.
 
@@ -280,17 +284,18 @@ Use `profile=tracking` for lightweight plan-tracking issues and
 7. Run `code-review-pre-merge-gate`:
    `skills/code-review/code-review-pre-merge-gate/SKILL.md`.
 8. Keep `code-review-pre-merge-gate` read-only. As each reviewer lens returns,
-   post one compact single-lens outcome through `forge-cli pr review` with the
-   mapped reviewer bot profile. The parent delivery workflow posts; reviewer
+   post one compact specialist review comment through `forge-cli pr review`
+   with the mapped reviewer bot profile, or `FORGE_BOT_PROFILE=dobi` for
+   unmapped specialist lenses. The parent delivery workflow posts; reviewer
    subagents never call the provider.
 9. Repair concrete findings in this delivery workflow, then rerun validation,
-   checks, and affected review lenses. Post each focused follow-up outcome with
-   the same mapped reviewer bot profile before continuing.
+   checks, and affected review lenses. Post each focused follow-up specialist
+   review comment with the same bot-profile selection before continuing.
 10. Post the final combined delivery review outcome body produced by
    `code-review-pre-merge-gate` with `forge-cli pr review` before merge.
    Set `FORGE_BOT_PROFILE=dobi` for combined delivery-owner outcomes so they
-   stay on `dobi-bot`; set a reviewer bot profile only for single-lens progress
-   outcomes.
+   stay on `dobi-bot`; set a reviewer bot profile only for mapped specialist
+   review comments.
 11. Sweep provider review threads immediately before merge with
     `forge-cli pr review-threads` (see Entrypoint) — bot reviewers post
     asynchronously, so this runs as the last gate, not only at creation.

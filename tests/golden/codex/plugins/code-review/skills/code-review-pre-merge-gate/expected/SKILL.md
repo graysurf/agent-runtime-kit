@@ -29,8 +29,9 @@ Prereqs:
 - Keep this workflow read-only: it does not fix code, mark reviewables ready,
   merge, close issues, or clean branches. When it runs under an owning delivery
   workflow with provider write access, the owning parent may post compact
-  single-lens progress outcomes through `forge-cli pr review`; reviewer
-  subagents never post directly.
+  specialist review comments through `forge-cli pr review`; reviewer
+  subagents never post directly. Specialist comments use `comments-only`; final
+  delivery decisions belong to the owning workflow.
 
 Inputs:
 
@@ -52,8 +53,8 @@ Outputs:
 - Concrete findings, accepted tradeoffs, residual risks, and validation gaps.
 - A delivery review outcome body suitable for the owning PR/MR delivery
   workflow to post.
-- Single-lens progress outcome recommendations for the owning delivery workflow
-  to post as each reviewer lens returns and after any focused follow-up rerun.
+- Specialist review comment recommendations for the owning delivery workflow to
+  post as each reviewer lens returns and after any focused follow-up rerun.
 
 Failure modes:
 
@@ -110,8 +111,10 @@ review-specialists scope \
    use `multi_agent_v1.spawn_agent` when it is available; if dispatch is
    unavailable or blocked, state the fallback reason and review the lenses inline.
    When an owning delivery workflow has provider write access, have it post one
-   compact single-lens outcome for each returned lens before repair work starts.
-   The parent posts with the mapped reviewer bot profile; the reviewer subagent
+   compact specialist review comment for each returned lens before repair work
+   starts. The parent uses the bot-profile selection from
+   `REVIEW_OUTCOME_POSTING_CONTRACT.md`: reviewer bot for mapped lenses and
+   `FORGE_BOT_PROFILE=dobi` for unmapped specialist lenses. The reviewer subagent
    stays read-only.
 6. Dispatch `reviewer-red-team` only after the first-wave lenses, and only when
    the scope warrants it. If dispatch is unavailable or blocked, state the
@@ -120,14 +123,14 @@ review-specialists scope \
    it can probe cross-cutting failure modes, then validate its JSONL and merge the
    combined first-wave plus red-team JSONL before folding it into the result.
    When red-team returns, have the owning delivery workflow post the red-team
-   single-lens outcome before any red-team repair loop starts.
+   specialist review comment before any red-team repair loop starts.
 7. Classify every meaningful first-wave and red-team item using the shared
    delivery outcome vocabulary.
 8. Treat evidence-backed concrete findings as blocking until repaired, accepted
    by the owner, or converted into an explicit follow-up.
 9. After repairs, rerun focused validation and affected lenses; have the owning
-   delivery workflow post a follow-up single-lens outcome with the same mapped
-   reviewer bot profile for each rerun.
+   delivery workflow post a follow-up specialist review comment with the same
+   bot-profile selection for each rerun.
 10. Produce a compact gate result and final delivery review outcome body. The
     owning delivery skill posts the final combined outcome, reruns checks,
     merges, or stops.
@@ -139,8 +142,9 @@ reviewer-subagent dispatch, fallback justification, and the review outcome
 recommendation. Each dispatched reviewer subagent owns only its read-only lens.
 Provider delivery skills own PR/MR comments, ready transitions, checks,
 merge/close calls, issue closeout, and repair execution. This gate may
-recommend single-lens progress comments, but the provider write remains in the
-owning delivery workflow.
+recommend specialist review comments, but the provider write remains in the
+owning delivery workflow and final dispositions stay in the combined delivery
+outcome.
 
 ## References
 
@@ -148,6 +152,8 @@ owning delivery workflow.
   `skills/code-review/code-review-specialists/references/DELIVERY_SPECIALIST_REVIEW_GATE.md`
 - Delivery review outcome comment:
   `skills/code-review/code-review-specialists/references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`
+- Specialist review comment:
+  `skills/code-review/code-review-specialists/references/SPECIALIST_REVIEW_COMMENT.md`
 - Review outcome posting contract:
   `skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`
 - Delivery review outcome schema:
