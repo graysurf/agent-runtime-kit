@@ -60,10 +60,11 @@ For every end-to-end delivery PR or MR:
    reviewables, the review may be a short testing/maintainability pass that
    records "no concrete findings" plus why broader lenses were not selected.
 6. For delivery gates with provider write access, the owning parent posts a
-   compact single-lens outcome through `forge-cli pr review` after each selected
-   lens returns. Use the lens bot profile from
+   compact specialist review comment through `forge-cli pr review` after each
+   selected lens returns. Use the lens bot profile from
    `REVIEW_OUTCOME_POSTING_CONTRACT.md`. The reviewer subagent remains read-only
-   and does not post directly.
+   and does not post directly. Specialist comments report findings only; the
+   parent records final dispositions later.
 
 ## Findings And Repair Loop
 
@@ -71,8 +72,8 @@ For every end-to-end delivery PR or MR:
 - Repair concrete findings on the same delivery branch when they are inside the
   accepted delivery scope.
 - After repairs, rerun focused validation, provider checks or pipelines, and the
-  affected specialist lenses. Post the focused follow-up outcome with the same
-  lens bot profile before continuing to the next gate step.
+  affected specialist lenses. Post the focused follow-up specialist review
+  comment with the same lens bot profile before continuing to the next gate step.
 - Repeat review and repair until no concrete unresolved findings remain, or
   stop with an exact blocker and unblock action.
 - Do not treat user-authorized review fixes as a successful stopping point; they
