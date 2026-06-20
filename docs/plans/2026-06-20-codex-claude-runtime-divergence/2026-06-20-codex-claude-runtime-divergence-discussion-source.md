@@ -1,18 +1,23 @@
 # Codex / Claude Runtime Divergence — Options Evaluation
 
-- **Status**: evaluation complete; the four open decisions were resolved on
-  2026-06-20 in favor of the durable path (per-product home render, an agent-docs
-  product dimension, and a broad leakage lint). Ready to graduate into an L2
-  coupled nils-cli plan; not yet executed.
+- **Status**: graduated into this L2 plan bundle on 2026-06-20; the four
+  decisions are resolved (per-product home render, an agent-docs product
+  dimension, a broad leakage lint). This file is the bundle's discussion source;
+  the plan and execution-state are siblings. Not yet executed.
 - **Date**: 2026-06-20
 - **Source**: in-session evaluation run as two multi-agent workflows
   (19 subagents total), plus a follow-up fact check of the home prompt against
   the skill bodies. Feasibility was verified by reading the `nils-cli` render and
   agent-docs crates in `sympoies/nils-cli` and the documented Codex and Claude
   harness behavior. Decisions appended 2026-06-20.
-- **Intended next step**: graduate this capture into an
-  `docs/plans/<YYYY-MM-DD>-<slug>/` bundle and run the coupled nils-cli change
-  (R1 + C1) gate-first, then consume it in this repo and bump the pin.
+- **Intended next step**: open a tracking issue with
+  `create-plan-tracking-issue`, then run the coupled nils-cli change (R1 + C1)
+  gate-first, consume it in this repo, and bump the pin.
+
+## Execution
+
+- Recommended plan: docs/plans/2026-06-20-codex-claude-runtime-divergence/2026-06-20-codex-claude-runtime-divergence-plan.md
+- Recommended execution state: docs/plans/2026-06-20-codex-claude-runtime-divergence/2026-06-20-codex-claude-runtime-divergence-execution-state.md
 
 ## Purpose
 
