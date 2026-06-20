@@ -17,6 +17,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from collections.abc import Iterable, Mapping
@@ -298,6 +299,28 @@ def _agent_docs_base_args(repo_root: str) -> list[str]:
     return args
 
 
+def _agent_docs_fingerprint() -> str:
+    """A cheap identity of the installed ``agent-docs`` binary for cache keying.
+
+    Resolved validation contracts depend on the binary's probed capabilities
+    (``--product`` / ``--require-declared-intent`` support), which change across
+    CLI upgrades without touching ``AGENT_DOCS.toml``. Folding the resolved
+    executable path, size, and mtime into the contract cache key invalidates the
+    cache after such an upgrade, so a stale unfiltered fallback contract is not
+    served once the host learns to filter by product. Uses only ``which`` plus a
+    ``stat`` (no subprocess) so the recorder stays cheap on every tool call;
+    returns ``""`` when the binary cannot be resolved.
+    """
+    executable = shutil.which("agent-docs")
+    if not executable:
+        return ""
+    try:
+        stat = os.stat(executable)
+    except OSError:
+        return executable
+    return f"{executable}:{stat.st_size}:{stat.st_mtime_ns}"
+
+
 def _agent_docs_json(args: list[str]) -> dict[str, Any] | None:
     try:
         completed = subprocess.run(
@@ -431,7 +454,9 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
     Returns one ``{"context": "...", "commands": [...], "marker": "..."}``
     record per declared intent whose validation contract contains at least one
     command. The agent-docs result is cached per repo and docs-home, keyed on
-    the catalog's mtime, so the recorder can run on every tool call cheaply.
+    the catalog's mtime, the runtime product, and a fingerprint of the
+    ``agent-docs`` binary (so a CLI upgrade that changes product filtering
+    invalidates the cache), letting the recorder run on every tool call cheaply.
     """
     catalog = os.path.join(repo_root, "AGENT_DOCS.toml")
     if not os.path.isfile(catalog):
@@ -443,7 +468,10 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
 
     docs_home = _docs_home(repo_root)
     product = _runtime_product()
-    cache_key = "\0".join([repo_root, docs_home or "", product or ""])
+    agent_docs_fingerprint = _agent_docs_fingerprint()
+    cache_key = "\0".join(
+        [repo_root, docs_home or "", product or "", agent_docs_fingerprint]
+    )
     digest = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:16]
     cache_path = os.path.join(_runtime_cache_dir(), f"contract-{digest}.json")
     try:
@@ -454,6 +482,7 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
             and cached.get("catalog_mtime") == catalog_mtime
             and cached.get("docs_home") == docs_home
             and cached.get("product") == product
+            and cached.get("agent_docs_fingerprint") == agent_docs_fingerprint
         ):
             contracts = cached.get("contracts")
             if isinstance(contracts, list):
@@ -477,6 +506,7 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
                     "catalog_mtime": catalog_mtime,
                     "docs_home": docs_home,
                     "product": product,
+                    "agent_docs_fingerprint": agent_docs_fingerprint,
                     "contracts": contracts,
                 },
                 handle,
