@@ -209,6 +209,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.sync-runtime-surfaces.shared-cli.codex-missing-cli
+    product: shared-cli
+    domain: meta
+    skill_id: meta.sync-runtime-surfaces
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: source sync-runtime-surfaces in library mode with Codex selected and no codex binary on PATH
+    invocation: sync-runtime-surfaces Codex plugin registry apply helper
+    expected_exit_code: nonzero
+    expected_artifacts: actionable Codex CLI 0.141.0+ requirement message and no skipped activation
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.sync-runtime-surfaces.shared-cli.prune-fixture
     product: shared-cli
     domain: meta

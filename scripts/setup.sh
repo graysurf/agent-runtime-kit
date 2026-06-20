@@ -580,7 +580,6 @@ sync_codex_plugin_registry_activation() {
     --source-root "$REPO_HOME_DEFAULT" \
     --product codex \
     --no-pull \
-    --no-prune \
     --no-verify \
     "$mode_flag"
 }

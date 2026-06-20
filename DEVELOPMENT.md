@@ -96,7 +96,7 @@ bash "$HOME/.config/agent-runtime-kit/scripts/sync-runtime-surfaces.sh" \
   --product claude --no-pull --no-prune --no-verify --apply
 bash "$HOME/.config/agent-runtime-kit/scripts/sync-runtime-surfaces.sh" \
   --source-root "$HOME/.config/agent-runtime-kit" \
-  --product codex --no-pull --no-prune --no-verify --apply
+  --product codex --no-pull --no-verify --apply
 agent-docs audit --target all --strict \
   --project-path "$HOME/.config/agent-runtime-kit"
 agent-runtime doctor --source-root "$HOME/.config/agent-runtime-kit" \

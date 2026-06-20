@@ -1010,6 +1010,21 @@ for entry in entries:
 PY
 }
 
+require_codex_plugin_cli() {
+  if ! command -v codex >/dev/null 2>&1; then
+    CODEX_PLUGIN_STATUS="missing-codex"
+    err "codex plugin registry requires Codex CLI >= 0.141.0 on PATH; install or expose the codex binary before running --apply."
+    return 127
+  fi
+
+  if ! codex plugin --help >/dev/null 2>&1 ||
+    ! codex plugin marketplace --help >/dev/null 2>&1; then
+    CODEX_PLUGIN_STATUS="unsupported-codex"
+    err "codex plugin registry requires Codex CLI >= 0.141.0 with 'codex plugin marketplace' support; upgrade Codex CLI before running --apply."
+    return 1
+  fi
+}
+
 # Mirror of sync_claude_plugin_registry for Codex, adapted to the Codex plugin
 # CLI (`codex plugin add` / `remove`, `codex plugin marketplace add` / `remove`,
 # no `--scope`) and the `{installed:[...],available:[...]}` /
@@ -1033,10 +1048,8 @@ sync_codex_plugin_registry() {
   marketplace="$(codex_marketplace_name "$marketplace_json")"
   materialized_home="$(codex_materialized_marketplace_home "$state_home" "$marketplace")"
 
-  if [ "$APPLY" = "1" ] && ! command -v codex >/dev/null 2>&1; then
-    CODEX_PLUGIN_STATUS="skipped"
-    log "codex plugin registry skipped (codex binary not on PATH)"
-    return 0
+  if [ "$APPLY" = "1" ]; then
+    require_codex_plugin_cli || return $?
   fi
 
   materialize_codex_plugin_marketplace "$marketplace_json" "$materialized_home"

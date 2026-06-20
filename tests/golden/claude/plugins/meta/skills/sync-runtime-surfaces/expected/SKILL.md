@@ -37,7 +37,9 @@ Outputs:
 - A concise summary of whether pull, render, install, prune, doctor, and Codex
   prompt-input verification were planned, skipped, completed, or (for prune)
   flagged `review-needed`, plus whether Codex / Claude plugin registry
-  activation was planned, installed, or skipped.
+  activation was planned, installed, skipped, or failed. Codex plugin
+  activation is mandatory for apply-mode Codex skill visibility; Claude
+  activation remains skipped when the Claude CLI is absent.
 - A read-only source count check before any render/install step.
 
 Failure modes:
@@ -51,7 +53,8 @@ Failure modes:
 - `agent-runtime render`, `install`, `prune-stale`, or
   `doctor --class skill-surface` fails.
 - Codex plugin registry activation fails when Codex is selected and the
-  `codex` binary is available.
+  `codex` binary is absent or does not expose the plugin marketplace commands
+  required by Codex CLI 0.141.0+.
 - Claude plugin registry activation fails when Claude is selected and the
   `claude` binary is available.
 - Codex prompt-input verification fails when Codex is selected and available.
