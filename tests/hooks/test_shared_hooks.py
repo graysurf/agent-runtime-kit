@@ -614,6 +614,64 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_allowed(decision)
 
+    def test_blocks_forge_cli_wrapper_bypass(self) -> None:
+        blocked_commands = (
+            "env -u FORGE_BOT_PROFILE forge-cli pr review 448",
+            "env FORGE_BOT_PROFILE=dobi forge-cli pr review 448",
+            "env -S 'forge-cli pr review 448'",
+            "env -S 'FORGE_BOT_PROFILE=dobi forge-cli pr review 448'",
+            "env -S'forge-cli pr review 448'",
+            "env -iS'forge-cli pr review 448'",
+            "env -C /tmp forge-cli pr review 448",
+            "env --chdir=/tmp forge-cli pr review 448",
+            "env -P /bin forge-cli pr review 448",
+            "command forge-cli pr review 448",
+            "command env -S 'forge-cli pr review 448'",
+            "exec forge-cli pr review 448",
+            "/opt/homebrew/bin/forge-cli pr review 448",
+            "time /opt/homebrew/bin/forge-cli pr review 448",
+            "time FORGE_BOT_PROFILE=dobi env forge-cli pr review 448",
+            "/usr/bin/time -o /dev/null env forge-cli pr review 448",
+            "/usr/bin/time --output=/dev/null env forge-cli pr review 448",
+            "agent-run exec --cwd /repo -- time env forge-cli pr review 448",
+            "agent-run exec --cwd /repo -- env -u FORGE_BOT_PROFILE forge-cli pr review 448",
+            "agent-run exec --cwd /repo -- env -S 'forge-cli pr review 448'",
+            "bash -lc 'env -u FORGE_BOT_PROFILE forge-cli pr review 448'",
+            "zsh -lc '/opt/homebrew/bin/forge-cli pr review 448'",
+            "dash -c 'forge-cli pr review 448'",
+            "ksh -c 'forge-cli pr review 448'",
+            "bash <<'EOF'\nforge-cli pr review 448\nEOF",
+            "dash <<'EOF'\nforge-cli pr review 448\nEOF",
+            "ksh <<'EOF'\nforge-cli pr review 448\nEOF",
+            "agent-run exec --cwd /repo -- bash -lc 'env -u FORGE_BOT_PROFILE forge-cli pr review 448'",
+            "FORGE_NO_LABELS=1 env -u FORGE_BOT_PROFILE forge-cli pr review 448",
+        )
+        for command in blocked_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "forge-label-reminder.py", command_payload(command)
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "forge-cli wrapper")
+
+        allowed_commands = (
+            "forge-cli pr review 448",
+            "FORGE_BOT_PROFILE=dobi forge-cli pr review 448",
+            "FORGE_AS=bot FORGE_BOT_PROFILE=dobi forge-cli pr review 448",
+            "agent-run exec --cwd /repo -- forge-cli pr review 448",
+            "env printf forge-cli",
+            "command -v forge-cli",
+            "cat <<'EOF'\nforge-cli pr review 448\nEOF",
+            "bash -lc 'true' <<'EOF'\nforge-cli pr review 448\nEOF",
+        )
+        for command in allowed_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "forge-label-reminder.py", command_payload(command)
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
     def test_blocks_project_memory_write(self) -> None:
         code, decision, stderr = run_hook(
             "block-project-memory-write.py",

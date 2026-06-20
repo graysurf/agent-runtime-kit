@@ -50,10 +50,13 @@ Outputs:
 - Required checks / pipeline state waited through `forge-cli pr wait-checks`.
 - A `code-review-pre-merge-gate` result completed before merge with at least
   `testing` and `maintainability`.
+- Compact single-lens review outcomes posted to the PR/MR as each reviewer lens
+  returns, authored by the matching reviewer bot profile when one exists. If a
+  linked tracking or dispatch issue is present, mirror the compact review URL
+  breadcrumb to that issue.
 - A delivery review outcome posted to the PR/MR before merge through
-  `forge-cli pr review`; combined owner outcomes use the default `dobi-bot`,
-  while intentionally posted single-lens outcomes may set the matching reviewer
-  bot profile.
+  `forge-cli pr review`; combined owner outcomes set `FORGE_BOT_PROFILE=dobi`,
+  while single-lens progress outcomes set the matching reviewer bot profile.
 - A provider review-thread sweep completed immediately before merge, with
   every unresolved thread (bot or human) dispositioned: repaired, resolved as
   accepted, or converted to a follow-up issue.
@@ -159,7 +162,7 @@ review-specialists scope \
   --testing \
   --maintainability \
   --format json
-env -u FORGE_BOT_PROFILE forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
   --decision "$REVIEW_DECISION" \
   --comment-file "$DELIVERY_REVIEW_OUTCOME" \
   --lens testing \
@@ -172,16 +175,16 @@ when the review blocks, and `comments-only` when posting non-decisional review
 notes. This decision is outcome metadata for the comment; `forge-cli pr review`
 does not mutate native provider approval or request-changes state.
 
-For bot identity and issue mirroring: combined delivery-owner outcomes normally
-clear `FORGE_BOT_PROFILE` so the default `dobi-bot` authors them. If you
-intentionally post a single-lens reviewer outcome, set the matching profile for
-that one command only:
+For bot identity and issue mirroring: post a compact single-lens outcome after
+each reviewer lens returns and after each focused follow-up rerun. Set the
+matching profile for that one command only:
 `red-team` -> `review-red-team`, `testing` -> `review-testing-bot`,
 `maintainability` -> `review-maintainability`, and `performance` ->
-`review-performance`. When the PR/MR is linked to a tracking or dispatch issue
-and the issue number is available, add `--issue "$ISSUE" --mirror-issue` so the
-issue activity shows the review progress without duplicating the full outcome
-body.
+`review-performance`. For the final combined delivery-owner outcome, set
+`FORGE_BOT_PROFILE=dobi` so `dobi-bot` authors it. When the PR/MR is linked to a
+tracking or dispatch issue and the issue number is available, add
+`--issue "$ISSUE" --mirror-issue` so the issue activity shows review progress
+without duplicating full outcome bodies.
 
 Immediately before the merge call, sweep provider review threads. Bot
 reviewers post asynchronously — often minutes after PR creation — so the sweep
@@ -276,38 +279,42 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    `--no-merge` so checks / pipelines complete before the mandatory review gate.
 7. Run `code-review-pre-merge-gate`:
    `skills/code-review/code-review-pre-merge-gate/SKILL.md`.
-8. Keep `code-review-pre-merge-gate` read-only. Repair concrete findings in
-   this delivery workflow, then rerun validation, checks, and affected review
-   lenses.
-9. Post the delivery review outcome body produced by
+8. Keep `code-review-pre-merge-gate` read-only. As each reviewer lens returns,
+   post one compact single-lens outcome through `forge-cli pr review` with the
+   mapped reviewer bot profile. The parent delivery workflow posts; reviewer
+   subagents never call the provider.
+9. Repair concrete findings in this delivery workflow, then rerun validation,
+   checks, and affected review lenses. Post each focused follow-up outcome with
+   the same mapped reviewer bot profile before continuing.
+10. Post the final combined delivery review outcome body produced by
    `code-review-pre-merge-gate` with `forge-cli pr review` before merge.
-   Clear inherited `FORGE_BOT_PROFILE` for combined delivery-owner outcomes so
-   they stay on the default `dobi-bot`; set a reviewer bot profile only for
-   intentionally posted single-lens outcomes.
-10. Sweep provider review threads immediately before merge with
+   Set `FORGE_BOT_PROFILE=dobi` for combined delivery-owner outcomes so they
+   stay on `dobi-bot`; set a reviewer bot profile only for single-lens progress
+   outcomes.
+11. Sweep provider review threads immediately before merge with
     `forge-cli pr review-threads` (see Entrypoint) — bot reviewers post
     asynchronously, so this runs as the last gate, not only at creation.
     Disposition every unresolved thread: repair, reply-and-resolve as
     accepted, or convert to a follow-up issue. `pr merge` refuses
     undispositioned threads (`unresolved_review_threads`); do not bypass with
     `--allow-unresolved-threads` without recording the reason.
-11. In the same pass, sweep the description's task list with
+12. In the same pass, sweep the description's task list with
     `forge-cli pr tasks` (see Entrypoint). Disposition every unchecked
     `- [ ]` item: check it off or rewrite it as deferred with a follow-up
     ref. `pr merge` refuses unchecked items (`unchecked_task_items`); do not
     bypass with `--allow-unchecked-tasks` without its required reason flag
     and a matching note in the delivery review outcome.
-12. Before merge, if the PR/MR references a linked tracking or dispatch issue,
+13. Before merge, if the PR/MR references a linked tracking or dispatch issue,
     audit it and confirm lifecycle readiness: source/plan snapshots, complete
     state, latest `role=session`, validation, review, and dashboard links are
     present. If not, stop and route to the matching plan delivery workflow.
-13. Merge with `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` unless
+14. Merge with `forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER"` unless
     `--no-merge` is the requested final stop.
-14. After merge, if the body referenced a linked tracking or dispatch issue
+15. After merge, if the body referenced a linked tracking or dispatch issue
     and `--no-closeout` was not supplied, run `plan-issue record close` with
     the correct profile. On gate fail, leave the issue open with the blocked
     code surfaced by `plan-issue` and route to the matching closeout skill.
-15. Record the PR/MR URL, labels, check/pipeline evidence, review outcome, merge
+16. Record the PR/MR URL, labels, check/pipeline evidence, review outcome, merge
     commit, chained closeout result, and any fallback used in delivery notes.
 
 ## Boundary
