@@ -74,5 +74,6 @@ For every end-to-end delivery PR or MR:
 - Weakly evidenced concerns, accepted tradeoffs, cleanup notes, and residual
   risks must be reported by the owning delivery workflow. Issue-backed delivery
   must also record their issue-visible disposition before closeout.
-- The owning delivery workflow must post the final or blocked outcome using
-  `references/DELIVERY_REVIEW_OUTCOME_COMMENT.md` before final merge/close.
+- The owning delivery workflow must post the final or blocked outcome through
+  `forge-cli pr review`, following
+  `references/DELIVERY_REVIEW_OUTCOME_COMMENT.md`, before final merge/close.

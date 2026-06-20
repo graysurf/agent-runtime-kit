@@ -11,7 +11,7 @@ description: >
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.13`, `forge-cli >=1.11.2`,
+- CLI floors: `plan-issue >=1.0.13`, `forge-cli >=1.13.0`,
   `review-evidence`.
 - Issue precondition: the shared dispatch issue exists and the lane PR
   has been created by `execute-dispatch-lane` /
@@ -42,7 +42,9 @@ Outputs:
 - Dispatch lane `state` / `session` update through `tracking
   checkpoint --live --post state,session` when the review outcome flips
   the lane back to implementation.
-- `forge-cli pr review` posts the provider review comment.
+- `forge-cli pr review` posts provider-visible review outcome metadata and
+  mirrors a compact progress breadcrumb to the shared dispatch issue. It does
+  not mutate native provider approval or request-changes state.
 - `review-evidence` produces a retained findings artifact path or
   URL.
 
@@ -86,8 +88,14 @@ plan-issue --format json tracking checkpoint \
   --live \
   --post review --repair-dashboard
 
-forge-cli pr review --repo "$OWNER_REPO" --pr "$PR_NUMBER" \
-  --decision "$DECISION" --comment "$REVIEW_COMMENT" --format json
+forge-cli pr review "$PR_NUMBER" \
+  --repo "$OWNER_REPO" \
+  --decision "$DECISION" \
+  --comment-file "$REVIEW_COMMENT_FILE" \
+  --lens "$REVIEW_LENS" \
+  --issue "$ISSUE" \
+  --mirror-issue \
+  --format json
 ```
 
 ## Workflow
@@ -105,8 +113,9 @@ forge-cli pr review --repo "$OWNER_REPO" --pr "$PR_NUMBER" \
 4. **Review checkpoint** — `tracking checkpoint --live --post review
    --repair-dashboard`. If findings flip the lane back to
    implementation, also post `state,session` for the lane scope.
-5. **Provider review comment** — `forge-cli pr review` records the
-   decision on the provider.
+5. **Provider review outcome** — `forge-cli pr review` records the
+   decision as provider-visible outcome metadata and mirrors the review URL to
+   the shared issue.
 6. **Read-back** — confirm the dispatch dashboard reflects the lane
    review status and the lane PR carries the review comment.
 7. **Stop** on any Failure mode code; do not implement fixes unless

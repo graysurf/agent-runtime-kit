@@ -10,7 +10,7 @@ description: >
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli >=1.11.2`, `plan-issue >=1.1.0`, and
+- `agent-runtime`, `forge-cli >=1.13.0`, `plan-issue >=1.1.0`, and
   `review-specialists` are installed from the released nils-cli package and
   available on `PATH`. The `code-review-pre-merge-gate` workflow uses
   `review-specialists`; the review-thread sweep and merge gate need
@@ -50,7 +50,8 @@ Outputs:
 - Required checks / pipeline state waited through `forge-cli pr wait-checks`.
 - A `code-review-pre-merge-gate` result completed before merge with at least
   `testing` and `maintainability`.
-- A delivery review outcome comment posted to the PR/MR before merge.
+- A delivery review outcome posted to the PR/MR before merge through
+  `forge-cli pr review`.
 - A provider review-thread sweep completed immediately before merge, with
   every unresolved thread (bot or human) dispositioned: repaired, resolved as
   accepted, or converted to a follow-up issue.
@@ -80,7 +81,7 @@ Failure modes:
   time. The description is the delivery contract; `forge-cli pr merge` fails
   closed with `unchecked_task_items`, and the task-list sweep is how the
   workflow dispositions them before that gate trips.
-- Delivery review outcome comment posting fails.
+- Delivery review outcome posting fails.
 - `local_path_present`: rewrite useful evidence paths in provider-visible PR
   bodies, delivery outcome comments, or linked issue closeout records to
   `$HOME/...` and omit remote-useless local artifact paths before retrying.
@@ -156,10 +157,22 @@ review-specialists scope \
   --testing \
   --maintainability \
   --format json
-forge-cli --provider "$PROVIDER" pr comment "$PR_NUMBER" \
-  --body-file "$DELIVERY_REVIEW_OUTCOME"
+forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+  --decision "$REVIEW_DECISION" \
+  --comment-file "$DELIVERY_REVIEW_OUTCOME" \
+  --lens testing \
+  --lens maintainability
 forge-cli --provider "$PROVIDER" pr merge "$PR_NUMBER" --method squash
 ```
+
+Map the gate result to `approve` when delivery may merge, `request-changes`
+when the review blocks, and `comments-only` when posting non-decisional review
+notes. This decision is outcome metadata for the comment; `forge-cli pr review`
+does not mutate native provider approval or request-changes state.
+
+When the PR/MR is linked to a tracking or dispatch issue and the issue number is
+available, add `--issue "$ISSUE" --mirror-issue` so the issue activity shows the
+review progress without duplicating the full outcome body.
 
 Immediately before the merge call, sweep provider review threads. Bot
 reviewers post asynchronously — often minutes after PR creation — so the sweep
@@ -258,7 +271,7 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    this delivery workflow, then rerun validation, checks, and affected review
    lenses.
 9. Post the delivery review outcome body produced by
-   `code-review-pre-merge-gate` before merge.
+   `code-review-pre-merge-gate` with `forge-cli pr review` before merge.
 10. Sweep provider review threads immediately before merge with
     `forge-cli pr review-threads` (see Entrypoint) — bot reviewers post
     asynchronously, so this runs as the last gate, not only at creation.

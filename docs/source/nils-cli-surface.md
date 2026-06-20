@@ -1,20 +1,30 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-20 (refreshed for `v1.12.1`)
+- Snapshot date: 2026-06-21 (refreshed for `v1.13.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.12.1`
+- Active `git describe --tags` output: `v1.13.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.12.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.13.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `1455c01`
-  (`chore(release): bump cli versions to 1.12.1 (#919)`)
+- Head commit: `78e3c2c`
+  (`chore(release): bump cli versions to 1.13.0 (#921)`)
 - Release:
-  [`v1.12.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.12.1),
+  [`v1.13.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.13.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.13.0` is a lock-step minor over `v1.12.1`. Runtime-kit now consumes the
+  `forge-cli pr review` outcome-posting primitive, so the `forge-cli` floor
+  moves to `>= 1.13.0`; the exact `pinned_tag` gate (now `v1.13.0`) remains
+  the primary host gate. Consumer-visible changes:
+  - `forge-cli`: `pr review <id>` posts a PR/MR review outcome comment with
+    `--decision comments-only|approve|request-changes`, `--comment` or
+    `--comment-file`, repeatable `--lens`, and optional `--issue
+    --mirror-issue` for a compact issue activity breadcrumb. The primitive
+    intentionally records outcome comments only; native provider approve /
+    request-changes state mutation stays out of scope ([#920](https://github.com/sympoies/nils-cli/pull/920)).
 - `v1.12.1` is a lock-step patch over `v1.12.0`. Runtime-kit now consumes the
   product-scoped agent-docs resolver and the per-product home-prompt render
   target, so the `agent-docs` and `agent-runtime` floors move to `>= 1.12.1`;

@@ -1,7 +1,7 @@
 # Delivery Review Outcome Schema
 
-Purpose: one shared disposition vocabulary for delivery review outcome comments
-and dispatch lane PR review evidence.
+Purpose: one shared disposition vocabulary for delivery review outcomes posted
+through `forge-cli pr review` and for dispatch lane PR review evidence.
 
 ## Dispositions
 
