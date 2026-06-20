@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: open
+- Status: promoted
 - First observed: 2026-06-20
 - Area: forge-bot identity routing; gh issue/pr comment posting
 - Severity: low
@@ -79,7 +79,12 @@ the hook/policy change from this entry.
 
 ## Next Action
 
-None now — deferred by the user (observed but not fixing this turn). Revisit
-when next touching the forge-bot hook/guardrail or the comment-posting
-convention; decide between a hook extension and a skill-policy note. Leave
-`Cluster` unset until a sibling identity-routing gap appears.
+None. Promoted by forge-cli pr review outcome posting plus runtime-kit skill-policy routing; no remaining action for this review-outcome path.
+
+Lifecycle link: `https://github.com/graysurf/agent-runtime-kit/pull/445`
+
+## Archive
+
+- Archived: 2026-06-21
+- Reason: Promoted by forge-cli pr review outcome posting and runtime-kit skill-policy routing.
+- Durable link: `https://github.com/graysurf/agent-runtime-kit/pull/445`
