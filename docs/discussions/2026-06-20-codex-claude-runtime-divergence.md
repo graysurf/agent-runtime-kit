@@ -1,14 +1,18 @@
 # Codex / Claude Runtime Divergence — Options Evaluation
 
-- **Status**: broad evaluation complete; convergence pending. Material for
-  continued discussion — not yet an executed-and-archived plan.
+- **Status**: evaluation complete; the four open decisions were resolved on
+  2026-06-20 in favor of the durable path (per-product home render, an agent-docs
+  product dimension, and a broad leakage lint). Ready to graduate into an L2
+  coupled nils-cli plan; not yet executed.
 - **Date**: 2026-06-20
 - **Source**: in-session evaluation run as two multi-agent workflows
-  (19 subagents total). Feasibility was verified by reading the `nils-cli`
-  render and agent-docs crates in `sympoies/nils-cli` and the documented Codex
-  and Claude harness behavior.
-- **Intended next step**: pick a convergence path (recommended defaults below),
-  then implement Step 1 as a pure-repo, test-first change.
+  (19 subagents total), plus a follow-up fact check of the home prompt against
+  the skill bodies. Feasibility was verified by reading the `nils-cli` render and
+  agent-docs crates in `sympoies/nils-cli` and the documented Codex and Claude
+  harness behavior. Decisions appended 2026-06-20.
+- **Intended next step**: graduate this capture into an
+  `docs/plans/<YYYY-MM-DD>-<slug>/` bundle and run the coupled nils-cli change
+  (R1 + C1) gate-first, then consume it in this repo and bump the pin.
 
 ## Purpose
 
@@ -22,9 +26,9 @@ auto-detected and the corresponding content is applied to that runtime, without
 polluting the other runtime's loaded context.
 
 This document records the evaluated option space, the probe-verified
-feasibility, the recommended convergence path, and the decisions that remain. It
-is the read-first source for the next discussion or for generating an
-implementation plan; it is not itself a task-by-task plan.
+feasibility, the resolved decisions, and the chosen convergence path. It is the
+read-first source for the L2 plan that will execute the change; it is not itself
+a task-by-task plan.
 
 ## Confirmed Facts
 
@@ -41,11 +45,25 @@ Detection already exists; application is the gap.
   into `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` — never rendered. Its
   "Code Review Delegation" section says "This policy is Codex-only" and is loaded
   word for word by both runtimes (SUPPORT_MATRIX surfaces 1 and 17).
-- **Pollution source 2 (skills)**: the five
-  `core/skills/code-review/*/SKILL.md.tera` files carry cross-product prose but
-  have no `{% if product %}`, and the `tests/golden/codex` and
-  `tests/golden/claude` versions are byte-identical — a second leak at the
-  render layer.
+- **The home authorization and the skill baseline disagree for Codex.** The
+  `AGENT_HOME.md` "Code Review Delegation" section — added in commit `dd58860`,
+  the most recent change on `main` — authorizes Codex to "use subagent reviewers
+  by default." The five `core/skills/code-review/*/SKILL.md.tera` bodies set the
+  opposite baseline for explicit-only hosts: "on hosts that only spawn subagents
+  on explicit request (e.g. Codex), run the lenses inline by default — the
+  expected path for that host, not a waiver — and dispatch only when the user
+  explicitly opts in." The home paragraph is the standing per-product opt-in
+  layered on top of the product-neutral skill baseline (skills cannot branch per
+  product; see the null Tera view below). Consequence: deleting the home
+  paragraph is **not** behavior-neutral — it reverts Codex to inline-by-default.
+  An earlier draft of this document claimed the skills already encode the
+  behavior and the section "can simply be deleted"; that was wrong and is
+  corrected here. The fix is to deliver the authorization per-product, not to
+  delete it.
+- **Pollution source 2 (skills)**: the five code-review `SKILL.md.tera` files
+  carry cross-product prose, and the `tests/golden/codex` and
+  `tests/golden/claude` versions are byte-identical, so the per-product split is
+  expressed only as capability prose, not as rendered divergence.
 
 Probe-verified feasibility (evidence is in `sympoies/nils-cli` unless noted):
 
@@ -62,29 +80,24 @@ Probe-verified feasibility (evidence is in `sympoies/nils-cli` unless noted):
   nils-cli code.
 - **The `products` map can omit a product cleanly.** Both `codex` and `claude`
   keys are independently optional; an omitted product renders nothing and trips
-  no drift fixture (`writer.rs`; `rendered_target` re-renders and byte-compares,
-  so absent-on-both is a zero diff). Shipping an artifact to one product only is
-  pure-repo and audit-clean.
+  no drift fixture. Shipping an artifact to one product only is pure-repo and
+  audit-clean.
 - **Claude `additionalContext` is not durable.** Hook-injected
   `additionalContext` is conversation-scoped and lost on `/compact` with no
   reload, unlike `CLAUDE.md` which re-injects from disk each session start. It is
   unsuitable for load-bearing per-product policy on Claude.
 - **Claude `@import` works at home scope.** `~/.claude/CLAUDE.md` honors
   `@import` with relative and absolute (`~/`) paths, including files outside
-  `~/.claude`, and the import is durable across compaction.
+  `~/.claude`, durable across compaction.
 - **Codex has a single home file.** Codex reads exactly one home-scope file
   (`$CODEX_HOME/AGENTS.md`, or an `AGENTS.override.md`); there is no include
   directive or second home file. A Codex-only home delta must live in those
   bytes, or be rendered per product.
-- **Codex honors `additionalContext`.** Codex feeds SessionStart and
-  UserPromptSubmit `additionalContext` to the model as developer context.
-  Authority parity with `AGENTS.md` is undocumented, and persistence is
-  session/turn-scoped, so it is suitable for advisory steering, not load-bearing
-  policy.
+- **Codex honors `additionalContext`** as developer context (advisory,
+  session/turn-scoped, undocumented authority parity with `AGENTS.md`).
 - **Env vars never reach the model context.** On both runtimes, environment
-  variables (including any `AGENT_RUNTIME_PRODUCT`) are visible to subprocesses
-  only; the model only learns a value if a command echoes it. Self-detection by
-  the model reading an env var directly is not viable.
+  variables are visible to subprocesses only; self-detection by the model
+  reading an env var directly is not viable.
 - **Live detection hazard.** A Claude session on this machine has both
   `CLAUDECODE=1` and `CODEX_HOME` set (profile cross-leak). Any marker-based
   self-detection must rank a positive session marker above the mere presence of
@@ -130,7 +143,7 @@ Feasibility legend: `pure-repo` (doable in this repo now); `needs-nils-cli`
 
 | ID | Option | Runtime | Feasibility | Effort | Key tradeoff |
 | --- | --- | --- | --- | --- | --- |
-| R1 | Render `AGENT_HOME.md` per product | both | needs-nils-cli | high | Strongest isolation; breaks the raw-symlink contract and must keep a neutral fallback. |
+| R1 | Render `AGENT_HOME.md` per product | both | needs-nils-cli | high | Strongest isolation; breaks the raw-symlink contract and must keep a neutral fallback. **Chosen for the home delegation (D1).** |
 | R2 | Three-variant render (codex/claude/neutral) | both | needs-nils-cli | high | Satisfies the fallback contract; costs a third golden tree and a "neutral" product. |
 | R3 | Per-product skill bodies via `{% if product %}` | both | needs-nils-cli | medium | Looks pure-repo but is not — skills render with a null view, so the branch silently mis-renders. Requires giving the skill render path a product view. |
 | R3' | Per-product agent bodies via `{% if product %}` | both | pure-repo | low | Works today (agents have the product var); only carries divergence anchored to a subagent definition, not parent routing or home policy. |
@@ -140,7 +153,7 @@ Feasibility legend: `pure-repo` (doable in this repo now); `needs-nils-cli`
 | ID | Option | Runtime | Feasibility | Effort | Key tradeoff |
 | --- | --- | --- | --- | --- | --- |
 | L1a | Claude `@import` per-product appendix | claude | pure-repo | medium | Verified durable; clean for the Claude side only. |
-| L1b | Codex home appendix (sibling include) | codex | blocked | — | Codex has no include and reads one home file; a delta must be concatenated (breaks symlink) or rendered. The core asymmetry. |
+| L1b | Codex home appendix (sibling include) | codex | blocked | — | Codex has no include and reads one home file. The core asymmetry. |
 
 ### Hook-Injection
 
@@ -148,16 +161,16 @@ Feasibility legend: `pure-repo` (doable in this repo now); `needs-nils-cli`
 | --- | --- | --- | --- | --- | --- |
 | H1 | SessionStart product-policy injector | codex / claude | split: codex ok, claude blocked | low | Codex honors it (advisory); Claude drops it on `/compact`. Safe only for soft, re-derivable steering. |
 | H2 | Runtime beacon one-liner | both | interim | low | Makes today's prose decidable, but both blocks still load — fails the "no pollution" bar. |
-| H3 | Product-scoped registration (one hook per product) | both | pure-repo | medium | The foreign script never runs (precedent: the Claude-only coauthor guard); still bound by `additionalContext` durability. |
-| H4 | PreToolUse action-gated nudge | both | pure-repo | high | High signal-to-noise, action-only, brittle trigger; PreToolUse `additionalContext` is "parsed but not supported" on Codex today. |
+| H3 | Product-scoped registration (one hook per product) | both | pure-repo | medium | The foreign script never runs; still bound by `additionalContext` durability. |
+| H4 | PreToolUse action-gated nudge | both | pure-repo | high | High signal-to-noise, action-only, brittle trigger; PreToolUse `additionalContext` is "parsed but not supported" on Codex. |
 
 ### Agent-Docs-Catalog
 
 | ID | Option | Runtime | Feasibility | Effort | Key tradeoff |
 | --- | --- | --- | --- | --- | --- |
-| C1 | Catalog `product` field plus `preflight --product` | both | needs-nils-cli | high | Declarative, audit-visible, zero pollution; fixes the cue and the finish-line validation parity. Contract bump every AGENT_DOCS repo inherits. |
-| C2 | `when = "product:codex"` predicate | both | needs-nils-cli | high | `[[validation]]` has no `when` today (two grammar changes); overloads a path-only predicate with a runtime axis. |
-| C3 | Hook-side post-filter on a naming convention | both | pure-repo | low | Ships today as a bridge, but partial (cue-only) and convention-based, not parser-enforced. |
+| C1 | Catalog `product` field plus `preflight --product` | both | needs-nils-cli | high | Declarative, audit-visible, zero pollution; fixes the cue and the finish-line validation parity. Contract bump every AGENT_DOCS repo inherits. **Scheduled now (D4).** |
+| C2 | `when = "product:codex"` predicate | both | needs-nils-cli | high | `[[validation]]` has no `when` today; overloads a path-only predicate with a runtime axis. |
+| C3 | Hook-side post-filter on a naming convention | both | pure-repo | low | Ships today as a bridge, but partial (cue-only) and convention-based. |
 | C4 | Capability-as-presence — ship a Codex-only artifact | codex | pure-repo | medium | Strongest isolation (absent for the other runtime); may package what the parent already does. |
 
 ### Runtime-Self-Detect
@@ -165,27 +178,27 @@ Feasibility legend: `pure-repo` (doable in this repo now); `needs-nils-cli`
 | ID | Option | Runtime | Feasibility | Effort | Key tradeoff |
 | --- | --- | --- | --- | --- | --- |
 | S1 | Documented self-detect contract (with precedence) | both | pure-repo | medium | Turn-one identity even with hooks off; identity-only, depends on upstream markers, precedence essential. |
-| S2 | Self-detect then fetch indirection | both | pure-repo | medium | Real token-level isolation with no render path; can under-apply (missed fetch) or mis-apply (wrong identity). |
-| S3 | Deterministic identity probe (`agent-runtime whoami`) | both | pure-repo / needs-nils-cli | medium | Identity as a checkable fact; skill-bin form is pure-repo, a durable subcommand is upstream; costs a tool call. |
-| S4 | In-doc symmetric If-Codex / If-Claude blocks | both | interim | low | Instantly shippable, but both branches stay resident — fails the pollution bar and doubles in-context text. |
+| S2 | Self-detect then fetch indirection | both | pure-repo | medium | Real token-level isolation with no render path; can under-apply or mis-apply. |
+| S3 | Deterministic identity probe (`agent-runtime whoami`) | both | pure-repo / needs-nils-cli | medium | Identity as a checkable fact; costs a tool call. |
+| S4 | In-doc symmetric If-Codex / If-Claude blocks | both | interim | low | Instantly shippable, but both branches stay resident — fails the pollution bar. |
 
 ### Authoring And Enforce
 
 | ID | Option | Runtime | Feasibility | Effort | Key tradeoff |
 | --- | --- | --- | --- | --- | --- |
-| A0 | Capability-conditional prose ("on hosts that...") | both | pure-repo | low | The pattern already in use in the code-review skills — true for both, renders identical, the runtime self-selects. No detection needed. |
+| A0 | Capability-conditional prose ("on hosts that...") | both | pure-repo | low | The pattern in the code-review skills — true for both, renders identical, the runtime self-selects. Carries the conservative baseline, not the Codex dispatch-by-default override. |
 | A1 | Fenced product blocks stripped at apply | both | needs-nils-cli | medium | Single-source, lint-verifiable; a bespoke preprocessor and a durable strip step that belongs upstream. |
-| A2 | Shared-core plus per-product overlay composed at apply | both | pure-repo / needs-nils-cli | medium | Filename-level product scope, minimal duplication; merge semantics need defining; a real merge surface is upstream. |
-| A3 | Capability-data-driven fragment assembly | both | needs-nils-cli | high | Most auditable "what is Codex-only?" view, and the heaviest — likely over-built for today's divergence. |
-| A4 | Cross-product leakage lint | both | pure-repo | low | A repo-local bash check (not a nils-cli audit class) that fails CI on the other product's sentinel. Ship it with the content fix or it red-gates against today's identical goldens. |
+| A2 | Shared-core plus per-product overlay composed at apply | both | pure-repo / needs-nils-cli | medium | Filename-level product scope; merge semantics need defining. |
+| A3 | Capability-data-driven fragment assembly | both | needs-nils-cli | high | Most auditable view, and the heaviest — over-built for today's divergence. |
+| A4 | Cross-product leakage lint | both | pure-repo | low | A repo-local bash check that fails CI on the other product's sentinel. Ship it with the content fix or it red-gates. **Chosen, broad-sentinel form (D2).** |
 
 ## Decisions (Settled By The Evaluation)
 
-- The code-review delegation divergence is **already solved** by the
-  capability-conditional prose (A0) in the skill bodies and the per-product
-  reviewer agents. It renders byte-identical and the runtime self-selects, so it
-  needs no detection mechanism. The only real leak is the `AGENT_HOME.md`
-  section, which can simply be deleted.
+- The code-review divergence is carried by two layers that currently disagree:
+  the product-neutral skill baseline (inline for explicit-only hosts) and the
+  Codex-only home authorization (dispatch by default, commit `dd58860`). The
+  home authorization is real, recent, and load-bearing; the fix is to deliver it
+  per-product, not to delete it.
 - R3 (per-product skill bodies) is not pure-repo: skills render with a null Tera
   context, so it requires giving the skill render path a product view upstream.
 - H1 (hook injection of policy) is split: usable on Codex as advisory steering,
@@ -200,176 +213,196 @@ Feasibility legend: `pure-repo` (doable in this repo now); `needs-nils-cli`
   both-sides answer is per-product render of the home prompt, which needs
   nils-cli.
 
-## Recommended Convergence Path
+## Resolved Decisions (2026-06-20)
 
-Match the mechanism weight to the divergence volume, which today is essentially
-one home section plus the code-review family.
+The owner chose the durable path over the quick-win. The four open decision
+points are now resolved:
 
-1. **Ship now (pure-repo, ~1 PR).** Delete the `AGENT_HOME.md` "Code Review
-   Delegation" section — the behavior already lives in the skills' capability
-   prose (A0) and the reviewer agents. Backfill the host-capability note in the
-   skills that lack it. Add the A4 leakage lint in the same PR, with its
-   allowlist, so CI never red-gates. Optionally add a thin Codex SessionStart
-   reinforcement (advisory only).
-2. **If per-skill variance is later needed (needs-nils-cli).** Give the skill
-   render path a `product` view (mirroring agents), then real `{% if product %}`
-   in `SKILL.md.tera` works (R3). Upstream release plus pin bump.
-3. **Long-term declarative endpoint (needs-nils-cli).** Add a `product` field to
-   the agent-docs catalog plus `preflight --product` (C1). Zero pollution by
-   construction for both the injected cue and the finish-line validation parity.
-   Pair with the S1 self-detect contract as cheap insurance. Every AGENT_DOCS
-   repo inherits the contract, so it follows a release plus pin-bump ceremony.
+- **D1 — Codex-only review authorization → per-product render home (R1).** Keep
+  the `dd58860` authorization as real policy and deliver it via a per-product
+  rendered home prompt: the Codex-rendered home carries the delegation block, the
+  Claude-rendered home does not, and a product-neutral `AGENT_HOME.md` remains
+  the safe fallback when `AGENT_RUNTIME_PRODUCT` is unset or in an unrelated repo.
+  Strongest, durable isolation. Requires nils-cli (a home-prompt render target)
+  plus a pin bump, and supersedes the raw-symlink delivery of the home prompt.
+- **D2 — Leakage lint → broad sentinel.** The A4 lint forbids the bare product
+  names (`Codex`, `Claude`, `CODEX_`) in the other product's loaded artifacts,
+  not only the strong "Codex-only" phrases. This catches paraphrased leaks at the
+  cost of a larger allowlist, which must cover the legitimately-shared docs
+  (`SUPPORT_MATRIX.md`, `docs/source/harness-shape-*.md`, the A0 capability
+  prose). The allowlist needs documented reasons and a negative self-test so it
+  neither red-gates the tree nor gets neutered.
+- **D3 — C1 schema version → bump to v2.** Adding the `product` field bumps the
+  preflight contract to `agent-docs.preflight.v2`, an explicit closed-contract
+  signal, rather than treating it as an additive v1 field. Every AGENT_DOCS
+  consumer's pinned agent-docs must understand v2 before any catalog adds a
+  `product` key.
+- **D4 — Invest now → schedule C1 (nils-cli) in this effort.** The agent-docs
+  catalog product dimension is built now, not deferred. Combined with D1, this is
+  one coupled nils-cli effort: render gains a per-product home target (R1) and
+  agent-docs gains the `product` field/filter at v2 (C1), shipped together, then
+  pin-bumped, then consumed in the repo.
 
-## Scoped Plan — Step 1 (Quick-Win, Pure-Repo)
+## Chosen Convergence Path
 
-1. Delete the leaky "Code Review Delegation" section in `AGENT_HOME.md`; confirm
-   `grep -niE 'codex|claude' AGENT_HOME.md` returns zero.
-2. Backfill the host-capability note in the `core/skills/code-review/*/SKILL.md.tera`
-   files that lack it, so no skill relies on the deleted home section. Keep the
-   shared body that describes both branches — do not add a product conditional
-   (it would silently mis-render).
-3. Add `scripts/ci/product-leak-audit.sh` plus an allowlist, modeled on
-   `scripts/ci/skill-governance-audit.sh` and the needle logic of the nils-cli
-   `agent_home_leak` audit class. It scans each product's loaded artifacts and
-   fails on the other product's sentinel outside the allowlist. Register it last
-   in `scripts/ci/all.sh` and document it in `DEVELOPMENT.md`.
-4. Optional: add `core/hooks/shared/session-start-product-policy.sh` plus
-   per-product fragment files that emit only the matching product's advisory
-   text as `additionalContext`, no-op when the product is unset. Write the
-   failing hook-contract test first.
+A single coupled nils-cli effort, gate-first (ship upstream, release, pin bump,
+then consume), mirroring the precedent in
+`docs/discussions/2026-06-14-test-first-discipline-redesign.md`.
 
-Sequencing: land everything in one change with the allowlist and content fix
-before the lint is registered, so the lint is green on first run. The golden
-gate stays a clean no-op because no `SKILL.md.tera` gains a product conditional.
+1. **Upstream nils-cli (one release).**
+   - R1: add a home-prompt render target so `AGENT_HOME.md` can render per
+     product (a Codex block, a Claude block, and a product-neutral fallback),
+     with the golden and audit-drift surfaces extended to cover it.
+   - C1: add an optional `product` field to `[[document]]` and `[[validation]]`
+     in the agent-docs catalog, a `--product` flag on
+     preflight/list/explain/audit, a one-place resolver filter (documents and
+     validation contracts), and the `agent-docs.preflight.v2` schema. Unset
+     product means include-all (safe fallback). Validate product names against a
+     fixed `{codex, claude}` enum so a typo hard-errors.
+2. **Release, tap, brew upgrade, pin bump** via `meta:nils-cli-bump`; raise the
+   `agent-docs` `required_clis` floor to the release that introduces `product`
+   and `agent-docs.preflight.v2`.
+3. **Consume in `agent-runtime-kit`.**
+   - Move the Codex-only delegation authorization out of the shared
+     `AGENT_HOME.md` body into the Codex-rendered home block (R1); keep a
+     product-neutral fallback. Optionally also register it as a `product=codex`
+     catalog doc so a Codex session's preflight cue surfaces it.
+   - Forward `AGENT_RUNTIME_PRODUCT` as `--product` from
+     `core/hooks/shared/user-prompt-agent-docs.sh` and
+     `core/hooks/shared/hook_common.py`, capability-probed; add the active
+     product to the validation-contract cache key; keep cue and finish-line gate
+     in parity.
+   - Add the broad-sentinel cross-product leakage lint (A4) with its allowlist
+     and a negative self-test; register it in `scripts/ci/all.sh` and document it
+     in `DEVELOPMENT.md`.
+   - Update render golden, `audit-drift` (including the `agent-home-leak`
+     class), and `SUPPORT_MATRIX.md` surface 1 to reflect the home prompt
+     becoming a rendered artifact.
 
-## Scoped Plan — Step 3 (C1 Declarative, Needs nils-cli)
+## Scoped Plan
 
-1. Add an optional `product` field to `[[document]]` and `[[validation]]` in
-   `AGENT_DOCS.toml`; unset means include-all (safe fallback). Validate names
-   against a fixed `{codex, claude}` enum so a typo hard-errors rather than
-   silently never-matching.
-2. Upstream `nils-agent-docs`: extend the parser (allowed fields), the model
-   (`DocumentEntry` / `ValidationEntry` plus the resolved JSON surface), the CLI
-   (`--product` flag on preflight/list/explain/audit), and the resolver (filter
-   in one place, in both `resolve_documents` and the validation-contract path).
-3. Forward `AGENT_RUNTIME_PRODUCT` as `--product` from
-   `core/hooks/shared/user-prompt-agent-docs.sh` and
-   `core/hooks/shared/hook_common.py`, capability-probed against
-   `preflight --help`. Add the active product to the contract cache key.
-4. Migrate the Codex-only delegation prose into a `product=codex` doc; remove it
-   from `AGENT_HOME.md`. Order: release, tap, brew upgrade, pin bump (via
-   `meta:nils-cli-bump`), then add the field to the catalog — an older binary
-   hard-errors on the new key, so the catalog edit must follow the pin floor.
+### Upstream (sympoies/nils-cli)
 
-Parity is the correctness crux: docs and validations must filter identically, in
-one place in the resolver, or a Codex-only validation could block a Claude stop.
+1. R1 home-prompt render target: a new `RenderTarget` (or manifest entry) that
+   emits a per-product home prompt with a product-neutral fallback; extend the
+   render-golden and audit-drift coverage.
+2. C1 catalog product dimension: parser (allowed fields), model (`DocumentEntry`
+   / `ValidationEntry` plus the resolved JSON surface), CLI (`--product`),
+   resolver (filter in one place for documents and validation contracts), schema
+   `agent-docs.preflight.v2`. Unset means include-all.
+
+### Consume (agent-runtime-kit)
+
+1. Adopt the per-product home render and move the delegation authorization into
+   the Codex block; keep a product-neutral fallback `AGENT_HOME.md`.
+2. Forward `--product` from the two hook consumers; add product to the contract
+   cache key; verify cue and finish-line gate parity.
+3. Add the broad-sentinel leakage lint plus allowlist and negative self-test;
+   register and document it.
+4. Refresh render golden, audit-drift, and the SUPPORT_MATRIX surface-1
+   acceptance for the home prompt; bump the pin via `meta:nils-cli-bump`.
+
+Ordering: ship and pin the nils-cli release before the catalog or rendered-home
+consume edits — an older binary hard-errors on the new `product` key and lacks
+the home render target.
 
 ## Scope
 
-- A broad, probe-verified menu of options to detect the runtime and apply
-  per-product content without cross-context pollution.
-- A recommended convergence path and two scoped plans (Step 1 pure-repo, Step 3
-  declarative).
+- The evaluation, the resolved decisions, and the scoped coupled plan that the
+  L2 plan will execute.
 
 ## Non-Scope
 
-- Implementing any option. Step 1 is ready to execute test-first but is not done
-  here.
-- Adopting Codex's plugin loader / marketplace, or any change to the
+- Executing the change. The upstream nils-cli work, the pin bump, and the repo
+  consume are carried out by the L2 plan, not here.
+- Adopting Codex's plugin loader / marketplace, or any other change to the
   product-capabilities baseline.
-- Changing the nils-cli pin or cutting a release.
 
 ## Implementation Boundaries
 
-- Durable runtime behavior belongs in `sympoies/nils-cli` (release plus pin
-  bump), not repo shell glue. The Step 1 leakage lint is a deliberate repo-local
-  bash exception, not a new nils-cli audit class.
+- Durable runtime behavior (the home render target, the catalog product
+  dimension) belongs in `sympoies/nils-cli`, released and pinned. The leakage
+  lint is a deliberate repo-local bash exception, not a new nils-cli audit class.
 - `AGENT_HOME.md` must remain safe fallback policy for unrelated workspaces where
-  `AGENT_RUNTIME_PRODUCT` is unset; any relocation of policy must define the
-  unset-product behavior (include-all or neutral).
+  `AGENT_RUNTIME_PRODUCT` is unset; the per-product render must keep a
+  product-neutral fallback.
 - Repo content (docs, commits, code, comments) is English.
 - `main` is protected and requires verified signatures; never force-push it.
 
-## Acceptance Criteria (Step 1)
+## Acceptance Criteria
 
-- `grep -niE 'codex|claude' AGENT_HOME.md` returns zero hits after the deletion.
-- `agent-runtime render --product codex|claude` plus
-  `git diff --exit-code -- tests/golden/` is a clean no-op (no product
-  conditional crept into any skill).
-- `scripts/ci/product-leak-audit.sh` passes against the fixed tree, and a
-  negative self-test (temporarily re-adding a "Codex-only" line to a
-  Claude-loaded artifact) fails.
-- `bash tests/hooks/run.sh` passes, including the new hook-contract cases if the
-  optional SessionStart reinforcement ships.
+- The Codex-rendered home prompt contains the review-delegation authorization;
+  the Claude-rendered home does not; a product-neutral fallback exists for unset
+  product.
+- `agent-docs preflight --product codex` includes a `product=codex` doc;
+  `--product claude` excludes it; unset includes all; the finish-line validation
+  contract filters identically (no Codex-only validation can block a Claude
+  stop).
+- The broad-sentinel leakage lint passes against the fixed tree with a documented
+  allowlist, and a negative self-test (re-adding a foreign product name to a
+  loaded artifact) fails.
+- Render golden, `audit-drift` (including `agent-home-leak`), and the
+  SUPPORT_MATRIX surface-1 acceptance are updated and green.
+- `bash scripts/ci/all.sh && bash tests/hooks/run.sh` passes.
 
 ## Validation Plan
 
 - `bash scripts/ci/all.sh && bash tests/hooks/run.sh` (the declared project
   validation; also the `pre-push` gate).
-- Render plus golden no-op diff, and `agent-runtime audit-drift` (the
-  `agent-home-leak` class stays green; no `$AGENT_HOME` token is added).
+- Render plus golden diff for the new per-product home artifact, and
+  `agent-runtime audit-drift` for the home-prompt and catalog changes.
+- `agent-docs preflight --product codex|claude` and an unset run, asserting the
+  expected document and validation sets.
 
 ## Risks And Guardrails
 
-- Adding `{% if product %}` to a `SKILL.md.tera` silently takes the `else` branch
-  for both products with no error and no golden change. Guardrail: forbid product
-  conditionals in skills until the skill render path gains a product view.
-- `additionalContext` is weak and non-persistent on both runtimes and is dropped
-  by `/compact`. Guardrail: keep load-bearing behavior in always-loaded skill
-  bodies; any hook fragment is advisory and re-derivable.
-- Deleting the `AGENT_HOME.md` section is live in both homes on the next sync.
-  Guardrail: confirm the skills and reviewer agents already encode the behavior
-  before deletion, and backfill the skills that lack the note in the same change.
-- The leakage lint will flag the legitimate capability prose that names both
-  products. Guardrail: allowlist by capability-prose marker with documented
-  reasons, and include a negative self-test so the allowlist does not neuter the
-  lint.
-
-## Decision Points (Recommended Defaults)
-
-These are the choices the next discussion converges on. Defaults are recommended,
-not yet adopted.
-
-- **Ship the H1 SessionStart reinforcement at all?** Recommended: no for now.
-  The skills already carry the load-bearing behavior, and Claude drops the
-  injected text on `/compact`, so it is redundant nicety.
-- **Leakage-lint sentinel breadth.** Recommended: start with strong sentinels
-  ("Codex-only", "Claude-only", "This policy is Codex-only") to catch the exact
-  leak class with low noise; broaden later if a real leak slips through.
-- **C1 schema version.** Recommended: keep `agent-docs.preflight.v1` (the new
-  field is additive and the kit hooks parse leniently); bump to v2 only if a
-  strict external JSON consumer is identified.
-- **Does the divergence volume justify the heavy mechanisms yet?** Recommended:
-  defer R1, A3, and C4-at-scale until divergence grows beyond the current one
-  home section plus the code-review family.
+- Making `AGENT_HOME.md` a render artifact breaks the raw-symlink acceptance
+  contract (SUPPORT_MATRIX surface 1) and must keep a product-neutral fallback.
+  Guardrail: render a neutral baseline for unset/unknown product and keep the
+  fallback file valid for unrelated repos.
+- The broad-sentinel lint flags many legitimately-shared docs. Guardrail: a
+  documented allowlist plus a negative self-test so it neither red-gates nor gets
+  neutered; ship the lint in the same change as the content relocation.
+- The v2 schema bump forces consumers to acknowledge v2. Guardrail: raise the
+  pinned `agent-docs` floor and confirm every AGENT_DOCS repo runs a v2-capable
+  binary before any catalog adds a `product` key.
+- Adding `{% if product %}` to a `SKILL.md.tera` silently mis-renders (null
+  view). Guardrail: skill-level per-product divergence needs the upstream skill
+  product view; do not attempt it as a repo edit.
+- Ordering hazard: an older nils-cli hard-errors on the new catalog key and lacks
+  the home render target. Guardrail: ship and pin the release before the consume
+  edits.
 
 ## Retention Intent
 
-Coordination material: cleanup-eligible once the described work ships or is
-abandoned. Promote to `docs/source/` (repo-wide architecture / policy) if the
-divergence model becomes authoritative knowledge rather than a single
-convergence's substrate.
+Coordination material that now feeds a decided plan. Graduate it into a
+`docs/plans/<YYYY-MM-DD>-<slug>/` bundle as the discussion source when the L2
+plan is authored; promote any durable architecture conclusions into
+`docs/source/` if the divergence model becomes canonical.
 
 ## Read-First References
 
-- `AGENT_HOME.md` — the leaking "Code Review Delegation" section and the
+- `AGENT_HOME.md` — the `dd58860` "Code Review Delegation" authorization and the
   safe-fallback contract.
 - `core/skills/code-review/*/SKILL.md.tera` and the domain `README.md` — the
-  capability-conditional prose pattern (A0).
+  conservative inline baseline (A0) that the home authorization overrides.
 - `core/hooks/claude/settings.hooks.jsonc`, `targets/codex/hooks/config.block.toml`,
   `core/hooks/shared/user-prompt-agent-docs.sh`, `core/hooks/shared/hook_common.py`
   — the detection primitive and the agent-docs injection path.
 - `SUPPORT_MATRIX.md`, `docs/source/harness-shape-codex.md`,
-  `docs/source/harness-shape-claude.md` — per-product surface model.
-- `manifests/product-capabilities.yaml`, `manifests/skills.yaml` — the
-  capability and `products`-map model.
+  `docs/source/harness-shape-claude.md` — per-product surface model and the
+  surface-1 raw-symlink acceptance that R1 changes.
+- `manifests/product-capabilities.yaml`, `manifests/skills.yaml` — capability and
+  `products`-map model.
 - `sympoies/nils-cli` `crates/agent-runtime/src/render/` and the agent-docs crate
-  — render and catalog source of truth for the needs-nils-cli options.
+  — render and catalog source of truth for the R1 and C1 work.
+- `docs/discussions/2026-06-14-test-first-discipline-redesign.md` — the
+  gate-first coupled nils-cli precedent this plan follows.
 
 ## Recommended Next Artifact
 
-- For Step 1: implement directly as a pure-repo, test-first change (no plan
-  bundle needed).
-- For Step 3 (C1): when it is scheduled, move this capture into a
-  `docs/plans/<YYYY-MM-DD>-<slug>/` bundle as the discussion source, author the
-  plan and execution-state files, and open a plan-tracking issue.
+Graduate this capture into an L2 plan: move it into a
+`docs/plans/<YYYY-MM-DD>-<slug>/` bundle as `<slug>-discussion-source.md`, author
+`<slug>-plan.md` and `<slug>-execution-state.md` for the coupled nils-cli effort
+(upstream R1 + C1 release, pin bump, repo consume), then open a tracking issue
+with `create-plan-tracking-issue`.
