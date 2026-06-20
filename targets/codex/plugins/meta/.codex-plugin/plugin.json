@@ -91,6 +91,10 @@
       "source": "core/skills/meta/evidence-migrate"
     },
     {
+      "id": "evidence-prune-source",
+      "source": "core/skills/meta/evidence-prune-source"
+    },
+    {
       "id": "nils-cli-bump",
       "source": "core/skills/meta/nils-cli-bump"
     },

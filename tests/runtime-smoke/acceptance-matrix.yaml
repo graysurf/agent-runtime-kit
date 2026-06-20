@@ -352,6 +352,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: meta.evidence-prune-source.shared-cli.deterministic
+    product: shared-cli
+    domain: meta
+    skill_id: meta.evidence-prune-source
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: seed a synthetic agent-out tree with one archived and one unarchived skill-usage record, plus a synthetic archive catalog containing only the archived source digest
+    invocation: evidence prune-source --archived-only dry-run JSON probe against the seeded agent-out tree
+    expected_exit_code: 0
+    expected_artifacts: dry-run report marking the archived source run prunable, retaining the unarchived run, and deleting nothing
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: meta.nils-cli-bump.shared-cli.deterministic
     product: shared-cli
     domain: meta

@@ -1,20 +1,33 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-19 (refreshed for `v1.11.2`)
+- Snapshot date: 2026-06-20 (refreshed for `v1.12.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.11.2`
+- Active `git describe --tags` output: `v1.12.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.11.2`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.12.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `71eaaf3`
-  (`chore(release): bump cli versions to 1.11.2 (#913)`)
+- Head commit: `f0deaac`
+  (`chore(release): bump cli versions to 1.12.0 (#917)`)
 - Release:
-  [`v1.11.2`](https://github.com/sympoies/nils-cli/releases/tag/v1.11.2),
+  [`v1.12.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.12.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.12.0` is a lock-step minor over `v1.11.2`. Runtime-kit now consumes the
+  new `evidence prune-source` source-cleanup surface, so the `evidence` floor
+  moves to `>= 1.12.0`; the exact `pinned_tag` gate (now `v1.12.0`) remains the
+  primary host gate. Consumer-visible change:
+  - `v1.12.0`: `evidence prune-source --archived-only` scans agent-out
+    `skill-usage.record.json` source run directories, computes each raw source
+    digest, and prunes only records whose digest already exists in the archive
+    `catalog.json`; dry-run is default, and `--apply` deletes the local source
+    run directory while leaving the archive read-only
+    ([#916](https://github.com/sympoies/nils-cli/pull/916)). The new
+    `evidence-prune-source` skill owns direct dry-run/confirmation usage, and
+    `heuristic-session-closeout` runs it after retention so archived local
+    source records do not accumulate indefinitely.
 - `v1.11.2` is a lock-step patch over `v1.11.1`. No consumed flag or JSON
   envelope changed, but runtime-kit skills invoke `forge-cli` with explicit
   provider selection and rely on the release's fork-safe remote-derived repo
@@ -737,7 +750,7 @@ keeps both in sync on a release bump.
 Notes on derivation:
 
 - The **Crate** column lists every directory currently under
-  `crates/` in the source repo (42 entries).
+  `crates/` in the source repo (43 entries).
 - The **Binary** column lists every binary the crate produces. Library
   crates show `(library only)`. Crates that ship more than one binary
   enumerate them comma-separated.
@@ -777,7 +790,7 @@ Notes on derivation:
 | `memo`                  | `memo`                                                                                                          | Memo storage CLI.                                                                                                                                                                                                                                                      |
 | `nils-build-info`           | (library only)                                                                                                      | Build metadata helper for the workspace `--version` output; consumed transitively, never appears in `required_clis`. New crate as of `v0.28.0` (#625).                                                                                                                 |
 | `nils-common`               | (library only)                                                                                                      | Shared workspace utilities; never appears in `required_clis`.                                                                                                                                                                                                          |
-| `nils-evidence`             | `evidence`                                                                                                          | Query/migrate CLI over the durable, secret-scrubbed skill-usage evidence archive (`migrate` / `discover` / `query` / `search` / `catalog` / `validate-*`). New crate as of `v1.5.0`; consumed by the `evidence-migrate` skill, which sets the `evidence >= 1.6.0` floor mirrored in `docs/source/nils-cli-pin.yaml`. As of `v1.6.1`, `migrate` hardens scrub/path handling, query/catalog/XDG behavior, and host-vouch precedence so `--host` resolves slug-only records without overriding records that already resolve a cwd identity ([#854](https://github.com/sympoies/nils-cli/pull/854), [#856](https://github.com/sympoies/nils-cli/pull/856)). As of `v1.8.0`, `migrate` hardens cwd/origin and slug identity matching for nested source rescue, repointed or ambiguous cwd guards, refined cwd-vs-slug matching, and one uniform slug rule; `purge --apply` also hardens destructive-operation safety. `evidence-migrate` and `heuristic-session-closeout` consume those guarantees, so the `evidence` floor moves to `>= 1.8.0` ([#873](https://github.com/sympoies/nils-cli/pull/873), [#874](https://github.com/sympoies/nils-cli/pull/874), [#877](https://github.com/sympoies/nils-cli/pull/877), [#878](https://github.com/sympoies/nils-cli/pull/878), [#879](https://github.com/sympoies/nils-cli/pull/879), [#880](https://github.com/sympoies/nils-cli/pull/880)). |
+| `nils-evidence`             | `evidence`                                                                                                          | Query/migrate CLI over the durable, secret-scrubbed skill-usage evidence archive (`migrate` / `discover` / `query` / `search` / `catalog` / `validate-*` / `prune-source`). New crate as of `v1.5.0`; consumed by the `evidence-migrate` skill, which sets the `evidence >= 1.6.0` floor mirrored in `docs/source/nils-cli-pin.yaml`. As of `v1.6.1`, `migrate` hardens scrub/path handling, query/catalog/XDG behavior, and host-vouch precedence so `--host` resolves slug-only records without overriding records that already resolve a cwd identity ([#854](https://github.com/sympoies/nils-cli/pull/854), [#856](https://github.com/sympoies/nils-cli/pull/856)). As of `v1.8.0`, `migrate` hardens cwd/origin and slug identity matching for nested source rescue, repointed or ambiguous cwd guards, refined cwd-vs-slug matching, and one uniform slug rule; `purge --apply` also hardens destructive-operation safety. `evidence-migrate` and `heuristic-session-closeout` consume those guarantees, so the `evidence` floor moves to `>= 1.8.0` ([#873](https://github.com/sympoies/nils-cli/pull/873), [#874](https://github.com/sympoies/nils-cli/pull/874), [#877](https://github.com/sympoies/nils-cli/pull/877), [#878](https://github.com/sympoies/nils-cli/pull/878), [#879](https://github.com/sympoies/nils-cli/pull/879), [#880](https://github.com/sympoies/nils-cli/pull/880)). As of `v1.12.0`, `prune-source --archived-only` is the source-cleanup counterpart to copy-only migration: it reads archive `catalog.json` source digests, dry-runs by default, and `--apply` deletes only already-archived local source run directories. `evidence-prune-source` and `heuristic-session-closeout` consume that surface, so the `evidence` floor moves to `>= 1.12.0` ([#916](https://github.com/sympoies/nils-cli/pull/916)). |
 | `nils-markdown`             | `md-render`                                                                                                         | Shared Tera-backed Markdown template layer. Ships the `md-render` binary behind the `bin-cli` cargo feature (enumerated by `workspace-bins.sh`); library role otherwise, not consumed by any skill today. Present since before `v0.25.8`; the prior snapshot omitted it. |
 | `nils-scrub`                | (library only)                                                                                                      | Shared secret-scrub pattern set plus labelled scrub-log format, extracted from `plan-archive` so both `plan-archive refresh` and `evidence migrate` reuse one v1 implementation. New crate as of `v1.5.0`; never appears in `required_clis`.                            |
 | `nils-term`                 | (library only)                                                                                                      | Terminal / TTY helpers; never appears in `required_clis`.                                                                                                                                                                                                              |

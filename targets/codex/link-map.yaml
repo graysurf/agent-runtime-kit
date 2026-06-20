@@ -178,6 +178,12 @@ entries:
     destination: skills/meta/evidence-migrate
     recursive: false
 
+  - id: meta.evidence-prune-source.codex-skill-dir
+    kind: symlinked-file
+    source: build/codex/plugins/meta/skills/evidence-prune-source
+    destination: skills/meta/evidence-prune-source
+    recursive: false
+
   - id: meta.nils-cli-bump.codex-skill-dir
     kind: symlinked-file
     source: build/codex/plugins/meta/skills/nils-cli-bump

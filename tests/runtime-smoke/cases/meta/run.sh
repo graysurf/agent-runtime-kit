@@ -1106,6 +1106,40 @@ run_evidence_migrate_probe() {
   grep -q 'parse failed' "$out"
 }
 
+run_evidence_prune_source_probe() {
+  local out="$META_ARTIFACTS_DIR/evidence-prune-source.dry-run.json"
+  require_meta_bin evidence || return 1
+  require_meta_bin python3 || return 1
+  local root="$META_ARTIFACTS_DIR/evidence-prune-source"
+  local src="$root/out/projects"
+  local archive="$root/archive"
+  local archived="$src/graysurf__agent-runtime-kit/20260620-010000-skill-usage"
+  local retained="$src/graysurf__agent-runtime-kit/20260620-020000-skill-usage"
+  local archived_body archived_digest
+  rm -rf "$root"
+  mkdir -p "$archived" "$retained" "$archive"
+  archived_body='{"schema":"skill-usage.record.v1","producer":{"tool":"skill-usage","nils_cli_version":"1.12.0"},"skill":"evidence-migrate","started_at":"2026-06-20T01:00:00Z","ended_at":"2026-06-20T01:05:00Z","cwd":"/Users/tester/Project/kit","trigger":"user_explicit","intent":"archive evidence","inputs":{"user_request_summary":"x","referenced_files":[],"external_sources":[]},"outcome":{"status":"pass","summary":"done"},"artifacts":[],"linked_records":[],"validation":[],"failures":[]}'
+  printf '%s' "$archived_body" >"$archived/skill-usage.record.json"
+  printf '%s' '{"schema":"skill-usage.record.v1","producer":{"tool":"skill-usage","nils_cli_version":"1.12.0"},"skill":"code-review","started_at":"2026-06-20T02:00:00Z","ended_at":"2026-06-20T02:05:00Z","cwd":"/Users/tester/Project/kit","trigger":"user_explicit","intent":"review","inputs":{"user_request_summary":"x","referenced_files":[],"external_sources":[]},"outcome":{"status":"pass","summary":"done"},"artifacts":[],"linked_records":[],"validation":[],"failures":[]}' \
+    >"$retained/skill-usage.record.json"
+  archived_digest="sha256:$(printf '%s' "$archived_body" | python3 -c 'import hashlib, sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())')"
+  printf '{"schema_version":"evidence.catalog.v1","records":[{"source_digest":"%s"}]}\n' "$archived_digest" \
+    >"$archive/catalog.json"
+  evidence prune-source \
+    --source-out "$src" \
+    --archive "$archive" \
+    --archived-only \
+    --format json >"$out" 2>&1
+  grep -q '"schema_version":"cli.evidence.prune-source.v1"' "$out"
+  grep -q '"prunable":1' "$out"
+  grep -q '"kept":1' "$out"
+  grep -q '"deleted":0' "$out"
+  grep -q '"reason":"already archived"' "$out"
+  grep -q '"reason":"not archived"' "$out"
+  [ -d "$archived" ]
+  [ -d "$retained" ]
+}
+
 run_nils_cli_bump_probe() {
   local drift="$META_ARTIFACTS_DIR/nils-cli-bump.drift.json"
   local aligned="$META_ARTIFACTS_DIR/nils-cli-bump.aligned.json"
@@ -1236,6 +1270,7 @@ record_case "meta.plan-archive-migrate" "plan-archive migrate dry-run JSON probe
 record_case "meta.plan-archive-query" "plan-archive query single-ref JSON probe surfaced fetched_at" run_plan_archive_query_probe
 record_case "meta.plan-archive-discover" "plan-archive discover JSON probe classified blocked candidate" run_plan_archive_discover_probe
 record_case "meta.evidence-migrate" "evidence migrate dry-run JSON probe resolved an archive target and reported a blocked malformed record" run_evidence_migrate_probe
+record_case "meta.evidence-prune-source" "evidence prune-source dry-run JSON probe retained unarchived source and marked archived source prunable" run_evidence_prune_source_probe
 record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 drift and passed host-aligned pin" run_nils_cli_bump_probe
 record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe
 record_case "meta.setup" "setup dry-run renders codex and claude before install and delegates Claude plugin activation" run_setup_render_before_install_probe
