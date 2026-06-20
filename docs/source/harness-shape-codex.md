@@ -131,7 +131,7 @@ a uniform shape:
 - Support today: **partial** — the manifest is shipped and Codex-loadable;
   live activation is gated (CODEX_PLUGIN_ACTIVATION) pending cut-over.
 
-### 4. Plugin marketplace (`.codex-plugin/marketplace.json`)
+### 4. Plugin marketplace (`.agents/plugins/marketplace.json`)
 
 - Codex reads from: `codex plugin marketplace add <root>` registers a
   marketplace whose manifest lives at the canonical
@@ -148,8 +148,10 @@ a uniform shape:
   `codex-kit`, and installs every `<plugin>@codex-kit`. Activation is gated by
   default so it does not list every skill twice alongside the flat skill root
   (surface 15).
-- Acceptance lane: gate 8 runtime-smoke codex plugin-registry probe asserts the
-  gated default and the activation dry-run plan.
+- Acceptance lane: gate 8 runtime-smoke codex plugin-registry probes assert the
+  gated default stays inert, a gated-on dry-run prints the activation plan
+  without executing it, and a stubbed gated-on apply registers `codex-kit` and
+  installs each `<plugin>@codex-kit`.
 - Support today: **partial** — the marketplace is shipped and installable; live
   activation is gated pending cut-over from the flat root.
 

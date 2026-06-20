@@ -154,13 +154,13 @@ surfaces:
         min_nils_cli: "v0.17.5"
         acceptance:
           - kind: ci
-            note: "gate 8 (runtime-smoke codex plugin-registry probe: gated default plus activation dry-run plans)"
+            note: "gate 8 (runtime-smoke codex plugin-registry probes: gated default stays inert; a gated-on dry-run prints the activation plan without executing it; a stubbed gated-on apply registers codex-kit and installs each <plugin>@codex-kit)"
             descriptive_only: true
           - kind: live
             note: "`CODEX_PLUGIN_ACTIVATION=1 sync-runtime-surfaces.sh --apply --product codex` then `codex plugin list` includes `<plugin>@codex-kit`; `codex debug prompt-input` lists skills as `<plugin>:<skill>`"
             descriptive_only: true
         source_manifest:
-          - "docs/source/harness-shape-codex.md#4-plugin-marketplace-codex-pluginmarketplacejson"
+          - "docs/source/harness-shape-codex.md#4-plugin-marketplace-agentspluginsmarketplacejson"
           - manifests/product-capabilities.yaml
           - targets/codex/link-map.yaml
       claude:

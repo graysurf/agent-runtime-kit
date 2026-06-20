@@ -6,7 +6,7 @@
 - Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/435>
 - Current sprint: Sprint 3 (complete)
 - Status: implementation-complete; pending PR delivery
-- Branch: chore/codex-plugin-marketplace-adoption
+- Branch: feat/codex-plugin-marketplace-adoption
 - Last updated: 2026-06-20
 
 ## Task Ledger
