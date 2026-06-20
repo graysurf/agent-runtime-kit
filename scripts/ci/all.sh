@@ -97,9 +97,12 @@ if ! agent-runtime doctor --class version-alignment --pin "$PIN_MANIFEST" --form
 fi
 
 # -----------------------------------------------------------------------------
-# Position 3 — render codex
+# Position 3 — render home prompts and codex
 # -----------------------------------------------------------------------------
-banner 3 "agent-runtime render --product codex"
+banner 3 "agent-runtime render --target home-prompt + --product codex"
+agent-runtime render --target home-prompt
+agent-runtime render --target home-prompt --product codex
+agent-runtime render --target home-prompt --product claude
 agent-runtime render --product codex
 
 # -----------------------------------------------------------------------------
@@ -118,6 +121,9 @@ agent-runtime render --target support-matrix
 # Position 6 — golden diff (rendered build vs committed golden tree)
 # -----------------------------------------------------------------------------
 banner 6 "git diff --exit-code tests/golden/ (after --update-golden refresh)"
+agent-runtime render --target home-prompt >/dev/null
+agent-runtime render --target home-prompt --product codex >/dev/null
+agent-runtime render --target home-prompt --product claude >/dev/null
 agent-runtime render --product codex --update-golden >/dev/null
 agent-runtime render --product claude --update-golden >/dev/null
 agent-runtime render --target support-matrix --update-golden >/dev/null
@@ -174,7 +180,7 @@ ACCEPTANCE_OUT_DIR="${CLAUDE_KIT_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/stat
 ACCEPTANCE_CODEX_HOME="${ACCEPTANCE_OUT_DIR}/codex-home"
 rm -rf "$ACCEPTANCE_CODEX_HOME"
 mkdir -p "$ACCEPTANCE_CODEX_HOME"
-ln -s "$REPO_ROOT/AGENT_HOME.md" "$ACCEPTANCE_CODEX_HOME/AGENTS.md"
+ln -s "$REPO_ROOT/build/codex/AGENT_HOME.md" "$ACCEPTANCE_CODEX_HOME/AGENTS.md"
 CODEX_HOME="$ACCEPTANCE_CODEX_HOME" bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
 
 # -----------------------------------------------------------------------------
@@ -291,4 +297,11 @@ bash tests/hooks/run.sh
 banner 14 "version-baseline mirror consistency audit"
 python3 scripts/ci/version-baseline-audit.py check
 
-printf '\nci/all.sh: positions 1-14 OK\n'
+# -----------------------------------------------------------------------------
+# Position 15 — rendered product leakage audit
+# -----------------------------------------------------------------------------
+banner 15 "product leakage audit"
+bash scripts/ci/product-leak-audit.sh --self-test
+bash scripts/ci/product-leak-audit.sh
+
+printf '\nci/all.sh: positions 1-15 OK\n'

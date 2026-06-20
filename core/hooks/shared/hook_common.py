@@ -265,6 +265,11 @@ def _docs_home() -> str | None:
     return docs_home or None
 
 
+def _runtime_product() -> str | None:
+    product = os.environ.get("AGENT_RUNTIME_PRODUCT", "").strip()
+    return product if product in {"codex", "claude"} else None
+
+
 def _agent_docs_base_args(repo_root: str) -> list[str]:
     docs_home = _docs_home()
     args = ["agent-docs"]
@@ -305,6 +310,25 @@ def _agent_docs_supports_declared_intent_guard(repo_root: str) -> bool:
         completed.returncode == 0
         and "--require-declared-intent" in completed.stdout
     )
+
+
+def _agent_docs_product_args(repo_root: str) -> list[str]:
+    product = _runtime_product()
+    if product is None:
+        return []
+    try:
+        completed = subprocess.run(
+            _agent_docs_base_args(repo_root) + ["preflight", "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=15,
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return []
+    if completed.returncode != 0 or "--product" not in completed.stdout:
+        return []
+    return ["--product", product]
 
 
 def _validation_marker_default(context: str) -> str:
@@ -359,6 +383,7 @@ def _resolve_validation_contracts(repo_root: str) -> list[dict[str, Any]]:
         if _agent_docs_supports_declared_intent_guard(repo_root)
         else []
     )
+    product_args = _agent_docs_product_args(repo_root)
     for intent in _declared_intents(repo_root):
         data = _agent_docs_json(
             _agent_docs_base_args(repo_root)
@@ -367,6 +392,7 @@ def _resolve_validation_contracts(repo_root: str) -> list[dict[str, Any]]:
                 "--intent",
                 intent,
                 *guard_args,
+                *product_args,
                 "--format",
                 "json",
             ]
@@ -396,9 +422,11 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
     except OSError:
         catalog_mtime = 0.0
 
-    digest = hashlib.sha1(repo_root.encode("utf-8")).hexdigest()[:16]
-    cache_path = os.path.join(_runtime_cache_dir(), f"contract-{digest}.json")
     docs_home = _docs_home()
+    product = _runtime_product()
+    cache_key = "\0".join([repo_root, docs_home or "", product or ""])
+    digest = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:16]
+    cache_path = os.path.join(_runtime_cache_dir(), f"contract-{digest}.json")
     try:
         with open(cache_path, encoding="utf-8") as handle:
             cached = json.load(handle)
@@ -406,6 +434,7 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
             isinstance(cached, dict)
             and cached.get("catalog_mtime") == catalog_mtime
             and cached.get("docs_home") == docs_home
+            and cached.get("product") == product
         ):
             contracts = cached.get("contracts")
             if isinstance(contracts, list):
@@ -428,6 +457,7 @@ def validation_contracts(repo_root: str) -> list[dict[str, Any]]:
                 {
                     "catalog_mtime": catalog_mtime,
                     "docs_home": docs_home,
+                    "product": product,
                     "contracts": contracts,
                 },
                 handle,

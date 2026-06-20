@@ -25,11 +25,12 @@ surfaces:
     products:
       codex:
         state: shipped
-        mechanism: "symlink `$CODEX_HOME/AGENTS.md -> AGENT_HOME.md`"
+        mechanism: "`agent-runtime render --target home-prompt --product codex` writes `build/codex/AGENT_HOME.md`; `$CODEX_HOME/AGENTS.md` symlinks to that rendered file"
         source_artifacts:
           - AGENT_HOME.md
+          - build/codex/AGENT_HOME.md
         min_product: "0.130.0"
-        min_nils_cli: "n/a"
+        min_nils_cli: "v1.12.1"
         acceptance:
           - kind: ci
             note: "— (home-policy cutover only)"
@@ -43,11 +44,12 @@ surfaces:
           - AGENT_HOME.md
       claude:
         state: shipped
-        mechanism: "symlink `$HOME/.claude/CLAUDE.md -> AGENT_HOME.md`"
+        mechanism: "`agent-runtime render --target home-prompt --product claude` writes `build/claude/AGENT_HOME.md`; `$HOME/.claude/CLAUDE.md` symlinks to that rendered file"
         source_artifacts:
           - AGENT_HOME.md
+          - build/claude/AGENT_HOME.md
         min_product: "2.1.145"
-        min_nils_cli: "n/a"
+        min_nils_cli: "v1.12.1"
         acceptance:
           - kind: ci
             note: "— (home-policy cutover only)"
@@ -648,11 +650,12 @@ surfaces:
     products:
       codex:
         state: shipped
-        mechanism: "policy text loaded as part of the home prompt (surface 1)"
+        mechanism: "Codex-only policy text is rendered into `build/codex/AGENT_HOME.md` and loaded through the home prompt (surface 1)"
         source_artifacts:
           - AGENT_HOME.md
+          - build/codex/AGENT_HOME.md
         min_product: "0.130.0"
-        min_nils_cli: "n/a"
+        min_nils_cli: "v1.12.1"
         acceptance:
           - kind: ci
             note: "—"
@@ -664,11 +667,10 @@ surfaces:
           - "docs/source/harness-shape-codex.md#17-prompt-mode-delegation-policy-agenthomemd"
           - AGENT_HOME.md
       claude:
-        state: shipped
-        mechanism: "same shared home prompt, same policy text"
-        source_artifacts:
-          - AGENT_HOME.md
-        min_product: "2.1.145"
+        state: not-applicable
+        mechanism: "Codex-only delegation policy is omitted from the rendered Claude home prompt; Claude Code uses its native reviewer defaults"
+        source_artifacts: []
+        min_product: "n/a"
         min_nils_cli: "n/a"
         acceptance:
           - kind: ci

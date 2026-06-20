@@ -17,14 +17,15 @@ publishes is the standalone Linux container image at
 `ghcr.io/graysurf/agent-runtime-kit`; see [`RELEASING.md`](RELEASING.md) for how
 that image is versioned and cut.
 
-The local gate stack is mature. `scripts/ci/all.sh` runs thirteen positions
+The local gate stack is mature. `scripts/ci/all.sh` runs fifteen positions
 covering plan/skill governance, nils-cli pin alignment, Codex/Claude render and
 golden diff, drift audit, surface-registry acceptance, the skill-surface shape
 diagnostic, sandbox install rehearsal, runtime-smoke, project-local overlay
-smoke, and the shared hook contract. `scripts/setup.sh` contains the brew-first
-host bootstrap path for installing the released `agent-runtime` binary, wiring
-home prompt docs, activating Claude/Codex runtime homes, pruning stale managed
-surfaces, and running doctor.
+smoke, the shared hook contract, version-baseline mirrors, and product leakage
+audit. `scripts/setup.sh` contains the brew-first host bootstrap path for
+installing the released `agent-runtime` binary, rendering and wiring home prompt
+docs, activating Claude/Codex runtime homes, pruning stale managed surfaces, and
+running doctor.
 
 ## Setup
 
@@ -75,6 +76,12 @@ installed when the product CLIs are available.
 Manual phase recovery remains supported:
 
 ```bash
+agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" \
+  --target home-prompt
+agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" \
+  --target home-prompt --product codex
+agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" \
+  --target home-prompt --product claude
 agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" --product codex
 agent-runtime render --source-root "$HOME/.config/agent-runtime-kit" --product claude
 agent-runtime install --source-root "$HOME/.config/agent-runtime-kit" \
@@ -309,7 +316,8 @@ That currently performs:
    deviation of the host `agent-runtime` from the manifest `pinned_tag`
    (ahead or behind) and on any `required_clis[]` floor miss; fail closed
    with the doctor's remediation banner
-3. `agent-runtime render --product codex`
+3. `agent-runtime render --target home-prompt` for neutral / Codex / Claude,
+   then `agent-runtime render --product codex`
 4. `agent-runtime render --product claude`
 5. `agent-runtime render --target support-matrix`
 6. render-golden refresh plus `git diff --exit-code -- tests/golden/`
@@ -327,6 +335,10 @@ That currently performs:
     agree with their sources of truth (`manifests/runtime-roots.yaml` for the
     product floor, `docs/source/nils-cli-pin.yaml` for the surface pin). Run
     `… report` for an advisory installed-vs-latest probe.
+15. `bash scripts/ci/product-leak-audit.sh --self-test` plus
+    `bash scripts/ci/product-leak-audit.sh` — broad-sentinel leakage audit over
+    rendered/loaded product artifacts, with documented allowlist reasons in
+    `scripts/ci/product-leak-allow.yaml`.
 
 Position 2 closes the silent-drift class identified by the inbox case
 `plan-issue-v2-marker-collapse-drift`: before this gate, a host that drifted

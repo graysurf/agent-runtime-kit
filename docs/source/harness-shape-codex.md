@@ -50,7 +50,7 @@ Scope rules:
   `min_version_effective_from`: **2026-07-04**; probe:
   `codex --version` (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Codex
-  surface) ships inside nils-cli; pinned snapshot **v1.12.0**
+  surface) ships inside nils-cli; pinned snapshot **v1.12.1**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
   Released subcommands consumed today: `render`, `install`, `uninstall`,
   `doctor` (including `--class skill-surface --product codex`),
@@ -84,15 +84,16 @@ a uniform shape:
 ### 1. Home-scope prompt (`AGENTS.md`)
 
 - Codex reads from: `$CODEX_HOME/AGENTS.md` on session start.
-- Source: root `AGENT_HOME.md`, shared with Claude's
-  `$HOME/.claude/CLAUDE.md` (`AGENT_HOME.md`, `DEVELOPMENT.md`).
-- Install mechanism: symlink `$CODEX_HOME/AGENTS.md →
-  <source_root>/AGENT_HOME.md`. The source filename is deliberately
-  distinct from repo-local `AGENTS.md` so Codex does not load duplicate
-  home/project policy in this repo.
+- Source: root `AGENT_HOME.md`, rendered per product to
+  `build/codex/AGENT_HOME.md` (`AGENT_HOME.md`, `DEVELOPMENT.md`).
+- Install mechanism: `agent-runtime render --target home-prompt --product
+  codex` writes the rendered file, and `$CODEX_HOME/AGENTS.md` symlinks to
+  `<source_root>/build/codex/AGENT_HOME.md`. The source filename is
+  deliberately distinct from repo-local `AGENTS.md` so Codex does not load
+  duplicate home/project policy in this repo.
 - Acceptance lane: covered by home-policy cutover and live Codex session
   observation; no dedicated CI gate diffs the link target.
-- Support today: **shipped (linked)**.
+- Support today: **shipped (rendered + linked)**.
 
 ### 2. Project-scope prompt (`./AGENTS.md`)
 
@@ -326,18 +327,20 @@ a uniform shape:
   carries opt-in delegation modes such as `parallel-first` and
   `orchestrator-first`; there is no separate Codex file loader for
   subagent definitions (`AGENT_HOME.md`).
-- Source: root `AGENT_HOME.md`.
-- Install mechanism: same symlink as surface 1; policy text is loaded as
-  part of the home-scope prompt.
+- Source: the Codex-only block in root `AGENT_HOME.md`, rendered into
+  `build/codex/AGENT_HOME.md`.
+- Install mechanism: same rendered-home symlink as surface 1; policy text is
+  loaded as part of the Codex home-scope prompt and omitted from the Claude
+  render.
 - Acceptance lane: live session prompt load only; no dedicated CI gate
   validates prompt-mode behavior.
-- Support today: **shipped (policy text in home prompt)**.
+- Support today: **shipped (Codex-only rendered home block)**.
 
 ## Coverage Summary
 
 | # | Surface | runtime-kit ships | Mechanism | Min Codex | Min nils-cli |
 |---|---|---|---|---|---|
-| 1 | `AGENTS.md` (home) | yes | symlink to `AGENT_HOME.md` | 0.130.0 | n/a |
+| 1 | `AGENTS.md` (home) | yes | rendered home prompt symlink to `build/codex/AGENT_HOME.md` | 0.130.0 | v1.12.1 |
 | 2 | `./AGENTS.md` (repo-local) | yes | repo working tree | 0.130.0 | n/a |
 | 3 | `.codex-plugin/plugin.json` | yes | plugin-manifest-copy; Codex loads it via the `codex-kit` marketplace (skills auto-discovered, manifest `skills` field ignored) | 0.141.0 | v0.17.5 |
 | 4 | `.agents/plugins/marketplace.json` | yes | `codex-kit` marketplace activated by `sync-runtime-surfaces.sh` / `setup.sh` | 0.141.0 | v0.17.5 |
@@ -353,7 +356,7 @@ a uniform shape:
 | 14 | `state_home` | yes | env var + `agent-out` allocation | 0.130.0 | v0.17.5 (`agent-out >=0.13.0` floor in skills.yaml) |
 | 15 | `$CODEX_HOME/skills/<d>/<s>/` | not-applicable | retired; plugin-scoped discovery is row 5 | n/a | n/a |
 | 16 | `config.toml` hook managed block | yes | managed-block sync | 0.130.0 | v0.17.5 |
-| 17 | prompt-mode delegation policy | yes | loaded via home prompt | 0.130.0 | n/a |
+| 17 | prompt-mode delegation policy | yes | Codex-only block loaded via rendered home prompt | 0.130.0 | v1.12.1 |
 
 Status legend:
 

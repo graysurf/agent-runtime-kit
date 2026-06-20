@@ -49,10 +49,16 @@ for k in ("session_id", "sessionId", "session", "conversation_id"):
 ' <<<"$payload" 2>/dev/null || true
 )"
 product="${AGENT_RUNTIME_PRODUCT:-agent-runtime}"
+product_args=()
+case "$product" in
+  codex | claude) ;;
+  *) product="" ;;
+esac
 repo_hash="$(printf '%s' "$repo_root" | cksum 2>/dev/null | awk '{print $1}' || true)"
 key="${session_id:-$(date +%Y%m%d)}"
 stamp_dir="$HOME/.cache/agent-runtime-kit"
-stamp="$stamp_dir/preflight-cue-${product}-${repo_hash}-${key}.stamp"
+stamp_product="${product:-agent-runtime}"
+stamp="$stamp_dir/preflight-cue-${stamp_product}-${repo_hash}-${key}.stamp"
 [[ -f "$stamp" ]] && exit 0
 
 docs_home="${AGENT_RUNTIME_DOCS_HOME:-${AGENT_DOCS_HOME:-}}"
@@ -63,6 +69,10 @@ require_declared_args=()
 if agent-docs "${dh_args[@]}" --project-path "$repo_root" \
   preflight --help 2>/dev/null | grep -q -- "--require-declared-intent"; then
   require_declared_args=(--require-declared-intent)
+fi
+if [[ -n "$product" ]] && agent-docs "${dh_args[@]}" --project-path "$repo_root" \
+  preflight --help 2>/dev/null | grep -q -- "--product"; then
+  product_args=(--product "$product")
 fi
 
 # Enumerate every declared intent, newest catalog wins. No hard-coded intent.
@@ -89,6 +99,7 @@ while IFS= read -r intent; do
   pf="$(
     agent-docs "${dh_args[@]}" --project-path "$repo_root" \
       preflight --intent "$intent" "${require_declared_args[@]}" \
+      "${product_args[@]}" \
       --format json 2>/dev/null
   )"
   status=$?
@@ -145,7 +156,7 @@ PY
 )"
 [[ -z "$cue" ]] && exit 0
 
-reminder="[agent-runtime-kit:${product}] This repo declares agent-docs intent contracts.
+reminder="[agent-runtime-kit:${stamp_product}] This repo declares agent-docs intent contracts.
 ${cue}"
 
 CTX="$reminder" "$python_bin" -c '

@@ -45,6 +45,37 @@ run_agent_docs_probe() {
   grep -q 'missing_required=0' "$out"
 }
 
+run_home_prompt_render_probe() {
+  local out="$META_ARTIFACTS_DIR/home-prompt-render.txt"
+  local codex_home="$REPO_ROOT/build/codex/AGENT_HOME.md"
+  local claude_home="$REPO_ROOT/build/claude/AGENT_HOME.md"
+  local neutral_home="$REPO_ROOT/build/neutral/AGENT_HOME.md"
+  require_meta_bin agent-runtime || return 1
+  (
+    cd "$REPO_ROOT"
+    agent-runtime render --source-root "$REPO_ROOT" --target home-prompt
+    agent-runtime render --source-root "$REPO_ROOT" --target home-prompt --product codex
+    agent-runtime render --source-root "$REPO_ROOT" --target home-prompt --product claude
+  ) >"$out" 2>&1
+
+  test -f "$neutral_home"
+  test -f "$codex_home"
+  test -f "$claude_home"
+  grep -q '## Code Review Delegation' "$codex_home"
+  if grep -q '## Code Review Delegation' "$claude_home"; then
+    echo "runtime-smoke meta: Claude home prompt includes Codex-only delegation section" >&2
+    return 1
+  fi
+  if grep -Eq '\bClaude\b|CLAUDE_' "$codex_home"; then
+    echo "runtime-smoke meta: Codex home prompt leaks Claude sentinel text" >&2
+    return 1
+  fi
+  if grep -Eq '\bCodex\b|CODEX_' "$claude_home"; then
+    echo "runtime-smoke meta: Claude home prompt leaks Codex sentinel text" >&2
+    return 1
+  fi
+}
+
 run_agent_out_probe() {
   local out="$META_ARTIFACTS_DIR/agent-out.json"
   local agent_home="$TMP_ROOT/meta-agent-home"
@@ -442,12 +473,22 @@ if bootstrap_lines:
     assert audit_lines[0][0] < bootstrap_lines[0][0], lines
     assert bootstrap_lines[0][0] < min(idx for idx, _ in sync_lines), lines
 else:
-    assert len(render_lines) == 2, render_lines
+    home_render_lines = [
+        (idx, line) for idx, line in render_lines if "--target home-prompt" in line
+    ]
+    product_render_lines = [
+        (idx, line) for idx, line in render_lines if "--target home-prompt" not in line
+    ]
+    assert len(home_render_lines) == 3, home_render_lines
+    assert len(product_render_lines) == 2, product_render_lines
+    assert any("--target home-prompt --product codex" in line for _, line in home_render_lines), home_render_lines
+    assert any("--target home-prompt --product claude" in line for _, line in home_render_lines), home_render_lines
     assert len(install_lines) == 2, install_lines
-    assert any("--product codex" in line for _, line in render_lines), render_lines
-    assert any("--product claude" in line for _, line in render_lines), render_lines
-    assert audit_lines[0][0] < min(idx for idx, _ in render_lines), lines
-    assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
+    assert any("--product codex" in line for _, line in product_render_lines), product_render_lines
+    assert any("--product claude" in line for _, line in product_render_lines), product_render_lines
+    assert max(idx for idx, _ in home_render_lines) < min(idx for idx, _ in link_lines), lines
+    assert audit_lines[0][0] < min(idx for idx, _ in product_render_lines), lines
+    assert max(idx for idx, _ in product_render_lines) < min(idx for idx, _ in install_lines), lines
     assert max(idx for idx, _ in install_lines) < min(idx for idx, _ in sync_lines), lines
 PY
 
@@ -485,11 +526,16 @@ command_name="${1:-}"
 shift || true
 source_root=""
 product=""
+target="product"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --source-root)
       source_root="$2"
+      shift 2
+      ;;
+    --target)
+      target="$2"
       shift 2
       ;;
     --product)
@@ -504,8 +550,15 @@ done
 
 case "$command_name" in
   render)
-    mkdir -p "$source_root/build/$product"
-    printf 'render %s\n' "$product"
+    if [ "$target" = "home-prompt" ]; then
+      render_product="${product:-neutral}"
+      mkdir -p "$source_root/build/$render_product"
+      printf '# AGENT_HOME %s fixture\n' "$render_product" >"$source_root/build/$render_product/AGENT_HOME.md"
+      printf 'render home-prompt %s\n' "$render_product"
+    else
+      mkdir -p "$source_root/build/$product"
+      printf 'render %s\n' "$product"
+    fi
     ;;
   install)
     test -d "$source_root/build/$product"
@@ -559,8 +612,8 @@ SH
       "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$target")"
   }
 
-  assert_symlink_target "$apply_home/.codex/AGENTS.md" "$source_root/AGENT_HOME.md"
-  assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/AGENT_HOME.md"
+  assert_symlink_target "$apply_home/.codex/AGENTS.md" "$source_root/build/codex/AGENT_HOME.md"
+  assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/build/claude/AGENT_HOME.md"
   grep -q "+ agent-docs audit --target all --strict --project-path" "$apply_out"
   grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
   grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product codex --no-pull --no-verify --apply" "$apply_out"
@@ -579,7 +632,15 @@ events = [
     for line in open(sys.argv[1], encoding="utf-8").read().splitlines()
     if line.startswith(("render ", "install "))
 ]
-assert events == ["render codex", "render claude", "install claude", "install codex"], events
+assert events == [
+    "render home-prompt neutral",
+    "render home-prompt codex",
+    "render home-prompt claude",
+    "render codex",
+    "render claude",
+    "install claude",
+    "install codex",
+], events
 PY
 
   mkdir -p "$collision_home/.codex" "$collision_source_root/.git"
@@ -691,6 +752,7 @@ run_sync_runtime_surfaces_prune_fixture_probe() {
   } >"$out" 2>&1
 
   (
+    # shellcheck disable=SC1091
     SYNC_RUNTIME_SURFACES_LIB=1 . "$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
     SOURCE_ROOT="$REPO_ROOT"
     APPLY=1
@@ -1520,6 +1582,7 @@ PY
 
 failures=0
 record_case "meta.agent-docs" "project-dev docs preflight passed from fixture workspace" run_agent_docs_probe
+record_case "meta.home-prompt-render" "home prompt render isolates Codex-only delegation and product sentinel text" run_home_prompt_render_probe
 record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe
 record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe
 record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap
