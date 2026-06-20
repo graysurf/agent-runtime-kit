@@ -131,7 +131,7 @@
         },
         "marketplace_concept": {
           "type": "boolean",
-          "description": "Whether the product has an upstream plugin marketplace / discovery API. Codex: false. Claude: true.",
+          "description": "Whether the product has an upstream plugin marketplace / discovery API. Claude: true. Codex is tracked false in this kit's baseline, but Codex shipped a real plugin marketplace in 2026 — the value is pending a capability-model correction (see the top NOTE in manifests/product-capabilities.yaml).",
           "default": false
         }
       }

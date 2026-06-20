@@ -6,6 +6,16 @@
 # product itself changes (e.g. Codex publishes a real plugin loader). Skill and
 # plugin entries live in their own manifests. Resolved Decision #10 governs the
 # Codex side.
+#
+# NOTE (2026-06): that trigger has now fired — Codex shipped a real plugin
+# loader + marketplace (`codex plugin marketplace add`;
+# developers.openai.com/codex/plugins/build). The Codex `loaded_at_runtime` and
+# `marketplace_concept` values below still encode the pre-2026 baseline, because
+# runtime-kit has NOT adopted Codex's plugin surface (it still installs Codex
+# skills via the flat `$CODEX_HOME/skills` root). Flipping them reverses Resolved
+# Decision #10 and pulls in the install/marketplace activation work, so they are
+# intentionally left unchanged here; the capability-model correction + adoption
+# is a separate tracked change.
 schema_version: 1
 
 products:
@@ -19,10 +29,13 @@ products:
     # discovery surface.
     nested_skill_support: true
     plugin_manifest:
-      # Codex never opens `.codex-plugin/plugin.json` at runtime. The file
-      # exists as a source-organisation convention shared with the Claude
-      # side; install exposes runtime-kit skills through `$CODEX_HOME/skills`
-      # and keeps plugin metadata for audit only.
+      # runtime-kit does not install Codex skills as a plugin, so this
+      # `.codex-plugin/plugin.json` is not loaded at runtime here — install
+      # exposes runtime-kit skills through `$CODEX_HOME/skills` and keeps this
+      # manifest for audit only. NOTE: Codex itself CAN load
+      # `.codex-plugin/plugin.json` as of 2026; `loaded_at_runtime: false`
+      # reflects runtime-kit's non-adoption, not a product limitation (see the
+      # top-of-file NOTE).
       path_pattern: "$CODEX_HOME/plugins/<domain>/.codex-plugin/plugin.json"
       loaded_at_runtime: false
       schema_ref: "core/docs/schemas/codex-plugin.schema.json"
@@ -38,6 +51,8 @@ products:
     runtime_state:
       state_home_env: "CODEX_AGENT_STATE_HOME"
       default_path: "${XDG_STATE_HOME:-$HOME/.local/state}/agent-runtime-kit/codex"
+    # NOTE: stale baseline — Codex shipped an upstream plugin marketplace in
+    # 2026. Left false pending the capability-model correction (see top NOTE).
     marketplace_concept: false
 
   claude:

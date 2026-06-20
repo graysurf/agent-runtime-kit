@@ -105,7 +105,7 @@ surfaces:
     products:
       codex:
         state: not-applicable
-        mechanism: "metadata copy for audit only; Codex has no plugin loader at runtime"
+        mechanism: "audit-only metadata; runtime-kit installs Codex skills via the flat skill root (surface 15), not as a plugin. Codex shipped a plugin loader that reads `.codex-plugin/plugin.json` in 2026; adopting it (capability flip + install) is tracked separately, not yet done"
         source_artifacts:
           - "targets/codex/plugins/<plugin>/.codex-plugin/plugin.json"
         min_product: "n/a"
@@ -145,7 +145,7 @@ surfaces:
     products:
       codex:
         state: not-applicable
-        mechanism: "Codex has no marketplace API"
+        mechanism: "runtime-kit ships no Codex marketplace. Codex added a plugin marketplace in 2026 (`codex plugin marketplace add`; `.agents/plugins/marketplace.json`, also reading `.claude-plugin/marketplace.json` as a legacy source); adopting it is tracked separately, not yet done"
         source_artifacts: []
         min_product: "n/a"
         min_nils_cli: "n/a"
@@ -186,7 +186,7 @@ surfaces:
     products:
       codex:
         state: not-applicable
-        mechanism: "Codex local skills live under `$CODEX_HOME/skills`, not plugin roots; row 15 is the active root"
+        mechanism: "runtime-kit's active Codex discovery is the flat skill root (surface 15); plugin-scoped skill trees under `$CODEX_HOME/plugins/<domain>/skills` are audit-only. Codex supports plugin-bundled `skills/<skill>/SKILL.md` discovery in 2026; runtime-kit has not switched to it"
         source_artifacts: []
         min_product: "n/a"
         min_nils_cli: "n/a"
