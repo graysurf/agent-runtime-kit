@@ -2,11 +2,11 @@
 # scripts/ci/sandbox-install-rehearsal.sh — CI gate sandbox install rehearsal.
 #
 # Uses `agent-runtime list-skills --format json` (cli.agent-runtime.list-skills.v1)
-# as the source of truth for the per-product skill list, then diffs against the
-# committed `tests/sandbox/<product>/expected-skills.txt` pin. Falls back to
-# the legacy dry-run-text regex parser when `list-skills` is not available on
-# the installed `agent-runtime`, so this script keeps working against
-# pre-0.22.0 binaries during rollout.
+# as the preferred source of truth for the per-product skill list, then diffs
+# against the committed `tests/sandbox/<product>/expected-skills.txt` pin. Falls
+# back to the dry-run-text parser when `list-skills` is unavailable or returns an
+# empty product result, so this script keeps working against released binaries
+# whose list-skills surface predates Codex plugin-scoped discovery.
 #
 # It also diffs the installed reviewer subagent files (the `agents-tree`
 # link-map entry, parsed from the dry-run plan) against the committed
@@ -77,13 +77,10 @@ extract_skill_ids_via_dry_run_regex() {
 
   case "$product" in
     codex)
-      {
-        sed -n 's#.* (\([a-z0-9][a-z0-9._-]*\)\.codex-skill-dir)#\1#p' "$dry_run_output"
-        sed -n 's#.* /.*skills/\([^/][^/]*\)/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output"
-      } | sort -u >"$out"
+      sed -n 's#.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md.*#\1.\2#p' "$dry_run_output" | sort -u >"$out"
       ;;
     *)
-      sed -n 's#.* /.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md ->.*#\1.\2#p' "$dry_run_output" | sort -u >"$out"
+      sed -n 's#.*plugins/\([^/][^/]*\)/skills/\([^/][^/]*\)/SKILL\.md.*#\1.\2#p' "$dry_run_output" | sort -u >"$out"
       ;;
   esac
 }
@@ -121,6 +118,9 @@ run_product() {
 
   if [[ "${USE_LIST_SKILLS:-1}" = "1" ]] && has_list_skills; then
     extract_skill_ids_via_list_skills "$product" "$observed" "$live_home"
+    if [ ! -s "$observed" ]; then
+      extract_skill_ids_via_dry_run_regex "$product" "$dry_run_output" "$observed"
+    fi
   else
     extract_skill_ids_via_dry_run_regex "$product" "$dry_run_output" "$observed"
   fi

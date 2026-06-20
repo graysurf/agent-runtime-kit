@@ -112,8 +112,8 @@ DESCRIPTION_MAX_CHARS = 240
 COUNT_TARGETS = [
     {
         "path": "docs/source/harness-shape-codex.md",
-        "label": "Codex local skill root declaration",
-        "pattern": r"(?P<prefix>; )(?P<count>\d+)(?P<suffix> Codex skill\s+entries are declared)",
+        "label": "Codex plugin-scoped skill declaration",
+        "pattern": r"(?P<prefix>tree;\n  )(?P<count>\d+)(?P<suffix> Codex plugin-scoped skill\s+entries are declared)",
     },
     {
         "path": "docs/source/harness-shape-codex.md",
@@ -344,18 +344,6 @@ def matrix_skill_ids(root: Path) -> set[str]:
 def sandbox_skill_ids(root: Path, product: str) -> set[str]:
     path = root / "tests" / "sandbox" / product / "expected-skills.txt"
     return {line.strip() for line in read(path).splitlines() if line.strip()}
-
-
-def codex_link_skill_ids(root: Path) -> set[str]:
-    path = root / "targets" / "codex" / "link-map.yaml"
-    text = read(path)
-    ids: set[str] = set()
-    for domain, skill in re.findall(
-        r"destination:\s+skills/([a-z0-9-]+)/([a-z0-9-]+)",
-        text,
-    ):
-        ids.add(f"{domain}.{skill}")
-    return ids
 
 
 def codex_plugin_manifest_error(
@@ -677,7 +665,6 @@ def validate_repo() -> None:
     matrix_ids = matrix_skill_ids(ROOT)
     codex_ids = sandbox_skill_ids(ROOT, "codex")
     claude_ids = sandbox_skill_ids(ROOT, "claude")
-    codex_link_ids = codex_link_skill_ids(ROOT)
     semver = re.compile(r"^>=\d+\.\d+\.\d+(?:[-+][A-Za-z0-9._-]+)?$")
     lifecycle_ids = {
         "meta.create-skill",
@@ -710,9 +697,6 @@ def validate_repo() -> None:
             fail(f"{skill_id} missing codex sandbox expected skill")
         if skill_id not in claude_ids:
             fail(f"{skill_id} missing claude sandbox expected skill")
-        if skill_id not in codex_link_ids:
-            fail(f"{skill_id} missing codex local skill link-map entry")
-
         products = entry["products"]
         assert isinstance(products, dict)
         for product, product_data in products.items():

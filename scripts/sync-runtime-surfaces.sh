@@ -22,13 +22,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_PROMPT_STATUS="not-run"
 CLAUDE_PLUGIN_STATUS="not-run"
 CODEX_PLUGIN_STATUS="not-run"
-# Activation gate for the Codex plugin marketplace. Default off: runtime-kit
-# keeps the flat $CODEX_HOME/skills root (surface 15) as Codex's live skill
-# discovery path, and registering the marketplace alongside it would list every
-# skill twice (bare `<skill>` from the flat root AND `<plugin>:<skill>` from the
-# plugin). Set CODEX_PLUGIN_ACTIVATION=1 (or pass --codex-plugin-activation) to
-# register + install the marketplace; the planned commands stay dry-run-visible.
-CODEX_PLUGIN_ACTIVATION="${CODEX_PLUGIN_ACTIVATION:-0}"
 PRUNE_SKIPPED_TOTAL=0
 PRUNE_LAST_SKIPPED=0
 
@@ -66,11 +59,8 @@ Options:
   --no-verify
       Skip post-install skill-surface doctor and Codex prompt-input probes.
   --codex-plugin-activation
-      Register and install the Codex plugin marketplace
-      (codex plugin marketplace add + codex plugin add <plugin>@codex-kit).
-      Off by default: the flat \$CODEX_HOME/skills root stays Codex's live skill
-      discovery path so skills are not listed twice. Equivalent to setting
-      CODEX_PLUGIN_ACTIVATION=1. Combine with --apply to register live.
+      Deprecated compatibility flag. Codex plugin marketplace activation is now
+      the default runtime-kit skill-discovery path.
   -h, --help
       Print this help and exit.
 EOF
@@ -168,7 +158,6 @@ parse_args() {
         shift
         ;;
       --codex-plugin-activation)
-        CODEX_PLUGIN_ACTIVATION=1
         shift
         ;;
       -h | --help)
@@ -1024,11 +1013,9 @@ PY
 # Mirror of sync_claude_plugin_registry for Codex, adapted to the Codex plugin
 # CLI (`codex plugin add` / `remove`, `codex plugin marketplace add` / `remove`,
 # no `--scope`) and the `{installed:[...],available:[...]}` /
-# `{marketplaces:[...]}` JSON shapes. Gated by CODEX_PLUGIN_ACTIVATION: off by
-# default so the live `codex plugin marketplace add` never doubles the flat
-# skill root (see the CODEX_PLUGIN_ACTIVATION global). Codex discovers each
-# installed plugin's bundled skills/<skill>/SKILL.md and ignores the
-# `.codex-plugin/plugin.json` `skills` field, so the audit array stays as-is.
+# `{marketplaces:[...]}` JSON shapes. Codex discovers each installed plugin's
+# bundled skills/<skill>/SKILL.md and ignores the `.codex-plugin/plugin.json`
+# `skills` field, so the audit array stays as-is.
 sync_codex_plugin_registry() {
   local live_home="$1"
   local state_home="$2"
@@ -1045,12 +1032,6 @@ sync_codex_plugin_registry() {
   marketplace_json="$(codex_marketplace_json_path "$live_home")"
   marketplace="$(codex_marketplace_name "$marketplace_json")"
   materialized_home="$(codex_materialized_marketplace_home "$state_home" "$marketplace")"
-
-  if [ "$CODEX_PLUGIN_ACTIVATION" != "1" ]; then
-    CODEX_PLUGIN_STATUS="gated"
-    log "codex plugin registry gated: marketplace=$marketplace (flat \$CODEX_HOME/skills root stays the live discovery path; set CODEX_PLUGIN_ACTIVATION=1 or pass --codex-plugin-activation to register the marketplace)"
-    return 0
-  fi
 
   if [ "$APPLY" = "1" ] && ! command -v codex >/dev/null 2>&1; then
     CODEX_PLUGIN_STATUS="skipped"
@@ -1145,6 +1126,80 @@ account_prune_skipped() {
   fi
 }
 
+cleanup_codex_legacy_flat_skill_root() {
+  local live_home="$1"
+  local legacy_root="$live_home/skills"
+
+  if [ ! -d "$legacy_root" ]; then
+    return 0
+  fi
+
+  log "cleaning retired Codex flat skill root live_home=$live_home"
+  print_cmd python3 - "$SOURCE_ROOT" "$legacy_root" "$APPLY"
+  python3 - "$SOURCE_ROOT" "$legacy_root" "$APPLY" <<'PY'
+import os
+import pathlib
+import sys
+
+source_root = pathlib.Path(sys.argv[1]).resolve()
+legacy_root = pathlib.Path(sys.argv[2])
+apply = sys.argv[3] == "1"
+build_plugins = (source_root / "build" / "codex" / "plugins").resolve()
+removed_symlinks = 0
+candidate_dirs = set()
+
+if not legacy_root.exists():
+    sys.exit(0)
+
+for domain_dir in sorted(legacy_root.iterdir()):
+    if domain_dir.is_symlink() or not domain_dir.is_dir():
+        continue
+    for skill_path in sorted(domain_dir.iterdir()):
+        if not skill_path.is_symlink():
+            continue
+        target_raw = os.readlink(skill_path)
+        if os.path.isabs(target_raw):
+            target_path = pathlib.Path(target_raw)
+        else:
+            target_path = skill_path.parent / target_raw
+        target_path = target_path.resolve(strict=False)
+        try:
+            rel_target = target_path.relative_to(build_plugins)
+        except ValueError:
+            continue
+        if len(rel_target.parts) != 3 or rel_target.parts[1] != "skills":
+            continue
+        if domain_dir.name != rel_target.parts[0] or skill_path.name != rel_target.parts[2]:
+            continue
+
+        rel_live = skill_path.relative_to(legacy_root.parent)
+        if apply:
+            skill_path.unlink()
+            print(f"removed legacy Codex flat skill symlink {rel_live}")
+        else:
+            print(f"would remove legacy Codex flat skill symlink {rel_live}")
+        removed_symlinks += 1
+        candidate_dirs.add(domain_dir)
+
+for domain_dir in sorted(candidate_dirs):
+    try:
+        is_empty = not any(domain_dir.iterdir())
+    except FileNotFoundError:
+        continue
+    if not is_empty:
+        continue
+    rel_live = domain_dir.relative_to(legacy_root.parent)
+    if apply:
+        domain_dir.rmdir()
+        print(f"removed empty legacy Codex flat skill directory {rel_live}")
+    else:
+        print(f"would remove empty legacy Codex flat skill directory {rel_live}")
+
+status = "removed" if apply else "planned"
+print(f"legacy Codex flat skill cleanup {status}: symlinks={removed_symlinks}")
+PY
+}
+
 prune_product() {
   local product="$1"
   local live_home
@@ -1171,6 +1226,9 @@ prune_product() {
       --product "$product" \
       --live-home "$live_home" \
       --dry-run
+    if [ "$product" = "codex" ]; then
+      cleanup_codex_legacy_flat_skill_root "$live_home"
+    fi
     return 0
   fi
 
@@ -1197,6 +1255,9 @@ prune_product() {
 
   changes="$(printf '%s\n' "$prune_json" | json_number changes)"
   account_prune_skipped "$product" "$prune_json"
+  if [ "$product" = "codex" ]; then
+    cleanup_codex_legacy_flat_skill_root "$live_home"
+  fi
   log "prune product=$product changes=${changes:-0} skipped=${PRUNE_LAST_SKIPPED:-0}"
 }
 

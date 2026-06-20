@@ -256,6 +256,7 @@ Final report format:
 - zsh-kit smoke: pass/fail
 - Codex doctor: pass/fail
 - Claude doctor: pass/fail
+- Codex plugins list: pass/fail/skipped
 - Claude plugins list: pass/fail/skipped
 - Codex prompt-input: pass/fail/skipped
 - Optional zsh-kit tools: installed/skipped

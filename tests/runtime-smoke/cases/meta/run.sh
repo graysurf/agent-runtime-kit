@@ -347,11 +347,10 @@ run_sync_runtime_surfaces_probe() {
   grep -q "agent-runtime doctor" "$out"
   grep -Eq "(\\+ codex debug prompt-input|codex prompt-input skipped)" "$out"
   grep -q "summary: synced surfaces for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
-  # Codex plugin marketplace activation is gated off by default, so the dry-run
-  # plans no live `codex plugin marketplace add` and reports `codex plugins=gated`.
-  grep -q "codex plugin registry gated: marketplace=codex-kit" "$out"
-  grep -q "codex plugins=gated" "$out"
-  ! grep -q "codex plugin marketplace add" "$out"
+  grep -q "codex plugin marketplace materialize dry-run" "$out"
+  grep -q "codex plugin registry planned: marketplace=codex-kit" "$out"
+  grep -q "codex plugins=planned" "$out"
+  grep -q "codex plugin marketplace add" "$out"
 }
 
 run_setup_render_before_install_probe() {
@@ -415,13 +414,20 @@ audit_lines = [
 
 assert len(link_lines) == 2, link_lines
 assert len(audit_lines) == 1, audit_lines
-assert len(sync_lines) == 1, sync_lines
-sync_line = sync_lines[0][1]
-assert "--product claude" in sync_line, sync_line
-assert "--no-pull" in sync_line, sync_line
-assert "--no-prune" in sync_line, sync_line
-assert "--no-verify" in sync_line, sync_line
-assert "--dry-run" in sync_line, sync_line
+assert len(sync_lines) == 2, sync_lines
+sync_products = []
+for _, sync_line in sync_lines:
+    if "--product claude" in sync_line:
+        sync_products.append("claude")
+    elif "--product codex" in sync_line:
+        sync_products.append("codex")
+    else:
+        raise AssertionError(sync_line)
+    assert "--no-pull" in sync_line, sync_line
+    assert "--no-prune" in sync_line, sync_line
+    assert "--no-verify" in sync_line, sync_line
+    assert "--dry-run" in sync_line, sync_line
+assert sync_products == ["claude", "codex"], sync_products
 assert max(idx for idx, _ in link_lines) < audit_lines[0][0], lines
 if bootstrap_lines:
     assert len(bootstrap_lines) == 1, bootstrap_lines
@@ -431,7 +437,7 @@ if bootstrap_lines:
     assert "--skip-homebrew-install" in bootstrap_line, bootstrap_line
     assert "--skip-cli-tools" in bootstrap_line, bootstrap_line
     assert audit_lines[0][0] < bootstrap_lines[0][0], lines
-    assert bootstrap_lines[0][0] < sync_lines[0][0], lines
+    assert bootstrap_lines[0][0] < min(idx for idx, _ in sync_lines), lines
 else:
     assert len(render_lines) == 2, render_lines
     assert len(install_lines) == 2, install_lines
@@ -439,7 +445,7 @@ else:
     assert any("--product claude" in line for _, line in render_lines), render_lines
     assert audit_lines[0][0] < min(idx for idx, _ in render_lines), lines
     assert max(idx for idx, _ in render_lines) < min(idx for idx, _ in install_lines), lines
-    assert max(idx for idx, _ in install_lines) < sync_lines[0][0], lines
+    assert max(idx for idx, _ in install_lines) < min(idx for idx, _ in sync_lines), lines
 PY
 
   mkdir -p "$stub_bin" "$source_root/.git" "$source_root/scripts"
@@ -554,10 +560,13 @@ SH
   assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/AGENT_HOME.md"
   grep -q "+ agent-docs audit --target all --strict --project-path" "$apply_out"
   grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
+  grep -q "+ bash $source_root/scripts/sync-runtime-surfaces.sh --source-root $source_root --product codex --no-pull --no-prune --no-verify --apply" "$apply_out"
   grep -q "sync-runtime-surfaces --source-root $source_root --product claude --no-pull --no-prune --no-verify --apply" "$apply_out"
+  grep -q "sync-runtime-surfaces --source-root $source_root --product codex --no-pull --no-prune --no-verify --apply" "$apply_out"
   grep -q "codex_home_prompt:" "$apply_out"
   grep -q "claude_home_prompt:" "$apply_out"
   grep -q "claude_plugin_registry_activation: sync-runtime-surfaces.sh" "$apply_out"
+  grep -q "codex_plugin_registry_activation: sync-runtime-surfaces.sh" "$apply_out"
 
   python3 - "$apply_out" <<'PY'
 import sys
@@ -633,19 +642,31 @@ run_sync_runtime_surfaces_prune_fixture_probe() {
   local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.prune-fixture.txt"
   local codex_home="$TMP_ROOT/sync-prune/codex-home"
   local claude_home="$TMP_ROOT/sync-prune/claude-home"
-  local codex_stale="$codex_home/skills/meta/removed-skill"
-  local codex_foreign="$codex_home/skills/meta/foreign-skill"
-  local codex_regular="$codex_home/skills/meta/user-note"
+  local codex_legacy_stale="$codex_home/skills/meta/removed-skill"
+  local codex_legacy_foreign="$codex_home/skills/meta/foreign-skill"
+  local codex_legacy_alias="$codex_home/skills/meta/agent-docs-alias"
+  local codex_legacy_regular="$codex_home/skills/meta/user-note"
+  local codex_stale_dir="$codex_home/plugins/meta/skills/removed-skill"
+  local codex_foreign="$codex_home/plugins/meta/skills/foreign-skill/SKILL.md"
+  local codex_regular="$codex_home/plugins/meta/skills/user-note/SKILL.md"
   local claude_stale_dir="$claude_home/plugins/meta/skills/removed-skill"
   local claude_foreign="$claude_home/plugins/meta/skills/foreign-skill/SKILL.md"
   local claude_regular="$claude_home/plugins/meta/skills/user-note/SKILL.md"
 
   require_meta_bin agent-runtime || return 1
-  mkdir -p "$codex_home/skills/meta" "$claude_stale_dir/scripts" \
+  mkdir -p "$codex_home/skills/meta" "$codex_stale_dir/scripts" \
+    "$codex_home/plugins/meta/skills/foreign-skill" \
+    "$codex_home/plugins/meta/skills/user-note" \
+    "$claude_stale_dir/scripts" \
     "$claude_home/plugins/meta/skills/foreign-skill" \
     "$claude_home/plugins/meta/skills/user-note"
 
-  ln -s "$REPO_ROOT/build/codex/plugins/meta/skills/removed-skill" "$codex_stale"
+  ln -s "$REPO_ROOT/build/codex/plugins/meta/skills/removed-skill" "$codex_legacy_stale"
+  ln -s /var/empty/foreign-skill "$codex_legacy_foreign"
+  ln -s "$REPO_ROOT/build/codex/plugins/meta/skills/agent-docs" "$codex_legacy_alias"
+  printf 'user note\n' >"$codex_legacy_regular"
+  ln -s "$REPO_ROOT/build/codex/plugins/meta/skills/removed-skill/SKILL.md" "$codex_stale_dir/SKILL.md"
+  ln -s "$REPO_ROOT/build/codex/plugins/meta/skills/removed-skill/scripts/tool.sh" "$codex_stale_dir/scripts/tool.sh"
   ln -s /var/empty/foreign-skill "$codex_foreign"
   printf 'user note\n' >"$codex_regular"
   ln -s "$REPO_ROOT/build/claude/plugins/meta/skills/removed-skill/SKILL.md" "$claude_stale_dir/SKILL.md"
@@ -666,12 +687,23 @@ run_sync_runtime_surfaces_prune_fixture_probe() {
       --apply
   } >"$out" 2>&1
 
-  grep -q "removed symlink skills/meta/removed-skill" "$out"
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+    SOURCE_ROOT="$REPO_ROOT"
+    APPLY=1
+    cleanup_codex_legacy_flat_skill_root "$codex_home"
+  ) >>"$out" 2>&1
+
+  grep -q "removed legacy Codex flat skill symlink skills/meta/removed-skill" "$out"
   grep -q "removed symlink plugins/meta/skills/removed-skill/SKILL.md" "$out"
   grep -q "removed empty directory plugins/meta/skills/removed-skill" "$out"
   grep -q "skip foreign symlink" "$out"
   grep -q "skip regular file" "$out"
-  test ! -L "$codex_stale"
+  test ! -L "$codex_legacy_stale"
+  test -L "$codex_legacy_foreign"
+  test -L "$codex_legacy_alias"
+  test -f "$codex_legacy_regular"
+  test ! -d "$codex_stale_dir"
   test -L "$codex_foreign"
   test -f "$codex_regular"
   test ! -d "$claude_stale_dir"
@@ -1008,7 +1040,6 @@ SH
     SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
     APPLY=1
     SOURCE_ROOT="$source_root"
-    CODEX_PLUGIN_ACTIVATION=1
     PATH="$stub_bin:$PATH" CODEX_STUB_LOG="$stub_log" \
       sync_codex_plugin_registry "$codex_home" "$state_home"
   ) >"$out" 2>&1
@@ -1036,62 +1067,6 @@ SH
   test ! -L "$materialized_home/plugins/meta/skills/demo-symlink/SKILL.md"
   test -f "$materialized_home/plugins/meta/.codex-plugin/plugin.json"
   test -f "$materialized_home/.agents/plugins/marketplace.json"
-}
-
-run_sync_runtime_surfaces_codex_plugin_registry_gated_probe() {
-  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.codex-plugin-registry-gated.txt"
-  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
-  local codex_home="$TMP_ROOT/sync-codex-plugin-gated/codex-home"
-  local source_root="$TMP_ROOT/sync-codex-plugin-gated/source"
-  local state_home="$TMP_ROOT/sync-codex-plugin-gated/state"
-  local materialized_home="$state_home/plugin-marketplaces/codex-kit"
-  local stub_bin="$TMP_ROOT/sync-codex-plugin-gated/bin"
-  local stub_log="$TMP_ROOT/sync-codex-plugin-gated/codex.log"
-
-  rm -rf "$TMP_ROOT/sync-codex-plugin-gated"
-  mkdir -p "$codex_home" "$source_root/targets/codex/.agents/plugins" "$stub_bin"
-  cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
-{
-  "name": "codex-kit",
-  "plugins": [
-    {
-      "name": "meta",
-      "version": "0.1.0",
-      "source": { "source": "local", "path": "./plugins/meta" },
-      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
-      "category": "Productivity"
-    }
-  ]
-}
-JSON
-  cat >"$stub_bin/codex" <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-printf '%s\n' "$*" >>"$CODEX_STUB_LOG"
-SH
-  chmod +x "$stub_bin/codex"
-  : >"$stub_log"
-
-  # shellcheck disable=SC1090,SC2034
-  (
-    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
-    APPLY=1
-    SOURCE_ROOT="$source_root"
-    PATH="$stub_bin:$PATH" CODEX_STUB_LOG="$stub_log" \
-      sync_codex_plugin_registry "$codex_home" "$state_home"
-  ) >"$out" 2>&1
-
-  grep -q "codex plugin registry gated: marketplace=codex-kit" "$out"
-  # The gated default must not register, install, or materialize anything live.
-  if grep -q "marketplace add" "$stub_log"; then
-    echo "gated default unexpectedly registered the Codex marketplace" >&2
-    exit 1
-  fi
-  if grep -q "plugin add" "$stub_log"; then
-    echo "gated default unexpectedly installed Codex plugins" >&2
-    exit 1
-  fi
-  test ! -e "$materialized_home"
 }
 
 run_sync_runtime_surfaces_codex_plugin_registry_planned_probe() {
@@ -1128,15 +1103,13 @@ SH
   chmod +x "$stub_bin/codex"
   : >"$stub_log"
 
-  # Gated ON (CODEX_PLUGIN_ACTIVATION=1) but dry-run (APPLY=0): the activation
-  # commands are printed as a plan, but nothing is executed and nothing is
-  # materialized live. Status is `planned`.
+  # Dry-run (APPLY=0): the activation commands are printed as a plan, but
+  # nothing is executed and nothing is materialized live. Status is `planned`.
   # shellcheck disable=SC1090,SC2034
   (
     SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
     APPLY=0
     SOURCE_ROOT="$source_root"
-    CODEX_PLUGIN_ACTIVATION=1
     PATH="$stub_bin:$PATH" CODEX_STUB_LOG="$stub_log" \
       sync_codex_plugin_registry "$codex_home" "$state_home"
   ) >"$out" 2>&1
@@ -1545,8 +1518,7 @@ record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=re
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Claude plugins for skill visibility" run_sync_runtime_surfaces_claude_plugin_registry_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces ships Codex marketplace entries with required policy metadata" run_sync_runtime_surfaces_codex_marketplace_shape_probe
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Codex plugins when activation is gated on" run_sync_runtime_surfaces_codex_plugin_registry_probe
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces leaves the Codex plugin marketplace inert when activation is gated off" run_sync_runtime_surfaces_codex_plugin_registry_gated_probe
-record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prints a Codex activation plan without executing it when gated on under dry-run" run_sync_runtime_surfaces_codex_plugin_registry_planned_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Codex plugins by default" run_sync_runtime_surfaces_codex_plugin_registry_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prints a Codex activation plan without executing it under dry-run" run_sync_runtime_surfaces_codex_plugin_registry_planned_probe
 
 exit "$failures"

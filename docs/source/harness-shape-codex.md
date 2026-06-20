@@ -11,13 +11,12 @@
   <https://developers.openai.com/codex/plugins/build>), and runtime-kit has now
   **adopted** it. The kit ships a `codex-kit` marketplace
   (`targets/codex/.agents/plugins/marketplace.json`) registered through
-  `scripts/sync-runtime-surfaces.sh`, so surfaces 3–5 below are `partial`
-  (shipped + proven). A spike confirmed Codex discovers each plugin's bundled
+  `scripts/sync-runtime-surfaces.sh`, so surfaces 3–5 below are `shipped`.
+  A spike confirmed Codex discovers each plugin's bundled
   `skills/<skill>/SKILL.md` and ignores the manifest `skills` field, so that
-  audit array is kept as-is. Live activation is **gated**
-  (CODEX_PLUGIN_ACTIVATION); the flat `$CODEX_HOME/skills` root (surface 15)
-  stays the default discovery path until cut-over, to avoid listing every skill
-  twice.
+  audit array is kept as-is. Issue #437 cut over Codex skill discovery to the
+  plugin marketplace and retired the flat `$CODEX_HOME/skills` root
+  (surface 15).
 
 ## Purpose
 
@@ -69,7 +68,7 @@ Scope rules:
 - Live Codex Desktop acceptance is separate from the deterministic
   version floor: `codex debug prompt-input` must show required skills
   in a fresh session
-  (`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`).
+  (`docs/plans/2026-06-20-codex-plugin-marketplace-adoption/`).
 
 ## Surface-By-Surface Shape
 
@@ -128,8 +127,8 @@ a uniform shape:
 - Acceptance lane: gate 1 governance (`plugin-manifest` skills audit) and gate
   5 audit-drift (`plugin-manifest-skills`) validate the audit array; the
   runtime-smoke codex plugin-registry probe covers registration planning.
-- Support today: **partial** — the manifest is shipped and Codex-loadable;
-  live activation is gated (CODEX_PLUGIN_ACTIVATION) pending cut-over.
+- Support today: **shipped** — the manifest is installed and Codex-loadable
+  through the default `codex-kit` marketplace activation path.
 
 ### 4. Plugin marketplace (`.agents/plugins/marketplace.json`)
 
@@ -142,36 +141,36 @@ a uniform shape:
   marketplace listing all 10 plugins by `./plugins/<name>`, installed by the
   `codex-kit.marketplace` `plugin-manifest-copy` entry
   (`targets/codex/link-map.yaml`).
-- Install mechanism: `CODEX_PLUGIN_ACTIVATION=1 sync-runtime-surfaces.sh
-  --apply --product codex` (`sync_codex_plugin_registry`) materializes a
+- Install mechanism: `sync-runtime-surfaces.sh --apply --product codex`
+  (`sync_codex_plugin_registry`) materializes a
   symlink-free marketplace under the Codex state home, registers it as
-  `codex-kit`, and installs every `<plugin>@codex-kit`. Activation is gated by
-  default so it does not list every skill twice alongside the flat skill root
-  (surface 15).
-- Acceptance lane: gate 8 runtime-smoke codex plugin-registry probes assert the
-  gated default stays inert, a gated-on dry-run prints the activation plan
-  without executing it, and a stubbed gated-on apply registers `codex-kit` and
-  installs each `<plugin>@codex-kit`.
-- Support today: **partial** — the marketplace is shipped and installable; live
-  activation is gated pending cut-over from the flat root.
+  `codex-kit`, and installs every `<plugin>@codex-kit`. First-time
+  `scripts/setup.sh` delegates the same Codex activation after bootstrap.
+- Acceptance lane: gate 8 runtime-smoke codex plugin-registry probes assert
+  default dry-run prints the activation plan without executing it, and a
+  stubbed apply registers `codex-kit` and installs each `<plugin>@codex-kit`.
+- Support today: **shipped** — the marketplace is the default Codex skill
+  discovery path for runtime-kit-managed skills.
 
 ### 5. Plugin-scoped skills (`<plugin>/skills/<skill>/SKILL.md`)
 
 - Codex reads from: once a plugin is installed from the `codex-kit`
   marketplace, Codex discovers each bundled `skills/<skill>/SKILL.md` and
-  surfaces it as `<plugin>:<skill>`. By default the active discovery stays the
-  flat skill root (`$CODEX_HOME/skills/<domain>/<skill>/SKILL.md`, surface 15)
-  because activation is gated.
+  surfaces it as `<plugin>:<skill>`.
 - Source: `build/codex/plugins/<domain>/skills/<skill>/` is the rendered tree;
+  65 Codex plugin-scoped skill entries are declared in `manifests/skills.yaml`
+  (count auto-maintained by
+  `scripts/ci/skill-governance-audit.sh --update-counts`);
   the marketplace materialization copies it symlink-free beside each plugin's
   `.codex-plugin/plugin.json` (`scripts/sync-runtime-surfaces.sh`). The
-  link-map also links it under `$CODEX_HOME/plugins/<domain>/skills` for audit.
-- Install mechanism: gated marketplace install (see surface 4); the flat skill
-  root install (surface 15) remains the default until cut-over.
+  link-map also links it under `$CODEX_HOME/plugins/<domain>/skills`.
+- Install mechanism: default marketplace install (see surface 4); the flat
+  skill root install (surface 15) is retired.
 - Acceptance lane: gate 3 render, gate 4 golden, gate 5 drift, and the gate 8
-  runtime-smoke codex plugin-registry probe.
-- Support today: **partial** — plugin-scoped discovery is shipped and proven;
-  the flat root (surface 15) stays the default until cut-over.
+  runtime-smoke codex plugin-registry probe; sandbox install rehearsal diffs
+  `tests/sandbox/codex/expected-skills.txt:1-65`.
+- Support today: **shipped** — plugin-scoped discovery is the default
+  runtime-kit-managed Codex skill path.
 
 ### 6. Slash command files (`commands/<name>.md` outside skills)
 
@@ -294,26 +293,16 @@ a uniform shape:
 
 ### 15. Codex local skill root (`skills/<domain>/<skill>/SKILL.md`)
 
-- Codex reads from: `$CODEX_HOME/skills/<domain>/<skill>/SKILL.md`;
-  live prompt input in the May 2026 cutover environment listed
-  `$HOME/.codex/skills` as the runtime-kit skill root
-  (`manifests/product-capabilities.yaml`).
-- Source: `core/skills/<domain>/<skill>/`, rendered to
-  `build/codex/plugins/<domain>/skills/<skill>/`; 65 Codex skill
-  entries are declared in `manifests/skills.yaml` (count auto-maintained
-  by `scripts/ci/skill-governance-audit.sh --update-counts`).
-- Install mechanism: one non-recursive directory symlink per active
-  skill folder under `$CODEX_HOME/skills/<domain>/<skill>/`
-  (`targets/codex/link-map.yaml`).
-- Acceptance lane: render output (CI position 2); render-golden
-  (position 4); drift audit (position 5); **Codex-only** skill-surface
-  doctor (position 6); sandbox install rehearsal diffs
-  `tests/sandbox/codex/expected-skills.txt`; runtime-smoke deterministic
-  mode exercises representative skills; live Codex Desktop acceptance
-  requires `codex debug prompt-input` (`DEVELOPMENT.md`,
-  `tests/sandbox/codex/expected-skills.txt:1-65`,
-  `docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`).
-- Support today: **shipped (rendered + directory symlink)**.
+- Codex reads from: no runtime-kit-managed content. This flat root was the
+  pre-plugin discovery path and is retired by issue #437.
+- Source: none for runtime-kit-managed skills; source skills still render to
+  `build/codex/plugins/<domain>/skills/<skill>/` for plugin-scoped discovery
+  (surface 5).
+- Install mechanism: no flat `$CODEX_HOME/skills/<domain>/<skill>/` entries are
+  installed by `targets/codex/link-map.yaml`.
+- Acceptance lane: covered by surface 5 plugin-scoped discovery and live
+  `codex debug prompt-input` showing `<plugin>:<skill>` names.
+- Support today: **not-applicable (retired)**.
 
 ### 16. Codex hook registration (`config.toml` managed block)
 
@@ -350,9 +339,9 @@ a uniform shape:
 |---|---|---|---|---|---|
 | 1 | `AGENTS.md` (home) | yes | symlink to `AGENT_HOME.md` | 0.130.0 | n/a |
 | 2 | `./AGENTS.md` (repo-local) | yes | repo working tree | 0.130.0 | n/a |
-| 3 | `.codex-plugin/plugin.json` | partial | plugin-manifest-copy; Codex loads it via the `codex-kit` marketplace (skills auto-discovered, manifest `skills` field ignored); activation gated | 0.141.0 | v0.17.5 |
-| 4 | `.agents/plugins/marketplace.json` | partial | `codex-kit` marketplace shipped + installable via gated `sync-runtime-surfaces.sh` (CODEX_PLUGIN_ACTIVATION) | 0.141.0 | v0.17.5 |
-| 5 | `plugins/<p>/skills/<s>/` discovery | partial | bundled `skills/<skill>/SKILL.md` discovered as `<plugin>:<skill>` once installed; gated, flat root (row 15) stays default | 0.141.0 | v0.20.0 |
+| 3 | `.codex-plugin/plugin.json` | yes | plugin-manifest-copy; Codex loads it via the `codex-kit` marketplace (skills auto-discovered, manifest `skills` field ignored) | 0.141.0 | v0.17.5 |
+| 4 | `.agents/plugins/marketplace.json` | yes | `codex-kit` marketplace activated by `sync-runtime-surfaces.sh` / `setup.sh` | 0.141.0 | v0.17.5 |
+| 5 | `plugins/<p>/skills/<s>/` discovery | yes | bundled `skills/<skill>/SKILL.md` discovered as `<plugin>:<skill>` once installed | 0.141.0 | v0.20.0 |
 | 6 | `commands/<n>.md` | not-applicable | — | n/a | n/a |
 | 7 | `agents/<n>.toml` | yes | rendered + directory symlink into `$CODEX_HOME/agents` | 0.139.0 | v1.3.0 |
 | 8 | `hooks/<n>.*` scripts | yes | shared scripts symlinked to `$CODEX_HOME/hooks` | 0.130.0 | v0.17.5 |
@@ -362,7 +351,7 @@ a uniform shape:
 | 12 | MCP servers | no | — | n/a | n/a |
 | 13 | Heuristic system | yes | shared policy root | 0.130.0 | v1.8.0 (heuristic-inbox) |
 | 14 | `state_home` | yes | env var + `agent-out` allocation | 0.130.0 | v0.17.5 (`agent-out >=0.13.0` floor in skills.yaml) |
-| 15 | `$CODEX_HOME/skills/<d>/<s>/` | yes | rendered + directory symlink per skill | 0.130.0 | v0.20.0 |
+| 15 | `$CODEX_HOME/skills/<d>/<s>/` | not-applicable | retired; plugin-scoped discovery is row 5 | n/a | n/a |
 | 16 | `config.toml` hook managed block | yes | managed-block sync | 0.130.0 | v0.17.5 |
 | 17 | prompt-mode delegation policy | yes | loaded via home prompt | 0.130.0 | n/a |
 
@@ -371,9 +360,7 @@ Status legend:
 - **yes** — concrete source artifact + link-map entry or repo-local
   prompt artifact + acceptance lane.
 - **partial** — surface shipped with a concrete source artifact, but not the
-  default/active path yet. Rows 3–5: the `codex-kit` plugin marketplace is
-  shipped and proven, but live activation is gated behind
-  CODEX_PLUGIN_ACTIVATION while the flat skill root (row 15) stays the default.
+  default/active path yet.
 - **planned-not-shipped** — contract defined in manifests but no source
   artifact yet.
 - **no** — Codex-capable or adjacent primitive that runtime-kit does not
@@ -396,8 +383,8 @@ From `DEVELOPMENT.md`:
    managed-block checks).
 6. **`agent-runtime doctor --class skill-surface --product codex`** —
    Codex-only skill-surface shape preflight. It validates the
-   source/link-map shape that feeds `$CODEX_HOME/skills`; it is not live
-   Codex Desktop acceptance.
+   source/link-map shape that feeds plugin-scoped Codex discovery; it is
+   not live Codex Desktop acceptance.
 7. **sandbox install rehearsal** — installs into temp `live_home`,
    compares installed skill surfaces with
    `tests/sandbox/codex/expected-skills.txt`, and accepts doctor only
@@ -422,7 +409,7 @@ Live Codex acceptance:
   `- <name>: ...` entry in the `<skills_instructions>` block with a
   file path under
   `agent-runtime-kit/build/codex/plugins/<domain>/skills/<skill>/SKILL.md`
-  (`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`).
+  (`docs/plans/2026-06-20-codex-plugin-marketplace-adoption/`).
 
 ## Open Items For Schema Design
 
@@ -432,9 +419,8 @@ Things that may need a dedicated column as the unified
 - A `runtime_loaded` field separate from `metadata_shipped`, so Codex
   `.codex-plugin/plugin.json` can be represented as copied/audited but
   not loaded.
-- A `runtime_skill_root` field that distinguishes Codex
-  `$CODEX_HOME/skills/<domain>/<skill>/` from Claude plugin-scoped skill
-  discovery.
+- A `runtime_skill_root` field that distinguishes retired flat roots from
+  active plugin-scoped skill discovery.
 - A `config_surface` enum that can express `config.toml` managed blocks
   and Claude `settings.json` blocks without pretending they are the same
   upstream primitive.

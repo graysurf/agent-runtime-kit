@@ -125,7 +125,7 @@ a uniform shape:
   home, registered, and installed through Claude's plugin registry when
   `claude` is on PATH)**.
   runtime-kit ships a parallel Codex marketplace (`codex-kit`) as of issue
-  #435, with live activation gated by default (see
+  #435, and issue #437 cut it over to default activation (see
   `docs/source/harness-shape-codex.md` surface 4).
 
 ### 5. Plugin-scoped skills (`<plugin>/skills/<skill>/SKILL.md`)
@@ -336,5 +336,5 @@ Quarantined (not in default CI):
 Live Claude acceptance (a fresh Claude session reading the installed
 surface) has no in-tree CI gate today. The closest analogue on the
 Codex side is `codex debug prompt-input` in
-`docs/plans/2026-05-23-codex-skill-surface-acceptance-cutover/`; no
+`docs/plans/2026-06-20-codex-plugin-marketplace-adoption/`; no
 equivalent Claude protocol exists yet.
