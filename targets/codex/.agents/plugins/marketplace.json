@@ -1,0 +1,71 @@
+{
+  "name": "codex-kit",
+  "owner": {
+    "name": "graysurf"
+  },
+  "metadata": {
+    "description": "Codex marketplace for agent-runtime-kit — 10 plugins (browser, code-review, conversation, dispatch, evidence, issue, media, meta, pr, reporting). Registered via `codex plugin marketplace add` and installed per plugin with `codex plugin add <plugin>@codex-kit`; Codex caches each plugin under $CODEX_HOME/plugins/cache/codex-kit/<plugin>/<version>/ and discovers its bundled skills/<skill>/SKILL.md. Activation is gated (see scripts/sync-runtime-surfaces.sh); the flat $CODEX_HOME/skills root stays the default discovery path until cut-over."
+  },
+  "plugins": [
+    {
+      "name": "browser",
+      "version": "0.1.0",
+      "source": "./plugins/browser",
+      "description": "Browser automation + browser-facing QA — agent-browser, playwright, browser-qa, web-qa, browser-session, web-evidence."
+    },
+    {
+      "name": "code-review",
+      "version": "0.1.0",
+      "source": "./plugins/code-review",
+      "description": "Read-only multi-lens code review — code-review-specialists with api-contract / data-migration / maintainability / performance / red-team / security / testing lenses."
+    },
+    {
+      "name": "conversation",
+      "version": "0.1.0",
+      "source": "./plugins/conversation",
+      "description": "Conversation-to-artifact workflows — discussion-to-implementation-doc, handoff-session-prompt."
+    },
+    {
+      "name": "dispatch",
+      "version": "0.1.0",
+      "source": "./plugins/dispatch",
+      "description": "Plan-driven multi-PR delivery on GitHub — create/deliver/closeout plan-tracking issues, dispatch-plan, dispatch-lane execution and review."
+    },
+    {
+      "name": "evidence",
+      "version": "0.1.0",
+      "source": "./plugins/evidence",
+      "description": "nils-cli workflow-evidence wrappers — canary-check, docs-impact, model-cross-check, review-evidence, skill-usage, test-first-evidence, web-evidence."
+    },
+    {
+      "name": "issue",
+      "version": "0.1.0",
+      "source": "./plugins/issue",
+      "description": "GitHub Issue lifecycle skills — issue-follow-up."
+    },
+    {
+      "name": "media",
+      "version": "0.1.0",
+      "source": "./plugins/media",
+      "description": "Screen and image capture — screen-record, image-processing wrappers backed by nils-cli media tools."
+    },
+    {
+      "name": "meta",
+      "version": "0.1.0",
+      "source": "./plugins/meta",
+      "description": "Workflow primitives — agent-docs, agent-out, agent-scope-lock, bootstrap, deploy, heuristic-inbox, pre-pr, release, repo-retro, semantic-commit, setup-project."
+    },
+    {
+      "name": "pr",
+      "version": "0.1.0",
+      "source": "./plugins/pr",
+      "description": "PR / MR lifecycle (GitHub + GitLab) — create/close/deliver × feat/fix and dispatch lane PRs. Hooked via block-direct-pr-create."
+    },
+    {
+      "name": "reporting",
+      "version": "0.1.0",
+      "source": "./plugins/reporting",
+      "description": "Read-only synthesis skills — daily-brief, topic-radar, project-retro."
+    }
+  ]
+}

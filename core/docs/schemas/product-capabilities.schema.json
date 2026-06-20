@@ -34,7 +34,7 @@
         },
         "codex_only_fields": {
           "type": "array",
-          "description": "Field names that only appear in `.codex-plugin/plugin.json`. Remember Codex never loads this file at runtime — these fields are source-organisation only.",
+          "description": "Field names that only appear in `.codex-plugin/plugin.json`. Codex's plugin loader discovers each plugin's bundled `skills/<skill>/SKILL.md` directly and ignores the manifest `skills` array, so that array is kept as source-organisation audit metadata.",
           "items": { "type": "string", "minLength": 1 },
           "uniqueItems": true
         },
@@ -75,7 +75,7 @@
             },
             "loaded_at_runtime": {
               "type": "boolean",
-              "description": "Whether the product actually loads this file. Codex `.codex-plugin/plugin.json` is `false` (source-organisation only)."
+              "description": "Whether the product's plugin loader reads this file at runtime. Both products are `true` (the kit ships a marketplace for each); Codex additionally auto-discovers bundled skills and ignores the manifest `skills` field."
             },
             "schema_ref": {
               "type": "string",

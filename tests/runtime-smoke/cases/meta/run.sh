@@ -347,6 +347,11 @@ run_sync_runtime_surfaces_probe() {
   grep -q "agent-runtime doctor" "$out"
   grep -Eq "(\\+ codex debug prompt-input|codex prompt-input skipped)" "$out"
   grep -q "summary: synced surfaces for codex; mode=dry-run; prune=planned; doctor=planned" "$out"
+  # Codex plugin marketplace activation is gated off by default, so the dry-run
+  # plans no live `codex plugin marketplace add` and reports `codex plugins=gated`.
+  grep -q "codex plugin registry gated: marketplace=codex-kit" "$out"
+  grep -q "codex plugins=gated" "$out"
+  ! grep -q "codex plugin marketplace add" "$out"
 }
 
 run_setup_render_before_install_probe() {
@@ -891,6 +896,184 @@ SH
   test -f "$materialized_home/.claude-plugin/marketplace.json"
 }
 
+run_sync_runtime_surfaces_codex_plugin_registry_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.codex-plugin-registry.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+  local codex_home="$TMP_ROOT/sync-codex-plugin-registry/codex-home"
+  local source_root="$TMP_ROOT/sync-codex-plugin-registry/source"
+  local state_home="$TMP_ROOT/sync-codex-plugin-registry/state"
+  local materialized_home="$state_home/plugin-marketplaces/codex-kit"
+  local stub_bin="$TMP_ROOT/sync-codex-plugin-registry/bin"
+  local stub_log="$TMP_ROOT/sync-codex-plugin-registry/codex.log"
+
+  rm -rf "$TMP_ROOT/sync-codex-plugin-registry"
+  mkdir -p "$codex_home" "$source_root/targets/codex/.agents/plugins" \
+    "$source_root/targets/codex/plugins/meta/.codex-plugin" \
+    "$source_root/targets/codex/plugins/evidence/.codex-plugin" \
+    "$source_root/build/codex/plugins/meta/skills/demo-symlink" \
+    "$source_root/build/codex/plugins/evidence/skills/demo" \
+    "$stub_bin"
+  cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
+{
+  "name": "codex-kit",
+  "plugins": [
+    { "name": "meta", "version": "0.1.0", "source": "./plugins/meta" },
+    { "name": "evidence", "version": "0.1.0", "source": "./plugins/evidence" }
+  ]
+}
+JSON
+  cat >"$source_root/targets/codex/plugins/meta/.codex-plugin/plugin.json" <<'JSON'
+{"name":"meta","version":"0.1.0","description":"meta fixture","skills":[{"id":"demo-symlink","source":"core/skills/meta/demo-symlink"}]}
+JSON
+  cat >"$source_root/targets/codex/plugins/evidence/.codex-plugin/plugin.json" <<'JSON'
+{"name":"evidence","version":"0.1.0","description":"evidence fixture","skills":[{"id":"demo","source":"core/skills/evidence/demo"}]}
+JSON
+  printf '# Demo symlink skill\n' >"$source_root/codex-skill.md"
+  ln -s "$source_root/codex-skill.md" "$source_root/build/codex/plugins/meta/skills/demo-symlink/SKILL.md"
+  printf '# Demo evidence skill\n' >"$source_root/build/codex/plugins/evidence/skills/demo/SKILL.md"
+  cat >"$stub_bin/codex" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$CODEX_STUB_LOG"
+case "$*" in
+  "plugin list --json")
+    printf '{"installed":[{"pluginId":"meta@codex-kit"}],"available":[]}\n'
+    ;;
+  "plugin marketplace list --json")
+    printf '{"marketplaces":[{"name":"codex-kit","root":"/old-state-home"}]}\n'
+    ;;
+esac
+SH
+  chmod +x "$stub_bin/codex"
+
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    APPLY=1
+    SOURCE_ROOT="$source_root"
+    CODEX_PLUGIN_ACTIVATION=1
+    PATH="$stub_bin:$PATH" CODEX_STUB_LOG="$stub_log" \
+      sync_codex_plugin_registry "$codex_home" "$state_home"
+  ) >"$out" 2>&1
+
+  grep -q "materializing Codex plugin marketplace" "$out"
+  grep -q "syncing Codex plugin registry marketplace=codex-kit source=$materialized_home" "$out"
+  grep -q "plugin marketplace remove codex-kit" "$stub_log"
+  grep -q "plugin marketplace add $materialized_home" "$stub_log"
+  grep -q "plugin remove meta@codex-kit" "$stub_log"
+  grep -q "plugin add meta@codex-kit" "$stub_log"
+  grep -q "plugin add evidence@codex-kit" "$stub_log"
+  # The installed-guard must NOT remove a plugin the stub reports as not installed
+  # (only meta@codex-kit is installed; evidence@codex-kit must be added, never removed).
+  if grep -q "plugin remove evidence@codex-kit" "$stub_log"; then
+    echo "refresh removed evidence@codex-kit which was not installed" >&2
+    exit 1
+  fi
+  test -f "$materialized_home/plugins/meta/skills/demo-symlink/SKILL.md"
+  test ! -L "$materialized_home/plugins/meta/skills/demo-symlink/SKILL.md"
+  test -f "$materialized_home/plugins/meta/.codex-plugin/plugin.json"
+  test -f "$materialized_home/.agents/plugins/marketplace.json"
+}
+
+run_sync_runtime_surfaces_codex_plugin_registry_gated_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.codex-plugin-registry-gated.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+  local codex_home="$TMP_ROOT/sync-codex-plugin-gated/codex-home"
+  local source_root="$TMP_ROOT/sync-codex-plugin-gated/source"
+  local state_home="$TMP_ROOT/sync-codex-plugin-gated/state"
+  local materialized_home="$state_home/plugin-marketplaces/codex-kit"
+  local stub_bin="$TMP_ROOT/sync-codex-plugin-gated/bin"
+  local stub_log="$TMP_ROOT/sync-codex-plugin-gated/codex.log"
+
+  rm -rf "$TMP_ROOT/sync-codex-plugin-gated"
+  mkdir -p "$codex_home" "$source_root/targets/codex/.agents/plugins" "$stub_bin"
+  cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
+{
+  "name": "codex-kit",
+  "plugins": [ { "name": "meta", "version": "0.1.0", "source": "./plugins/meta" } ]
+}
+JSON
+  cat >"$stub_bin/codex" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$CODEX_STUB_LOG"
+SH
+  chmod +x "$stub_bin/codex"
+  : >"$stub_log"
+
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    APPLY=1
+    SOURCE_ROOT="$source_root"
+    PATH="$stub_bin:$PATH" CODEX_STUB_LOG="$stub_log" \
+      sync_codex_plugin_registry "$codex_home" "$state_home"
+  ) >"$out" 2>&1
+
+  grep -q "codex plugin registry gated: marketplace=codex-kit" "$out"
+  # The gated default must not register, install, or materialize anything live.
+  if grep -q "marketplace add" "$stub_log"; then
+    echo "gated default unexpectedly registered the Codex marketplace" >&2
+    exit 1
+  fi
+  if grep -q "plugin add" "$stub_log"; then
+    echo "gated default unexpectedly installed Codex plugins" >&2
+    exit 1
+  fi
+  test ! -e "$materialized_home"
+}
+
+run_sync_runtime_surfaces_codex_plugin_registry_planned_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.codex-plugin-registry-planned.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+  local codex_home="$TMP_ROOT/sync-codex-plugin-planned/codex-home"
+  local source_root="$TMP_ROOT/sync-codex-plugin-planned/source"
+  local state_home="$TMP_ROOT/sync-codex-plugin-planned/state"
+  local materialized_home="$state_home/plugin-marketplaces/codex-kit"
+  local stub_bin="$TMP_ROOT/sync-codex-plugin-planned/bin"
+  local stub_log="$TMP_ROOT/sync-codex-plugin-planned/codex.log"
+
+  rm -rf "$TMP_ROOT/sync-codex-plugin-planned"
+  mkdir -p "$codex_home" "$source_root/targets/codex/.agents/plugins" "$stub_bin"
+  cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
+{
+  "name": "codex-kit",
+  "plugins": [ { "name": "meta", "version": "0.1.0", "source": "./plugins/meta" } ]
+}
+JSON
+  cat >"$stub_bin/codex" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$CODEX_STUB_LOG"
+SH
+  chmod +x "$stub_bin/codex"
+  : >"$stub_log"
+
+  # Gated ON (CODEX_PLUGIN_ACTIVATION=1) but dry-run (APPLY=0): the activation
+  # commands are printed as a plan, but nothing is executed and nothing is
+  # materialized live. Status is `planned`.
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    APPLY=0
+    SOURCE_ROOT="$source_root"
+    CODEX_PLUGIN_ACTIVATION=1
+    PATH="$stub_bin:$PATH" CODEX_STUB_LOG="$stub_log" \
+      sync_codex_plugin_registry "$codex_home" "$state_home"
+  ) >"$out" 2>&1
+
+  grep -q "codex plugin marketplace materialize dry-run" "$out"
+  grep -q "+ codex plugin marketplace add $materialized_home" "$out"
+  grep -q "+ codex plugin add meta@codex-kit" "$out"
+  grep -q "codex plugin registry planned: marketplace=codex-kit" "$out"
+  # No live invocation and no materialized tree in dry-run.
+  if [ -s "$stub_log" ]; then
+    echo "dry-run unexpectedly invoked the codex binary" >&2
+    exit 1
+  fi
+  test ! -e "$materialized_home"
+}
+
 run_project_local_shim_probe() {
   local name="$1"
   local script="$REPO_ROOT/tests/projects/project-local-smoke/.agents/scripts/${name}.sh"
@@ -1282,5 +1465,8 @@ record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-fi
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Claude plugins for skill visibility" run_sync_runtime_surfaces_claude_plugin_registry_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Codex plugins when activation is gated on" run_sync_runtime_surfaces_codex_plugin_registry_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces leaves the Codex plugin marketplace inert when activation is gated off" run_sync_runtime_surfaces_codex_plugin_registry_gated_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prints a Codex activation plan without executing it when gated on under dry-run" run_sync_runtime_surfaces_codex_plugin_registry_planned_probe
 
 exit "$failures"

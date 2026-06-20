@@ -124,8 +124,8 @@ a uniform shape:
 - Support today: **shipped (rendered, copy-installed, materialized into state
   home, registered, and installed through Claude's plugin registry when
   `claude` is on PATH)**.
-  Codex shipped its own plugin marketplace in 2026, but runtime-kit ships only
-  this Claude marketplace today; the Codex analogue is not yet adopted (see
+  runtime-kit ships a parallel Codex marketplace (`codex-kit`) as of issue
+  #435, with live activation gated by default (see
   `docs/source/harness-shape-codex.md` surface 4).
 
 ### 5. Plugin-scoped skills (`<plugin>/skills/<skill>/SKILL.md`)
