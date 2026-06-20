@@ -111,16 +111,16 @@
 
 - This policy is Codex-only. Other runtimes should continue using their normal
   reviewer defaults.
-- For code-review requests in Codex sessions, the user authorizes Codex to use
-  subagent reviewers by default when the active Codex host exposes subagent
-  tools.
+- For code-review requests in Codex sessions, if the active Codex host exposes
+  `multi_agent_v1.spawn_agent` or an equivalent subagent dispatch tool, Codex
+  must dispatch reviewer subagents rather than perform the full review inline.
 - Prefer `reviewer-quick` for small routine diffs and focused
   `reviewer-<lens>` agents for broad or risky diffs.
 - The parent agent still owns base-ref selection, lens selection, synthesis,
   validation, and any follow-up code or PR action; reviewer subagents inspect
   read-only and report findings.
 - If subagent dispatch is unavailable or blocked by the active Codex runtime,
-  run the same review inline and state that fallback.
+  run the same review inline and explicitly state that fallback.
 
 {% endif %}
 ## Work Tier Levels

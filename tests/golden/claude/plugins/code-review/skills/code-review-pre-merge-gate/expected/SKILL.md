@@ -18,11 +18,11 @@ Prereqs:
 - `review-specialists` is installed from the released nils-cli package and
   available on `PATH`.
 - The mandatory and risk lenses run through the managed read-only reviewer
-  subagents dispatched by the shared specialist gate on hosts that spawn
-  subagents without an explicit per-run request (e.g. Claude Code). On hosts that
-  only spawn subagents on explicit request (e.g. Codex), review the lenses inline
-  by default — the expected path, not a waiver — and dispatch only on explicit
-  opt-in; record a waiver only when an intended dispatch genuinely fails.
+  subagents whenever the active host exposes subagent dispatch. In Codex
+  sessions, if `multi_agent_v1.spawn_agent` or an equivalent dispatch tool is
+  exposed, Codex must dispatch the matching reviewers; inline review is only the
+  fallback when dispatch is unavailable or blocked, and the fallback must be
+  stated.
 - The PR/MR base branch or merge-base is known.
 - Local validation and provider check evidence are available or explicitly
   marked pending by the owning delivery workflow.
@@ -101,15 +101,15 @@ review-specialists scope \
    reviewer subagents (`reviewer-testing`, `reviewer-maintainability`, and any
    forced risk lens such as `reviewer-security`, `reviewer-api-contract`, or
    `reviewer-performance`); collect their JSONL findings, validate and merge them,
-   and classify each item using the shared delivery outcome vocabulary. (On hosts
-   that only spawn subagents on explicit request, such as Codex, review these
-   lenses inline by default.)
+   and classify each item using the shared delivery outcome vocabulary. In Codex,
+   use `multi_agent_v1.spawn_agent` when it is available; if dispatch is
+   unavailable or blocked, state the fallback reason and review the lenses inline.
 6. Dispatch `reviewer-red-team` only after the first-wave lenses, and only when
-   the scope warrants it. On explicit-only hosts such as Codex, run the same
-   red-team lens inline from `references/specialists/red-team.md` unless the
-   user explicitly opted into subagents. Hand it the merged first-wave findings
-   so it can probe cross-cutting failure modes, then validate its JSONL and merge
-   the combined first-wave plus red-team JSONL before folding it into the result.
+   the scope warrants it. If dispatch is unavailable or blocked, state the
+   fallback reason and run the same red-team lens inline from
+   `references/specialists/red-team.md`. Hand it the merged first-wave findings so
+   it can probe cross-cutting failure modes, then validate its JSONL and merge the
+   combined first-wave plus red-team JSONL before folding it into the result.
 7. Classify every meaningful first-wave and red-team item using the shared
    delivery outcome vocabulary.
 8. Treat evidence-backed concrete findings as blocking until repaired, accepted
@@ -120,10 +120,10 @@ review-specialists scope \
 ## Boundary
 
 `code-review-pre-merge-gate` owns the read-only review gate,
-reviewer-subagent dispatch when used, inline lens execution on explicit-only
-hosts, and the review outcome recommendation. Each dispatched reviewer subagent
-owns only its read-only lens. Provider delivery skills own PR/MR comments, ready
-transitions, checks, merge/close calls, issue closeout, and repair execution.
+reviewer-subagent dispatch, fallback justification, and the review outcome
+recommendation. Each dispatched reviewer subagent owns only its read-only lens.
+Provider delivery skills own PR/MR comments, ready transitions, checks,
+merge/close calls, issue closeout, and repair execution.
 
 ## References
 

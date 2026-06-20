@@ -63,7 +63,9 @@ a uniform shape:
 - Source: root `AGENT_HOME.md`, rendered per product to
   `build/claude/AGENT_HOME.md`; see `DEVELOPMENT.md`.
 - Install mechanism: `agent-runtime render --target home-prompt --product
-  claude` writes the rendered file, and `$HOME/.claude/CLAUDE.md` symlinks to
+  claude` writes the rendered file, and `scripts/setup.sh` plus
+  `scripts/sync-runtime-surfaces.sh --apply --product claude` wire
+  `$HOME/.claude/CLAUDE.md` to
   `<source_root>/build/claude/AGENT_HOME.md`. Filename is deliberately distinct
   from project-local `CLAUDE.md` so Claude does not load duplicate policy in
   this repo.

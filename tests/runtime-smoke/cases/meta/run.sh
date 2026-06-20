@@ -32,6 +32,14 @@ record_case() {
   results_record_case "$@"
 }
 
+assert_symlink_target() {
+  local link="$1"
+  local target="$2"
+  test -L "$link"
+  test "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$link")" = \
+    "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$target")"
+}
+
 run_agent_docs_probe() {
   local out="$META_ARTIFACTS_DIR/agent-docs.preflight.txt"
   require_meta_bin agent-docs || return 1
@@ -372,6 +380,8 @@ run_sync_runtime_surfaces_probe() {
   grep -q "skill-governance-audit.sh --check-counts" "$out"
   grep -q "skill-governance-audit: counts OK" "$out"
   grep -q "agent-runtime render" "$out"
+  grep -q -- "--target home-prompt" "$out"
+  grep -q -- "--target home-prompt --product codex" "$out"
   grep -q "agent-runtime install" "$out"
   grep -q "agent-runtime prune-stale" "$out"
   grep -q -- "--dry-run" "$out"
@@ -381,7 +391,174 @@ run_sync_runtime_surfaces_probe() {
   grep -q "codex plugin marketplace materialize dry-run" "$out"
   grep -q "codex plugin registry planned: marketplace=codex-kit" "$out"
   grep -q "codex plugins=planned" "$out"
+  grep -q "home-prompt=planned" "$out"
   grep -q "codex plugin marketplace add" "$out"
+}
+
+run_sync_runtime_surfaces_home_prompt_apply_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.home-prompt-apply.txt"
+  local collision_out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.home-prompt-collision.txt"
+  local root="$TMP_ROOT/sync-home-prompt-apply"
+  local source_root="$root/source"
+  local home="$root/home"
+  local codex_home="$home/.codex"
+  local collision_home="$root/collision-home"
+  local collision_codex_home="$collision_home/.codex"
+  local state_home="$root/state"
+  local stub_bin="$root/bin"
+  local stub_log="$root/codex.log"
+  local status
+
+  rm -rf "$root"
+  mkdir -p "$source_root/scripts/ci" \
+    "$source_root/targets/codex/.agents/plugins" \
+    "$source_root/targets/codex/plugins/meta/.codex-plugin" \
+    "$codex_home" "$collision_codex_home" "$stub_bin"
+  git -C "$source_root" init -q
+
+  printf '# raw AGENT_HOME fixture\n' >"$source_root/AGENT_HOME.md"
+  ln -s "$source_root/AGENT_HOME.md" "$codex_home/AGENTS.md"
+  printf 'manual codex policy\n' >"$collision_codex_home/AGENTS.md"
+
+  cat >"$source_root/scripts/ci/skill-governance-audit.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+case "${1:-}" in
+  --check-counts)
+    printf 'skill-governance-audit: counts OK skills=1 targets=1\n'
+    ;;
+  *)
+    printf 'unexpected skill-governance-audit args: %s\n' "$*" >&2
+    exit 64
+    ;;
+esac
+SH
+  chmod +x "$source_root/scripts/ci/skill-governance-audit.sh"
+
+  cat >"$source_root/targets/codex/.agents/plugins/marketplace.json" <<'JSON'
+{
+  "name": "codex-kit",
+  "plugins": [
+    {
+      "name": "meta",
+      "version": "0.1.0",
+      "source": { "source": "local", "path": "./plugins/meta" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}
+JSON
+  cat >"$source_root/targets/codex/plugins/meta/.codex-plugin/plugin.json" <<'JSON'
+{"name":"meta","version":"0.1.0","description":"meta fixture","skills":[{"id":"demo","source":"core/skills/meta/demo"}]}
+JSON
+
+  cat >"$stub_bin/agent-runtime" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+command_name="${1:-}"
+shift || true
+source_root=""
+product=""
+target="product"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --source-root)
+      source_root="$2"
+      shift 2
+      ;;
+    --target)
+      target="$2"
+      shift 2
+      ;;
+    --product)
+      product="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+case "$command_name" in
+  render)
+    if [ "$target" = "home-prompt" ]; then
+      render_product="${product:-neutral}"
+      mkdir -p "$source_root/build/$render_product"
+      printf '# AGENT_HOME %s fixture\n' "$render_product" >"$source_root/build/$render_product/AGENT_HOME.md"
+      printf 'render home-prompt %s\n' "$render_product"
+    else
+      mkdir -p "$source_root/build/$product/plugins/meta/skills/demo"
+      printf '# Demo skill\n' >"$source_root/build/$product/plugins/meta/skills/demo/SKILL.md"
+      printf 'render %s\n' "$product"
+    fi
+    ;;
+  install)
+    test -d "$source_root/build/$product"
+    printf 'install %s\n' "$product"
+    ;;
+  *)
+    printf 'unexpected agent-runtime command: %s\n' "$command_name" >&2
+    exit 64
+    ;;
+esac
+SH
+  cat >"$stub_bin/codex" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$CODEX_STUB_LOG"
+case "$*" in
+  "plugin list --json")
+    printf '{"installed":[],"available":[]}\n'
+    ;;
+  "plugin marketplace list --json")
+    printf '{"marketplaces":[]}\n'
+    ;;
+esac
+SH
+  chmod +x "$stub_bin/agent-runtime" "$stub_bin/codex"
+  : >"$stub_log"
+
+  (
+    cd "$REPO_ROOT"
+    PATH="$stub_bin:$PATH" HOME="$home" CODEX_HOME="$codex_home" \
+      CODEX_AGENT_STATE_HOME="$state_home" CODEX_STUB_LOG="$stub_log" \
+      bash scripts/sync-runtime-surfaces.sh \
+      --source-root "$source_root" \
+      --product codex \
+      --no-pull \
+      --no-prune \
+      --no-verify \
+      --apply
+  ) >"$out" 2>&1
+
+  assert_symlink_target "$codex_home/AGENTS.md" "$source_root/build/codex/AGENT_HOME.md"
+  grep -q "rewiring managed home prompt product=codex" "$out"
+  grep -q "home-prompt=wired" "$out"
+  grep -q "codex plugin registry installed: marketplace=codex-kit" "$out"
+  grep -q "plugin marketplace add $state_home/plugin-marketplaces/codex-kit" "$stub_log"
+  grep -q "plugin add meta@codex-kit" "$stub_log"
+
+  set +e
+  (
+    cd "$REPO_ROOT"
+    PATH="$stub_bin:$PATH" HOME="$collision_home" CODEX_HOME="$collision_codex_home" \
+      CODEX_AGENT_STATE_HOME="$state_home-collision" CODEX_STUB_LOG="$stub_log" \
+      bash scripts/sync-runtime-surfaces.sh \
+      --source-root "$source_root" \
+      --product codex \
+      --no-pull \
+      --no-prune \
+      --no-verify \
+      --apply
+  ) >"$collision_out" 2>&1
+  status=$?
+  set -e
+  [ "$status" -ne 0 ]
+  grep -q "refusing to overwrite" "$collision_out"
 }
 
 run_setup_render_before_install_probe() {
@@ -603,14 +780,6 @@ SH
       --skip-homebrew-install \
       --skip-cli-tools
   ) >"$apply_out" 2>&1
-
-  assert_symlink_target() {
-    local link="$1"
-    local target="$2"
-    test -L "$link"
-    test "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$link")" = \
-      "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$target")"
-  }
 
   assert_symlink_target "$apply_home/.codex/AGENTS.md" "$source_root/build/codex/AGENT_HOME.md"
   assert_symlink_target "$apply_home/.claude/CLAUDE.md" "$source_root/build/claude/AGENT_HOME.md"
@@ -1607,6 +1776,7 @@ record_case "meta.nils-cli-bump" "version-alignment doctor probe blocked v0.0.0 
 record_case "meta.worktree-triage" "worktree triage scan classified safe-merged, safe-superseded, and rescue-candidate worktrees" run_worktree_triage_probe
 record_case "meta.setup" "setup dry-run renders codex and claude before install and delegates Claude plugin activation" run_setup_render_before_install_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces dry-run planned codex refresh without mutation" run_sync_runtime_surfaces_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply rewires managed home prompt symlinks" run_sync_runtime_surfaces_home_prompt_apply_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces no-prune flag reports skipped prune" run_sync_runtime_surfaces_no_prune_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses linked git worktree source roots" run_sync_runtime_surfaces_worktree_guard_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe

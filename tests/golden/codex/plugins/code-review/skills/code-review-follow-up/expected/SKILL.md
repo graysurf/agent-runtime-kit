@@ -23,6 +23,12 @@ Prereqs:
   available.
 - Keep this workflow read-only: it does not fix code, post PR/MR comments,
   merge, close issues, or write provider state.
+- When affected specialist lenses need to rerun, dispatch the matching managed
+  `reviewer-<lens>` subagents whenever the active host exposes subagent
+  dispatch. In Codex sessions, if `multi_agent_v1.spawn_agent` or an equivalent
+  dispatch tool is exposed, Codex must dispatch the affected reviewers; inline
+  reruns are only the fallback when dispatch is unavailable or blocked, and the
+  fallback must be stated.
 
 Inputs:
 
@@ -80,7 +86,9 @@ review-specialists scope \
 4. Inspect only the changed areas needed to verify disposition. Do not broaden
    into a new review unless a new concrete risk appears.
 5. Rerun affected specialist lenses or focused validation when the original
-   finding depended on that lens.
+   finding depended on that lens. Dispatch matching reviewer subagents when
+   dispatch is available; if dispatch is unavailable or blocked, state the
+   fallback reason and run the same affected lenses inline.
 6. Classify each item as `resolved`, `unresolved`, `accepted-risk`,
    `not-reproducible`, or `residual-risk` with concrete evidence. For provider
    review threads (async bot reviewers), apply the per-finding triage and the
@@ -91,9 +99,10 @@ review-specialists scope \
 
 ## Boundary
 
-`code-review-follow-up` owns review-finding disposition after repairs. It does
-not own implementation fixes, broad new review, provider comments, merge
-decisions, issue closeout, or the durable evidence schema.
+`code-review-follow-up` owns review-finding disposition after repairs, affected
+reviewer-subagent reruns, and fallback justification. It does not own
+implementation fixes, broad new review, provider comments, merge decisions,
+issue closeout, or the durable evidence schema.
 
 ## References
 

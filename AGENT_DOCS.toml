@@ -77,12 +77,12 @@ notes = "Provider-agnostic discipline for dispositioning provider review threads
 
 [[document]]
 context = "project-dev"
-scope = "project"
+scope = "home"
 path = "core/policies/code-review-delegation-codex.md"
 required = true
 when = "always"
 product = "codex"
-notes = "Codex-only reviewer delegation authorization; rendered into the Codex home prompt and omitted from Claude."
+notes = "Codex-only reviewer delegation requirement inherited by project-dev preflight; AGENT_HOME carries the concise always-on rendered Codex prompt policy, and Claude omits this doc."
 
 # task-tools intent: external-fact awareness plus optional CLI-tooling catalog.
 # Docs-only (no [[validation]] contract); the UserPromptSubmit cue surfaces

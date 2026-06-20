@@ -87,10 +87,12 @@ a uniform shape:
 - Source: root `AGENT_HOME.md`, rendered per product to
   `build/codex/AGENT_HOME.md` (`AGENT_HOME.md`, `DEVELOPMENT.md`).
 - Install mechanism: `agent-runtime render --target home-prompt --product
-  codex` writes the rendered file, and `$CODEX_HOME/AGENTS.md` symlinks to
-  `<source_root>/build/codex/AGENT_HOME.md`. The source filename is
-  deliberately distinct from repo-local `AGENTS.md` so Codex does not load
-  duplicate home/project policy in this repo.
+  codex` writes the rendered file, and `scripts/setup.sh` plus
+  `scripts/sync-runtime-surfaces.sh --apply --product codex` wire
+  `$CODEX_HOME/AGENTS.md` to
+  `<source_root>/build/codex/AGENT_HOME.md`. The source filename is deliberately
+  distinct from repo-local `AGENTS.md` so Codex does not load duplicate
+  home/project policy in this repo.
 - Acceptance lane: covered by home-policy cutover and live Codex session
   observation; no dedicated CI gate diffs the link target.
 - Support today: **shipped (rendered + linked)**.
