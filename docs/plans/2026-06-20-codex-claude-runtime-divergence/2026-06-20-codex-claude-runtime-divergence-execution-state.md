@@ -5,9 +5,10 @@
 - Source document: docs/plans/2026-06-20-codex-claude-runtime-divergence/2026-06-20-codex-claude-runtime-divergence-plan.md
 - Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/438>
 - Current sprint: Sprint 4 (complete)
-- Status: implementation validated; PR delivery pending
+- Status: complete; tracking issue closed
 - Branch: `feat/codex-claude-runtime-divergence`
 - Last updated: 2026-06-20
+- Branch/commit/PR: graysurf/agent-runtime-kit#442 merged (https://github.com/graysurf/agent-runtime-kit/pull/442)
 
 ## Task Ledger
 
