@@ -1302,6 +1302,64 @@ def _split_env_string(value: str) -> list[str]:
         return []
 
 
+def env_split_expanded_tokens(
+    tokens: list[str], index: int = 0, *, depth: int = 0, max_depth: int = 5
+) -> list[str]:
+    """Expand GNU env -S split strings without stripping assignments."""
+    if depth > max_depth:
+        return []
+    expanded: list[str] = []
+    while index < len(tokens):
+        token = tokens[index]
+        if token in {"-S", "--split-string"}:
+            if index + 1 >= len(tokens):
+                return expanded
+            expanded.extend(
+                env_split_expanded_tokens(
+                    _split_env_string(tokens[index + 1]),
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            )
+            index += 2
+            continue
+        split_prefix = "--split-string="
+        if token.startswith(split_prefix):
+            expanded.extend(
+                env_split_expanded_tokens(
+                    _split_env_string(token.removeprefix(split_prefix)),
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            )
+            index += 1
+            continue
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            split_index = token.find("S", 1)
+            if split_index == len(token) - 1:
+                if index + 1 >= len(tokens):
+                    return expanded
+                split_value = tokens[index + 1]
+                index += 2
+            else:
+                split_value = token[split_index + 1 :]
+                index += 1
+            expanded.extend(
+                env_split_expanded_tokens(
+                    _split_env_string(split_value),
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            )
+            continue
+        expanded.append(token)
+        index += 1
+    return expanded
+
+
 def env_target_tokens(
     tokens: list[str], index: int = 0, *, depth: int = 0, max_depth: int = 5
 ) -> list[str]:
@@ -1581,7 +1639,23 @@ def bash_write_targets_from_tokens(tokens: list[str]) -> list[str]:
     return _stdout_redirect_targets(tokens) + _tee_targets(tokens)
 
 
-def _directory_like_target(path: str) -> bool:
+def _absolute_or_expanded_path(path: str) -> bool:
+    return path.startswith(("/", "~", "$"))
+
+
+def _resolve_bash_path(path: str, cwd: str = "") -> str:
+    if not cwd or cwd == "." or _absolute_or_expanded_path(path):
+        return path
+    if path == ".":
+        return cwd
+    if path.startswith("./"):
+        path = path[2:]
+    return f"{cwd.rstrip('/')}/{path}"
+
+
+def _directory_like_target(path: str, known_dirs: set[str] | None = None) -> bool:
+    if known_dirs and path in known_dirs:
+        return True
     if path in {".", "./", "~", "~/"}:
         return True
     if path.endswith("/"):
@@ -1600,7 +1674,9 @@ def _join_directory_target(directory: str, basename: str) -> str:
     return f"{directory.rstrip('/')}/{basename}"
 
 
-def _copy_style_targets_from_invocation(invocation: list[str]) -> list[str]:
+def _copy_style_targets_from_invocation(
+    invocation: list[str], *, cwd: str = "", known_dirs: set[str] | None = None
+) -> list[str]:
     if not invocation:
         return []
     name = PurePosixPath(invocation[0]).name
@@ -1644,19 +1720,88 @@ def _copy_style_targets_from_invocation(invocation: list[str]) -> list[str]:
 
     expanded: list[str] = []
     for destination in destinations:
-        expanded.append(destination)
-        if _directory_like_target(destination):
+        resolved_destination = _resolve_bash_path(destination, cwd)
+        expanded.append(resolved_destination)
+        if _directory_like_target(resolved_destination, known_dirs):
             for source in sources:
                 basename = PurePosixPath(source.replace("\\", "/")).name
                 if basename:
-                    expanded.append(_join_directory_target(destination, basename))
+                    expanded.append(_join_directory_target(resolved_destination, basename))
     return expanded
+
+
+def _mkdir_created_dirs_from_invocation(invocation: list[str], cwd: str = "") -> list[str]:
+    if not invocation or PurePosixPath(invocation[0]).name != "mkdir":
+        return []
+    dirs: list[str] = []
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        if token == "--":
+            dirs.extend(_resolve_bash_path(path, cwd) for path in invocation[index + 1 :])
+            break
+        if token in {"-m", "--mode", "-Z", "--context"}:
+            index += 2
+            continue
+        if token.startswith(("--mode=", "--context=")):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        dirs.append(_resolve_bash_path(token, cwd))
+        index += 1
+    return dirs
+
+
+def _cd_target_from_invocation(invocation: list[str], cwd: str = "") -> str | None:
+    if not invocation or PurePosixPath(invocation[0]).name != "cd":
+        return None
+    index = 1
+    while index < len(invocation) and invocation[index] in {"-L", "-P", "-e"}:
+        index += 1
+    if index < len(invocation) and invocation[index] == "--":
+        index += 1
+    if index >= len(invocation):
+        return "~"
+    target = invocation[index]
+    if target == "-":
+        return None
+    return _resolve_bash_path(target, cwd)
 
 
 def bash_copy_style_write_targets(command: str) -> list[str]:
     targets: list[str] = []
-    for simple_command in simple_commands_with_nested_shells(command, strip_heredocs=True):
-        targets.extend(_copy_style_targets_from_invocation(invocation_tokens(simple_command)))
+    known_dirs: set[str] = set()
+    cwd = ""
+    current: list[str] = []
+
+    def flush(separator: str | None) -> None:
+        nonlocal current, cwd
+        if not current:
+            return
+        invocation = invocation_tokens(current)
+        targets.extend(
+            _copy_style_targets_from_invocation(
+                invocation,
+                cwd=cwd,
+                known_dirs=known_dirs,
+            )
+        )
+        payload = nested_shell_payload(invocation)
+        if payload:
+            targets.extend(bash_copy_style_write_targets(payload))
+        if separator in {";", "&&"}:
+            known_dirs.update(_mkdir_created_dirs_from_invocation(invocation, cwd))
+            cwd = _cd_target_from_invocation(invocation, cwd) or cwd
+        current = []
+
+    for token in shell_tokens(normalize_command_separators(strip_heredoc_bodies(command))):
+        if is_shell_separator(token):
+            flush(token)
+            continue
+        current.append(token)
+    flush(None)
     return targets
 
 
@@ -1707,13 +1852,17 @@ def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
     writes: list[tuple[str, str]] = []
     current: list[str] = []
     piped_content: str | None = None
+    cwd = ""
 
     def flush(separator: str | None) -> None:
-        nonlocal current, piped_content
+        nonlocal current, piped_content, cwd
         if not current:
             piped_content = None if separator != "|" else piped_content
             return
         if any(token in {"<<", "<<-"} or token.startswith(("<<", "<<-")) for token in current):
+            if separator in {";", "&&"}:
+                invocation = invocation_tokens(current)
+                cwd = _cd_target_from_invocation(invocation, cwd) or cwd
             current = []
             piped_content = None if separator != "|" else piped_content
             return
@@ -1722,9 +1871,12 @@ def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
         content = _literal_stdout_from_tokens(current)
         if targets:
             payload = content or piped_content or ""
-            writes.extend((target, payload) for target in targets)
+            writes.extend((_resolve_bash_path(target, cwd), payload) for target in targets)
         if opaque_targets:
-            writes.extend((target, "") for target in opaque_targets)
+            writes.extend((_resolve_bash_path(target, cwd), "") for target in opaque_targets)
+        if separator in {";", "&&"}:
+            invocation = invocation_tokens(current)
+            cwd = _cd_target_from_invocation(invocation, cwd) or cwd
         piped_content = content if separator == "|" else None
         current = []
 

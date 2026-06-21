@@ -20,6 +20,7 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
+    env_split_expanded_tokens,
     invocation_tokens,
     nested_shell_payload,
     normalize_command_separators,
@@ -201,14 +202,62 @@ def bypass_assignment_enabled(token: str) -> bool:
     return name in BYPASS_ENV_NAMES and value.strip("\"'") in BYPASS_TRUE_VALUES
 
 
+def env_bypass_in_tokens(tokens: list[str], marker_enabled: bool = False) -> bool:
+    tokens = env_split_expanded_tokens(tokens)
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return marker_enabled
+        if bypass_assignment_enabled(token):
+            marker_enabled = True
+            index += 1
+            continue
+        if token in {"-u", "--unset"} and index + 1 < len(tokens):
+            if tokens[index + 1] in BYPASS_ENV_NAMES:
+                marker_enabled = False
+            index += 2
+            continue
+        if token.startswith("--unset="):
+            if token.split("=", 1)[1] in BYPASS_ENV_NAMES:
+                marker_enabled = False
+            index += 1
+            continue
+        if is_assignment(token):
+            index += 1
+            continue
+        if token in {"-i", "--ignore-environment", "-0", "--null"}:
+            index += 1
+            continue
+        if token in {"-C", "--chdir", "-P", "--path"}:
+            index += 2
+            continue
+        if token.startswith(("--chdir=", "--path=")):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return marker_enabled
+    return marker_enabled
+
+
 def simple_command_bypass_enabled(simple_command: list[str]) -> bool:
+    marker_enabled = False
+    index = 0
+    while index < len(simple_command) and is_assignment(simple_command[index]):
+        if bypass_assignment_enabled(simple_command[index]):
+            marker_enabled = True
+        index += 1
+    if index < len(simple_command) and basename(simple_command[index]) == "env":
+        return env_bypass_in_tokens(simple_command[index + 1 :], marker_enabled)
+
     command_index = command_python_index(simple_command)
     if command_index is None:
         invocation = invocation_tokens(simple_command)
         if not invocation:
             return False
         command_index = len(simple_command) - len(invocation)
-    marker_enabled = False
     index = 0
     while index < command_index:
         token = simple_command[index]
@@ -226,6 +275,8 @@ def simple_command_bypass_enabled(simple_command: list[str]) -> bool:
                 marker_enabled = False
             index += 1
             continue
+        if basename(token) == "env":
+            return env_bypass_in_tokens(simple_command[index + 1 :], marker_enabled)
         index += 1
     return marker_enabled
 

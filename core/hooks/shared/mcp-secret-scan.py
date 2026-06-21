@@ -156,20 +156,21 @@ def remote_name_target(url: str, output_dir: str | None = None) -> str | None:
 
 def curl_unknown_mcp_write_targets(invocation: list[str]) -> list[str]:
     targets: list[str] = []
+    explicit_targets: list[str] = []
+    urls: list[str] = []
     remote_name = False
     output_dir: str | None = None
     index = 1
     while index < len(invocation):
         token = invocation[index]
-        value: str | None = None
         if token in {"-o", "--output"} and index + 1 < len(invocation):
-            value = invocation[index + 1]
+            explicit_targets.append(invocation[index + 1])
             index += 2
         elif token.startswith("--output="):
-            value = token.split("=", 1)[1]
+            explicit_targets.append(token.split("=", 1)[1])
             index += 1
         elif token.startswith("-o") and token != "-o":
-            value = token[2:]
+            explicit_targets.append(token[2:])
             index += 1
         elif token == "--output-dir" and index + 1 < len(invocation):
             output_dir = invocation[index + 1]
@@ -186,44 +187,77 @@ def curl_unknown_mcp_write_targets(invocation: list[str]) -> list[str]:
             index += 1
             continue
         elif token == "--url" and index + 1 < len(invocation):
-            if remote_name:
-                value = remote_name_target(invocation[index + 1], output_dir)
+            urls.append(invocation[index + 1])
             index += 2
         elif token.startswith("--url="):
-            if remote_name:
-                value = remote_name_target(token.split("=", 1)[1], output_dir)
+            urls.append(token.split("=", 1)[1])
             index += 1
         elif token.startswith("-") and token != "-":
             index += 1
             continue
         else:
-            if remote_name:
-                value = remote_name_target(token, output_dir)
+            urls.append(token)
             index += 1
-        if value and is_mcp_json(value):
-            targets.append(value)
+    targets.extend(target for target in explicit_targets if is_mcp_json(target))
+    if remote_name:
+        for url in urls:
+            target = remote_name_target(url, output_dir)
+            if target and is_mcp_json(target):
+                targets.append(target)
     return targets
 
 
 def wget_unknown_mcp_write_targets(invocation: list[str]) -> list[str]:
     targets: list[str] = []
+    explicit_target = False
+    directory_prefix: str | None = None
+    urls: list[str] = []
+    spider = False
     index = 1
     while index < len(invocation):
         token = invocation[index]
         value: str | None = None
         if token in {"-O", "--output-document"} and index + 1 < len(invocation):
             value = invocation[index + 1]
+            explicit_target = True
             index += 2
         elif token.startswith("--output-document="):
             value = token.split("=", 1)[1]
+            explicit_target = True
             index += 1
         elif token.startswith("-O") and token != "-O":
             value = token[2:]
+            explicit_target = True
             index += 1
+        elif token in {"-P", "--directory-prefix"} and index + 1 < len(invocation):
+            directory_prefix = invocation[index + 1]
+            index += 2
+            continue
+        elif token.startswith("--directory-prefix="):
+            directory_prefix = token.split("=", 1)[1]
+            index += 1
+            continue
+        elif token.startswith("-P") and token != "-P":
+            directory_prefix = token[2:]
+            index += 1
+            continue
+        elif token == "--spider":
+            spider = True
+            index += 1
+            continue
+        elif token.startswith("-") and token != "-":
+            index += 1
+            continue
         else:
+            urls.append(token)
             index += 1
         if value and is_mcp_json(value):
             targets.append(value)
+    if not explicit_target and not spider:
+        for url in urls:
+            target = remote_name_target(url, directory_prefix)
+            if target and is_mcp_json(target):
+                targets.append(target)
     return targets
 
 

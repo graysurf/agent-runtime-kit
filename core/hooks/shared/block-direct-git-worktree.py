@@ -20,9 +20,11 @@ from hook_common import (
     command_from,
     emit_block,
     env_target_tokens,
+    env_split_expanded_tokens,
     invocation_tokens,
+    nested_shell_payload,
     read_payload,
-    simple_commands_with_nested_shells,
+    simple_commands,
 )
 
 BLOCK_REASON = (
@@ -187,6 +189,7 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
 
 
 def env_override_in_tokens(tokens: list[str]) -> bool:
+    tokens = env_split_expanded_tokens(tokens)
     index = 0
     while index < len(tokens):
         token = tokens[index]
@@ -225,14 +228,35 @@ def env_override_in_tokens(tokens: list[str]) -> bool:
     return False
 
 
-def invokes_git_worktree(command: str) -> bool:
-    if env_override_enabled():
+def invokes_git_worktree(
+    command: str,
+    *,
+    inherited_override: bool = False,
+    depth: int = 0,
+    max_depth: int = 5,
+) -> bool:
+    if depth == 0 and env_override_enabled():
         return False
-    return any(
-        git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
-        and not simple_command_override_enabled(simple_command)
-        for simple_command in simple_commands_with_nested_shells(command)
-    )
+    if depth > max_depth:
+        return False
+    for simple_command in simple_commands(command):
+        command_override = inherited_override or simple_command_override_enabled(
+            simple_command
+        )
+        if (
+            git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
+            and not command_override
+        ):
+            return True
+        payload = nested_shell_payload(invocation_tokens(simple_command))
+        if payload and invokes_git_worktree(
+            payload,
+            inherited_override=command_override,
+            depth=depth + 1,
+            max_depth=max_depth,
+        ):
+            return True
+    return False
 
 
 def main() -> int:

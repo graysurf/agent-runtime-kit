@@ -250,6 +250,8 @@ class SharedHookTests(unittest.TestCase):
             "printf 'git worktree list\\n'",
             "ALLOW_DIRECT_GIT_WORKTREE=1 git worktree add ../repo-topic",
             "env ALLOW_DIRECT_GIT_WORKTREE=1 git worktree add ../repo-topic",
+            "env -S 'ALLOW_DIRECT_GIT_WORKTREE=1 git worktree add ../repo-topic'",
+            "ALLOW_DIRECT_GIT_WORKTREE=1 bash -lc 'git worktree add ../repo-topic'",
         )
         for command in allowed_commands:
             with self.subTest(command=command):
@@ -564,6 +566,19 @@ class SharedHookTests(unittest.TestCase):
             self.assertEqual(code, 0, stderr)
             self.assert_allowed(decision)
 
+            for command in (
+                "env -S 'AGENT_RUNTIME_ALLOW_SYSTEM_PYTHON=1 python -m pytest'",
+                "AGENT_RUNTIME_ALLOW_SYSTEM_PYTHON=1 bash -lc 'python -m pytest'",
+            ):
+                with self.subTest(command=command):
+                    code, decision, stderr = run_hook(
+                        "block-direct-python.py",
+                        command_payload(command, workdir=str(repo)),
+                        cwd=repo,
+                    )
+                    self.assertEqual(code, 0, stderr)
+                    self.assert_allowed(decision)
+
     def test_direct_python_bypass_must_prefix_same_simple_command(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
@@ -650,10 +665,24 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_allowed(decision)
 
+        for command in (
+            "env -S 'AGENT_RUNTIME_PR_SKILL=create-pr gh pr create --draft'",
+            "AGENT_RUNTIME_PR_SKILL=create-pr bash -lc 'gh pr create --draft'",
+        ):
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-pr-create.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
         blocked_pr_mr_commands = (
             "gh api -X POST /repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
             "gh api --method POST repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
             "gh api repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
+            "gh api repos/graysurf/agent-runtime-kit/pulls -ftitle=x -fhead=topic -fbase=main",
+            "gh api repos/graysurf/agent-runtime-kit/pulls -Ftitle=x -Fhead=topic -Fbase=main",
             "glab mr create --draft",
             "bash -lc 'glab mr create --draft'",
             "glab api -X POST /projects/1/merge_requests",
@@ -1017,6 +1046,7 @@ class SharedHookTests(unittest.TestCase):
         for command in (
             "cp /tmp/project_notes.md .codex/memories/project_state/",
             "cp /tmp/project_notes.md ~/.codex/memories/project_state/",
+            "mkdir -p ~/.codex/memories/project_state && cp /tmp/project_notes.md ~/.codex/memories/project_state",
         ):
             with self.subTest(command=command):
                 code, decision, stderr = run_hook(
@@ -1026,9 +1056,37 @@ class SharedHookTests(unittest.TestCase):
                 self.assertEqual(code, 0, stderr)
                 self.assert_blocked(decision, "project-state memory")
 
+        for command in (
+            "mkdir -p .vscode && cp /tmp/mcp.json .vscode",
+            "cd .vscode && echo 'sk-ant-abcdefghijklmnopqrstuvwxyz' > mcp.json",
+        ):
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "mcp-secret-scan.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, ".vscode/mcp.json")
+
+        code, decision, stderr = run_hook(
+            "block-project-memory-write.py",
+            command_payload(
+                "cd ~/.codex/memories/project_state && echo notes > project_notes.md"
+            ),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "project-state memory")
+
         code, decision, stderr = run_hook(
             "portable-paths-scan.py",
             command_payload("printf '/Users/example/project\\n' | tee docs/example.md"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "portable-paths")
+
+        code, decision, stderr = run_hook(
+            "portable-paths-scan.py",
+            command_payload("cd docs && printf '/Users/example/project\\n' > example.md"),
         )
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "portable-paths")
@@ -1142,9 +1200,14 @@ class SharedHookTests(unittest.TestCase):
             "curl --output=.vscode/mcp.json https://example.invalid/mcp.json",
             "curl --remote-name https://example.invalid/.mcp.json",
             "curl --remote-name --output-dir .vscode https://example.invalid/mcp.json",
+            "curl --url=https://example.invalid/.mcp.json --remote-name",
+            "curl --output-dir .vscode --url https://example.invalid/mcp.json -O",
             "wget -O .cursor/mcp.json https://example.invalid/mcp.json",
             "wget --output-document=.mcp.json https://example.invalid/mcp.json",
             "wget -O.mcp.json https://example.invalid/mcp.json",
+            "wget https://example.invalid/.mcp.json",
+            "wget -P .vscode https://example.invalid/mcp.json",
+            "wget --directory-prefix=.vscode https://example.invalid/mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js > .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2> .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2>>.mcp.json",
