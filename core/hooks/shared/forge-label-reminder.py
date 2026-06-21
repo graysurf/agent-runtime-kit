@@ -66,6 +66,7 @@ LABELABLE_SUBCOMMANDS = frozenset(
 
 LABEL_FLAG = "--label"
 LABEL_FLAG_PREFIX = "--label="
+HELP_FLAGS = frozenset({"--help", "-h"})
 
 OVERRIDE_ENV_NAMES = ("FORGE_NO_LABELS", "AGENT_RUNTIME_FORGE_NO_LABELS")
 TRUTHY_VALUES = {"1", "true", "yes"}
@@ -449,12 +450,18 @@ def has_label_flag(rest: list[str]) -> bool:
     )
 
 
+def is_help_request(rest: list[str]) -> bool:
+    return any(token in HELP_FLAGS for token in rest)
+
+
 def needs_label_reminder(tokens: list[str]) -> bool:
     invocation = invocation_tokens(tokens)
     if not invocation or PurePosixPath(invocation[0]).name != "forge-cli":
         return False
     rest = invocation[1:]
     if leading_subcommand(rest) not in LABELABLE_SUBCOMMANDS:
+        return False
+    if is_help_request(rest):
         return False
     return not has_label_flag(rest)
 
