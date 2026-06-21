@@ -56,6 +56,36 @@ def arg_value(text: str, key: str) -> str | None:
     return match.group(1) if match else None
 
 
+def arg_text_value(text: str, key: str) -> str | None:
+    match = re.search(rf"^\s*ARG\s+{re.escape(key)}=([^\s#]+)\s*$", text, re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def runtime_recommended_version(text: str, product: str) -> str | None:
+    match = re.search(
+        rf"^\s{{2}}{re.escape(product)}:\n(?P<body>.*?)(?=^\s{{2}}\w+:|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        return None
+    version_match = re.search(
+        r'^\s*recommended_version:\s*"([^"]+)"\s*$',
+        match.group("body"),
+        re.MULTILINE,
+    )
+    return version_match.group(1) if version_match else None
+
+
+def workflow_step(text: str, name: str) -> str | None:
+    marker = f"      - name: {name}"
+    start = text.find(marker)
+    if start == -1:
+        return None
+    end = text.find("\n      - name:", start + 1)
+    return text[start:] if end == -1 else text[start:end]
+
+
 def check_nils_pin_manifest(errors: list[str]) -> None:
     text = read("docs/source/nils-cli-pin.yaml")
     for key in ("linux_amd64", "linux_arm64"):
@@ -94,6 +124,18 @@ def check_dockerfile(errors: list[str]) -> None:
         if docker_value != manifest_value:
             fail(errors, f"docker/Dockerfile {arg} default does not match docs/source/nils-cli-pin.yaml")
 
+    runtime_roots = read("manifests/runtime-roots.yaml")
+    product_version_pairs = {
+        "CLAUDE_CODE_VERSION": runtime_recommended_version(runtime_roots, "claude"),
+        "CODEX_VERSION": runtime_recommended_version(runtime_roots, "codex"),
+    }
+    for arg, expected in product_version_pairs.items():
+        value = arg_text_value(dockerfile, arg)
+        if value in {None, "", "latest"}:
+            fail(errors, f"docker/Dockerfile {arg} must be pinned, not latest")
+        elif expected and value != expected:
+            fail(errors, f"docker/Dockerfile {arg}={value} does not match manifests/runtime-roots.yaml recommended_version={expected}")
+
     required_fragments = (
         "test \"$expected\" = \"$published\"",
         "test \"$gh_sha\" = \"$gh_published\"",
@@ -120,11 +162,25 @@ def check_publish_workflow(errors: list[str]) -> None:
         "provenance: true",
         "sbom: true",
         "actions/attest-build-provenance@",
-        "NILS_CLI_SHA256_AMD64=${{ steps.pin.outputs.nils_cli_sha256_amd64 }}",
-        "NILS_CLI_SHA256_ARM64=${{ steps.pin.outputs.nils_cli_sha256_arm64 }}",
     ):
         if fragment not in workflow:
             fail(errors, f".github/workflows/publish-image.yml missing {fragment}")
+    for step_name in ("Build amd64 for smoke test", "Build and push multi-arch"):
+        step = workflow_step(workflow, step_name)
+        if step is None:
+            fail(errors, f".github/workflows/publish-image.yml missing step {step_name}")
+            continue
+        for fragment in (
+            "NILS_CLI_VERSION=${{ steps.pin.outputs.nils_cli }}",
+            "NILS_CLI_SHA256_AMD64=${{ steps.pin.outputs.nils_cli_sha256_amd64 }}",
+            "NILS_CLI_SHA256_ARM64=${{ steps.pin.outputs.nils_cli_sha256_arm64 }}",
+        ):
+            if fragment not in step:
+                fail(errors, f".github/workflows/publish-image.yml step {step_name} missing {fragment}")
+    push_step = workflow_step(workflow, "Build and push multi-arch") or ""
+    for fragment in ("id: push", "push: true"):
+        if fragment not in push_step:
+            fail(errors, f".github/workflows/publish-image.yml final publish step missing {fragment}")
     for line_no, line in enumerate(workflow.splitlines(), 1):
         if "actions/attest-build-provenance@" in line:
             ref = line.split("@", 1)[1].split()[0]

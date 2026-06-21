@@ -17,6 +17,7 @@ sys.dont_write_bytecode = True
 
 from hook_common import (
     ALLOW,
+    bash_write_targets_from_tokens,
     bash_write_operations,
     command_from,
     emit_block,
@@ -177,6 +178,11 @@ def bash_unknown_mcp_write_targets(command: str) -> list[str]:
                     index += 1
                 if value and is_mcp_json(value):
                     targets.append(value)
+            continue
+        if name == "printf":
+            for target in bash_write_targets_from_tokens(simple_command):
+                if is_mcp_json(target):
+                    targets.append(target)
     return targets
 
 
@@ -225,6 +231,8 @@ def hook_contents_to_scan(payload: dict[str, Any]) -> tuple[list[tuple[str, str]
                 contents.append((file_path, content))
             else:
                 unknown_paths.append(file_path)
+        inspected_paths = {file_path for file_path, _content in contents}
+        unknown_paths = [path for path in unknown_paths if path not in inspected_paths]
         unknown_paths.extend(bash_unknown_mcp_write_targets(command_from(payload)))
         return contents, unknown_paths
 
@@ -251,7 +259,6 @@ def run_hook_mode() -> int:
         if file_path not in paths:
             paths.append(file_path)
         hits.extend(scan(content))
-    unknown_paths = [path for path in unknown_paths if path not in paths]
     if hits:
         reason = BLOCK_TEMPLATE.format(paths=format_paths(paths), hits=format_hits(hits))
         emit_block(reason)

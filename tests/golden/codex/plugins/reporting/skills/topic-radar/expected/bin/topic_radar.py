@@ -693,6 +693,14 @@ def read_limited_response(resp: Any, max_bytes: int) -> bytes:
     return body
 
 
+def read_limited_file(path: Path, max_bytes: int) -> bytes:
+    with path.open("rb") as handle:
+        body = handle.read(max_bytes + 1)
+    if len(body) > max_bytes:
+        raise RemoteFetchError(f"cached_response_too_large:max={max_bytes}")
+    return body
+
+
 def safe_xml_fromstring(data: bytes | str) -> ET.Element:
     raw = data.encode("utf-8") if isinstance(data, str) else data
     if UNSAFE_XML_DECL_RE.search(raw):
@@ -722,8 +730,9 @@ def http_get(
         if cache_path.exists() and not refresh:
             age_seconds = max(0.0, time.time() - cache_path.stat().st_mtime)
             if age_seconds <= cache_ttl_seconds:
+                body = read_limited_file(cache_path, max_bytes)
                 record_cache_event(cache_events, "hit", url, age_seconds)
-                return cache_path.read_bytes()
+                return body
             record_cache_event(cache_events, "stale", url, age_seconds)
         else:
             record_cache_event(cache_events, "miss", url)

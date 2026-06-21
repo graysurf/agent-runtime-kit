@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import threading
 import unittest
 import urllib.request
@@ -71,6 +72,24 @@ class TopicRadarSecurityTest(unittest.TestCase):
         finally:
             server.shutdown()
             server.server_close()
+
+    def test_http_get_rejects_oversized_cache_hit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp)
+            url = "https://example.test/feed.xml"
+            headers = {"User-Agent": topic_radar.USER_AGENT}
+            cache_path = cache_dir / f"{topic_radar.cache_key(url, headers, None)}.body"
+            cache_path.write_bytes(b"abcdef")
+
+            with self.assertRaises(topic_radar.RemoteFetchError) as caught:
+                topic_radar.http_get(
+                    url,
+                    timeout=3,
+                    max_bytes=5,
+                    cache_ttl_seconds=60,
+                    cache_dir=cache_dir,
+                )
+            self.assertIn("cached_response_too_large", str(caught.exception))
 
     def test_safe_xml_rejects_doctype_and_entity_declarations(self) -> None:
         self.assertEqual(topic_radar.safe_xml_fromstring(b"<rss><channel /></rss>").tag, "rss")

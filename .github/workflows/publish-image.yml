@@ -147,6 +147,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             NILS_CLI_VERSION=${{ steps.pin.outputs.nils_cli }}
+            NILS_CLI_SHA256_AMD64=${{ steps.pin.outputs.nils_cli_sha256_amd64 }}
+            NILS_CLI_SHA256_ARM64=${{ steps.pin.outputs.nils_cli_sha256_arm64 }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

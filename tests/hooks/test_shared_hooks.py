@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 import unittest
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,19 @@ def parse_stdout(stdout: str) -> dict[str, object] | None:
     parsed = json.loads(stripped)
     if not isinstance(parsed, dict):
         raise AssertionError(f"hook stdout was not a JSON object: {stdout!r}")
+    return parsed
+
+
+def load_claude_hook_fragment() -> dict[str, Any]:
+    text = (
+        REPO_ROOT / "core" / "hooks" / "claude" / "settings.hooks.jsonc"
+    ).read_text(encoding="utf-8")
+    cleaned = "\n".join(
+        line for line in text.splitlines() if not line.lstrip().startswith("//")
+    )
+    parsed = json.loads("{\n" + cleaned + "\n}")
+    if not isinstance(parsed, dict):
+        raise AssertionError("Claude hook fragment did not parse as a JSON object")
     return parsed
 
 
@@ -981,6 +995,20 @@ class SharedHookTests(unittest.TestCase):
         self.assert_blocked(decision, ".vscode/mcp.json")
         assert decision is not None
         self.assertNotIn("/Users/example", str(decision.get("reason", "")))
+
+    def test_mcp_secret_scan_blocks_generated_and_ordered_unknown_bash_writes(self) -> None:
+        commands = (
+            "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz' > .mcp.json",
+            "cat > .mcp.json <<'EOF'\n{}\nEOF\ncp /private/source.json .mcp.json",
+        )
+        for command in commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "mcp-secret-scan.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "could not inspect")
 
     def test_skill_usage_reminder_uses_catalog(self) -> None:
         code, decision, stderr = run_hook(
@@ -2485,6 +2513,31 @@ exit 65
         for script in expected_scripts:
             self.assertIn(f"hooks/{script}", codex_block)
             self.assertIn(f"hooks/{script}", claude_fragment)
+
+    def test_bash_scanner_hooks_registered_for_codex_and_claude(self) -> None:
+        expected_scripts = {
+            "mcp-secret-scan.py",
+            "block-project-memory-write.py",
+            "portable-paths-scan.py",
+        }
+        codex_block = tomllib.loads(
+            (REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml").read_text(
+                encoding="utf-8"
+            )
+        )
+        codex_groups = codex_block["hooks"]["PreToolUse"]
+        codex_bash = next(group for group in codex_groups if group["matcher"] == "Bash")
+        codex_commands = "\n".join(hook["command"] for hook in codex_bash["hooks"])
+
+        claude_hooks = load_claude_hook_fragment()["hooks"]["PreToolUse"]
+        claude_bash = next(group for group in claude_hooks if group["matcher"] == "Bash")
+        claude_commands = "\n".join(hook["command"] for hook in claude_bash["hooks"])
+
+        for script in expected_scripts:
+            with self.subTest(product="codex", script=script):
+                self.assertIn(f"hooks/{script}", codex_commands)
+            with self.subTest(product="claude", script=script):
+                self.assertIn(f"hooks/{script}", claude_commands)
 
     def test_codex_hook_paths_fall_back_when_codex_home_is_unset(self) -> None:
         codex_block = (REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml").read_text(
