@@ -1445,7 +1445,12 @@ def _literal_stdout_from_tokens(tokens: list[str]) -> str:
             args = args[1:]
         return " ".join(args)
     if command == "printf":
-        return " ".join(args)
+        # Do not approximate printf formatting. Multi-argument printf output is
+        # opaque to this parser, so protected writes fail closed instead of
+        # scanning a string that differs from the shell's real output.
+        if len(args) == 1:
+            return args[0]
+        return ""
     return ""
 
 

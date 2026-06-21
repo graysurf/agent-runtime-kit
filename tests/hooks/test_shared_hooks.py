@@ -999,6 +999,7 @@ class SharedHookTests(unittest.TestCase):
     def test_mcp_secret_scan_blocks_generated_and_ordered_unknown_bash_writes(self) -> None:
         commands = (
             "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz' > .mcp.json",
+            "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz' | tee .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\ncp /private/source.json .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js > .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2> .mcp.json",
