@@ -287,7 +287,10 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    post one compact specialist review comment through `forge-cli pr review`
    with the mapped reviewer bot profile, or `FORGE_BOT_PROFILE=dobi` for
    unmapped specialist lenses. The parent delivery workflow posts; reviewer
-   subagents never call the provider.
+   subagents never call the provider. Post the moment each lens returns — before
+   the repair in step 9, never batched after it; the comment is the finding the
+   step-9 fix responds to, so it must exist first (see
+   `REVIEW_OUTCOME_POSTING_CONTRACT.md`, posting order).
 9. Repair concrete findings in this delivery workflow, then rerun validation,
    checks, and affected review lenses. Post each focused follow-up specialist
    review comment with the same bot-profile selection before continuing.

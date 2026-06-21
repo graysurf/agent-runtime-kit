@@ -102,7 +102,10 @@ review-specialists merge --input focused-findings.jsonl --summary-out focused-re
 `code-review-focused-lens` owns narrow, user-selected review lenses,
 reviewer-subagent dispatch, and fallback justification. It does not own broad
 specialist selection, delivery gate policy, provider comments, merge decisions,
-evidence record structure, or code repairs.
+evidence record structure, or code repairs. When a caller does post these lens
+findings, the owner posts them the moment the lens returns — before any repair —
+per the posting-order invariant in
+`skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ## References
 
