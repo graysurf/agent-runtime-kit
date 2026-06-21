@@ -108,6 +108,11 @@ SOURCE_WEIGHTS = {
 USER_AGENT = f"agent-runtime-kit-topic-radar/{VERSION} (+https://github.com/graysurf/agent-runtime-kit)"
 MAX_REMOTE_RESPONSE_BYTES = 12 * 1024 * 1024
 UNSAFE_XML_DECL_RE = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+UNSAFE_XML_TEXT_DECL_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+XML_ENCODING_DECL_RE = re.compile(
+    r"<\?xml[^>]*encoding\s*=\s*['\"](?P<encoding>[A-Za-z0-9._-]+)['\"]",
+    re.IGNORECASE,
+)
 POLYMARKET_MCP_SOURCE_DETAIL = "polymarket-mcp"
 POLYMARKET_CLOB_IDS_CAMEL_KEY = "clob" + "Tok" + "enIds"
 POLYMARKET_CLOB_IDS_SNAKE_KEY = "clob_" + "tok" + "en_ids"
@@ -701,9 +706,59 @@ def read_limited_file(path: Path, max_bytes: int) -> bytes:
     return body
 
 
+def xml_encoding_candidates(raw: bytes) -> list[str]:
+    encodings: list[str] = []
+
+    def add(encoding: str) -> None:
+        if encoding not in encodings:
+            encodings.append(encoding)
+
+    if raw.startswith(b"\xef\xbb\xbf"):
+        add("utf-8-sig")
+    if raw.startswith((b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
+        add("utf-32")
+    elif raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+        add("utf-16")
+
+    prefix = raw[:256]
+    if prefix.startswith(b"\x00\x00\x00<") or prefix.startswith(b"<\x00\x00\x00"):
+        add("utf-32-be" if prefix.startswith(b"\x00\x00\x00<") else "utf-32-le")
+    elif prefix.startswith(b"\x00<\x00?") or prefix.startswith(b"<\x00?\x00"):
+        add("utf-16-be" if prefix.startswith(b"\x00<\x00?") else "utf-16-le")
+
+    ascii_prefix = prefix.decode("ascii", errors="ignore")
+    declared = XML_ENCODING_DECL_RE.search(ascii_prefix)
+    if declared:
+        add(declared.group("encoding"))
+
+    add("utf-8")
+    if b"\x00" in prefix:
+        add("utf-16-le")
+        add("utf-16-be")
+        add("utf-32-le")
+        add("utf-32-be")
+    return encodings
+
+
+def unsafe_xml_declaration_present(data: bytes | str) -> bool:
+    if isinstance(data, str):
+        return bool(UNSAFE_XML_TEXT_DECL_RE.search(data))
+
+    if UNSAFE_XML_DECL_RE.search(data):
+        return True
+
+    for encoding in xml_encoding_candidates(data):
+        try:
+            text = data.decode(encoding)
+        except (LookupError, UnicodeError):
+            continue
+        if UNSAFE_XML_TEXT_DECL_RE.search(text):
+            return True
+    return False
+
+
 def safe_xml_fromstring(data: bytes | str) -> ET.Element:
-    raw = data.encode("utf-8") if isinstance(data, str) else data
-    if UNSAFE_XML_DECL_RE.search(raw):
+    if unsafe_xml_declaration_present(data):
         raise UnsafeXmlError("unsafe_xml_declaration:doctype_or_entity")
     return ET.fromstring(data)
 

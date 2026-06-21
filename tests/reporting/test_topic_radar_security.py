@@ -96,6 +96,10 @@ class TopicRadarSecurityTest(unittest.TestCase):
         for xml in (
             b'<!DOCTYPE rss [<!ENTITY x "boom">]><rss><channel /></rss>',
             b'<rss><channel /><!ENTITY x "boom"></rss>',
+            (
+                '<?xml version="1.0" encoding="UTF-16"?>'
+                '<!DOCTYPE rss [<!ENTITY x "boom">]><rss><channel /></rss>'
+            ).encode("utf-16"),
         ):
             with self.subTest(xml=xml):
                 with self.assertRaises(topic_radar.UnsafeXmlError):

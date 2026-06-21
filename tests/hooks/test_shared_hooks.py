@@ -928,6 +928,13 @@ class SharedHookTests(unittest.TestCase):
         self.assert_blocked(decision, "project-state memory")
 
         code, decision, stderr = run_hook(
+            "block-project-memory-write.py",
+            command_payload("cp /tmp/source .codex/memories/project_state/project_notes.md"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "project-state memory")
+
+        code, decision, stderr = run_hook(
             "portable-paths-scan.py",
             command_payload("printf '/Users/example/project\\n' | tee docs/example.md"),
         )
