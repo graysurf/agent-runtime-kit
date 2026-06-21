@@ -1679,17 +1679,26 @@ def _literal_stdout_from_tokens(tokens: list[str]) -> str:
         return ""
     command = PurePosixPath(invocation[0]).name
     args = invocation[1:]
+    generated_escape_re = r"\\(?:x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})"
     if command == "echo":
-        while args and args[0] in {"-n", "-e", "-E"}:
+        expands_backslash = False
+        while args and re.fullmatch(r"-[neE]+", args[0]):
+            for flag in args[0][1:]:
+                if flag == "e":
+                    expands_backslash = True
+                elif flag == "E":
+                    expands_backslash = False
             args = args[1:]
         content = " ".join(args)
+        if expands_backslash and re.search(generated_escape_re, content):
+            return ""
         return "" if re.search(r"[$`]", content) else content
     if command == "printf":
         # Do not approximate printf formatting. Multi-argument printf output is
         # opaque to this parser, so protected writes fail closed instead of
         # scanning a string that differs from the shell's real output.
         if len(args) == 1:
-            return "" if re.search(r"[$`]", args[0]) else args[0]
+            return "" if re.search(rf"[$`]|{generated_escape_re}", args[0]) else args[0]
         return ""
     return ""
 

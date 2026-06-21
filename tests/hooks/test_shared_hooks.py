@@ -650,12 +650,15 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_allowed(decision)
 
-        blocked_mr_commands = (
+        blocked_pr_mr_commands = (
+            "gh api -X POST /repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
+            "gh api --method POST repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
+            "gh api repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
             "glab mr create --draft",
             "bash -lc 'glab mr create --draft'",
             "glab api -X POST /projects/1/merge_requests",
         )
-        for command in blocked_mr_commands:
+        for command in blocked_pr_mr_commands:
             with self.subTest(command=command):
                 code, decision, stderr = run_hook(
                     "block-direct-pr-create.py",
@@ -665,6 +668,7 @@ class SharedHookTests(unittest.TestCase):
                 self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
 
         for command in (
+            "env AGENT_RUNTIME_PR_SKILL=pr:create-pr gh api -X POST /repos/graysurf/agent-runtime-kit/pulls -f title=x -f head=topic -f base=main",
             "AGENT_RUNTIME_PR_SKILL=pr:create-pr glab mr create --draft",
             "env AGENT_RUNTIME_PR_SKILL=pr:create-pr glab api -X POST /projects/1/merge_requests",
         ):
@@ -931,6 +935,7 @@ class SharedHookTests(unittest.TestCase):
             "agent-run exec --cwd /repo -- forge-cli pr review 448",
             "env printf forge-cli",
             "command -v forge-cli",
+            "bash -- -c 'forge-cli pr review 448'",
             "cat <<'EOF'\nforge-cli pr review 448\nEOF",
             "bash -lc 'true' <<'EOF'\nforge-cli pr review 448\nEOF",
         )
@@ -1135,7 +1140,11 @@ class SharedHookTests(unittest.TestCase):
             "cat > .mcp.json <<'EOF'\n{}\nEOF\ncp /private/source.json .mcp.json",
             "curl -fsSL -o .mcp.json https://example.invalid/mcp.json",
             "curl --output=.vscode/mcp.json https://example.invalid/mcp.json",
+            "curl --remote-name https://example.invalid/.mcp.json",
+            "curl --remote-name --output-dir .vscode https://example.invalid/mcp.json",
             "wget -O .cursor/mcp.json https://example.invalid/mcp.json",
+            "wget --output-document=.mcp.json https://example.invalid/mcp.json",
+            "wget -O.mcp.json https://example.invalid/mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js > .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2> .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2>>.mcp.json",
@@ -1152,6 +1161,8 @@ class SharedHookTests(unittest.TestCase):
             "MCP_TOKEN=sk-ant-abcdefghijklmnopqrstuvwxyz; cat > .mcp.json <<EOF\n"
             '{"apiKey":"$MCP_TOKEN"}\n'
             "EOF",
+            "printf '\\x73\\x6b-ant-abcdefghijklmnopqrstuvwxyz' > .mcp.json",
+            "echo -e '\\x73\\x6b-ant-abcdefghijklmnopqrstuvwxyz' > .mcp.json",
         )
         for command in commands:
             with self.subTest(command=command):

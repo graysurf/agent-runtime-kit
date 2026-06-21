@@ -88,6 +88,7 @@ CLI_OPTIONS_WITH_VALUE_PREFIXES = ("--repo=",)
 GLAB_API_METHOD_FLAGS = {"-X", "--method"}
 GLAB_API_POST_PARAMETER_FLAGS = {"-F", "--field", "-f", "--raw-field", "--form"}
 MR_ENDPOINT_RE = re.compile(r"(?:^|/)merge_requests(?:$|[/?#])")
+PULLS_ENDPOINT_RE = re.compile(r"(?:^|/)repos/[^/\s]+/[^/\s]+/pulls(?:$|[/?#])")
 
 
 def basename(token: str) -> str:
@@ -162,6 +163,18 @@ def cli_subcommands(simple_command: list[str], command_name: str) -> list[str]:
 def invokes_gh_pr_create(simple_command: list[str]) -> bool:
     args = cli_subcommands(simple_command, "gh")
     return args[:2] == ["pr", "create"]
+
+
+def api_has_pulls_endpoint(args: list[str]) -> bool:
+    return any(PULLS_ENDPOINT_RE.search(token) for token in args)
+
+
+def invokes_gh_api_pr_create(simple_command: list[str]) -> bool:
+    args = cli_subcommands(simple_command, "gh")
+    if args[:1] != ["api"]:
+        return False
+    api_args = args[1:]
+    return api_method_is_post(api_args) and api_has_pulls_endpoint(api_args)
 
 
 def invokes_glab_mr_create(simple_command: list[str]) -> bool:
@@ -281,7 +294,10 @@ def main() -> int:
 
     for simple_command in simple_commands_with_nested_shells(command):
         pr_marker = marker_value_before_command(simple_command, "gh")
-        if invokes_gh_pr_create(simple_command) and pr_marker not in ALLOWED_PR_SKILLS:
+        if (
+            invokes_gh_pr_create(simple_command)
+            or invokes_gh_api_pr_create(simple_command)
+        ) and pr_marker not in ALLOWED_PR_SKILLS:
             emit_block(BLOCK_REASON_PR)
             return ALLOW
         mr_marker = marker_value_before_command(simple_command, "glab")

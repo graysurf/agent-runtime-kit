@@ -310,8 +310,7 @@ def shell_c_payload(tokens: list[str], index: int) -> str | None:
     while index < len(tokens):
         token = tokens[index]
         if token == "--":
-            index += 1
-            continue
+            return None
         if token == "-c" or (
             token.startswith("-") and not token.startswith("--") and "c" in token[1:]
         ):

@@ -143,6 +143,90 @@ def format_paths(paths: list[str]) -> str:
     return ", ".join(seen)
 
 
+def remote_name_target(url: str, output_dir: str | None = None) -> str | None:
+    without_fragment = url.split("#", 1)[0]
+    without_query = without_fragment.split("?", 1)[0].rstrip("/")
+    name = PurePosixPath(without_query.replace("\\", "/")).name
+    if not name:
+        return None
+    if output_dir:
+        return f"{output_dir.rstrip('/')}/{name}"
+    return name
+
+
+def curl_unknown_mcp_write_targets(invocation: list[str]) -> list[str]:
+    targets: list[str] = []
+    remote_name = False
+    output_dir: str | None = None
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        value: str | None = None
+        if token in {"-o", "--output"} and index + 1 < len(invocation):
+            value = invocation[index + 1]
+            index += 2
+        elif token.startswith("--output="):
+            value = token.split("=", 1)[1]
+            index += 1
+        elif token.startswith("-o") and token != "-o":
+            value = token[2:]
+            index += 1
+        elif token == "--output-dir" and index + 1 < len(invocation):
+            output_dir = invocation[index + 1]
+            index += 2
+            continue
+        elif token.startswith("--output-dir="):
+            output_dir = token.split("=", 1)[1]
+            index += 1
+            continue
+        elif token in {"-O", "--remote-name", "--remote-name-all"} or (
+            token.startswith("-") and not token.startswith("--") and "O" in token[1:]
+        ):
+            remote_name = True
+            index += 1
+            continue
+        elif token == "--url" and index + 1 < len(invocation):
+            if remote_name:
+                value = remote_name_target(invocation[index + 1], output_dir)
+            index += 2
+        elif token.startswith("--url="):
+            if remote_name:
+                value = remote_name_target(token.split("=", 1)[1], output_dir)
+            index += 1
+        elif token.startswith("-") and token != "-":
+            index += 1
+            continue
+        else:
+            if remote_name:
+                value = remote_name_target(token, output_dir)
+            index += 1
+        if value and is_mcp_json(value):
+            targets.append(value)
+    return targets
+
+
+def wget_unknown_mcp_write_targets(invocation: list[str]) -> list[str]:
+    targets: list[str] = []
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        value: str | None = None
+        if token in {"-O", "--output-document"} and index + 1 < len(invocation):
+            value = invocation[index + 1]
+            index += 2
+        elif token.startswith("--output-document="):
+            value = token.split("=", 1)[1]
+            index += 1
+        elif token.startswith("-O") and token != "-O":
+            value = token[2:]
+            index += 1
+        else:
+            index += 1
+        if value and is_mcp_json(value):
+            targets.append(value)
+    return targets
+
+
 def bash_unknown_mcp_write_targets(command: str) -> list[str]:
     targets = [target for target in bash_copy_style_write_targets(command) if is_mcp_json(target)]
     for simple_command in simple_commands_with_nested_shells(command, strip_heredocs=True):
@@ -150,25 +234,10 @@ def bash_unknown_mcp_write_targets(command: str) -> list[str]:
         if not invocation:
             continue
         name = PurePosixPath(invocation[0]).name
-        if name not in {"curl", "wget"}:
-            continue
-        index = 1
-        while index < len(invocation):
-            token = invocation[index]
-            value: str | None = None
-            if token in {"-o", "--output", "-O"} and index + 1 < len(invocation):
-                value = invocation[index + 1]
-                index += 2
-            elif token.startswith("--output="):
-                value = token.split("=", 1)[1]
-                index += 1
-            elif token.startswith("-o") and token != "-o":
-                value = token[2:]
-                index += 1
-            else:
-                index += 1
-            if value and is_mcp_json(value):
-                targets.append(value)
+        if name == "curl":
+            targets.extend(curl_unknown_mcp_write_targets(invocation))
+        elif name == "wget":
+            targets.extend(wget_unknown_mcp_write_targets(invocation))
     return targets
 
 
