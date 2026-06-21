@@ -102,7 +102,10 @@ review-specialists scope \
 `code-review-follow-up` owns review-finding disposition after repairs, affected
 reviewer-subagent reruns, and fallback justification. It does not own
 implementation fixes, broad new review, provider comments, merge decisions,
-issue closeout, or the durable evidence schema.
+issue closeout, or the durable evidence schema. When a caller does post a
+follow-up disposition, the owner posts it the moment the recheck returns —
+before further repair — per the posting-order invariant in
+`skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ## References
 

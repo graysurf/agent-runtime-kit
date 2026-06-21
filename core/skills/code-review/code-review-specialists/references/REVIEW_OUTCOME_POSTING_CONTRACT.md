@@ -11,7 +11,25 @@ delivery-owner outcomes are post-disposition comments posted after the owner has
 synthesized findings, decided repairs or tradeoffs, and chosen the final review
 decision.
 
-For delivery review gates, the default provider-visible progress model is:
+## Posting order is non-negotiable
+
+A review finding is both work-progress and evidence: it is the cause a fix
+commit responds to. Post it the moment the lens that produced it returns —
+before repairing, committing, or moving to the next lens. The fix is the reply
+to the comment, so the comment must already exist when the fix lands.
+
+Never invert this. Do not repair and commit first and post the comment after. A
+comment posted after its fix reads as caused by nothing, inverts the PR/MR
+timeline, and is lost entirely if the run stops between the fix and the post.
+Posting is not a closing summary of work already done; it is the record that the
+finding existed before anyone acted on it.
+
+Only the final combined delivery-owner outcome — the disposition (`approve` or
+`request-changes`) — is posted after repairs, because a disposition can only be
+decided once the findings it resolves exist. Findings post first as they return;
+the disposition posts last.
+
+For delivery review gates, the required posting order is:
 
 1. After each reviewer lens returns, the parent posts a compact single-lens
    specialist review comment with that lens's bot profile.

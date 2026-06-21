@@ -104,7 +104,10 @@ When retained evidence is required, record the final reviewer judgment through
 dispatch, synthesis of the returned findings, and escalation rationale. The
 `reviewer-quick` subagent owns only the read-only inspection lens. This workflow
 does not own specialist orchestration, provider comments, PR/MR merge decisions,
-evidence record structure, or product-code repairs.
+evidence record structure, or product-code repairs. When a caller does post
+these findings, the owner posts them the moment the pass returns — before any
+repair — per the posting-order invariant in
+`skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ## References
 

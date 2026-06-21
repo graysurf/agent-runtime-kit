@@ -92,6 +92,12 @@ review-specialists scope \
 
 ## Workflow
 
+Posting order is non-negotiable. When the owning delivery workflow has provider
+write access, it posts each lens's specialist review comment the moment that
+lens returns — before any repair or commit, never batched after fixing — because
+a finding is work-progress and evidence, not a closing summary. See
+`skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
+
 1. Resolve reviewable metadata and confirm the base ref is the actual PR/MR
    target branch or merge-base.
 2. Follow the shared delivery gate in

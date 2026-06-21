@@ -122,7 +122,10 @@ Do not start without explicit user approval.
    small or ordinary diff; `code-review-specialists` for a broad or risky one.
    Do not define a separate review rubric here.
 2. Present the consolidated findings and ask the user how to proceed — fix now,
-   fix later, or proceed as-is — then act on the decision.
+   fix later, or proceed as-is — then act on the decision. When this build is
+   being delivered through a PR/MR, surface the findings on it before fixing,
+   never after, per the posting-order invariant in
+   `skills/code-review/code-review-specialists/references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 
 ### Phase 7 — Summary
 
