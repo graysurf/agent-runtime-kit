@@ -1337,23 +1337,52 @@ def simple_commands_with_nested_shells(
     return commands
 
 
-def _stdout_redirect_targets(tokens: list[str]) -> list[str]:
-    targets: list[str] = []
+def _output_redirect_targets(tokens: list[str]) -> list[tuple[str, bool]]:
+    """Return output redirection targets and whether stdout content is inspectable."""
+    targets: list[tuple[str, bool]] = []
     index = 0
     while index < len(tokens):
         token = tokens[index]
         if token in {">", ">>"}:
             if index + 1 < len(tokens):
-                targets.append(tokens[index + 1])
+                targets.append((tokens[index + 1], True))
             index += 2
             continue
-        match = re.match(r"^(?P<fd>1?)(?P<op>>>?)(?P<path>.+)$", token)
+        if token in {"&>", "&>>"}:
+            if index + 1 < len(tokens):
+                targets.append((tokens[index + 1], False))
+            index += 2
+            continue
+        split_fd = re.match(r"^(?P<fd>\d+)(?P<op>>>?)$", token)
+        if split_fd:
+            if index + 1 < len(tokens):
+                targets.append((tokens[index + 1], split_fd.group("fd") == "1"))
+            index += 2
+            continue
+        combined = re.match(r"^&(?P<op>>>?)(?P<path>.+)$", token)
+        if combined and combined.group("path"):
+            targets.append((combined.group("path"), False))
+            index += 1
+            continue
+        match = re.match(r"^(?P<fd>\d*)(?P<op>>>?)(?P<path>.+)$", token)
         if match and match.group("path"):
-            targets.append(match.group("path"))
+            targets.append((match.group("path"), match.group("fd") in {"", "1"}))
             index += 1
             continue
         index += 1
     return targets
+
+
+def _stdout_redirect_targets(tokens: list[str]) -> list[str]:
+    return [
+        target for target, inspectable in _output_redirect_targets(tokens) if inspectable
+    ]
+
+
+def _opaque_output_redirect_targets(tokens: list[str]) -> list[str]:
+    return [
+        target for target, inspectable in _output_redirect_targets(tokens) if not inspectable
+    ]
 
 
 def _tee_targets(tokens: list[str]) -> list[str]:
@@ -1435,10 +1464,13 @@ def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
             piped_content = None if separator != "|" else piped_content
             return
         targets = bash_write_targets_from_tokens(current)
+        opaque_targets = _opaque_output_redirect_targets(current)
         content = _literal_stdout_from_tokens(current)
         if targets:
             payload = content or piped_content or ""
             writes.extend((target, payload) for target in targets)
+        if opaque_targets:
+            writes.extend((target, "") for target in opaque_targets)
         piped_content = content if separator == "|" else None
         current = []
 
@@ -1456,12 +1488,14 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
         return []
     writes: list[tuple[str, str]] = []
     lines = command.split("\n")
-    pending: list[tuple[str, bool, bool, list[str], list[str]]] = []
+    pending: list[tuple[str, bool, bool, list[str], list[str], list[str]]] = []
     logical_scan_parts: list[str] = []
     for raw in lines:
         line = raw.rstrip("\r")
         if pending:
-            delimiter, strip_tabs, preserve_body, targets, body = pending[0]
+            delimiter, strip_tabs, preserve_body, targets, opaque_targets, body = pending[
+                0
+            ]
             candidate = line.lstrip("\t") if strip_tabs else line
             if candidate == delimiter:
                 body_text = "\n".join(body)
@@ -1469,6 +1503,8 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
                     writes.extend(_bash_write_operations(body_text, depth=depth + 1))
                 for target in targets:
                     writes.append((target, body_text))
+                for target in opaque_targets:
+                    writes.append((target, ""))
                 pending.pop(0)
             else:
                 body.append(raw)
@@ -1481,19 +1517,32 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
         logical_scan_parts.append(line)
         logical_line = "".join(logical_scan_parts)
         targets = []
+        opaque_targets = []
         for tokens in simple_commands(logical_line):
             targets.extend(bash_write_targets_from_tokens(tokens))
+            opaque_targets.extend(_opaque_output_redirect_targets(tokens))
         for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
             logical_line
         ):
-            pending.append((delimiter, strip_tabs, preserve_body, targets, []))
+            pending.append(
+                (delimiter, strip_tabs, preserve_body, targets, opaque_targets, [])
+            )
         logical_scan_parts = []
-    for _delimiter, _strip_tabs, preserve_body, targets, body in pending:
+    for (
+        _delimiter,
+        _strip_tabs,
+        preserve_body,
+        targets,
+        opaque_targets,
+        body,
+    ) in pending:
         body_text = "\n".join(body)
         if preserve_body:
             writes.extend(_bash_write_operations(body_text, depth=depth + 1))
         for target in targets:
             writes.append((target, body_text))
+        for target in opaque_targets:
+            writes.append((target, ""))
     return writes
 
 

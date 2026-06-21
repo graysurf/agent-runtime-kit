@@ -1001,6 +1001,10 @@ class SharedHookTests(unittest.TestCase):
             "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz' > .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\ncp /private/source.json .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js > .mcp.json",
+            "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2> .mcp.json",
+            "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2>>.mcp.json",
+            "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js &>.mcp.json",
+            "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js &>>.mcp.json",
         )
         for command in commands:
             with self.subTest(command=command):
