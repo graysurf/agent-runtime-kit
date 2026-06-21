@@ -902,6 +902,20 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, ".mcp.json")
 
+        for command in (
+            "echo 'sk-ant-abcdefghijklmnopqrstuvwxyz' >| .mcp.json",
+            "cat >| .mcp.json <<'EOF'\n"
+            '{"apiKey":"sk-ant-abcdefghijklmnopqrstuvwxyz"}\n'
+            "EOF",
+        ):
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "mcp-secret-scan.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, ".mcp.json")
+
         code, decision, stderr = run_hook(
             "block-project-memory-write.py",
             command_payload(
@@ -1006,6 +1020,14 @@ class SharedHookTests(unittest.TestCase):
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2>>.mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js &>.mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js &>>.mcp.json",
+            "node generate-secret.js >| .mcp.json",
+            "node generate-secret.js >|.mcp.json",
+            "bash > .mcp.json <<'EOF'\n"
+            "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz'\n"
+            "EOF",
+            "bash >| .mcp.json <<'EOF'\n"
+            "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz'\n"
+            "EOF",
         )
         for command in commands:
             with self.subTest(command=command):

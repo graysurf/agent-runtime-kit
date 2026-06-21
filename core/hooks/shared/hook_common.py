@@ -543,11 +543,58 @@ def command_ran_marker(marker_set: Mapping[str, str], index: int) -> str:
 
 
 SHELL_SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
+CLOBBER_REDIRECT_MARKER = "__AGENT_CLOBBER_REDIRECT__"
+
+
+def _shield_clobber_redirects(command: str) -> str:
+    """Keep Bash `>|` clobber redirects from being tokenized as pipelines."""
+    out: list[str] = []
+    quote = None
+    index = 0
+    length = len(command)
+    while index < length:
+        char = command[index]
+        if quote == "'":
+            out.append(char)
+            if char == "'":
+                quote = None
+            index += 1
+            continue
+        if quote == '"':
+            if char == "\\" and index + 1 < length:
+                out.append(char)
+                out.append(command[index + 1])
+                index += 2
+                continue
+            out.append(char)
+            if char == '"':
+                quote = None
+            index += 1
+            continue
+        if char == "\\" and index + 1 < length:
+            out.append(char)
+            out.append(command[index + 1])
+            index += 2
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            out.append(char)
+            index += 1
+            continue
+        if command.startswith(">|", index):
+            out.append(f">{CLOBBER_REDIRECT_MARKER}")
+            index += 2
+            continue
+        out.append(char)
+        index += 1
+    return "".join(out)
 
 
 def shell_tokens(command: str) -> list[str]:
     try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
+        lexer = shlex.shlex(
+            _shield_clobber_redirects(command), posix=True, punctuation_chars=";&|()"
+        )
         lexer.whitespace_split = True
         lexer.commenters = ""
         return list(lexer)
@@ -747,7 +794,10 @@ def _simple_command_spanning(line: str, op_start: int) -> list[str]:
 # `&>` / `&>>` arms only fire on raw text; `shell_tokens` (shlex with `&` in
 # `punctuation_chars`) splits an `&`-redirection into separate tokens, so a
 # tokenized operand never reaches the walk starting with `&`.
-_REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
+_CLOBBER_REDIRECT_RE = re.escape(CLOBBER_REDIRECT_MARKER)
+_REDIRECT_TOKEN_RE = re.compile(
+    rf"^(?:\d*(?:<<<|<<-?|<>|<&|>{_CLOBBER_REDIRECT_RE}|>>|>&|<|>)|&>>|&>)"
+)
 
 # Bash invocation options that always bind the FOLLOWING word as an argument.
 # When the next token is instead a redirection or here-doc operator, bash never
@@ -1341,27 +1391,40 @@ def _output_redirect_targets(tokens: list[str]) -> list[tuple[str, bool]]:
     """Return output redirection targets and whether stdout content is inspectable."""
     targets: list[tuple[str, bool]] = []
     index = 0
+    clobber_op = f">{CLOBBER_REDIRECT_MARKER}"
     while index < len(tokens):
         token = tokens[index]
-        if token in {">", ">>"}:
+        if token in {">", ">>", clobber_op}:
             if index + 1 < len(tokens):
                 targets.append((tokens[index + 1], True))
             index += 2
             continue
-        if token in {"&>", "&>>"}:
+        if token in {"&>", "&>>", f"&{clobber_op}"}:
             if index + 1 < len(tokens):
                 targets.append((tokens[index + 1], False))
             index += 2
             continue
-        split_fd = re.match(r"^(?P<fd>\d+)(?P<op>>>?)$", token)
+        split_fd = re.match(
+            rf"^(?P<fd>\d+)(?P<op>>>?|>{_CLOBBER_REDIRECT_RE})$", token
+        )
         if split_fd:
             if index + 1 < len(tokens):
                 targets.append((tokens[index + 1], split_fd.group("fd") == "1"))
             index += 2
             continue
-        combined = re.match(r"^&(?P<op>>>?)(?P<path>.+)$", token)
+        combined = re.match(
+            rf"^&(?P<op>>>?|>{_CLOBBER_REDIRECT_RE})(?P<path>.+)$", token
+        )
         if combined and combined.group("path"):
             targets.append((combined.group("path"), False))
+            index += 1
+            continue
+        clobber = re.match(
+            rf"^(?P<fd>\d*)(?P<op>>{_CLOBBER_REDIRECT_RE})(?P<path>.+)$",
+            token,
+        )
+        if clobber and clobber.group("path"):
+            targets.append((clobber.group("path"), clobber.group("fd") in {"", "1"}))
             index += 1
             continue
         match = re.match(r"^(?P<fd>\d*)(?P<op>>>?)(?P<path>.+)$", token)
@@ -1423,11 +1486,8 @@ def _tokens_without_redirections(tokens: list[str]) -> list[str]:
     index = 0
     while index < len(tokens):
         token = tokens[index]
-        if token in {">", ">>", "<", "<<", "<<-", "<<<"}:
-            index += 2
-            continue
-        if re.match(r"^\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)", token):
-            index += 1
+        if _REDIRECT_TOKEN_RE.match(token):
+            index += 2 if _redirect_consumes_next(token) else 1
             continue
         kept.append(token)
         index += 1
@@ -1507,7 +1567,7 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
                 if preserve_body:
                     writes.extend(_bash_write_operations(body_text, depth=depth + 1))
                 for target in targets:
-                    writes.append((target, body_text))
+                    writes.append((target, "" if preserve_body else body_text))
                 for target in opaque_targets:
                     writes.append((target, ""))
                 pending.pop(0)
@@ -1545,7 +1605,7 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
         if preserve_body:
             writes.extend(_bash_write_operations(body_text, depth=depth + 1))
         for target in targets:
-            writes.append((target, body_text))
+            writes.append((target, "" if preserve_body else body_text))
         for target in opaque_targets:
             writes.append((target, ""))
     return writes
