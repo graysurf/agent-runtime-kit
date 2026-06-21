@@ -169,9 +169,10 @@ for fixture in "${drift_fixtures[@]}"; do
 done
 
 # -----------------------------------------------------------------------------
-# Position 8 — surface registry schema + executable acceptance
+# Position 8 — supply-chain hardening + surface registry schema + executable acceptance
 # -----------------------------------------------------------------------------
-banner 8 "validate surfaces manifest + executable acceptance"
+banner 8 "security hardening audit + validate surfaces manifest + executable acceptance"
+python3 scripts/ci/security-hardening-audit.py
 if bash scripts/ci/validate-surfaces-manifest.sh tests/surfaces/invalid-acceptance.yaml; then
   echo "ci/all.sh: invalid surface acceptance fixture unexpectedly passed" >&2
   exit 1

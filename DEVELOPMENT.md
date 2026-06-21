@@ -334,7 +334,8 @@ That currently performs:
 5. `agent-runtime render --target support-matrix`
 6. render-golden refresh plus `git diff --exit-code -- tests/golden/`
 7. `agent-runtime audit-drift` plus all fixtures under `tests/drift/`
-8. `bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance`
+8. `python3 scripts/ci/security-hardening-audit.py` plus
+   `bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance`
 9. `agent-runtime doctor --class skill-surface --product codex` shape preflight
 10. sandbox install rehearsal dry-run plus expected skill-list diff
 11. `bash tests/runtime-smoke/run.sh --mode deterministic`
@@ -383,6 +384,7 @@ plan-tooling validate --format text --explain
 bash scripts/ci/skill-governance-audit.sh
 bash scripts/ci/skill-governance-audit.sh --fixture create
 bash scripts/ci/skill-governance-audit.sh --fixture remove
+python3 scripts/ci/security-hardening-audit.py
 bash scripts/ci/validate-surfaces-manifest.sh
 bash scripts/ci/validate-surfaces-manifest.sh --execute-acceptance
 if bash scripts/ci/validate-surfaces-manifest.sh \

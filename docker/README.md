@@ -152,20 +152,23 @@ baked `$HOME/.config/zsh` or `/opt/private-skills` tree.
 
 ## What's inside
 
-- **Base**: `node:22-trixie-slim` — Debian 13, glibc 2.41 (Node ≥18 for both
-  CLIs; glibc for their native binaries). Trixie, not bookworm: the `nils-cli`
-  release binaries require GLIBC ≥ 2.39, which bookworm's 2.36 cannot satisfy.
+- **Base**: `node:22-trixie-slim` pinned by digest — Debian 13, glibc 2.41
+  (Node ≥18 for both CLIs; glibc for their native binaries). Trixie, not
+  bookworm: the `nils-cli` release binaries require GLIBC ≥ 2.39, which
+  bookworm's 2.36 cannot satisfy.
 - **Shell runtime**: Debian `zsh` plus a generic first-run floor (`starship`,
   `zoxide`, `eza`, `git-delta`, `tree`, `neovim`, `libnotify-bin`) and
   `zsh-kit` for runtime shell setup from an operator-supplied repo URL/path.
   Personal shell repos are fetched or mounted at runtime, not copied into the
   image.
-- **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via `npm -g`.
+- **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via the
+  committed `docker/npm-cli-pins/package-lock.json` integrity pins.
 - **nils-cli**: prebuilt Linux release tarball (`agent-runtime`, `agent-docs`,
   `semantic-commit`, `forge-cli`, `plan-tooling`, `plan-issue`, `zsh-kit`, …
   ~40 binaries),
-  pinned to the version in `docs/source/nils-cli-pin.yaml` and verified against
-  the published `.sha256`. No Linuxbrew.
+  pinned to the version and Linux release digests in
+  `docs/source/nils-cli-pin.yaml`, then verified against both that in-repo
+  SHA256 pin and the published `.sha256`. No Linuxbrew.
 - **Core CLI tools** (`cli-tools.yaml` `core` profile): `ripgrep`, `fd`, `fzf`,
   `jq`, `yq`, `gh`, `glab`, `bat`.
 - **Rendered runtime**: `agent-runtime render` + `install` activate the shared
@@ -179,11 +182,21 @@ Released images are published to the GitHub Container Registry (GHCR) at
 are CalVer (`vYYYY.MM.DD`); cutting a GitHub Release fires
 `.github/workflows/publish-image.yml`, which resolves the `nils-cli` pin,
 smoke-tests an `amd64` build, then pushes the multi-arch image tagged with the
-date and `latest`. See [`../RELEASING.md`](../RELEASING.md) for the full
-process.
+date and `latest`. The pushed image includes BuildKit provenance/SBOM
+attestations and a GitHub provenance attestation for the immutable image digest.
+See [`../RELEASING.md`](../RELEASING.md) for the full process.
 
 ```bash
 docker pull ghcr.io/graysurf/agent-runtime-kit:latest
+```
+
+To verify a dated release before running it:
+
+```bash
+docker buildx imagetools inspect ghcr.io/graysurf/agent-runtime-kit:2026.05.30
+gh attestation verify \
+  oci://ghcr.io/graysurf/agent-runtime-kit:2026.05.30 \
+  -R graysurf/agent-runtime-kit
 ```
 
 ## Known gaps / review follow-ups

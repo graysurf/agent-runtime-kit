@@ -106,6 +106,13 @@ SOURCE_WEIGHTS = {
     "news": 12.0,
 }
 USER_AGENT = f"agent-runtime-kit-topic-radar/{VERSION} (+https://github.com/graysurf/agent-runtime-kit)"
+MAX_REMOTE_RESPONSE_BYTES = 12 * 1024 * 1024
+UNSAFE_XML_DECL_RE = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+UNSAFE_XML_TEXT_DECL_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+XML_ENCODING_DECL_RE = re.compile(
+    r"<\?xml[^>]*encoding\s*=\s*['\"](?P<encoding>[A-Za-z0-9._-]+)['\"]",
+    re.IGNORECASE,
+)
 POLYMARKET_MCP_SOURCE_DETAIL = "polymarket-mcp"
 POLYMARKET_CLOB_IDS_CAMEL_KEY = "clob" + "Tok" + "enIds"
 POLYMARKET_CLOB_IDS_SNAKE_KEY = "clob_" + "tok" + "en_ids"
@@ -323,6 +330,14 @@ class RadarItem:
             "signalMetrics": self.signal_metrics,
             "raw": self.raw,
         }
+
+
+class RemoteFetchError(RuntimeError):
+    """Remote fetch was refused before accepting untrusted content."""
+
+
+class UnsafeXmlError(ValueError):
+    """XML input contains declarations ElementTree should not process here."""
 
 
 def now_utc() -> datetime:
@@ -591,11 +606,170 @@ def dedupe_and_rank(
     return sorted(merged.values(), key=lambda x: x.score, reverse=True)
 
 
+def normalized_url_host(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    host = parsed.hostname
+    if host is None and "://" not in url:
+        host = urllib.parse.urlsplit(f"//{url}").hostname
+    return host.lower().rstrip(".") if host else ""
+
+
+def normalized_url_origin(
+    url: str,
+    *,
+    default_scheme: str | None = None,
+    default_port: int | None = None,
+) -> tuple[str, str, int | None]:
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.hostname is None and "://" not in url:
+        parsed = urllib.parse.urlsplit(f"//{url}")
+    scheme = (parsed.scheme or default_scheme or "").lower()
+    host = (parsed.hostname or "").lower().rstrip(".")
+    port = parsed.port
+    if port is None:
+        port = {"http": 80, "https": 443}.get(scheme, default_port)
+    return scheme, host, port
+
+
+def format_origin(origin: tuple[str, str, int | None]) -> str:
+    scheme, host, port = origin
+    if not host:
+        return "<none>"
+    if scheme:
+        default_port = {"http": 80, "https": 443}.get(scheme)
+        if port is not None and port != default_port:
+            return f"{scheme}://{host}:{port}"
+        return f"{scheme}://{host}"
+    return host
+
+
+def redirect_allowed_origins(
+    url: str, allowed_hosts: set[str] | None = None
+) -> set[tuple[str, str, int | None]]:
+    source_origin = normalized_url_origin(url)
+    source_scheme, _source_host, source_port = source_origin
+    origins = {source_origin}
+    for host in allowed_hosts or set():
+        origin = normalized_url_origin(
+            host,
+            default_scheme=source_scheme,
+            default_port=source_port,
+        )
+        if origin[1]:
+            origins.add(origin)
+    return {origin for origin in origins if origin[1]}
+
+
+class AllowlistRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def __init__(self, allowed_origins: set[tuple[str, str, int | None]]) -> None:
+        super().__init__()
+        self.allowed_origins = frozenset(allowed_origins)
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        redirected_url = urllib.parse.urljoin(req.full_url, newurl)
+        redirected_origin = normalized_url_origin(redirected_url)
+        if redirected_origin not in self.allowed_origins:
+            raise RemoteFetchError(
+                f"redirect_origin_not_allowed:{format_origin(redirected_origin)}"
+            )
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def read_limited_response(resp: Any, max_bytes: int) -> bytes:
+    content_length = resp.headers.get("Content-Length") if getattr(resp, "headers", None) else None
+    if content_length:
+        try:
+            declared_length = int(content_length)
+        except ValueError:
+            declared_length = -1
+        if declared_length > max_bytes:
+            raise RemoteFetchError(f"response_too_large:content_length={declared_length}:max={max_bytes}")
+    body = resp.read(max_bytes + 1)
+    if len(body) > max_bytes:
+        raise RemoteFetchError(f"response_too_large:max={max_bytes}")
+    return body
+
+
+def read_limited_file(path: Path, max_bytes: int) -> bytes:
+    with path.open("rb") as handle:
+        body = handle.read(max_bytes + 1)
+    if len(body) > max_bytes:
+        raise RemoteFetchError(f"cached_response_too_large:max={max_bytes}")
+    return body
+
+
+def xml_encoding_candidates(raw: bytes) -> list[str]:
+    encodings: list[str] = []
+
+    def add(encoding: str) -> None:
+        if encoding not in encodings:
+            encodings.append(encoding)
+
+    if raw.startswith(b"\xef\xbb\xbf"):
+        add("utf-8-sig")
+    if raw.startswith((b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
+        add("utf-32")
+    elif raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+        add("utf-16")
+
+    prefix = raw[:256]
+    if prefix.startswith(b"\x00\x00\x00<") or prefix.startswith(b"<\x00\x00\x00"):
+        add("utf-32-be" if prefix.startswith(b"\x00\x00\x00<") else "utf-32-le")
+    elif prefix.startswith(b"\x00<\x00?") or prefix.startswith(b"<\x00?\x00"):
+        add("utf-16-be" if prefix.startswith(b"\x00<\x00?") else "utf-16-le")
+
+    ascii_prefix = prefix.decode("ascii", errors="ignore")
+    declared = XML_ENCODING_DECL_RE.search(ascii_prefix)
+    if declared:
+        add(declared.group("encoding"))
+
+    add("utf-8")
+    if b"\x00" in prefix:
+        add("utf-16-le")
+        add("utf-16-be")
+        add("utf-32-le")
+        add("utf-32-be")
+    return encodings
+
+
+def unsafe_xml_declaration_present(data: bytes | str) -> bool:
+    if isinstance(data, str):
+        return bool(UNSAFE_XML_TEXT_DECL_RE.search(data))
+
+    if UNSAFE_XML_DECL_RE.search(data):
+        return True
+
+    for encoding in xml_encoding_candidates(data):
+        try:
+            text = data.decode(encoding)
+        except (LookupError, UnicodeError):
+            continue
+        if UNSAFE_XML_TEXT_DECL_RE.search(text):
+            return True
+    return False
+
+
+def safe_xml_fromstring(data: bytes | str) -> ET.Element:
+    if unsafe_xml_declaration_present(data):
+        raise UnsafeXmlError("unsafe_xml_declaration:doctype_or_entity")
+    return ET.fromstring(data)
+
+
 def http_get(
     url: str,
     timeout: int,
     headers: dict[str, str] | None = None,
     *,
+    max_bytes: int = MAX_REMOTE_RESPONSE_BYTES,
+    allowed_hosts: set[str] | None = None,
     cache_ttl_seconds: int = 0,
     cache_dir: Path | None = None,
     cache_events: list[dict[str, Any]] | None = None,
@@ -611,14 +785,22 @@ def http_get(
         if cache_path.exists() and not refresh:
             age_seconds = max(0.0, time.time() - cache_path.stat().st_mtime)
             if age_seconds <= cache_ttl_seconds:
+                body = read_limited_file(cache_path, max_bytes)
                 record_cache_event(cache_events, "hit", url, age_seconds)
-                return cache_path.read_bytes()
+                return body
             record_cache_event(cache_events, "stale", url, age_seconds)
         else:
             record_cache_event(cache_events, "miss", url)
     req = urllib.request.Request(url, headers=request_headers)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        body = resp.read()
+    redirect_origins = redirect_allowed_origins(url, allowed_hosts)
+    opener = urllib.request.build_opener(AllowlistRedirectHandler(redirect_origins))
+    with opener.open(req, timeout=timeout) as resp:
+        final_origin = normalized_url_origin(resp.geturl())
+        if final_origin not in redirect_origins:
+            raise RemoteFetchError(
+                f"redirect_origin_not_allowed:{format_origin(final_origin)}"
+            )
+        body = read_limited_response(resp, max_bytes)
     if cache_path is not None:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile("wb", dir=str(cache_path.parent), delete=False) as tmp:
@@ -646,6 +828,8 @@ def get_json(url: str, timeout: int, errors: list[dict[str, Any]], source: str, 
         errors.append(http_error_record(source, exc, url))
     except urllib.error.URLError as exc:
         errors.append({"source": source, "error": f"url_error:{exc.reason}", "url": url})
+    except RemoteFetchError as exc:
+        errors.append({"source": source, "error": str(exc), "url": url})
     except json.JSONDecodeError as exc:
         errors.append({"source": source, "error": f"json_decode_error:{exc}", "url": url, "bodySnippet": safe_snippet(body)})
     except (TimeoutError, UnicodeDecodeError) as exc:
@@ -1144,7 +1328,10 @@ def fetch_arxiv(args: argparse.Namespace, errors: list[dict[str, Any]]) -> list[
         errors.append({"source": "arxiv", "error": f"{type(exc).__name__}:{exc}", "url": url})
         return []
     try:
-        root = ET.fromstring(xml_bytes)
+        root = safe_xml_fromstring(xml_bytes)
+    except UnsafeXmlError as exc:
+        errors.append({"source": "arxiv", "error": f"unsafe_xml:{exc}", "url": url})
+        return []
     except ET.ParseError as exc:
         errors.append({"source": "arxiv", "error": f"xml_parse_error:{exc}", "url": url})
         return []
@@ -1246,7 +1433,10 @@ def fetch_official(args: argparse.Namespace, errors: list[dict[str, Any]]) -> li
             errors.append({"source": "official", "sourceDetail": feed_name, "error": f"{type(exc).__name__}:{exc}"})
             continue
         try:
-            root = ET.fromstring(xml_bytes)
+            root = safe_xml_fromstring(xml_bytes)
+        except UnsafeXmlError as exc:
+            errors.append({"source": "official", "sourceDetail": feed_name, "error": f"unsafe_xml:{exc}"})
+            continue
         except ET.ParseError as exc:
             errors.append({"source": "official", "sourceDetail": feed_name, "error": f"xml_parse_error:{exc}"})
             continue
@@ -1407,7 +1597,10 @@ def fetch_google_news_rss(
         errors.append({"source": "news", "sourceDetail": "Google News RSS", "error": f"{type(exc).__name__}:{exc}"})
         return []
     try:
-        root = ET.fromstring(xml_bytes)
+        root = safe_xml_fromstring(xml_bytes)
+    except UnsafeXmlError as exc:
+        errors.append({"source": "news", "sourceDetail": "Google News RSS", "error": f"unsafe_xml:{exc}"})
+        return []
     except ET.ParseError as exc:
         errors.append({"source": "news", "sourceDetail": "Google News RSS", "error": f"xml_parse_error:{exc}"})
         return []

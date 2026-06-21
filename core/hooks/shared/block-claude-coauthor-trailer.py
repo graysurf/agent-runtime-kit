@@ -31,7 +31,9 @@ from hook_common import (
 
 # A commit trailer line whose author is any Claude model, e.g.
 # `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
-CLAUDE_COAUTHOR_RE = re.compile(r"^\s*co-authored-by:\s*claude\b", re.IGNORECASE | re.MULTILINE)
+CLAUDE_COAUTHOR_RE = re.compile(
+    r"^[ \t]*co-authored-by:\s*claude\b", re.IGNORECASE | re.MULTILINE
+)
 
 BLOCK_REASON = (
     "commit carries a Claude Co-Authored-By trailer\n"

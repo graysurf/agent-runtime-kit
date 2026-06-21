@@ -16,16 +16,23 @@
 # trims the context so no repo-root .dockerignore is needed.
 # =============================================================================
 
-ARG NODE_VERSION=22
-# Fallback only. The pin-aligned entrypoint `docker/build.sh` passes this from
-# docs/source/nils-cli-pin.yaml so the pin gate stays the single source; keep
-# this default roughly in step with that pin for plain `docker build` users.
-ARG NILS_CLI_VERSION=v1.0.10
-ARG CLAUDE_CODE_VERSION=latest
-ARG CODEX_VERSION=latest
+# Fallback only. The pin-aligned entrypoint `docker/build.sh` passes the version
+# from docs/source/nils-cli-pin.yaml; keep this default and the SHA256 args in
+# step with that pin for plain `docker build` users.
+ARG NILS_CLI_VERSION=v1.14.0
+ARG CLAUDE_CODE_VERSION=2.1.177
+ARG CODEX_VERSION=0.141.0
 ARG GH_VERSION=2.65.0
 ARG GLAB_VERSION=1.101.0
 ARG YQ_VERSION=v4.44.6
+ARG NILS_CLI_SHA256_AMD64=4e4188ca56a99fe558e3eea740217ddb2fb0201628561a305649c1370c44bab9
+ARG NILS_CLI_SHA256_ARM64=94f316da4a66f6c81cd6c677acf2a283ea10d8e237444b0e35fea0b91d0c6bfb
+ARG GH_SHA256_AMD64=762569efe785082b7d1feb06995efece1a9cecce16da8503ac6fdbcbea04085b
+ARG GH_SHA256_ARM64=8bcec9f3ee5c7c3700359a75da774c71221064a0ba017537795aa32ac8bbb481
+ARG GLAB_SHA256_AMD64=f8f40309a622416b769a455a85509bae7800070cd023466f2d33d8ee82f3fc61
+ARG GLAB_SHA256_ARM64=201cca73881e09d17c7c45801dee4541a9f999ebd9348abc44e0caac7787464b
+ARG YQ_SHA256_AMD64=0c2b24e645b57d8e7c0566d18643a6d4f5580feeea3878127354a46f2a1e4598
+ARG YQ_SHA256_ARM64=9477ac3cc447b6c083986129e35af8122eb2b938fe55c9c3e40436fb966e5813
 
 # -----------------------------------------------------------------------------
 # Stage 1 — fetch nils-cli prebuilt Linux binaries.
@@ -33,26 +40,31 @@ ARG YQ_VERSION=v4.44.6
 # nils-cli ships the agent-runtime, agent-docs, semantic-commit, forge-cli,
 # plan-tooling, plan-issue, plan-archive, zsh-kit (and ~35 more) binaries as a
 # single release tarball. We download the arch-matched tarball and verify it
-# against the published .sha256 sidecar — no Linuxbrew required.
+# against the in-repo SHA256 pin and published .sha256 sidecar — no Linuxbrew
+# required.
 # -----------------------------------------------------------------------------
-FROM debian:trixie-slim AS nils
+FROM debian:trixie-slim@sha256:4e401d95de7083948053197a9c3913343cd06b706bf15eb6a0c3ccd26f436a0e AS nils
 ARG NILS_CLI_VERSION
+ARG NILS_CLI_SHA256_AMD64
+ARG NILS_CLI_SHA256_ARM64
 ARG TARGETARCH
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends curl ca-certificates tar; \
     rm -rf /var/lib/apt/lists/*; \
     case "$TARGETARCH" in \
-      amd64) triple="x86_64-unknown-linux-gnu" ;; \
-      arm64) triple="aarch64-unknown-linux-gnu" ;; \
+      amd64) triple="x86_64-unknown-linux-gnu"; expected="${NILS_CLI_SHA256_AMD64}" ;; \
+      arm64) triple="aarch64-unknown-linux-gnu"; expected="${NILS_CLI_SHA256_ARM64}" ;; \
       *) echo "unsupported TARGETARCH=$TARGETARCH" >&2; exit 1 ;; \
     esac; \
+    test -n "$expected"; \
     base="https://github.com/sympoies/nils-cli/releases/download/${NILS_CLI_VERSION}"; \
     file="nils-cli-${NILS_CLI_VERSION}-${triple}.tar.gz"; \
     cd /tmp; \
     curl -fsSL -o "$file" "${base}/${file}"; \
     curl -fsSL -o "${file}.sha256" "${base}/${file}.sha256"; \
-    expected="$(cut -d' ' -f1 "${file}.sha256")"; \
+    published="$(cut -d' ' -f1 "${file}.sha256")"; \
+    test "$expected" = "$published" || { echo "nils-cli digest pin mismatch for ${file}: expected ${expected}, published ${published}" >&2; exit 1; }; \
     echo "${expected}  ${file}" | sha256sum -c -; \
     mkdir -p /opt/nils; \
     tar -xzf "$file" -C /opt/nils --strip-components=1; \
@@ -68,12 +80,18 @@ RUN set -eux; \
 # run `agent-runtime`. Keep this at trixie (or newer) while the pinned nils-cli
 # needs glibc ≥ 2.39.
 # -----------------------------------------------------------------------------
-FROM node:${NODE_VERSION}-trixie-slim AS runtime
+FROM node:22-trixie-slim@sha256:cfd8f2a5bc50526aee08e88970979f92722828e7dcc6d8983607fb8bff4bdb82 AS runtime
 ARG CLAUDE_CODE_VERSION
 ARG CODEX_VERSION
 ARG GH_VERSION
 ARG GLAB_VERSION
 ARG YQ_VERSION
+ARG GH_SHA256_AMD64
+ARG GH_SHA256_ARM64
+ARG GLAB_SHA256_AMD64
+ARG GLAB_SHA256_ARM64
+ARG YQ_SHA256_AMD64
+ARG YQ_SHA256_ARM64
 ENV DEBIAN_FRONTEND=noninteractive
 
 # OCI labels. `image.source` links the published GHCR package to this repo
@@ -102,33 +120,51 @@ RUN set -eux; \
 # gh, glab, and yq are installed from arch-matched release binaries.
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
-    curl -fsSL -o /tmp/gh.tgz \
-      "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${arch}.tar.gz"; \
-    tar -xzf /tmp/gh.tgz -C /tmp; \
+    case "$arch" in \
+      amd64) gh_sha="${GH_SHA256_AMD64}"; glab_sha="${GLAB_SHA256_AMD64}"; yq_sha="${YQ_SHA256_AMD64}" ;; \
+      arm64) gh_sha="${GH_SHA256_ARM64}"; glab_sha="${GLAB_SHA256_ARM64}"; yq_sha="${YQ_SHA256_ARM64}" ;; \
+      *) echo "unsupported Debian architecture=$arch" >&2; exit 1 ;; \
+    esac; \
+    test -n "$gh_sha"; test -n "$glab_sha"; test -n "$yq_sha"; \
+    gh_file="gh_${GH_VERSION}_linux_${arch}.tar.gz"; \
+    gh_base="https://github.com/cli/cli/releases/download/v${GH_VERSION}"; \
+    curl -fsSL -o "/tmp/${gh_file}" "${gh_base}/${gh_file}"; \
+    curl -fsSL -o /tmp/gh-checksums.txt "${gh_base}/gh_${GH_VERSION}_checksums.txt"; \
+    gh_published="$(awk -v file="$gh_file" '$2 == file { print $1; exit }' /tmp/gh-checksums.txt)"; \
+    test "$gh_sha" = "$gh_published" || { echo "gh digest pin mismatch for ${gh_file}: expected ${gh_sha}, published ${gh_published}" >&2; exit 1; }; \
+    cd /tmp; \
+    echo "${gh_sha}  ${gh_file}" | sha256sum -c -; \
+    tar -xzf "/tmp/${gh_file}" -C /tmp; \
     install -m 0755 "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh; \
     glab_file="glab_${GLAB_VERSION}_linux_${arch}.tar.gz"; \
     glab_base="https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads"; \
     curl -fsSL -o "/tmp/${glab_file}" "${glab_base}/${glab_file}"; \
     curl -fsSL -o /tmp/glab-checksums.txt "${glab_base}/checksums.txt"; \
-    cd /tmp; \
-    grep "  ${glab_file}$" glab-checksums.txt | sha256sum -c -; \
+    glab_published="$(awk -v file="$glab_file" '$2 == file { print $1; exit }' /tmp/glab-checksums.txt)"; \
+    test "$glab_sha" = "$glab_published" || { echo "glab digest pin mismatch for ${glab_file}: expected ${glab_sha}, published ${glab_published}" >&2; exit 1; }; \
+    echo "${glab_sha}  ${glab_file}" | sha256sum -c -; \
     tar -xzf "/tmp/${glab_file}" -C /tmp; \
     install -m 0755 /tmp/bin/glab /usr/local/bin/glab; \
-    curl -fsSL -o /usr/local/bin/yq \
-      "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${arch}"; \
-    chmod 0755 /usr/local/bin/yq; \
-    rm -rf /tmp/gh* /tmp/glab* /tmp/bin; \
+    yq_file="yq_linux_${arch}"; \
+    curl -fsSL -o "/tmp/${yq_file}" \
+      "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${yq_file}"; \
+    echo "${yq_sha}  /tmp/${yq_file}" | sha256sum -c -; \
+    install -m 0755 "/tmp/${yq_file}" /usr/local/bin/yq; \
+    rm -rf /tmp/gh* /tmp/glab* /tmp/yq_linux_* /tmp/bin; \
     gh --version; glab --version; yq --version
 
 # nils-cli binaries (agent-runtime et al.) from stage 1.
 COPY --from=nils /opt/nils/bin/ /usr/local/bin/
 RUN agent-runtime --version; zsh-kit --version; zsh --version
 
-# Claude Code + Codex CLI via npm (global).
+# Claude Code + Codex CLI via npm lockfile pins.
+COPY docker/npm-cli-pins/package.json docker/npm-cli-pins/package-lock.json /opt/npm-cli-pins/
 RUN set -eux; \
-    npm install -g \
-      "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
-      "@openai/codex@${CODEX_VERSION}"; \
+    cd /opt/npm-cli-pins; \
+    node -e "const fs=require('fs'); const pkg=require('./package.json'); const lock=require('./package-lock.json'); const pins={'@anthropic-ai/claude-code':process.env.CLAUDE_CODE_VERSION,'@openai/codex':process.env.CODEX_VERSION}; for (const [name, version] of Object.entries(pins)) { if (pkg.dependencies[name] !== version) throw new Error(name + ' package.json pin mismatch'); const locked = lock.packages['node_modules/' + name]; if (!locked || locked.version !== version || !/^sha512-/.test(locked.integrity || '')) throw new Error(name + ' lockfile pin/integrity mismatch'); }"; \
+    npm ci --omit=dev; \
+    ln -sf /opt/npm-cli-pins/node_modules/.bin/claude /usr/local/bin/claude; \
+    ln -sf /opt/npm-cli-pins/node_modules/.bin/codex /usr/local/bin/codex; \
     npm cache clean --force; \
     claude --version; \
     codex --version

@@ -310,8 +310,7 @@ def shell_c_payload(tokens: list[str], index: int) -> str | None:
     while index < len(tokens):
         token = tokens[index]
         if token == "--":
-            index += 1
-            continue
+            return None
         if token == "-c" or (
             token.startswith("-") and not token.startswith("--") and "c" in token[1:]
         ):
@@ -357,9 +356,13 @@ def shell_heredoc_bypasses_forge_cli_wrapper(command: str) -> bool:
 
         logical_scan_parts.append(line)
         logical_line = "".join(logical_scan_parts)
-        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
-            logical_line
-        ):
+        for (
+            delimiter,
+            strip_tabs,
+            preserve_body,
+            _delimiter_quoted,
+            _op_start,
+        ) in _heredoc_delimiters_on_line(logical_line):
             pending.append((delimiter, strip_tabs, preserve_body, []))
         logical_scan_parts = []
     for _delimiter, _strip_tabs, preserve_body, body in pending:

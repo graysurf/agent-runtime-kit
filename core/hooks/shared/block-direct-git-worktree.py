@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import re
-import shlex
 import sys
 from pathlib import PurePosixPath
 
@@ -20,8 +19,12 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
-    normalize_command_separators,
+    env_target_tokens,
+    env_split_expanded_tokens,
+    invocation_tokens,
+    nested_shell_payload,
     read_payload,
+    simple_commands,
 )
 
 BLOCK_REASON = (
@@ -30,7 +33,6 @@ BLOCK_REASON = (
 )
 
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
-SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
 MUTATING_WORKTREE_COMMANDS = {
     "add",
     "remove",
@@ -61,24 +63,6 @@ GIT_OPTIONS_WITH_VALUE_PREFIXES = (
     "--namespace=",
     "--work-tree=",
 )
-
-
-def shell_tokens(command: str) -> list[str]:
-    # Treat unquoted newlines as command separators so a blocked command on a
-    # later physical line (after a `cd` or other preamble) cannot slip past the
-    # guard. See hook_common.normalize_command_separators.
-    command = normalize_command_separators(command)
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        return list(lexer)
-    except ValueError:
-        return []
-
-
-def is_separator(token: str) -> bool:
-    return token in SEPARATOR_TOKENS or bool(token) and all(char in ";&|()" for char in token)
 
 
 def basename(token: str) -> str:
@@ -114,27 +98,10 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def git_command_index(simple_command: list[str]) -> int | None:
-    index = 0
-    while index < len(simple_command) and is_assignment(simple_command[index]):
-        index += 1
-    if index >= len(simple_command):
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
         return None
-
-    command = basename(simple_command[index])
-    if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
-    elif command == "time":
-        index += 1
-        while index < len(simple_command) and simple_command[index].startswith("-"):
-            index += 1
-    elif command in {"command", "exec"}:
-        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
-            return None
-        index += 1
-
-    if index >= len(simple_command):
-        return None
-    return index if basename(simple_command[index]) == "git" else None
+    return 0 if basename(invocation[0]) == "git" else None
 
 
 def git_subcommand(simple_command: list[str]) -> str | None:
@@ -143,13 +110,13 @@ def git_subcommand(simple_command: list[str]) -> str | None:
 
 
 def git_subcommand_with_index(simple_command: list[str]) -> tuple[str, int] | None:
-    git_index = git_command_index(simple_command)
-    if git_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != "git":
         return None
 
-    index = git_index + 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
         if token == "--":
             return None
         if token in GIT_OPTIONS_WITH_VALUE:
@@ -172,6 +139,9 @@ def git_subcommand_with_index(simple_command: list[str]) -> tuple[str, int] | No
 
 
 def git_worktree_action(simple_command: list[str]) -> str | None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
+        return None
     found = git_subcommand_with_index(simple_command)
     if found is None:
         return None
@@ -180,8 +150,8 @@ def git_worktree_action(simple_command: list[str]) -> str | None:
         return None
 
     index += 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    while index < len(invocation):
+        token = invocation[index]
         if token == "--":
             return None
         if token.startswith("-") and token != "-":
@@ -215,9 +185,14 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
     if index >= len(simple_command) or basename(simple_command[index]) != "env":
         return False
 
-    index += 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    return env_override_in_tokens(simple_command[index + 1 :])
+
+
+def env_override_in_tokens(tokens: list[str]) -> bool:
+    tokens = env_split_expanded_tokens(tokens)
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
         if token == "--":
             return False
         if is_assignment(token):
@@ -234,6 +209,18 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
         if token.startswith("--unset="):
             index += 1
             continue
+        if token in {"-C", "--chdir", "-P", "--path"}:
+            index += 2
+            continue
+        if token.startswith(("--chdir=", "--path=")):
+            index += 1
+            continue
+        if token in {"-S", "--split-string"} and index + 1 < len(tokens):
+            return env_override_in_tokens(env_target_tokens(tokens, index))
+        if token.startswith("--split-string="):
+            return env_override_in_tokens(env_target_tokens(tokens, index))
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            return env_override_in_tokens(env_target_tokens(tokens, index))
         if token.startswith("-") and token != "-":
             index += 1
             continue
@@ -241,24 +228,35 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
     return False
 
 
-def invokes_git_worktree(command: str) -> bool:
-    if env_override_enabled():
+def invokes_git_worktree(
+    command: str,
+    *,
+    inherited_override: bool = False,
+    depth: int = 0,
+    max_depth: int = 5,
+) -> bool:
+    if depth == 0 and env_override_enabled():
         return False
-    simple_command: list[str] = []
-    for token in shell_tokens(command):
-        if is_separator(token):
-            if (
-                git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
-                and not simple_command_override_enabled(simple_command)
-            ):
-                return True
-            simple_command = []
-            continue
-        simple_command.append(token)
-    return (
-        git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
-        and not simple_command_override_enabled(simple_command)
-    )
+    if depth > max_depth:
+        return False
+    for simple_command in simple_commands(command):
+        command_override = inherited_override or simple_command_override_enabled(
+            simple_command
+        )
+        if (
+            git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
+            and not command_override
+        ):
+            return True
+        payload = nested_shell_payload(invocation_tokens(simple_command))
+        if payload and invokes_git_worktree(
+            payload,
+            inherited_override=command_override,
+            depth=depth + 1,
+            max_depth=max_depth,
+        ):
+            return True
+    return False
 
 
 def main() -> int:

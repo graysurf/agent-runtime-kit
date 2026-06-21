@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import re
-import shlex
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -19,9 +18,13 @@ sys.dont_write_bytecode = True
 from hook_common import (
     ALLOW,
     command_from,
+    env_target_tokens,
+    env_split_expanded_tokens,
     emit_block,
-    normalize_command_separators,
+    invocation_tokens,
+    nested_shell_payload,
     read_payload,
+    simple_commands,
 )
 
 _BUILTIN_PR_SKILLS: frozenset[str] = frozenset(
@@ -81,34 +84,13 @@ BLOCK_REASON_MR = (
     "allowed MR skill name>."
 )
 
-SKILL_MARKER_RE = re.compile(
-    rf"(?:^|[\s;&|()])(?P<name>{'|'.join(MARKER_ENV_NAMES)})=(?P<value>\S+)"
-)
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
-SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
 CLI_OPTIONS_WITH_VALUE = {"-R", "--repo"}
 CLI_OPTIONS_WITH_VALUE_PREFIXES = ("--repo=",)
 GLAB_API_METHOD_FLAGS = {"-X", "--method"}
 GLAB_API_POST_PARAMETER_FLAGS = {"-F", "--field", "-f", "--raw-field", "--form"}
 MR_ENDPOINT_RE = re.compile(r"(?:^|/)merge_requests(?:$|[/?#])")
-
-
-def shell_tokens(command: str) -> list[str]:
-    # Treat unquoted newlines as command separators so a blocked command on a
-    # later physical line (after a `cd` or other preamble) cannot slip past the
-    # guard. See hook_common.normalize_command_separators.
-    command = normalize_command_separators(command)
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        return list(lexer)
-    except ValueError:
-        return []
-
-
-def is_separator(token: str) -> bool:
-    return token in SEPARATOR_TOKENS or (bool(token) and all(char in ";&|()" for char in token))
+PULLS_ENDPOINT_RE = re.compile(r"(?:^|/)repos/[^/\s]+/[^/\s]+/pulls(?:$|[/?#])")
 
 
 def basename(token: str) -> str:
@@ -144,27 +126,10 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def cli_command_index(simple_command: list[str], command_name: str) -> int | None:
-    index = 0
-    while index < len(simple_command) and is_assignment(simple_command[index]):
-        index += 1
-    if index >= len(simple_command):
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
         return None
-
-    command = basename(simple_command[index])
-    if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
-    elif command == "time":
-        index += 1
-        while index < len(simple_command) and simple_command[index].startswith("-"):
-            index += 1
-    elif command in {"command", "exec"}:
-        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
-            return None
-        index += 1
-
-    if index >= len(simple_command):
-        return None
-    return index if basename(simple_command[index]) == command_name else None
+    return 0 if basename(invocation[0]) == command_name else None
 
 
 def skip_cli_global_options(tokens: list[str], index: int) -> int:
@@ -189,17 +154,29 @@ def skip_cli_global_options(tokens: list[str], index: int) -> int:
 
 
 def cli_subcommands(simple_command: list[str], command_name: str) -> list[str]:
-    command_index = cli_command_index(simple_command, command_name)
-    if command_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != command_name:
         return []
 
-    index = skip_cli_global_options(simple_command, command_index + 1)
-    return simple_command[index:]
+    index = skip_cli_global_options(invocation, 1)
+    return invocation[index:]
 
 
 def invokes_gh_pr_create(simple_command: list[str]) -> bool:
     args = cli_subcommands(simple_command, "gh")
     return args[:2] == ["pr", "create"]
+
+
+def api_has_pulls_endpoint(args: list[str]) -> bool:
+    return any(PULLS_ENDPOINT_RE.search(token) for token in args)
+
+
+def invokes_gh_api_pr_create(simple_command: list[str]) -> bool:
+    args = cli_subcommands(simple_command, "gh")
+    if args[:1] != ["api"]:
+        return False
+    api_args = args[1:]
+    return api_method_is_post(api_args) and api_has_pulls_endpoint(api_args)
 
 
 def invokes_glab_mr_create(simple_command: list[str]) -> bool:
@@ -220,6 +197,8 @@ def api_method_is_post(args: list[str]) -> bool:
             return True
         if any(token.startswith(f"{flag}=") for flag in GLAB_API_POST_PARAMETER_FLAGS):
             return True
+        if token.startswith(("-f", "-F")) and token not in {"-f", "-F"}:
+            return True
     return False
 
 
@@ -235,35 +214,128 @@ def invokes_glab_api_mr_create(simple_command: list[str]) -> bool:
     return api_method_is_post(api_args) and api_has_merge_requests_endpoint(api_args)
 
 
-def iter_simple_commands(command: str) -> list[list[str]]:
-    simple_commands: list[list[str]] = []
-    current: list[str] = []
-    for token in shell_tokens(command):
-        if is_separator(token):
-            if current:
-                simple_commands.append(current)
-                current = []
+def marker_assignment_value(token: str) -> str | None:
+    if not is_assignment(token):
+        return None
+    name, value = token.split("=", 1)
+    if name not in MARKER_ENV_NAMES:
+        return None
+    return value.strip("\"'")
+
+
+def marker_value_before_command(
+    simple_command: list[str], command_name: str, marker: str | None = None
+) -> str | None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != command_name:
+        return None
+    return marker_value_before_invocation(simple_command, marker)
+
+
+def marker_value_before_invocation(
+    tokens: list[str], marker: str | None = None
+) -> str | None:
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        value = marker_assignment_value(token)
+        if value is not None:
+            marker = value
+            index += 1
             continue
-        current.append(token)
-    if current:
-        simple_commands.append(current)
-    return simple_commands
+        if basename(token) == "env":
+            return marker_value_from_env_tokens(tokens[index + 1 :], marker)
+        if basename(token) in {"time", "command", "exec"}:
+            index += 1
+            continue
+        return marker
+    return marker
 
 
-def invokes_pr_create(command: str) -> bool:
-    return any(invokes_gh_pr_create(simple_command) for simple_command in iter_simple_commands(command))
+def marker_value_from_env_tokens(tokens: list[str], marker: str | None) -> str | None:
+    tokens = env_split_expanded_tokens(tokens)
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return marker
+        value = marker_assignment_value(token)
+        if value is not None:
+            marker = value
+            index += 1
+            continue
+        if token in {"-u", "--unset"} and index + 1 < len(tokens):
+            if tokens[index + 1] in MARKER_ENV_NAMES:
+                marker = None
+            index += 2
+            continue
+        if token.startswith("--unset="):
+            if token.split("=", 1)[1] in MARKER_ENV_NAMES:
+                marker = None
+            index += 1
+            continue
+        if token in {"-C", "--chdir", "-P", "--path"}:
+            index += 2
+            continue
+        if token.startswith(("--chdir=", "--path=")):
+            index += 1
+            continue
+        if token in {"-S", "--split-string"} and index + 1 < len(tokens):
+            return marker_value_from_env_tokens(env_target_tokens(tokens, index), marker)
+        if token.startswith("--split-string="):
+            return marker_value_from_env_tokens(env_target_tokens(tokens, index), marker)
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            return marker_value_from_env_tokens(env_target_tokens(tokens, index), marker)
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return marker
+    return marker
 
 
-def invokes_mr_create(command: str) -> bool:
-    return any(
-        invokes_glab_mr_create(simple_command) or invokes_glab_api_mr_create(simple_command)
-        for simple_command in iter_simple_commands(command)
-    )
-
-
-def marker_value(command: str) -> str | None:
-    match = SKILL_MARKER_RE.search(command)
-    return match.group("value") if match else None
+def command_creates_pr_or_mr(
+    command: str,
+    *,
+    inherited_pr_marker: str | None = None,
+    inherited_mr_marker: str | None = None,
+    depth: int = 0,
+    max_depth: int = 5,
+) -> str | None:
+    if depth > max_depth:
+        return None
+    for simple_command in simple_commands(command):
+        pr_marker = marker_value_before_command(
+            simple_command, "gh", inherited_pr_marker
+        )
+        if (
+            invokes_gh_pr_create(simple_command)
+            or invokes_gh_api_pr_create(simple_command)
+        ) and pr_marker not in ALLOWED_PR_SKILLS:
+            return BLOCK_REASON_PR
+        mr_marker = marker_value_before_command(
+            simple_command, "glab", inherited_mr_marker
+        )
+        if (
+            invokes_glab_mr_create(simple_command)
+            or invokes_glab_api_mr_create(simple_command)
+        ) and mr_marker not in ALLOWED_MR_SKILLS:
+            return BLOCK_REASON_MR
+        payload = nested_shell_payload(invocation_tokens(simple_command))
+        if payload:
+            blocked = command_creates_pr_or_mr(
+                payload,
+                inherited_pr_marker=marker_value_before_invocation(
+                    simple_command, inherited_pr_marker
+                ),
+                inherited_mr_marker=marker_value_before_invocation(
+                    simple_command, inherited_mr_marker
+                ),
+                depth=depth + 1,
+                max_depth=max_depth,
+            )
+            if blocked:
+                return blocked
+    return None
 
 
 def main() -> int:
@@ -271,12 +343,12 @@ def main() -> int:
     if not command:
         return ALLOW
 
-    marker = marker_value(command)
-    if invokes_pr_create(command) and marker not in ALLOWED_PR_SKILLS:
-        emit_block(BLOCK_REASON_PR)
-        return ALLOW
-    if invokes_mr_create(command) and marker not in ALLOWED_MR_SKILLS:
-        emit_block(BLOCK_REASON_MR)
+    reason = command_creates_pr_or_mr(command)
+    if reason:
+        if reason == BLOCK_REASON_PR:
+            emit_block(BLOCK_REASON_PR)
+        else:
+            emit_block(BLOCK_REASON_MR)
     return ALLOW
 
 

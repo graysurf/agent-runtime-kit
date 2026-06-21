@@ -8,7 +8,6 @@ dirty-tree handling stay auditable.
 from __future__ import annotations
 
 import re
-import shlex
 import sys
 from pathlib import PurePosixPath
 
@@ -19,14 +18,14 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
-    normalize_command_separators,
+    invocation_tokens,
     read_payload,
+    simple_commands_with_nested_shells,
 )
 
 BLOCK_REASON = "Do not use git commit directly. Use semantic-commit instead."
 
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
-SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
 GIT_OPTIONS_WITH_VALUE = {
     "-C",
     "-c",
@@ -43,24 +42,6 @@ GIT_OPTIONS_WITH_VALUE_PREFIXES = (
     "--namespace=",
     "--work-tree=",
 )
-
-
-def shell_tokens(command: str) -> list[str]:
-    # Treat unquoted newlines as command separators so a blocked command on a
-    # later physical line (after a `cd` or other preamble) cannot slip past the
-    # guard. See hook_common.normalize_command_separators.
-    command = normalize_command_separators(command)
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        return list(lexer)
-    except ValueError:
-        return []
-
-
-def is_separator(token: str) -> bool:
-    return token in SEPARATOR_TOKENS or bool(token) and all(char in ";&|()" for char in token)
 
 
 def basename(token: str) -> str:
@@ -96,37 +77,20 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def git_command_index(simple_command: list[str]) -> int | None:
-    index = 0
-    while index < len(simple_command) and is_assignment(simple_command[index]):
-        index += 1
-    if index >= len(simple_command):
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
         return None
-
-    command = basename(simple_command[index])
-    if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
-    elif command == "time":
-        index += 1
-        while index < len(simple_command) and simple_command[index].startswith("-"):
-            index += 1
-    elif command in {"command", "exec"}:
-        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
-            return None
-        index += 1
-
-    if index >= len(simple_command):
-        return None
-    return index if basename(simple_command[index]) == "git" else None
+    return 0 if basename(invocation[0]) == "git" else None
 
 
 def git_subcommand(simple_command: list[str]) -> str | None:
-    git_index = git_command_index(simple_command)
-    if git_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != "git":
         return None
 
-    index = git_index + 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
         if token == "--":
             return None
         if token in GIT_OPTIONS_WITH_VALUE:
@@ -149,15 +113,10 @@ def git_subcommand(simple_command: list[str]) -> str | None:
 
 
 def invokes_git_commit(command: str) -> bool:
-    simple_command: list[str] = []
-    for token in shell_tokens(command):
-        if is_separator(token):
-            if git_subcommand(simple_command) == "commit":
-                return True
-            simple_command = []
-            continue
-        simple_command.append(token)
-    return git_subcommand(simple_command) == "commit"
+    return any(
+        git_subcommand(simple_command) == "commit"
+        for simple_command in simple_commands_with_nested_shells(command)
+    )
 
 
 def main() -> int:

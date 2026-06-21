@@ -87,9 +87,15 @@ run_topic_radar_probe() {
   grep -q '## Top Signals' "$out_markdown"
 }
 
+run_topic_radar_security_probe() {
+  require_reporting_bin python3 || return 1
+  PYTHONDONTWRITEBYTECODE=1 python3 "$REPO_ROOT/tests/reporting/test_topic_radar_security.py"
+}
+
 failures=0
 record_case "reporting.daily-brief" "daily-brief backend topic-radar sample JSON exposes brief clusters" run_daily_brief_probe
 record_case "reporting.project-retro" "project-retro repo-retro JSON report passed against temp git workspace" run_project_retro_probe
 record_case "reporting.topic-radar" "topic-radar sample JSON and markdown probes passed without network" run_topic_radar_probe
+record_case "reporting.topic-radar-security" "topic-radar rejects oversized bodies, unsafe XML, and cross-host redirects" run_topic_radar_security_probe
 
 exit "$failures"

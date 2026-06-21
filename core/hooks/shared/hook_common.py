@@ -543,11 +543,58 @@ def command_ran_marker(marker_set: Mapping[str, str], index: int) -> str:
 
 
 SHELL_SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
+CLOBBER_REDIRECT_MARKER = "__AGENT_CLOBBER_REDIRECT__"
+
+
+def _shield_clobber_redirects(command: str) -> str:
+    """Keep Bash `>|` clobber redirects from being tokenized as pipelines."""
+    out: list[str] = []
+    quote = None
+    index = 0
+    length = len(command)
+    while index < length:
+        char = command[index]
+        if quote == "'":
+            out.append(char)
+            if char == "'":
+                quote = None
+            index += 1
+            continue
+        if quote == '"':
+            if char == "\\" and index + 1 < length:
+                out.append(char)
+                out.append(command[index + 1])
+                index += 2
+                continue
+            out.append(char)
+            if char == '"':
+                quote = None
+            index += 1
+            continue
+        if char == "\\" and index + 1 < length:
+            out.append(char)
+            out.append(command[index + 1])
+            index += 2
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            out.append(char)
+            index += 1
+            continue
+        if command.startswith(">|", index):
+            out.append(f">{CLOBBER_REDIRECT_MARKER}")
+            index += 2
+            continue
+        out.append(char)
+        index += 1
+    return "".join(out)
 
 
 def shell_tokens(command: str) -> list[str]:
     try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
+        lexer = shlex.shlex(
+            _shield_clobber_redirects(command), posix=True, punctuation_chars=";&|()"
+        )
         lexer.whitespace_split = True
         lexer.commenters = ""
         return list(lexer)
@@ -639,7 +686,7 @@ def normalize_command_separators(command: str) -> str:
     return "".join(out)
 
 
-def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
+def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int, bool]:
     """Read a here-doc delimiter word starting at ``index``.
 
     Returns the *unquoted* delimiter (the form bash compares the closing line
@@ -647,12 +694,14 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
     delimiter are stripped, matching bash.
     """
     out: list[str] = []
+    quoted = False
     length = len(line)
     while index < length:
         char = line[index]
         if char in (" ", "\t", "<", ">", "|", "&", ";", "(", ")"):
             break
         if char == "$" and index + 1 < length and line[index + 1] in ("'", '"'):
+            quoted = True
             quote = line[index + 1]
             index += 2
             while index < length and line[index] != quote:
@@ -665,6 +714,7 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
             index += 1  # skip closing quote
             continue
         if char in ("'", '"'):
+            quoted = True
             quote = char
             index += 1
             while index < length and line[index] != quote:
@@ -673,12 +723,13 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
             index += 1  # skip closing quote
             continue
         if char == "\\" and index + 1 < length:
+            quoted = True
             out.append(line[index + 1])
             index += 2
             continue
         out.append(char)
         index += 1
-    return "".join(out), index
+    return "".join(out), index, quoted
 
 
 SHELL_HEREDOC_EXECUTORS = {"bash", "sh", "dash", "ksh", "zsh"}
@@ -747,7 +798,10 @@ def _simple_command_spanning(line: str, op_start: int) -> list[str]:
 # `&>` / `&>>` arms only fire on raw text; `shell_tokens` (shlex with `&` in
 # `punctuation_chars`) splits an `&`-redirection into separate tokens, so a
 # tokenized operand never reaches the walk starting with `&`.
-_REDIRECT_TOKEN_RE = re.compile(r"^(?:\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)|&>>|&>)")
+_CLOBBER_REDIRECT_RE = re.escape(CLOBBER_REDIRECT_MARKER)
+_REDIRECT_TOKEN_RE = re.compile(
+    rf"^(?:\d*(?:<<<|<<-?|<>|<&|>{_CLOBBER_REDIRECT_RE}|>>|>&|<|>)|&>>|&>)"
+)
 
 # Bash invocation options that always bind the FOLLOWING word as an argument.
 # When the next token is instead a redirection or here-doc operator, bash never
@@ -1052,7 +1106,7 @@ def _heredoc_body_is_executed_by_shell(
     return cursor >= len(invocation)  # no script-file operand -> stdin is the script
 
 
-def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
+def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool, bool, int]]:
     """Return here-doc operators on a shell logical line, in order.
 
     Ignores `<<<` (here-string, which takes a word not a body), a `<<` inside
@@ -1060,10 +1114,11 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
     shift), so those never start spurious body skipping.
 
     The third tuple member is true when the body is script content executed by a
-    shell command such as ``bash <<EOF``. Such bodies must stay visible to the
-    validation matcher; inert data bodies such as ``cat <<EOF`` are stripped.
+    shell command such as ``bash <<EOF``. The fourth member records whether the
+    delimiter word was quoted, which disables body expansion for inert
+    here-docs. The final member is the redirection operator start index.
     """
-    result: list[tuple[str, bool, bool]] = []
+    result: list[tuple[str, bool, bool, bool, int]] = []
     index = 0
     length = len(line)
     quote: str | None = None
@@ -1122,13 +1177,17 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
                 cursor += 1
             while cursor < length and line[cursor] in (" ", "\t"):
                 cursor += 1
-            delimiter, cursor = _parse_heredoc_delimiter(line, cursor)
+            delimiter, cursor, delimiter_quoted = _parse_heredoc_delimiter(
+                line, cursor
+            )
             if delimiter:
                 result.append(
                     (
                         delimiter,
                         strip_tabs,
                         _heredoc_body_is_executed_by_shell(line, op_start, fd),
+                        delimiter_quoted,
+                        op_start,
                     )
                 )
             index = cursor
@@ -1175,9 +1234,13 @@ def strip_heredoc_bodies(command: str) -> str:
 
         logical_scan_parts.append(line)
         logical_line = "".join(logical_scan_parts)
-        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
-            logical_line
-        ):
+        for (
+            delimiter,
+            strip_tabs,
+            preserve_body,
+            _delimiter_quoted,
+            _op_start,
+        ) in _heredoc_delimiters_on_line(logical_line):
             pending.append((delimiter, strip_tabs, preserve_body, []))
         kept.extend(logical_raw_lines)
         logical_scan_parts = []
@@ -1213,6 +1276,154 @@ def is_assignment(token: str) -> bool:
     return bool(ASSIGNMENT_RE.match(token))
 
 
+ENV_OPTIONS_WITH_VALUE = {
+    "-u",
+    "--unset",
+    "-C",
+    "--chdir",
+    "-P",
+    "--path",
+    "-S",
+    "--split-string",
+}
+ENV_OPTIONS_WITH_VALUE_PREFIXES = (
+    "--unset=",
+    "--chdir=",
+    "--path=",
+    "--split-string=",
+)
+ENV_OPTIONS_WITHOUT_VALUE = {"-i", "--ignore-environment", "-0", "--null"}
+
+
+def _split_env_string(value: str) -> list[str]:
+    try:
+        return shlex.split(value, posix=True)
+    except ValueError:
+        return []
+
+
+def env_split_expanded_tokens(
+    tokens: list[str], index: int = 0, *, depth: int = 0, max_depth: int = 5
+) -> list[str]:
+    """Expand GNU env -S split strings without stripping assignments."""
+    if depth > max_depth:
+        return []
+    expanded: list[str] = []
+    while index < len(tokens):
+        token = tokens[index]
+        if token in {"-S", "--split-string"}:
+            if index + 1 >= len(tokens):
+                return expanded
+            expanded.extend(
+                env_split_expanded_tokens(
+                    _split_env_string(tokens[index + 1]),
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            )
+            index += 2
+            continue
+        split_prefix = "--split-string="
+        if token.startswith(split_prefix):
+            expanded.extend(
+                env_split_expanded_tokens(
+                    _split_env_string(token.removeprefix(split_prefix)),
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            )
+            index += 1
+            continue
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            split_index = token.find("S", 1)
+            if split_index == len(token) - 1:
+                if index + 1 >= len(tokens):
+                    return expanded
+                split_value = tokens[index + 1]
+                index += 2
+            else:
+                split_value = token[split_index + 1 :]
+                index += 1
+            expanded.extend(
+                env_split_expanded_tokens(
+                    _split_env_string(split_value),
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            )
+            continue
+        expanded.append(token)
+        index += 1
+    return expanded
+
+
+def env_target_tokens(
+    tokens: list[str], index: int = 0, *, depth: int = 0, max_depth: int = 5
+) -> list[str]:
+    if depth > max_depth:
+        return []
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return tokens[index + 1 :]
+        if is_assignment(token):
+            index += 1
+            continue
+        if token in ENV_OPTIONS_WITHOUT_VALUE:
+            index += 1
+            continue
+        if token in ENV_OPTIONS_WITH_VALUE:
+            if index + 1 >= len(tokens):
+                return []
+            if token in {"-S", "--split-string"}:
+                split_tokens = _split_env_string(tokens[index + 1])
+                return env_target_tokens(
+                    split_tokens + tokens[index + 2 :],
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            index += 2
+            continue
+        split_prefix = "--split-string="
+        if token.startswith(split_prefix):
+            split_tokens = _split_env_string(token.removeprefix(split_prefix))
+            return env_target_tokens(
+                split_tokens + tokens[index + 1 :],
+                0,
+                depth=depth + 1,
+                max_depth=max_depth,
+            )
+        if any(token.startswith(prefix) for prefix in ENV_OPTIONS_WITH_VALUE_PREFIXES):
+            index += 1
+            continue
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            split_index = token.find("S", 1)
+            if split_index == len(token) - 1:
+                if index + 1 >= len(tokens):
+                    return []
+                split_value = tokens[index + 1]
+                rest = tokens[index + 2 :]
+            else:
+                split_value = token[split_index + 1 :]
+                rest = tokens[index + 1 :]
+            split_tokens = _split_env_string(split_value)
+            return env_target_tokens(
+                split_tokens + rest,
+                0,
+                depth=depth + 1,
+                max_depth=max_depth,
+            )
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return tokens[index:]
+    return []
+
+
 def skip_env_prefix(tokens: list[str], index: int) -> int:
     while index < len(tokens):
         token = tokens[index]
@@ -1246,7 +1457,7 @@ def invocation_tokens(simple_command: list[str]) -> list[str]:
 
     command = PurePosixPath(simple_command[index]).name
     if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
+        return invocation_tokens(env_target_tokens(simple_command, index + 1))
     elif command == "time":
         index += 1
         while index < len(simple_command) and simple_command[index].startswith("-"):
@@ -1268,6 +1479,533 @@ def invocation_tokens(simple_command: list[str]) -> list[str]:
             return simple_command[index + 2 :]
 
     return simple_command[index:]
+
+
+def shell_c_payload(tokens: list[str], index: int = 0) -> str | None:
+    """Return the command string passed to a shell ``-c``/``--command`` option."""
+    index += 1
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return None
+        if token == "-c":
+            if index + 1 < len(tokens):
+                return tokens[index + 1]
+            return None
+        if token.startswith("-") and not token.startswith("--") and "c" in token[1:]:
+            if index + 1 < len(tokens):
+                return tokens[index + 1]
+            return None
+        index += 1
+    return None
+
+
+def nested_shell_payload(invocation: list[str]) -> str | None:
+    """Return nested shell source carried by ``bash -c``/``sh -c`` or ``eval``."""
+    if not invocation:
+        return None
+    command = PurePosixPath(invocation[0]).name
+    if command in SHELL_HEREDOC_EXECUTORS:
+        return shell_c_payload(invocation, 0)
+    if command == "eval" and len(invocation) > 1:
+        return " ".join(invocation[1:])
+    return None
+
+
+def simple_commands_with_nested_shells(
+    command: str, *, strip_heredocs: bool = False, max_depth: int = 5
+) -> list[list[str]]:
+    """Return simple commands, recursively descending into shell command strings.
+
+    This intentionally reuses the same best-effort shell grammar as
+    ``simple_commands``. If a command-position shell invocation carries a
+    ``-c``/``--command`` payload, or the command is ``eval``, the payload is
+    parsed as another shell command string so guard hooks inspect equivalent
+    wrapper forms of a blocked action.
+    """
+    commands: list[list[str]] = []
+    seen: set[tuple[int, str]] = set()
+
+    def visit(source: str, depth: int) -> None:
+        if depth > max_depth:
+            return
+        key = (depth, source)
+        if key in seen:
+            return
+        seen.add(key)
+        for tokens in simple_commands(source, strip_heredocs=strip_heredocs):
+            if not tokens:
+                continue
+            commands.append(tokens)
+            payload = nested_shell_payload(invocation_tokens(tokens))
+            if payload:
+                visit(payload, depth + 1)
+
+    visit(command, 0)
+    return commands
+
+
+def _output_redirect_targets(tokens: list[str]) -> list[tuple[str, bool]]:
+    """Return output redirection targets and whether stdout content is inspectable."""
+    targets: list[tuple[str, bool]] = []
+    index = 0
+    clobber_op = f">{CLOBBER_REDIRECT_MARKER}"
+    while index < len(tokens):
+        token = tokens[index]
+        if token in {">", ">>", clobber_op}:
+            if index + 1 < len(tokens):
+                targets.append((tokens[index + 1], True))
+            index += 2
+            continue
+        if token in {"&>", "&>>", f"&{clobber_op}"}:
+            if index + 1 < len(tokens):
+                targets.append((tokens[index + 1], False))
+            index += 2
+            continue
+        split_fd = re.match(
+            rf"^(?P<fd>\d+)(?P<op>>>?|>{_CLOBBER_REDIRECT_RE})$", token
+        )
+        if split_fd:
+            if index + 1 < len(tokens):
+                targets.append((tokens[index + 1], split_fd.group("fd") == "1"))
+            index += 2
+            continue
+        combined = re.match(
+            rf"^&(?P<op>>>?|>{_CLOBBER_REDIRECT_RE})(?P<path>.+)$", token
+        )
+        if combined and combined.group("path"):
+            targets.append((combined.group("path"), False))
+            index += 1
+            continue
+        clobber = re.match(
+            rf"^(?P<fd>\d*)(?P<op>>{_CLOBBER_REDIRECT_RE})(?P<path>.+)$",
+            token,
+        )
+        if clobber and clobber.group("path"):
+            targets.append((clobber.group("path"), clobber.group("fd") in {"", "1"}))
+            index += 1
+            continue
+        match = re.match(r"^(?P<fd>\d*)(?P<op>>>?)(?P<path>.+)$", token)
+        if match and match.group("path"):
+            targets.append((match.group("path"), match.group("fd") in {"", "1"}))
+            index += 1
+            continue
+        index += 1
+    return targets
+
+
+def _stdout_redirect_targets(tokens: list[str]) -> list[str]:
+    return [
+        target for target, inspectable in _output_redirect_targets(tokens) if inspectable
+    ]
+
+
+def _opaque_output_redirect_targets(tokens: list[str]) -> list[str]:
+    return [
+        target for target, inspectable in _output_redirect_targets(tokens) if not inspectable
+    ]
+
+
+def _tee_targets(tokens: list[str]) -> list[str]:
+    invocation = invocation_tokens(tokens)
+    if not invocation or PurePosixPath(invocation[0]).name != "tee":
+        return []
+    targets: list[str] = []
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        if token == "--":
+            targets.extend(invocation[index + 1 :])
+            break
+        if token in {"-a", "--append", "-i", "--ignore-interrupts"}:
+            index += 1
+            continue
+        if token in {"-p", "--output-error"}:
+            index += 1
+            continue
+        if token.startswith("--output-error="):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        targets.append(token)
+        index += 1
+    return targets
+
+
+def bash_write_targets_from_tokens(tokens: list[str]) -> list[str]:
+    """Best-effort output paths for a shell simple command."""
+    return _stdout_redirect_targets(tokens) + _tee_targets(tokens)
+
+
+def _absolute_or_expanded_path(path: str) -> bool:
+    return path.startswith(("/", "~", "$"))
+
+
+def _resolve_bash_path(path: str, cwd: str = "") -> str:
+    if not cwd or cwd == "." or _absolute_or_expanded_path(path):
+        return path
+    if path == ".":
+        return cwd
+    if path.startswith("./"):
+        path = path[2:]
+    return f"{cwd.rstrip('/')}/{path}"
+
+
+def _directory_like_target(path: str, known_dirs: set[str] | None = None) -> bool:
+    if known_dirs and path in known_dirs:
+        return True
+    if path in {".", "./", "~", "~/"}:
+        return True
+    if path.endswith("/"):
+        return True
+    expanded = os.path.expanduser(path)
+    return bool(expanded) and os.path.isdir(expanded)
+
+
+def _join_directory_target(directory: str, basename: str) -> str:
+    if not basename:
+        return directory
+    if directory in {".", "./"}:
+        return f"./{basename}"
+    if directory in {"~", "~/"}:
+        return f"~/{basename}"
+    return f"{directory.rstrip('/')}/{basename}"
+
+
+def _copy_style_targets_from_invocation(
+    invocation: list[str], *, cwd: str = "", known_dirs: set[str] | None = None
+) -> list[str]:
+    if not invocation:
+        return []
+    name = PurePosixPath(invocation[0]).name
+    if name not in {"cp", "install", "mv"}:
+        return []
+
+    positional: list[str] = []
+    target_directory: str | None = None
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        if token == "--":
+            positional.extend(invocation[index + 1 :])
+            break
+        if token in {"-t", "--target-directory"} and index + 1 < len(invocation):
+            target_directory = invocation[index + 1]
+            index += 2
+            continue
+        if token.startswith("--target-directory="):
+            target_directory = token.split("=", 1)[1]
+            index += 1
+            continue
+        if token.startswith("-t") and token != "-t":
+            target_directory = token[2:]
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        positional.append(token)
+        index += 1
+
+    if target_directory is not None:
+        sources = positional
+        destinations = [target_directory]
+    elif len(positional) >= 2:
+        sources = positional[:-1]
+        destinations = [positional[-1]]
+    else:
+        return []
+
+    expanded: list[str] = []
+    for destination in destinations:
+        resolved_destination = _resolve_bash_path(destination, cwd)
+        expanded.append(resolved_destination)
+        if _directory_like_target(resolved_destination, known_dirs):
+            for source in sources:
+                basename = PurePosixPath(source.replace("\\", "/")).name
+                if basename:
+                    expanded.append(_join_directory_target(resolved_destination, basename))
+    return expanded
+
+
+def _mkdir_created_dirs_from_invocation(invocation: list[str], cwd: str = "") -> list[str]:
+    if not invocation or PurePosixPath(invocation[0]).name != "mkdir":
+        return []
+    dirs: list[str] = []
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        if token == "--":
+            dirs.extend(_resolve_bash_path(path, cwd) for path in invocation[index + 1 :])
+            break
+        if token in {"-m", "--mode", "-Z", "--context"}:
+            index += 2
+            continue
+        if token.startswith(("--mode=", "--context=")):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        dirs.append(_resolve_bash_path(token, cwd))
+        index += 1
+    return dirs
+
+
+def _cd_target_from_invocation(invocation: list[str], cwd: str = "") -> str | None:
+    if not invocation or PurePosixPath(invocation[0]).name != "cd":
+        return None
+    index = 1
+    while index < len(invocation) and invocation[index] in {"-L", "-P", "-e"}:
+        index += 1
+    if index < len(invocation) and invocation[index] == "--":
+        index += 1
+    if index >= len(invocation):
+        return "~"
+    target = invocation[index]
+    if target == "-":
+        return None
+    return _resolve_bash_path(target, cwd)
+
+
+def bash_copy_style_write_targets(command: str) -> list[str]:
+    targets: list[str] = []
+    known_dirs: set[str] = set()
+    cwd = ""
+    current: list[str] = []
+
+    def flush(separator: str | None) -> None:
+        nonlocal current, cwd
+        if not current:
+            return
+        invocation = invocation_tokens(current)
+        targets.extend(
+            _copy_style_targets_from_invocation(
+                invocation,
+                cwd=cwd,
+                known_dirs=known_dirs,
+            )
+        )
+        payload = nested_shell_payload(invocation)
+        if payload:
+            targets.extend(bash_copy_style_write_targets(payload))
+        if separator in {";", "&&"}:
+            known_dirs.update(_mkdir_created_dirs_from_invocation(invocation, cwd))
+            cwd = _cd_target_from_invocation(invocation, cwd) or cwd
+        current = []
+
+    for token in shell_tokens(normalize_command_separators(strip_heredoc_bodies(command))):
+        if is_shell_separator(token):
+            flush(token)
+            continue
+        current.append(token)
+    flush(None)
+    return targets
+
+
+def _tokens_without_redirections(tokens: list[str]) -> list[str]:
+    kept: list[str] = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if _REDIRECT_TOKEN_RE.match(token):
+            index += 2 if _redirect_consumes_next(token) else 1
+            continue
+        kept.append(token)
+        index += 1
+    return kept
+
+
+def _literal_stdout_from_tokens(tokens: list[str]) -> str:
+    invocation = invocation_tokens(_tokens_without_redirections(tokens))
+    if not invocation:
+        return ""
+    command = PurePosixPath(invocation[0]).name
+    args = invocation[1:]
+    generated_escape_re = r"\\(?:x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})"
+    if command == "echo":
+        expands_backslash = False
+        while args and re.fullmatch(r"-[neE]+", args[0]):
+            for flag in args[0][1:]:
+                if flag == "e":
+                    expands_backslash = True
+                elif flag == "E":
+                    expands_backslash = False
+            args = args[1:]
+        content = " ".join(args)
+        if expands_backslash and re.search(generated_escape_re, content):
+            return ""
+        return "" if re.search(r"[$`]", content) else content
+    if command == "printf":
+        # Do not approximate printf formatting. Multi-argument printf output is
+        # opaque to this parser, so protected writes fail closed instead of
+        # scanning a string that differs from the shell's real output.
+        if len(args) == 1:
+            return "" if re.search(rf"[$`]|{generated_escape_re}", args[0]) else args[0]
+        return ""
+    return ""
+
+
+def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
+    writes: list[tuple[str, str]] = []
+    current: list[str] = []
+    piped_content: str | None = None
+    cwd = ""
+
+    def flush(separator: str | None) -> None:
+        nonlocal current, piped_content, cwd
+        if not current:
+            piped_content = None if separator != "|" else piped_content
+            return
+        if any(token in {"<<", "<<-"} or token.startswith(("<<", "<<-")) for token in current):
+            if separator in {";", "&&"}:
+                invocation = invocation_tokens(current)
+                cwd = _cd_target_from_invocation(invocation, cwd) or cwd
+            current = []
+            piped_content = None if separator != "|" else piped_content
+            return
+        targets = bash_write_targets_from_tokens(current)
+        opaque_targets = _opaque_output_redirect_targets(current)
+        content = _literal_stdout_from_tokens(current)
+        if targets:
+            payload = content or piped_content or ""
+            writes.extend((_resolve_bash_path(target, cwd), payload) for target in targets)
+        if opaque_targets:
+            writes.extend((_resolve_bash_path(target, cwd), "") for target in opaque_targets)
+        if separator in {";", "&&"}:
+            invocation = invocation_tokens(current)
+            cwd = _cd_target_from_invocation(invocation, cwd) or cwd
+        piped_content = content if separator == "|" else None
+        current = []
+
+    for token in shell_tokens(normalize_command_separators(strip_heredoc_bodies(command))):
+        if is_shell_separator(token):
+            flush(token)
+            continue
+        current.append(token)
+    flush(None)
+    return writes
+
+
+def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str]]:
+    if "<<" not in command:
+        return []
+    writes: list[tuple[str, str]] = []
+    lines = command.split("\n")
+    pending: list[tuple[str, bool, bool, bool, list[str], list[str], list[str]]] = []
+    logical_scan_parts: list[str] = []
+
+    def inspected_heredoc_content(
+        body_text: str, *, preserve_body: bool, delimiter_quoted: bool
+    ) -> str:
+        if preserve_body:
+            return ""
+        if not delimiter_quoted and re.search(r"[$`]", body_text):
+            return ""
+        return body_text
+
+    for raw in lines:
+        line = raw.rstrip("\r")
+        if pending:
+            (
+                delimiter,
+                strip_tabs,
+                preserve_body,
+                delimiter_quoted,
+                targets,
+                opaque_targets,
+                body,
+            ) = pending[0]
+            candidate = line.lstrip("\t") if strip_tabs else line
+            if candidate == delimiter:
+                body_text = "\n".join(body)
+                if preserve_body:
+                    writes.extend(_bash_write_operations(body_text, depth=depth + 1))
+                inspected_content = inspected_heredoc_content(
+                    body_text,
+                    preserve_body=preserve_body,
+                    delimiter_quoted=delimiter_quoted,
+                )
+                for target in targets:
+                    writes.append((target, inspected_content))
+                for target in opaque_targets:
+                    writes.append((target, ""))
+                pending.pop(0)
+            else:
+                body.append(raw)
+            continue
+
+        if _line_has_unquoted_continuation(line):
+            logical_scan_parts.append(line[:-1])
+            continue
+
+        logical_scan_parts.append(line)
+        logical_line = "".join(logical_scan_parts)
+        for (
+            delimiter,
+            strip_tabs,
+            preserve_body,
+            delimiter_quoted,
+            op_start,
+        ) in _heredoc_delimiters_on_line(logical_line):
+            tokens = _simple_command_spanning(logical_line, op_start)
+            targets = bash_write_targets_from_tokens(tokens)
+            opaque_targets = _opaque_output_redirect_targets(tokens)
+            pending.append(
+                (
+                    delimiter,
+                    strip_tabs,
+                    preserve_body,
+                    delimiter_quoted,
+                    targets,
+                    opaque_targets,
+                    [],
+                )
+            )
+        logical_scan_parts = []
+    for (
+        _delimiter,
+        _strip_tabs,
+        preserve_body,
+        delimiter_quoted,
+        targets,
+        opaque_targets,
+        body,
+    ) in pending:
+        body_text = "\n".join(body)
+        if preserve_body:
+            writes.extend(_bash_write_operations(body_text, depth=depth + 1))
+        inspected_content = inspected_heredoc_content(
+            body_text,
+            preserve_body=preserve_body,
+            delimiter_quoted=delimiter_quoted,
+        )
+        for target in targets:
+            writes.append((target, inspected_content))
+        for target in opaque_targets:
+            writes.append((target, ""))
+    return writes
+
+
+def _bash_write_operations(
+    command: str, *, depth: int = 0, max_depth: int = 5
+) -> list[tuple[str, str]]:
+    if depth > max_depth:
+        return []
+    writes = _record_heredoc_bash_writes(command, depth)
+    writes.extend(_record_literal_bash_writes(command))
+    for tokens in simple_commands(command, strip_heredocs=True):
+        payload = nested_shell_payload(invocation_tokens(tokens))
+        if payload:
+            writes.extend(_bash_write_operations(payload, depth=depth + 1))
+    return writes
+
+
+def bash_write_operations(command: str) -> list[tuple[str, str]]:
+    """Best-effort ``(path, content)`` pairs for Bash-authored file writes."""
+    return _bash_write_operations(command)
 
 
 def normalize_pathish(token: str) -> str:

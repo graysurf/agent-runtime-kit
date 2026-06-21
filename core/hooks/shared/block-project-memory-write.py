@@ -9,7 +9,15 @@ import sys
 # Codex may execute hooks through a source symlink; keep the checkout clean.
 sys.dont_write_bytecode = True
 
-from hook_common import ALLOW, emit_block, file_paths_from_payload, read_payload
+from hook_common import (
+    ALLOW,
+    bash_copy_style_write_targets,
+    bash_write_operations,
+    command_from,
+    emit_block,
+    file_paths_from_payload,
+    read_payload,
+)
 
 BLOCK_REASON = (
     "Blocked project-state memory write. Do not store project state in "
@@ -26,12 +34,19 @@ PROJECT_MEMORY_PATTERNS: tuple[re.Pattern[str], ...] = (
 
 def is_project_memory_path(path: str) -> bool:
     normalized = path.replace("\\", "/")
+    if normalized.startswith("~/"):
+        normalized = normalized[2:]
     return any(pattern.search(normalized) for pattern in PROJECT_MEMORY_PATTERNS)
 
 
 def main() -> int:
     payload = read_payload()
-    if any(is_project_memory_path(path) for path in file_paths_from_payload(payload)):
+    paths = file_paths_from_payload(payload)
+    if str(payload.get("tool_name", "")) == "Bash":
+        command = command_from(payload)
+        paths.extend(path for path, _content in bash_write_operations(command))
+        paths.extend(bash_copy_style_write_targets(command))
+    if any(is_project_memory_path(path) for path in paths):
         emit_block(BLOCK_REASON)
     return ALLOW
 
