@@ -592,6 +592,9 @@ class SharedHookTests(unittest.TestCase):
             "forge-cli pr view 123",
             "forge-cli issue list",
             "forge-cli label ensure",
+            "forge-cli pr create --help",
+            "forge-cli pr deliver --help",
+            "forge-cli issue create -h",
             "gh pr create --title x",
             # Explicit no-label opt-out via the inline bypass marker.
             "FORGE_NO_LABELS=1 forge-cli pr create --title x",
