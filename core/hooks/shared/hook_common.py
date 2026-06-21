@@ -1430,6 +1430,10 @@ def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
         if not current:
             piped_content = None if separator != "|" else piped_content
             return
+        if any(token in {"<<", "<<-"} or token.startswith(("<<", "<<-")) for token in current):
+            current = []
+            piped_content = None if separator != "|" else piped_content
+            return
         targets = bash_write_targets_from_tokens(current)
         content = _literal_stdout_from_tokens(current)
         if targets:
@@ -1438,7 +1442,7 @@ def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
         piped_content = content if separator == "|" else None
         current = []
 
-    for token in shell_tokens(strip_heredoc_bodies(command)):
+    for token in shell_tokens(normalize_command_separators(strip_heredoc_bodies(command))):
         if is_shell_separator(token):
             flush(token)
             continue

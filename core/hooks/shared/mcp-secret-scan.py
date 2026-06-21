@@ -231,8 +231,6 @@ def hook_contents_to_scan(payload: dict[str, Any]) -> tuple[list[tuple[str, str]
                 contents.append((file_path, content))
             else:
                 unknown_paths.append(file_path)
-        inspected_paths = {file_path for file_path, _content in contents}
-        unknown_paths = [path for path in unknown_paths if path not in inspected_paths]
         unknown_paths.extend(bash_unknown_mcp_write_targets(command_from(payload)))
         return contents, unknown_paths
 
