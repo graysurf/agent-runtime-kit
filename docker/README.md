@@ -152,7 +152,7 @@ baked `$HOME/.config/zsh` or `/opt/private-skills` tree.
 
 ## What's inside
 
-- **Base**: `node:22-trixie-slim` pinned by digest — Debian 13, glibc 2.41
+- **Base**: `node:26-trixie-slim` pinned by digest — Debian 13, glibc 2.41
   (Node ≥18 for both CLIs; glibc for their native binaries). Trixie, not
   bookworm: the `nils-cli` release binaries require GLIBC ≥ 2.39, which
   bookworm's 2.36 cannot satisfy.
