@@ -1,20 +1,42 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-21 (refreshed for `v1.13.0`)
+- Snapshot date: 2026-06-21 (refreshed for `v1.14.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.13.0`
+- Active `git describe --tags` output: `v1.14.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.13.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.14.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `78e3c2c`
-  (`chore(release): bump cli versions to 1.13.0 (#921)`)
+- Head commit: `b535fc4`
+  (`chore(release): bump cli versions to 1.14.0 (#936)`)
 - Release:
-  [`v1.13.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.13.0),
+  [`v1.14.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.14.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.14.0` is a lock-step minor over `v1.13.0`. Runtime-kit does not consume
+  a new CLI flag or JSON envelope from this release, so no `required_clis[]`
+  floor moves — the exact `pinned_tag` gate (now `v1.14.0`) covers the host.
+  Consumer-visible changes:
+  - `forge-cli pr review` keeps the `v1.13.0` outcome-posting surface but
+    hardens guard, dry-run, issue-mirror, and GitLab fallback behavior across
+    GitHub/GitLab providers ([#922](https://github.com/sympoies/nils-cli/pull/922),
+    [#923](https://github.com/sympoies/nils-cli/pull/923),
+    [#924](https://github.com/sympoies/nils-cli/pull/924),
+    [#925](https://github.com/sympoies/nils-cli/pull/925)).
+  - `agent-runtime render` swaps the internal template engine from Tera to
+    Minijinja while preserving the existing runtime-kit render contract
+    ([#931](https://github.com/sympoies/nils-cli/pull/931)).
+  - REST/websocket/gRPC test helpers, `github-app-cli`, dependency policy,
+    crate-standard docs, and CI retry behavior changed upstream but do not add
+    a runtime-kit-consumed surface ([#926](https://github.com/sympoies/nils-cli/pull/926),
+    [#927](https://github.com/sympoies/nils-cli/pull/927),
+    [#929](https://github.com/sympoies/nils-cli/pull/929),
+    [#930](https://github.com/sympoies/nils-cli/pull/930),
+    [#932](https://github.com/sympoies/nils-cli/pull/932),
+    [#933](https://github.com/sympoies/nils-cli/pull/933),
+    [#935](https://github.com/sympoies/nils-cli/pull/935)).
 - `v1.13.0` is a lock-step minor over `v1.12.1`. Runtime-kit now consumes the
   `forge-cli pr review` outcome-posting primitive, so the `forge-cli` floor
   moves to `>= 1.13.0`; the exact `pinned_tag` gate (now `v1.13.0`) remains
