@@ -20,6 +20,8 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
+    invocation_tokens,
+    nested_shell_payload,
     normalize_command_separators,
     read_payload,
     tool_input_dict,
@@ -30,6 +32,7 @@ BYPASS_ENV_NAMES = (
     "AGENT_KIT_ALLOW_SYSTEM_PYTHON",
     "CLAUDE_KIT_ALLOW_SYSTEM_PYTHON",
 )
+BYPASS_TRUE_VALUES = {"1", "true", "TRUE", "yes", "YES"}
 
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
 PYTHON_NAME_RE = re.compile(r"^python(?:3(?:\.\d+)?)?$")
@@ -53,12 +56,7 @@ class PythonInvocation:
 
 def has_bypass(command: str) -> bool:
     for env_name in BYPASS_ENV_NAMES:
-        if os.environ.get(env_name) in {"1", "true", "TRUE", "yes", "YES"}:
-            return True
-        if re.search(
-            rf"(?:^|[\s;&|()]){re.escape(env_name)}=(?:1|true|TRUE|yes|YES)(?:\s|$|[;&|()])",
-            command,
-        ):
+        if os.environ.get(env_name) in BYPASS_TRUE_VALUES:
             return True
     return False
 
@@ -162,6 +160,11 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def command_python_token(simple_command: list[str]) -> str | None:
+    index = command_python_index(simple_command)
+    return simple_command[index] if index is not None else None
+
+
+def command_python_index(simple_command: list[str]) -> int | None:
     index = 0
     while index < len(simple_command) and is_assignment(simple_command[index]):
         index += 1
@@ -182,7 +185,43 @@ def command_python_token(simple_command: list[str]) -> str | None:
 
     if index >= len(simple_command):
         return None
-    return simple_command[index] if is_direct_python_token(simple_command[index]) else None
+    return index if is_direct_python_token(simple_command[index]) else None
+
+
+def bypass_assignment_enabled(token: str) -> bool:
+    if not is_assignment(token):
+        return False
+    name, value = token.split("=", 1)
+    return name in BYPASS_ENV_NAMES and value.strip("\"'") in BYPASS_TRUE_VALUES
+
+
+def simple_command_bypass_enabled(simple_command: list[str]) -> bool:
+    command_index = command_python_index(simple_command)
+    if command_index is None:
+        invocation = invocation_tokens(simple_command)
+        if not invocation:
+            return False
+        command_index = len(simple_command) - len(invocation)
+    marker_enabled = False
+    index = 0
+    while index < command_index:
+        token = simple_command[index]
+        if bypass_assignment_enabled(token):
+            marker_enabled = True
+            index += 1
+            continue
+        if token in {"-u", "--unset"} and index + 1 < command_index:
+            if simple_command[index + 1] in BYPASS_ENV_NAMES:
+                marker_enabled = False
+            index += 2
+            continue
+        if token.startswith("--unset="):
+            if token.split("=", 1)[1] in BYPASS_ENV_NAMES:
+                marker_enabled = False
+            index += 1
+            continue
+        index += 1
+    return marker_enabled
 
 
 def cd_target(simple_command: list[str], cwd: Path) -> Path | None:
@@ -277,23 +316,48 @@ def path_from_transcript(payload: dict[str, object]) -> Path | None:
     return None
 
 
-def direct_python_invocation(command: str, start_cwd: Path) -> PythonInvocation | None:
+def direct_python_invocation(
+    command: str,
+    start_cwd: Path,
+    *,
+    inherited_bypass: bool = False,
+    depth: int = 0,
+    max_depth: int = 5,
+) -> PythonInvocation | None:
+    if depth > max_depth:
+        return None
     simple_command: list[str] = []
     current_cwd = start_cwd
+
+    def inspect(simple: list[str], cwd: Path) -> PythonInvocation | None:
+        if not simple:
+            return None
+        command_bypass = inherited_bypass or simple_command_bypass_enabled(simple)
+        found = command_python_token(simple)
+        if found and not command_bypass:
+            return PythonInvocation(found, cwd)
+        payload = nested_shell_payload(invocation_tokens(simple))
+        if payload:
+            return direct_python_invocation(
+                payload,
+                cwd,
+                inherited_bypass=command_bypass,
+                depth=depth + 1,
+                max_depth=max_depth,
+            )
+        return None
+
     for token in shell_tokens(command):
         if is_separator(token):
-            found = command_python_token(simple_command)
+            found = inspect(simple_command, current_cwd)
             if found:
-                return PythonInvocation(found, current_cwd)
+                return found
             if token in {";", "&&"}:
                 current_cwd = cd_target(simple_command, current_cwd) or current_cwd
             simple_command = []
             continue
         simple_command.append(token)
-    found = command_python_token(simple_command)
-    if found:
-        return PythonInvocation(found, current_cwd)
-    return None
+    return inspect(simple_command, current_cwd)
 
 
 def block_reason(executable: str, manager: PythonManager) -> str:
@@ -318,10 +382,14 @@ def block_reason(executable: str, manager: PythonManager) -> str:
 def main() -> int:
     payload = read_payload()
     command = command_from(payload)
-    if not command or has_bypass(command):
+    if not command:
         return ALLOW
 
-    invocation = direct_python_invocation(command, path_from_payload(payload))
+    invocation = direct_python_invocation(
+        command,
+        path_from_payload(payload),
+        inherited_bypass=has_bypass(command),
+    )
     if not invocation:
         return ALLOW
 

@@ -8,7 +8,6 @@ dirty-tree handling stay auditable.
 from __future__ import annotations
 
 import re
-import shlex
 import sys
 from pathlib import PurePosixPath
 
@@ -19,14 +18,13 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
-    normalize_command_separators,
     read_payload,
+    simple_commands_with_nested_shells,
 )
 
 BLOCK_REASON = "Do not use git commit directly. Use semantic-commit instead."
 
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
-SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
 GIT_OPTIONS_WITH_VALUE = {
     "-C",
     "-c",
@@ -43,24 +41,6 @@ GIT_OPTIONS_WITH_VALUE_PREFIXES = (
     "--namespace=",
     "--work-tree=",
 )
-
-
-def shell_tokens(command: str) -> list[str]:
-    # Treat unquoted newlines as command separators so a blocked command on a
-    # later physical line (after a `cd` or other preamble) cannot slip past the
-    # guard. See hook_common.normalize_command_separators.
-    command = normalize_command_separators(command)
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        return list(lexer)
-    except ValueError:
-        return []
-
-
-def is_separator(token: str) -> bool:
-    return token in SEPARATOR_TOKENS or bool(token) and all(char in ";&|()" for char in token)
 
 
 def basename(token: str) -> str:
@@ -149,15 +129,10 @@ def git_subcommand(simple_command: list[str]) -> str | None:
 
 
 def invokes_git_commit(command: str) -> bool:
-    simple_command: list[str] = []
-    for token in shell_tokens(command):
-        if is_separator(token):
-            if git_subcommand(simple_command) == "commit":
-                return True
-            simple_command = []
-            continue
-        simple_command.append(token)
-    return git_subcommand(simple_command) == "commit"
+    return any(
+        git_subcommand(simple_command) == "commit"
+        for simple_command in simple_commands_with_nested_shells(command)
+    )
 
 
 def main() -> int:

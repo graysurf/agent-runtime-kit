@@ -15,7 +15,15 @@ from typing import Any
 # Codex may execute hooks through a source symlink; keep the checkout clean.
 sys.dont_write_bytecode = True
 
-from hook_common import ALLOW, emit_block, patch_text_candidates, read_payload, tool_input_dict
+from hook_common import (
+    ALLOW,
+    bash_write_operations,
+    command_from,
+    emit_block,
+    patch_text_candidates,
+    read_payload,
+    tool_input_dict,
+)
 
 HOME_PATH_RE = re.compile(
     r"(?P<root>/Users|/home)/(?P<owner>[A-Za-z0-9._-]+)"
@@ -202,6 +210,12 @@ def hook_contents_to_scan(payload: dict[str, Any]) -> list[tuple[str, str]]:
     contents: list[tuple[str, str]] = []
     tool_name = str(payload.get("tool_name", ""))
     tool_input = tool_input_dict(payload)
+
+    if tool_name == "Bash":
+        for file_path, content in bash_write_operations(command_from(payload)):
+            if content and is_active_text_surface(file_path):
+                contents.append((file_path, content))
+        return contents
 
     file_path = str(tool_input.get("file_path", ""))
     if file_path and is_active_text_surface(file_path):

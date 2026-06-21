@@ -48,12 +48,13 @@ Each release publishes, for `linux/amd64` and `linux/arm64`:
 
    Use `--version YYYY.MM.DD` to cut an explicit CalVer tag, or `--prerelease`
    to skip the rolling `latest` tag.
-
 4. `.github/workflows/publish-image.yml` runs on `release: published`:
    - resolves the `nils-cli` pin from `docs/source/nils-cli-pin.yaml`,
    - builds `linux/amd64` and smoke-tests it (`claude` / `codex` /
      `agent-runtime` versions and the rendered-home symlinks),
    - builds multi-arch and pushes to GHCR with the dated tag plus `latest`,
+   - emits BuildKit provenance/SBOM attestations and a GitHub provenance
+     attestation for the pushed image digest,
    - verifies that the pushed GHCR manifests are anonymously readable and carry
      both `linux/amd64` and `linux/arm64`.
 
@@ -75,4 +76,14 @@ scripts/release.sh --verify-only --version v2026.05.30
 ```bash
 docker pull ghcr.io/graysurf/agent-runtime-kit:latest
 docker run --rm -it ghcr.io/graysurf/agent-runtime-kit:latest
+```
+
+For a dated release, inspect the immutable digest and verify the provenance
+attestation before running it:
+
+```bash
+docker buildx imagetools inspect ghcr.io/graysurf/agent-runtime-kit:2026.05.30
+gh attestation verify \
+  oci://ghcr.io/graysurf/agent-runtime-kit:2026.05.30 \
+  -R graysurf/agent-runtime-kit
 ```

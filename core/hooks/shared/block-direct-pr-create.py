@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import re
-import shlex
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -20,8 +19,8 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
-    normalize_command_separators,
     read_payload,
+    simple_commands_with_nested_shells,
 )
 
 _BUILTIN_PR_SKILLS: frozenset[str] = frozenset(
@@ -81,34 +80,12 @@ BLOCK_REASON_MR = (
     "allowed MR skill name>."
 )
 
-SKILL_MARKER_RE = re.compile(
-    rf"(?:^|[\s;&|()])(?P<name>{'|'.join(MARKER_ENV_NAMES)})=(?P<value>\S+)"
-)
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
-SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
 CLI_OPTIONS_WITH_VALUE = {"-R", "--repo"}
 CLI_OPTIONS_WITH_VALUE_PREFIXES = ("--repo=",)
 GLAB_API_METHOD_FLAGS = {"-X", "--method"}
 GLAB_API_POST_PARAMETER_FLAGS = {"-F", "--field", "-f", "--raw-field", "--form"}
 MR_ENDPOINT_RE = re.compile(r"(?:^|/)merge_requests(?:$|[/?#])")
-
-
-def shell_tokens(command: str) -> list[str]:
-    # Treat unquoted newlines as command separators so a blocked command on a
-    # later physical line (after a `cd` or other preamble) cannot slip past the
-    # guard. See hook_common.normalize_command_separators.
-    command = normalize_command_separators(command)
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        return list(lexer)
-    except ValueError:
-        return []
-
-
-def is_separator(token: str) -> bool:
-    return token in SEPARATOR_TOKENS or (bool(token) and all(char in ";&|()" for char in token))
 
 
 def basename(token: str) -> str:
@@ -235,35 +212,42 @@ def invokes_glab_api_mr_create(simple_command: list[str]) -> bool:
     return api_method_is_post(api_args) and api_has_merge_requests_endpoint(api_args)
 
 
-def iter_simple_commands(command: str) -> list[list[str]]:
-    simple_commands: list[list[str]] = []
-    current: list[str] = []
-    for token in shell_tokens(command):
-        if is_separator(token):
-            if current:
-                simple_commands.append(current)
-                current = []
+def marker_assignment_value(token: str) -> str | None:
+    if not is_assignment(token):
+        return None
+    name, value = token.split("=", 1)
+    if name not in MARKER_ENV_NAMES:
+        return None
+    return value.strip("\"'")
+
+
+def marker_value_before_command(
+    simple_command: list[str], command_name: str
+) -> str | None:
+    command_index = cli_command_index(simple_command, command_name)
+    if command_index is None:
+        return None
+    marker: str | None = None
+    index = 0
+    while index < command_index:
+        token = simple_command[index]
+        value = marker_assignment_value(token)
+        if value is not None:
+            marker = value
+            index += 1
             continue
-        current.append(token)
-    if current:
-        simple_commands.append(current)
-    return simple_commands
-
-
-def invokes_pr_create(command: str) -> bool:
-    return any(invokes_gh_pr_create(simple_command) for simple_command in iter_simple_commands(command))
-
-
-def invokes_mr_create(command: str) -> bool:
-    return any(
-        invokes_glab_mr_create(simple_command) or invokes_glab_api_mr_create(simple_command)
-        for simple_command in iter_simple_commands(command)
-    )
-
-
-def marker_value(command: str) -> str | None:
-    match = SKILL_MARKER_RE.search(command)
-    return match.group("value") if match else None
+        if token in {"-u", "--unset"} and index + 1 < command_index:
+            if simple_command[index + 1] in MARKER_ENV_NAMES:
+                marker = None
+            index += 2
+            continue
+        if token.startswith("--unset="):
+            if token.split("=", 1)[1] in MARKER_ENV_NAMES:
+                marker = None
+            index += 1
+            continue
+        index += 1
+    return marker
 
 
 def main() -> int:
@@ -271,12 +255,18 @@ def main() -> int:
     if not command:
         return ALLOW
 
-    marker = marker_value(command)
-    if invokes_pr_create(command) and marker not in ALLOWED_PR_SKILLS:
-        emit_block(BLOCK_REASON_PR)
-        return ALLOW
-    if invokes_mr_create(command) and marker not in ALLOWED_MR_SKILLS:
-        emit_block(BLOCK_REASON_MR)
+    for simple_command in simple_commands_with_nested_shells(command):
+        pr_marker = marker_value_before_command(simple_command, "gh")
+        if invokes_gh_pr_create(simple_command) and pr_marker not in ALLOWED_PR_SKILLS:
+            emit_block(BLOCK_REASON_PR)
+            return ALLOW
+        mr_marker = marker_value_before_command(simple_command, "glab")
+        if (
+            invokes_glab_mr_create(simple_command)
+            or invokes_glab_api_mr_create(simple_command)
+        ) and mr_marker not in ALLOWED_MR_SKILLS:
+            emit_block(BLOCK_REASON_MR)
+            return ALLOW
     return ALLOW
 
 

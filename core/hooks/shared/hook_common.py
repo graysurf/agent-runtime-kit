@@ -1270,6 +1270,248 @@ def invocation_tokens(simple_command: list[str]) -> list[str]:
     return simple_command[index:]
 
 
+def shell_c_payload(tokens: list[str], index: int = 0) -> str | None:
+    """Return the command string passed to a shell ``-c``/``--command`` option."""
+    index += 1
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            index += 1
+            continue
+        if token in {"-c", "--command"}:
+            if index + 1 < len(tokens):
+                return tokens[index + 1]
+            return None
+        if token.startswith("--command="):
+            return token.split("=", 1)[1]
+        if token.startswith("-") and not token.startswith("--") and "c" in token[1:]:
+            if index + 1 < len(tokens):
+                return tokens[index + 1]
+            return None
+        index += 1
+    return None
+
+
+def nested_shell_payload(invocation: list[str]) -> str | None:
+    """Return nested shell source carried by ``bash -c``/``sh -c`` or ``eval``."""
+    if not invocation:
+        return None
+    command = PurePosixPath(invocation[0]).name
+    if command in SHELL_HEREDOC_EXECUTORS:
+        return shell_c_payload(invocation, 0)
+    if command == "eval" and len(invocation) > 1:
+        return " ".join(invocation[1:])
+    return None
+
+
+def simple_commands_with_nested_shells(
+    command: str, *, strip_heredocs: bool = False, max_depth: int = 5
+) -> list[list[str]]:
+    """Return simple commands, recursively descending into shell command strings.
+
+    This intentionally reuses the same best-effort shell grammar as
+    ``simple_commands``. If a command-position shell invocation carries a
+    ``-c``/``--command`` payload, or the command is ``eval``, the payload is
+    parsed as another shell command string so guard hooks inspect equivalent
+    wrapper forms of a blocked action.
+    """
+    commands: list[list[str]] = []
+    seen: set[tuple[int, str]] = set()
+
+    def visit(source: str, depth: int) -> None:
+        if depth > max_depth:
+            return
+        key = (depth, source)
+        if key in seen:
+            return
+        seen.add(key)
+        for tokens in simple_commands(source, strip_heredocs=strip_heredocs):
+            if not tokens:
+                continue
+            commands.append(tokens)
+            payload = nested_shell_payload(invocation_tokens(tokens))
+            if payload:
+                visit(payload, depth + 1)
+
+    visit(command, 0)
+    return commands
+
+
+def _stdout_redirect_targets(tokens: list[str]) -> list[str]:
+    targets: list[str] = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token in {">", ">>"}:
+            if index + 1 < len(tokens):
+                targets.append(tokens[index + 1])
+            index += 2
+            continue
+        match = re.match(r"^(?P<fd>1?)(?P<op>>>?)(?P<path>.+)$", token)
+        if match and match.group("path"):
+            targets.append(match.group("path"))
+            index += 1
+            continue
+        index += 1
+    return targets
+
+
+def _tee_targets(tokens: list[str]) -> list[str]:
+    invocation = invocation_tokens(tokens)
+    if not invocation or PurePosixPath(invocation[0]).name != "tee":
+        return []
+    targets: list[str] = []
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        if token == "--":
+            targets.extend(invocation[index + 1 :])
+            break
+        if token in {"-a", "--append", "-i", "--ignore-interrupts"}:
+            index += 1
+            continue
+        if token in {"-p", "--output-error"}:
+            index += 1
+            continue
+        if token.startswith("--output-error="):
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        targets.append(token)
+        index += 1
+    return targets
+
+
+def bash_write_targets_from_tokens(tokens: list[str]) -> list[str]:
+    """Best-effort output paths for a shell simple command."""
+    return _stdout_redirect_targets(tokens) + _tee_targets(tokens)
+
+
+def _tokens_without_redirections(tokens: list[str]) -> list[str]:
+    kept: list[str] = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token in {">", ">>", "<", "<<", "<<-", "<<<"}:
+            index += 2
+            continue
+        if re.match(r"^\d*(?:<<<|<<-?|<>|<&|>>|>&|<|>)", token):
+            index += 1
+            continue
+        kept.append(token)
+        index += 1
+    return kept
+
+
+def _literal_stdout_from_tokens(tokens: list[str]) -> str:
+    invocation = invocation_tokens(_tokens_without_redirections(tokens))
+    if not invocation:
+        return ""
+    command = PurePosixPath(invocation[0]).name
+    args = invocation[1:]
+    if command == "echo":
+        while args and args[0] in {"-n", "-e", "-E"}:
+            args = args[1:]
+        return " ".join(args)
+    if command == "printf":
+        return " ".join(args)
+    return ""
+
+
+def _record_literal_bash_writes(command: str) -> list[tuple[str, str]]:
+    writes: list[tuple[str, str]] = []
+    current: list[str] = []
+    piped_content: str | None = None
+
+    def flush(separator: str | None) -> None:
+        nonlocal current, piped_content
+        if not current:
+            piped_content = None if separator != "|" else piped_content
+            return
+        targets = bash_write_targets_from_tokens(current)
+        content = _literal_stdout_from_tokens(current)
+        if targets:
+            payload = content or piped_content or ""
+            writes.extend((target, payload) for target in targets)
+        piped_content = content if separator == "|" else None
+        current = []
+
+    for token in shell_tokens(strip_heredoc_bodies(command)):
+        if is_shell_separator(token):
+            flush(token)
+            continue
+        current.append(token)
+    flush(None)
+    return writes
+
+
+def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str]]:
+    if "<<" not in command:
+        return []
+    writes: list[tuple[str, str]] = []
+    lines = command.split("\n")
+    pending: list[tuple[str, bool, bool, list[str], list[str]]] = []
+    logical_scan_parts: list[str] = []
+    for raw in lines:
+        line = raw.rstrip("\r")
+        if pending:
+            delimiter, strip_tabs, preserve_body, targets, body = pending[0]
+            candidate = line.lstrip("\t") if strip_tabs else line
+            if candidate == delimiter:
+                body_text = "\n".join(body)
+                if preserve_body:
+                    writes.extend(_bash_write_operations(body_text, depth=depth + 1))
+                for target in targets:
+                    writes.append((target, body_text))
+                pending.pop(0)
+            else:
+                body.append(raw)
+            continue
+
+        if _line_has_unquoted_continuation(line):
+            logical_scan_parts.append(line[:-1])
+            continue
+
+        logical_scan_parts.append(line)
+        logical_line = "".join(logical_scan_parts)
+        targets = []
+        for tokens in simple_commands(logical_line):
+            targets.extend(bash_write_targets_from_tokens(tokens))
+        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
+            logical_line
+        ):
+            pending.append((delimiter, strip_tabs, preserve_body, targets, []))
+        logical_scan_parts = []
+    for _delimiter, _strip_tabs, preserve_body, targets, body in pending:
+        body_text = "\n".join(body)
+        if preserve_body:
+            writes.extend(_bash_write_operations(body_text, depth=depth + 1))
+        for target in targets:
+            writes.append((target, body_text))
+    return writes
+
+
+def _bash_write_operations(
+    command: str, *, depth: int = 0, max_depth: int = 5
+) -> list[tuple[str, str]]:
+    if depth > max_depth:
+        return []
+    writes = _record_heredoc_bash_writes(command, depth)
+    writes.extend(_record_literal_bash_writes(command))
+    for tokens in simple_commands(command, strip_heredocs=True):
+        payload = nested_shell_payload(invocation_tokens(tokens))
+        if payload:
+            writes.extend(_bash_write_operations(payload, depth=depth + 1))
+    return writes
+
+
+def bash_write_operations(command: str) -> list[tuple[str, str]]:
+    """Best-effort ``(path, content)`` pairs for Bash-authored file writes."""
+    return _bash_write_operations(command)
+
+
 def normalize_pathish(token: str) -> str:
     normalized = token
     while normalized.startswith("./"):

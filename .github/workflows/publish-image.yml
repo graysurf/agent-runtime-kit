@@ -14,6 +14,8 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 concurrency:
   group: publish-image-${{ github.ref }}
@@ -27,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 1
 
@@ -40,18 +42,26 @@ jobs:
           set -euo pipefail
           PIN="$(sed -n -E 's/^[[:space:]]*pinned_tag:[[:space:]]*"?([^"#]+)"?.*/\1/p' \
             docs/source/nils-cli-pin.yaml | head -1 | tr -d '[:space:]')"
+          SHA_AMD64="$(sed -n -E 's/^[[:space:]]*linux_amd64:[[:space:]]*"?([0-9a-f]{64})"?.*/\1/p' \
+            docs/source/nils-cli-pin.yaml | head -1 | tr -d '[:space:]')"
+          SHA_ARM64="$(sed -n -E 's/^[[:space:]]*linux_arm64:[[:space:]]*"?([0-9a-f]{64})"?.*/\1/p' \
+            docs/source/nils-cli-pin.yaml | head -1 | tr -d '[:space:]')"
           test -n "$PIN" || { echo "could not read nils_cli.pinned_tag" >&2; exit 1; }
+          test -n "$SHA_AMD64" || { echo "could not read nils_cli.release_sha256.linux_amd64" >&2; exit 1; }
+          test -n "$SHA_ARM64" || { echo "could not read nils_cli.release_sha256.linux_arm64" >&2; exit 1; }
           echo "nils_cli=$PIN" >> "$GITHUB_OUTPUT"
+          echo "nils_cli_sha256_amd64=$SHA_AMD64" >> "$GITHUB_OUTPUT"
+          echo "nils_cli_sha256_arm64=$SHA_ARM64" >> "$GITHUB_OUTPUT"
           echo "nils-cli pin: $PIN"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -59,7 +69,7 @@ jobs:
 
       - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -69,13 +79,15 @@ jobs:
       - name: Build amd64 for smoke test
         # Single-platform build loaded into the runner's docker so the image can
         # actually run. buildx layer cache is reused by the multi-arch push.
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           context: .
           file: docker/Dockerfile
           platforms: linux/amd64
           build-args: |
             NILS_CLI_VERSION=${{ steps.pin.outputs.nils_cli }}
+            NILS_CLI_SHA256_AMD64=${{ steps.pin.outputs.nils_cli_sha256_amd64 }}
+            NILS_CLI_SHA256_ARM64=${{ steps.pin.outputs.nils_cli_sha256_arm64 }}
           load: true
           tags: agent-runtime-kit:smoke
           cache-from: type=gha
@@ -127,7 +139,8 @@ jobs:
           run bash -lc 'test -L "$HOME/.claude/CLAUDE.md" && test -L "$CODEX_HOME/AGENTS.md"'
 
       - name: Build and push multi-arch
-        uses: docker/build-push-action@v7
+        id: push
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           context: .
           file: docker/Dockerfile
@@ -137,8 +150,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Attest image provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
       - name: Verify public GHCR manifests
         run: |

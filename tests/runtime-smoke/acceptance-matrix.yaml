@@ -664,6 +664,19 @@ cases:
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
+  - id: reporting.topic-radar-security.shared-cli.regression
+    product: shared-cli
+    domain: reporting
+    skill_id: reporting.topic-radar
+    mode: deterministic
+    fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
+    setup: start local HTTP fixtures
+    invocation: topic-radar security hardening regression tests
+    expected_exit_code: 0
+    expected_artifacts: oversized body, unsafe XML, and redirect rejections
+    cleanup: temp-output-only
+    expected_disposition: pass
+    skip_policy: none
   - id: pr.create-pr.shared-cli.deterministic
     product: shared-cli
     domain: pr

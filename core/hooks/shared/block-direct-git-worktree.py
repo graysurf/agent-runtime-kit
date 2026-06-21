@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import re
-import shlex
 import sys
 from pathlib import PurePosixPath
 
@@ -20,8 +19,8 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
-    normalize_command_separators,
     read_payload,
+    simple_commands_with_nested_shells,
 )
 
 BLOCK_REASON = (
@@ -30,7 +29,6 @@ BLOCK_REASON = (
 )
 
 ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*")
-SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}
 MUTATING_WORKTREE_COMMANDS = {
     "add",
     "remove",
@@ -61,24 +59,6 @@ GIT_OPTIONS_WITH_VALUE_PREFIXES = (
     "--namespace=",
     "--work-tree=",
 )
-
-
-def shell_tokens(command: str) -> list[str]:
-    # Treat unquoted newlines as command separators so a blocked command on a
-    # later physical line (after a `cd` or other preamble) cannot slip past the
-    # guard. See hook_common.normalize_command_separators.
-    command = normalize_command_separators(command)
-    try:
-        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        return list(lexer)
-    except ValueError:
-        return []
-
-
-def is_separator(token: str) -> bool:
-    return token in SEPARATOR_TOKENS or bool(token) and all(char in ";&|()" for char in token)
 
 
 def basename(token: str) -> str:
@@ -244,20 +224,10 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
 def invokes_git_worktree(command: str) -> bool:
     if env_override_enabled():
         return False
-    simple_command: list[str] = []
-    for token in shell_tokens(command):
-        if is_separator(token):
-            if (
-                git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
-                and not simple_command_override_enabled(simple_command)
-            ):
-                return True
-            simple_command = []
-            continue
-        simple_command.append(token)
-    return (
+    return any(
         git_worktree_action(simple_command) in MUTATING_WORKTREE_COMMANDS
         and not simple_command_override_enabled(simple_command)
+        for simple_command in simple_commands_with_nested_shells(command)
     )
 
 

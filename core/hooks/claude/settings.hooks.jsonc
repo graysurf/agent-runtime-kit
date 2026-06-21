@@ -93,6 +93,21 @@
         },
         {
           "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/mcp-secret-scan.py\"",
+          "statusMessage": "agent-runtime-kit: Scan Bash-authored MCP config writes"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/block-project-memory-write.py\"",
+          "statusMessage": "agent-runtime-kit: Protect Bash-authored project memory writes"
+        },
+        {
+          "type": "command",
+          "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/portable-paths-scan.py\"",
+          "statusMessage": "agent-runtime-kit: Scan Bash-authored docs for local paths"
+        },
+        {
+          "type": "command",
           "command": "AGENT_RUNTIME_PRODUCT=claude \"$HOME/.claude/hooks/finish-line-record.py\"",
           "statusMessage": "agent-runtime-kit: Record agent-docs validation runs"
         }

@@ -9,34 +9,60 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any
 
 # Codex may execute hooks through a source symlink; keep the checkout clean.
 sys.dont_write_bytecode = True
 
-from hook_common import ALLOW, emit_block, patch_text_candidates, read_payload, tool_input_dict
+from hook_common import (
+    ALLOW,
+    bash_write_operations,
+    command_from,
+    emit_block,
+    invocation_tokens,
+    patch_text_candidates,
+    read_payload,
+    simple_commands_with_nested_shells,
+    tool_input_dict,
+)
 
 PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("Anthropic key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{16,}\b")),
     ("OpenAI-style key", re.compile(r"\bsk-(?!ant-)[A-Za-z0-9_-]{16,}\b")),
     ("GitHub PAT", re.compile(r"\bghp_[A-Za-z0-9]{20,}\b")),
+    ("GitHub fine-grained PAT", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
     ("GitLab PAT", re.compile(r"\bglpat-[A-Za-z0-9_-]{16,}\b")),
     ("Slack bot token", re.compile(r"\bxoxb-[A-Za-z0-9-]{10,}\b")),
     ("Slack user token", re.compile(r"\bxoxp-[A-Za-z0-9-]{10,}\b")),
     ("xAI key", re.compile(r"\bxai-[A-Za-z0-9_-]{16,}\b")),
     ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("AWS secret key", re.compile(r"\b[A-Za-z0-9/+=]{40}\b")),
+    ("Private key", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
+    ("age secret key", re.compile(r"\bAGE-SECRET-KEY-1[0-9A-Z]{20,}\b")),
+    ("Google API key", re.compile(r"\bAIza[A-Za-z0-9_-]{20,}\b")),
+    ("Google OAuth token", re.compile(r"\bya29\.[A-Za-z0-9_-]{10,}\b")),
     ("Bearer token", re.compile(r"\bBearer\s+[A-Za-z0-9\-_.=]{8,}")),
     ("macOS home path", re.compile(r"/Users/[^/\s\"']+/")),
     ("Linux home path", re.compile(r"/home/[^/\s\"']+/")),
 )
 
 BLOCK_TEMPLATE = (
-    ".mcp.json change blocked: detected secret or absolute-path pattern(s):\n"
+    "MCP config change blocked for {paths}: detected secret or absolute-path pattern(s):\n"
     "{hits}\n\n"
-    "rule: AGENTS.md requires .mcp.json to avoid secrets and machine-local "
+    "rule: AGENTS.md requires MCP config to avoid secrets and machine-local "
     "absolute paths.\n"
     "fix: move machine-local values to ignored local config for the active "
     "tool.\n"
+    "escape hatch: set SKIP_MCP_SCAN=1 only after verifying a false positive."
+)
+UNKNOWN_CONTENT_BLOCK_TEMPLATE = (
+    "MCP config change blocked for {paths}: Bash-authored write target is protected, "
+    "but the hook could not inspect the proposed content.\n\n"
+    "rule: AGENTS.md requires MCP config to avoid secrets and machine-local "
+    "absolute paths.\n"
+    "fix: use Write/Edit for MCP config updates so the scanner can inspect the "
+    "content, or scan the source file before copying it.\n"
     "escape hatch: set SKIP_MCP_SCAN=1 only after verifying a false positive."
 )
 
@@ -57,9 +83,7 @@ def scan(content: str) -> list[tuple[str, str]]:
 def masked_sample(sample: str) -> str:
     if sample.startswith("/Users/") or sample.startswith("/home/"):
         return "<absolute home path>"
-    if len(sample) <= 8:
-        return "<redacted>"
-    return f"{sample[:4]}...{sample[-4:]}"
+    return "<redacted>"
 
 
 def format_hits(hits: list[tuple[str, str]]) -> str:
@@ -67,7 +91,93 @@ def format_hits(hits: list[tuple[str, str]]) -> str:
 
 
 def is_mcp_json(file_path: str) -> bool:
-    return os.path.basename(file_path) == ".mcp.json"
+    normalized = file_path.replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    parts = PurePosixPath(normalized).parts
+    if not parts:
+        return False
+    if parts[-1] == ".mcp.json":
+        return True
+    if parts == ("mcp.json",):
+        return True
+    return len(parts) >= 2 and parts[-2:] in {
+        (".vscode", "mcp.json"),
+        (".cursor", "mcp.json"),
+    }
+
+
+def display_mcp_path(file_path: str) -> str:
+    normalized = file_path.replace("\\", "/")
+    match = re.match(r"^(/Users|/home)/[^/]+(?P<tail>/.*)?$", normalized)
+    if match:
+        tail = match.group("tail") or ""
+        normalized = "$HOME" + tail
+    parts = PurePosixPath(normalized).parts
+    if parts and parts[-1] == ".mcp.json":
+        return ".mcp.json" if not normalized.startswith("$HOME/") else "$HOME/.../.mcp.json"
+    if len(parts) >= 2 and parts[-2:] == (".vscode", "mcp.json"):
+        return (
+            ".vscode/mcp.json"
+            if not normalized.startswith("$HOME/")
+            else "$HOME/.../.vscode/mcp.json"
+        )
+    if len(parts) >= 2 and parts[-2:] == (".cursor", "mcp.json"):
+        return (
+            ".cursor/mcp.json"
+            if not normalized.startswith("$HOME/")
+            else "$HOME/.../.cursor/mcp.json"
+        )
+    if parts == ("mcp.json",):
+        return "mcp.json"
+    return normalized
+
+
+def format_paths(paths: list[str]) -> str:
+    seen: list[str] = []
+    for path in paths:
+        display = display_mcp_path(path)
+        if display not in seen:
+            seen.append(display)
+    return ", ".join(seen)
+
+
+def bash_unknown_mcp_write_targets(command: str) -> list[str]:
+    targets: list[str] = []
+    for simple_command in simple_commands_with_nested_shells(command, strip_heredocs=True):
+        invocation = invocation_tokens(simple_command)
+        if not invocation:
+            continue
+        name = PurePosixPath(invocation[0]).name
+        if name in {"cp", "mv"}:
+            positional = [token for token in invocation[1:] if not token.startswith("-")]
+            if len(positional) >= 2 and is_mcp_json(positional[-1]):
+                targets.append(positional[-1])
+            continue
+        if name == "install":
+            positional = [token for token in invocation[1:] if not token.startswith("-")]
+            if len(positional) >= 2 and is_mcp_json(positional[-1]):
+                targets.append(positional[-1])
+            continue
+        if name in {"curl", "wget"}:
+            index = 1
+            while index < len(invocation):
+                token = invocation[index]
+                value: str | None = None
+                if token in {"-o", "--output", "-O"} and index + 1 < len(invocation):
+                    value = invocation[index + 1]
+                    index += 2
+                elif token.startswith("--output="):
+                    value = token.split("=", 1)[1]
+                    index += 1
+                elif token.startswith("-o") and token != "-o":
+                    value = token[2:]
+                    index += 1
+                else:
+                    index += 1
+                if value and is_mcp_json(value):
+                    targets.append(value)
+    return targets
 
 
 def proposed_content(tool_name: str, tool_input: dict[str, Any]) -> str:
@@ -101,32 +211,52 @@ def added_mcp_lines_from_apply_patch(patch_text: str) -> list[str]:
     return lines
 
 
-def hook_contents_to_scan(payload: dict[str, Any]) -> list[str]:
-    contents: list[str] = []
+def hook_contents_to_scan(payload: dict[str, Any]) -> tuple[list[tuple[str, str]], list[str]]:
+    contents: list[tuple[str, str]] = []
+    unknown_paths: list[str] = []
     tool_name = str(payload.get("tool_name", ""))
     tool_input = tool_input_dict(payload)
+
+    if tool_name == "Bash":
+        for file_path, content in bash_write_operations(command_from(payload)):
+            if not is_mcp_json(file_path):
+                continue
+            if content:
+                contents.append((file_path, content))
+            else:
+                unknown_paths.append(file_path)
+        unknown_paths.extend(bash_unknown_mcp_write_targets(command_from(payload)))
+        return contents, unknown_paths
 
     file_path = str(tool_input.get("file_path", ""))
     if is_mcp_json(file_path):
         content = proposed_content(tool_name, tool_input)
         if content:
-            contents.append(content)
+            contents.append((file_path, content))
 
     for candidate in patch_text_candidates(payload):
         added_lines = added_mcp_lines_from_apply_patch(candidate)
         if added_lines:
-            contents.append("\n".join(added_lines))
+            contents.append((".mcp.json", "\n".join(added_lines)))
 
-    return contents
+    return contents, unknown_paths
 
 
 def run_hook_mode() -> int:
     payload = read_payload()
     hits: list[tuple[str, str]] = []
-    for content in hook_contents_to_scan(payload):
+    paths: list[str] = []
+    contents, unknown_paths = hook_contents_to_scan(payload)
+    for file_path, content in contents:
+        if file_path not in paths:
+            paths.append(file_path)
         hits.extend(scan(content))
+    unknown_paths = [path for path in unknown_paths if path not in paths]
     if hits:
-        reason = BLOCK_TEMPLATE.format(hits=format_hits(hits))
+        reason = BLOCK_TEMPLATE.format(paths=format_paths(paths), hits=format_hits(hits))
+        emit_block(reason)
+    elif unknown_paths:
+        reason = UNKNOWN_CONTENT_BLOCK_TEMPLATE.format(paths=format_paths(unknown_paths))
         emit_block(reason)
     return ALLOW
 
