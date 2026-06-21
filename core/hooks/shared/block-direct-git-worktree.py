@@ -19,6 +19,8 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
+    env_target_tokens,
+    invocation_tokens,
     read_payload,
     simple_commands_with_nested_shells,
 )
@@ -94,27 +96,10 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def git_command_index(simple_command: list[str]) -> int | None:
-    index = 0
-    while index < len(simple_command) and is_assignment(simple_command[index]):
-        index += 1
-    if index >= len(simple_command):
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
         return None
-
-    command = basename(simple_command[index])
-    if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
-    elif command == "time":
-        index += 1
-        while index < len(simple_command) and simple_command[index].startswith("-"):
-            index += 1
-    elif command in {"command", "exec"}:
-        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
-            return None
-        index += 1
-
-    if index >= len(simple_command):
-        return None
-    return index if basename(simple_command[index]) == "git" else None
+    return 0 if basename(invocation[0]) == "git" else None
 
 
 def git_subcommand(simple_command: list[str]) -> str | None:
@@ -123,13 +108,13 @@ def git_subcommand(simple_command: list[str]) -> str | None:
 
 
 def git_subcommand_with_index(simple_command: list[str]) -> tuple[str, int] | None:
-    git_index = git_command_index(simple_command)
-    if git_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != "git":
         return None
 
-    index = git_index + 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
         if token == "--":
             return None
         if token in GIT_OPTIONS_WITH_VALUE:
@@ -152,6 +137,9 @@ def git_subcommand_with_index(simple_command: list[str]) -> tuple[str, int] | No
 
 
 def git_worktree_action(simple_command: list[str]) -> str | None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
+        return None
     found = git_subcommand_with_index(simple_command)
     if found is None:
         return None
@@ -160,8 +148,8 @@ def git_worktree_action(simple_command: list[str]) -> str | None:
         return None
 
     index += 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    while index < len(invocation):
+        token = invocation[index]
         if token == "--":
             return None
         if token.startswith("-") and token != "-":
@@ -195,9 +183,13 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
     if index >= len(simple_command) or basename(simple_command[index]) != "env":
         return False
 
-    index += 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    return env_override_in_tokens(simple_command[index + 1 :])
+
+
+def env_override_in_tokens(tokens: list[str]) -> bool:
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
         if token == "--":
             return False
         if is_assignment(token):
@@ -214,6 +206,18 @@ def simple_command_override_enabled(simple_command: list[str]) -> bool:
         if token.startswith("--unset="):
             index += 1
             continue
+        if token in {"-C", "--chdir", "-P", "--path"}:
+            index += 2
+            continue
+        if token.startswith(("--chdir=", "--path=")):
+            index += 1
+            continue
+        if token in {"-S", "--split-string"} and index + 1 < len(tokens):
+            return env_override_in_tokens(env_target_tokens(tokens, index))
+        if token.startswith("--split-string="):
+            return env_override_in_tokens(env_target_tokens(tokens, index))
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            return env_override_in_tokens(env_target_tokens(tokens, index))
         if token.startswith("-") and token != "-":
             index += 1
             continue

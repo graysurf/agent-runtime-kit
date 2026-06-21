@@ -1276,6 +1276,96 @@ def is_assignment(token: str) -> bool:
     return bool(ASSIGNMENT_RE.match(token))
 
 
+ENV_OPTIONS_WITH_VALUE = {
+    "-u",
+    "--unset",
+    "-C",
+    "--chdir",
+    "-P",
+    "--path",
+    "-S",
+    "--split-string",
+}
+ENV_OPTIONS_WITH_VALUE_PREFIXES = (
+    "--unset=",
+    "--chdir=",
+    "--path=",
+    "--split-string=",
+)
+ENV_OPTIONS_WITHOUT_VALUE = {"-i", "--ignore-environment", "-0", "--null"}
+
+
+def _split_env_string(value: str) -> list[str]:
+    try:
+        return shlex.split(value, posix=True)
+    except ValueError:
+        return []
+
+
+def env_target_tokens(
+    tokens: list[str], index: int = 0, *, depth: int = 0, max_depth: int = 5
+) -> list[str]:
+    if depth > max_depth:
+        return []
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return tokens[index + 1 :]
+        if is_assignment(token):
+            index += 1
+            continue
+        if token in ENV_OPTIONS_WITHOUT_VALUE:
+            index += 1
+            continue
+        if token in ENV_OPTIONS_WITH_VALUE:
+            if index + 1 >= len(tokens):
+                return []
+            if token in {"-S", "--split-string"}:
+                split_tokens = _split_env_string(tokens[index + 1])
+                return env_target_tokens(
+                    split_tokens + tokens[index + 2 :],
+                    0,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                )
+            index += 2
+            continue
+        split_prefix = "--split-string="
+        if token.startswith(split_prefix):
+            split_tokens = _split_env_string(token.removeprefix(split_prefix))
+            return env_target_tokens(
+                split_tokens + tokens[index + 1 :],
+                0,
+                depth=depth + 1,
+                max_depth=max_depth,
+            )
+        if any(token.startswith(prefix) for prefix in ENV_OPTIONS_WITH_VALUE_PREFIXES):
+            index += 1
+            continue
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            split_index = token.find("S", 1)
+            if split_index == len(token) - 1:
+                if index + 1 >= len(tokens):
+                    return []
+                split_value = tokens[index + 1]
+                rest = tokens[index + 2 :]
+            else:
+                split_value = token[split_index + 1 :]
+                rest = tokens[index + 1 :]
+            split_tokens = _split_env_string(split_value)
+            return env_target_tokens(
+                split_tokens + rest,
+                0,
+                depth=depth + 1,
+                max_depth=max_depth,
+            )
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return tokens[index:]
+    return []
+
+
 def skip_env_prefix(tokens: list[str], index: int) -> int:
     while index < len(tokens):
         token = tokens[index]
@@ -1309,7 +1399,7 @@ def invocation_tokens(simple_command: list[str]) -> list[str]:
 
     command = PurePosixPath(simple_command[index]).name
     if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
+        return invocation_tokens(env_target_tokens(simple_command, index + 1))
     elif command == "time":
         index += 1
         while index < len(simple_command) and simple_command[index].startswith("-"):
@@ -1339,14 +1429,11 @@ def shell_c_payload(tokens: list[str], index: int = 0) -> str | None:
     while index < len(tokens):
         token = tokens[index]
         if token == "--":
-            index += 1
-            continue
-        if token in {"-c", "--command"}:
+            return None
+        if token == "-c":
             if index + 1 < len(tokens):
                 return tokens[index + 1]
             return None
-        if token.startswith("--command="):
-            return token.split("=", 1)[1]
         if token.startswith("-") and not token.startswith("--") and "c" in token[1:]:
             if index + 1 < len(tokens):
                 return tokens[index + 1]
@@ -1494,6 +1581,85 @@ def bash_write_targets_from_tokens(tokens: list[str]) -> list[str]:
     return _stdout_redirect_targets(tokens) + _tee_targets(tokens)
 
 
+def _directory_like_target(path: str) -> bool:
+    if path in {".", "./", "~", "~/"}:
+        return True
+    if path.endswith("/"):
+        return True
+    expanded = os.path.expanduser(path)
+    return bool(expanded) and os.path.isdir(expanded)
+
+
+def _join_directory_target(directory: str, basename: str) -> str:
+    if not basename:
+        return directory
+    if directory in {".", "./"}:
+        return f"./{basename}"
+    if directory in {"~", "~/"}:
+        return f"~/{basename}"
+    return f"{directory.rstrip('/')}/{basename}"
+
+
+def _copy_style_targets_from_invocation(invocation: list[str]) -> list[str]:
+    if not invocation:
+        return []
+    name = PurePosixPath(invocation[0]).name
+    if name not in {"cp", "install", "mv"}:
+        return []
+
+    positional: list[str] = []
+    target_directory: str | None = None
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
+        if token == "--":
+            positional.extend(invocation[index + 1 :])
+            break
+        if token in {"-t", "--target-directory"} and index + 1 < len(invocation):
+            target_directory = invocation[index + 1]
+            index += 2
+            continue
+        if token.startswith("--target-directory="):
+            target_directory = token.split("=", 1)[1]
+            index += 1
+            continue
+        if token.startswith("-t") and token != "-t":
+            target_directory = token[2:]
+            index += 1
+            continue
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        positional.append(token)
+        index += 1
+
+    if target_directory is not None:
+        sources = positional
+        destinations = [target_directory]
+    elif len(positional) >= 2:
+        sources = positional[:-1]
+        destinations = [positional[-1]]
+    else:
+        return []
+
+    expanded: list[str] = []
+    for destination in destinations:
+        expanded.append(destination)
+        if _directory_like_target(destination):
+            for source in sources:
+                basename = PurePosixPath(source.replace("\\", "/")).name
+                if basename:
+                    expanded.append(_join_directory_target(destination, basename))
+    return expanded
+
+
+def bash_copy_style_write_targets(command: str) -> list[str]:
+    targets: list[str] = []
+    for simple_command in simple_commands_with_nested_shells(command, strip_heredocs=True):
+        targets.extend(_copy_style_targets_from_invocation(invocation_tokens(simple_command)))
+    return targets
+
+
 def _tokens_without_redirections(tokens: list[str]) -> list[str]:
     kept: list[str] = []
     index = 0
@@ -1516,13 +1682,14 @@ def _literal_stdout_from_tokens(tokens: list[str]) -> str:
     if command == "echo":
         while args and args[0] in {"-n", "-e", "-E"}:
             args = args[1:]
-        return " ".join(args)
+        content = " ".join(args)
+        return "" if re.search(r"[$`]", content) else content
     if command == "printf":
         # Do not approximate printf formatting. Multi-argument printf output is
         # opaque to this parser, so protected writes fail closed instead of
         # scanning a string that differs from the shell's real output.
         if len(args) == 1:
-            return args[0]
+            return "" if re.search(r"[$`]", args[0]) else args[0]
         return ""
     return ""
 

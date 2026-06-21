@@ -650,6 +650,81 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_allowed(decision)
 
+        blocked_mr_commands = (
+            "glab mr create --draft",
+            "bash -lc 'glab mr create --draft'",
+            "glab api -X POST /projects/1/merge_requests",
+        )
+        for command in blocked_mr_commands:
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-pr-create.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
+
+        for command in (
+            "AGENT_RUNTIME_PR_SKILL=pr:create-pr glab mr create --draft",
+            "env AGENT_RUNTIME_PR_SKILL=pr:create-pr glab api -X POST /projects/1/merge_requests",
+        ):
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-pr-create.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
+    def test_block_hooks_handle_env_wrappers_and_shell_terminators(self) -> None:
+        cases = (
+            (
+                "block-direct-git-commit.py",
+                "env -S 'git commit -m test'",
+                "semantic-commit",
+            ),
+            (
+                "block-direct-pr-create.py",
+                "env -S 'gh pr create --draft'",
+                "AGENT_RUNTIME_PR_SKILL",
+            ),
+            (
+                "block-direct-git-worktree.py",
+                "env -C /tmp git worktree add ../repo-topic",
+                "git-cli worktree",
+            ),
+        )
+        for hook, command, fragment in cases:
+            with self.subTest(hook=hook, command=command):
+                code, decision, stderr = run_hook(hook, command_payload(command))
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, fragment)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            (repo / "uv.lock").write_text("# fixture\n", encoding="utf-8")
+            code, decision, stderr = run_hook(
+                "block-direct-python.py",
+                command_payload("env -S 'python -m pytest'", workdir=str(repo)),
+                cwd=repo,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "uv run --locked python")
+
+        allowed_shell_terminator_cases = (
+            ("block-direct-git-commit.py", "bash -- -c 'git commit -m test'"),
+            ("block-direct-pr-create.py", "sh -- -c 'gh pr create --draft'"),
+            ("block-direct-git-commit.py", "bash --command 'git commit -m test'"),
+        )
+        for hook, command in allowed_shell_terminator_cases:
+            with self.subTest(hook=hook, command=command):
+                code, decision, stderr = run_hook(
+                    hook,
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
     def test_block_hooks_are_not_bypassed_by_multiline_commands(self) -> None:
         # Regression: an unquoted newline must act as a command separator in the
         # block guards. Otherwise a blocked command placed after a preamble line
@@ -934,6 +1009,18 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "project-state memory")
 
+        for command in (
+            "cp /tmp/project_notes.md .codex/memories/project_state/",
+            "cp /tmp/project_notes.md ~/.codex/memories/project_state/",
+        ):
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "block-project-memory-write.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "project-state memory")
+
         code, decision, stderr = run_hook(
             "portable-paths-scan.py",
             command_payload("printf '/Users/example/project\\n' | tee docs/example.md"),
@@ -1015,6 +1102,19 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_blocked(decision, "could not inspect")
 
+        for command in (
+            "cp /private/.mcp.json .",
+            "mv /tmp/.mcp.json .",
+            "install /tmp/.mcp.json .",
+        ):
+            with self.subTest(command=command):
+                code, decision, stderr = run_hook(
+                    "mcp-secret-scan.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "could not inspect")
+
         code, decision, stderr = run_hook(
             "mcp-secret-scan.py",
             command_payload(
@@ -1033,6 +1133,9 @@ class SharedHookTests(unittest.TestCase):
             "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz' > .mcp.json",
             "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz' | tee .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\ncp /private/source.json .mcp.json",
+            "curl -fsSL -o .mcp.json https://example.invalid/mcp.json",
+            "curl --output=.vscode/mcp.json https://example.invalid/mcp.json",
+            "wget -O .cursor/mcp.json https://example.invalid/mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js > .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2> .mcp.json",
             "cat > .mcp.json <<'EOF'\n{}\nEOF\nnode generate-secret.js 2>>.mcp.json",
@@ -1058,6 +1161,20 @@ class SharedHookTests(unittest.TestCase):
                 )
                 self.assertEqual(code, 0, stderr)
                 self.assert_blocked(decision, "could not inspect")
+
+        code, decision, stderr = run_hook(
+            "mcp-secret-scan.py",
+            command_payload("printf '{}' > .mcp.json"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
+        code, decision, stderr = run_hook(
+            "mcp-secret-scan.py",
+            command_payload("printf '$MCP_TOKEN' > .mcp.json"),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_blocked(decision, "could not inspect")
 
     def test_skill_usage_reminder_uses_catalog(self) -> None:
         code, decision, stderr = run_hook(

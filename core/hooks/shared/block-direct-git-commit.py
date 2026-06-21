@@ -18,6 +18,7 @@ from hook_common import (
     ALLOW,
     command_from,
     emit_block,
+    invocation_tokens,
     read_payload,
     simple_commands_with_nested_shells,
 )
@@ -76,37 +77,20 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def git_command_index(simple_command: list[str]) -> int | None:
-    index = 0
-    while index < len(simple_command) and is_assignment(simple_command[index]):
-        index += 1
-    if index >= len(simple_command):
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
         return None
-
-    command = basename(simple_command[index])
-    if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
-    elif command == "time":
-        index += 1
-        while index < len(simple_command) and simple_command[index].startswith("-"):
-            index += 1
-    elif command in {"command", "exec"}:
-        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
-            return None
-        index += 1
-
-    if index >= len(simple_command):
-        return None
-    return index if basename(simple_command[index]) == "git" else None
+    return 0 if basename(invocation[0]) == "git" else None
 
 
 def git_subcommand(simple_command: list[str]) -> str | None:
-    git_index = git_command_index(simple_command)
-    if git_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != "git":
         return None
 
-    index = git_index + 1
-    while index < len(simple_command):
-        token = simple_command[index]
+    index = 1
+    while index < len(invocation):
+        token = invocation[index]
         if token == "--":
             return None
         if token in GIT_OPTIONS_WITH_VALUE:

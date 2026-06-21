@@ -161,7 +161,8 @@ baked `$HOME/.config/zsh` or `/opt/private-skills` tree.
   `zsh-kit` for runtime shell setup from an operator-supplied repo URL/path.
   Personal shell repos are fetched or mounted at runtime, not copied into the
   image.
-- **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via `npm -g`.
+- **AI CLIs**: `@anthropic-ai/claude-code` and `@openai/codex` via the
+  committed `docker/npm-cli-pins/package-lock.json` integrity pins.
 - **nils-cli**: prebuilt Linux release tarball (`agent-runtime`, `agent-docs`,
   `semantic-commit`, `forge-cli`, `plan-tooling`, `plan-issue`, `zsh-kit`, …
   ~40 binaries),

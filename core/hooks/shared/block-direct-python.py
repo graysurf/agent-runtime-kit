@@ -160,11 +160,17 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def command_python_token(simple_command: list[str]) -> str | None:
-    index = command_python_index(simple_command)
-    return simple_command[index] if index is not None else None
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
+        return None
+    return invocation[0] if is_direct_python_token(invocation[0]) else None
 
 
 def command_python_index(simple_command: list[str]) -> int | None:
+    invocation = invocation_tokens(simple_command)
+    if invocation and is_direct_python_token(invocation[0]):
+        return max(0, len(simple_command) - len(invocation))
+
     index = 0
     while index < len(simple_command) and is_assignment(simple_command[index]):
         index += 1

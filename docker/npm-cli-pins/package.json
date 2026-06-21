@@ -1,0 +1,9 @@
+{
+  "name": "agent-runtime-kit-docker-cli-pins",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.177",
+    "@openai/codex": "0.141.0"
+  }
+}

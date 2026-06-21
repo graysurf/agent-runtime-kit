@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -41,7 +42,7 @@ def check_dependabot(errors: list[str]) -> None:
         fail(errors, ".github/dependabot.yml is missing")
         return
     text = path.read_text(encoding="utf-8")
-    for ecosystem in ("github-actions", "docker"):
+    for ecosystem in ("github-actions", "docker", "npm"):
         if f"package-ecosystem: {ecosystem}" not in text:
             fail(errors, f".github/dependabot.yml missing {ecosystem} ecosystem")
 
@@ -146,6 +147,61 @@ def check_dockerfile(errors: list[str]) -> None:
         if fragment not in dockerfile:
             fail(errors, f"docker/Dockerfile missing checksum verification fragment: {fragment}")
 
+    if "COPY docker/npm-cli-pins/package.json docker/npm-cli-pins/package-lock.json /opt/npm-cli-pins/" not in dockerfile:
+        fail(errors, "docker/Dockerfile must install AI CLIs from docker/npm-cli-pins lockfile")
+    if "npm ci --omit=dev" not in dockerfile:
+        fail(errors, "docker/Dockerfile must use npm ci for AI CLI lockfile install")
+
+
+def check_npm_cli_lockfile(errors: list[str]) -> None:
+    try:
+        package_json = json.loads(read("docker/npm-cli-pins/package.json"))
+        package_lock = json.loads(read("docker/npm-cli-pins/package-lock.json"))
+    except (json.JSONDecodeError, OSError) as exc:
+        fail(errors, f"docker/npm-cli-pins lockfile parse failed: {exc}")
+        return
+
+    dockerfile = read("docker/Dockerfile")
+    runtime_roots = read("manifests/runtime-roots.yaml")
+    expected = {
+        "@anthropic-ai/claude-code": (
+            "CLAUDE_CODE_VERSION",
+            runtime_recommended_version(runtime_roots, "claude"),
+        ),
+        "@openai/codex": (
+            "CODEX_VERSION",
+            runtime_recommended_version(runtime_roots, "codex"),
+        ),
+    }
+    dependencies = package_json.get("dependencies")
+    lock_packages = package_lock.get("packages")
+    if not isinstance(dependencies, dict):
+        fail(errors, "docker/npm-cli-pins/package.json missing dependencies object")
+        return
+    if not isinstance(lock_packages, dict):
+        fail(errors, "docker/npm-cli-pins/package-lock.json missing packages object")
+        return
+
+    for package_name, (arg_name, recommended_version) in expected.items():
+        docker_version = arg_text_value(dockerfile, arg_name)
+        expected_version = recommended_version or docker_version
+        if not expected_version:
+            fail(errors, f"could not resolve expected version for {package_name}")
+            continue
+        if docker_version != expected_version:
+            fail(errors, f"docker/Dockerfile {arg_name}={docker_version} does not match expected {expected_version}")
+        if dependencies.get(package_name) != expected_version:
+            fail(errors, f"docker/npm-cli-pins/package.json {package_name} must be pinned to {expected_version}")
+        package_entry = lock_packages.get(f"node_modules/{package_name}")
+        if not isinstance(package_entry, dict):
+            fail(errors, f"docker/npm-cli-pins/package-lock.json missing {package_name}")
+            continue
+        if package_entry.get("version") != expected_version:
+            fail(errors, f"docker/npm-cli-pins/package-lock.json {package_name} version does not match {expected_version}")
+        integrity = package_entry.get("integrity")
+        if not isinstance(integrity, str) or not integrity.startswith("sha512-"):
+            fail(errors, f"docker/npm-cli-pins/package-lock.json {package_name} missing sha512 integrity")
+
 
 def check_docker_build_entrypoint(errors: list[str]) -> None:
     script = read("docker/build.sh")
@@ -194,6 +250,7 @@ def main() -> int:
     check_dependabot(errors)
     check_nils_pin_manifest(errors)
     check_dockerfile(errors)
+    check_npm_cli_lockfile(errors)
     check_docker_build_entrypoint(errors)
     check_publish_workflow(errors)
 

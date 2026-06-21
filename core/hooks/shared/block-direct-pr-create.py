@@ -18,7 +18,9 @@ sys.dont_write_bytecode = True
 from hook_common import (
     ALLOW,
     command_from,
+    env_target_tokens,
     emit_block,
+    invocation_tokens,
     read_payload,
     simple_commands_with_nested_shells,
 )
@@ -121,27 +123,10 @@ def skip_env_prefix(tokens: list[str], index: int) -> int:
 
 
 def cli_command_index(simple_command: list[str], command_name: str) -> int | None:
-    index = 0
-    while index < len(simple_command) and is_assignment(simple_command[index]):
-        index += 1
-    if index >= len(simple_command):
+    invocation = invocation_tokens(simple_command)
+    if not invocation:
         return None
-
-    command = basename(simple_command[index])
-    if command == "env":
-        index = skip_env_prefix(simple_command, index + 1)
-    elif command == "time":
-        index += 1
-        while index < len(simple_command) and simple_command[index].startswith("-"):
-            index += 1
-    elif command in {"command", "exec"}:
-        if index + 1 < len(simple_command) and simple_command[index + 1] in {"-v", "-V"}:
-            return None
-        index += 1
-
-    if index >= len(simple_command):
-        return None
-    return index if basename(simple_command[index]) == command_name else None
+    return 0 if basename(invocation[0]) == command_name else None
 
 
 def skip_cli_global_options(tokens: list[str], index: int) -> int:
@@ -166,12 +151,12 @@ def skip_cli_global_options(tokens: list[str], index: int) -> int:
 
 
 def cli_subcommands(simple_command: list[str], command_name: str) -> list[str]:
-    command_index = cli_command_index(simple_command, command_name)
-    if command_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != command_name:
         return []
 
-    index = skip_cli_global_options(simple_command, command_index + 1)
-    return simple_command[index:]
+    index = skip_cli_global_options(invocation, 1)
+    return invocation[index:]
 
 
 def invokes_gh_pr_create(simple_command: list[str]) -> bool:
@@ -224,20 +209,44 @@ def marker_assignment_value(token: str) -> str | None:
 def marker_value_before_command(
     simple_command: list[str], command_name: str
 ) -> str | None:
-    command_index = cli_command_index(simple_command, command_name)
-    if command_index is None:
+    invocation = invocation_tokens(simple_command)
+    if not invocation or basename(invocation[0]) != command_name:
         return None
+    return marker_value_before_invocation(simple_command)
+
+
+def marker_value_before_invocation(tokens: list[str]) -> str | None:
     marker: str | None = None
     index = 0
-    while index < command_index:
-        token = simple_command[index]
+    while index < len(tokens):
+        token = tokens[index]
         value = marker_assignment_value(token)
         if value is not None:
             marker = value
             index += 1
             continue
-        if token in {"-u", "--unset"} and index + 1 < command_index:
-            if simple_command[index + 1] in MARKER_ENV_NAMES:
+        if basename(token) == "env":
+            return marker_value_from_env_tokens(tokens[index + 1 :], marker)
+        if basename(token) in {"time", "command", "exec"}:
+            index += 1
+            continue
+        return marker
+    return marker
+
+
+def marker_value_from_env_tokens(tokens: list[str], marker: str | None) -> str | None:
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            return marker
+        value = marker_assignment_value(token)
+        if value is not None:
+            marker = value
+            index += 1
+            continue
+        if token in {"-u", "--unset"} and index + 1 < len(tokens):
+            if tokens[index + 1] in MARKER_ENV_NAMES:
                 marker = None
             index += 2
             continue
@@ -246,7 +255,22 @@ def marker_value_before_command(
                 marker = None
             index += 1
             continue
-        index += 1
+        if token in {"-C", "--chdir", "-P", "--path"}:
+            index += 2
+            continue
+        if token.startswith(("--chdir=", "--path=")):
+            index += 1
+            continue
+        if token in {"-S", "--split-string"} and index + 1 < len(tokens):
+            return marker_value_from_env_tokens(env_target_tokens(tokens, index), marker)
+        if token.startswith("--split-string="):
+            return marker_value_from_env_tokens(env_target_tokens(tokens, index), marker)
+        if token.startswith("-") and not token.startswith("--") and "S" in token[1:]:
+            return marker_value_from_env_tokens(env_target_tokens(tokens, index), marker)
+        if token.startswith("-") and token != "-":
+            index += 1
+            continue
+        return marker
     return marker
 
 

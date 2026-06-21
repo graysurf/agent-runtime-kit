@@ -157,11 +157,14 @@ RUN set -eux; \
 COPY --from=nils /opt/nils/bin/ /usr/local/bin/
 RUN agent-runtime --version; zsh-kit --version; zsh --version
 
-# Claude Code + Codex CLI via npm (global).
+# Claude Code + Codex CLI via npm lockfile pins.
+COPY docker/npm-cli-pins/package.json docker/npm-cli-pins/package-lock.json /opt/npm-cli-pins/
 RUN set -eux; \
-    npm install -g \
-      "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
-      "@openai/codex@${CODEX_VERSION}"; \
+    cd /opt/npm-cli-pins; \
+    node -e "const fs=require('fs'); const pkg=require('./package.json'); const lock=require('./package-lock.json'); const pins={'@anthropic-ai/claude-code':process.env.CLAUDE_CODE_VERSION,'@openai/codex':process.env.CODEX_VERSION}; for (const [name, version] of Object.entries(pins)) { if (pkg.dependencies[name] !== version) throw new Error(name + ' package.json pin mismatch'); const locked = lock.packages['node_modules/' + name]; if (!locked || locked.version !== version || !/^sha512-/.test(locked.integrity || '')) throw new Error(name + ' lockfile pin/integrity mismatch'); }"; \
+    npm ci --omit=dev; \
+    ln -sf /opt/npm-cli-pins/node_modules/.bin/claude /usr/local/bin/claude; \
+    ln -sf /opt/npm-cli-pins/node_modules/.bin/codex /usr/local/bin/codex; \
     npm cache clean --force; \
     claude --version; \
     codex --version

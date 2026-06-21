@@ -17,7 +17,7 @@ sys.dont_write_bytecode = True
 
 from hook_common import (
     ALLOW,
-    bash_write_targets_from_tokens,
+    bash_copy_style_write_targets,
     bash_write_operations,
     command_from,
     emit_block,
@@ -144,45 +144,31 @@ def format_paths(paths: list[str]) -> str:
 
 
 def bash_unknown_mcp_write_targets(command: str) -> list[str]:
-    targets: list[str] = []
+    targets = [target for target in bash_copy_style_write_targets(command) if is_mcp_json(target)]
     for simple_command in simple_commands_with_nested_shells(command, strip_heredocs=True):
         invocation = invocation_tokens(simple_command)
         if not invocation:
             continue
         name = PurePosixPath(invocation[0]).name
-        if name in {"cp", "mv"}:
-            positional = [token for token in invocation[1:] if not token.startswith("-")]
-            if len(positional) >= 2 and is_mcp_json(positional[-1]):
-                targets.append(positional[-1])
+        if name not in {"curl", "wget"}:
             continue
-        if name == "install":
-            positional = [token for token in invocation[1:] if not token.startswith("-")]
-            if len(positional) >= 2 and is_mcp_json(positional[-1]):
-                targets.append(positional[-1])
-            continue
-        if name in {"curl", "wget"}:
-            index = 1
-            while index < len(invocation):
-                token = invocation[index]
-                value: str | None = None
-                if token in {"-o", "--output", "-O"} and index + 1 < len(invocation):
-                    value = invocation[index + 1]
-                    index += 2
-                elif token.startswith("--output="):
-                    value = token.split("=", 1)[1]
-                    index += 1
-                elif token.startswith("-o") and token != "-o":
-                    value = token[2:]
-                    index += 1
-                else:
-                    index += 1
-                if value and is_mcp_json(value):
-                    targets.append(value)
-            continue
-        if name == "printf":
-            for target in bash_write_targets_from_tokens(simple_command):
-                if is_mcp_json(target):
-                    targets.append(target)
+        index = 1
+        while index < len(invocation):
+            token = invocation[index]
+            value: str | None = None
+            if token in {"-o", "--output", "-O"} and index + 1 < len(invocation):
+                value = invocation[index + 1]
+                index += 2
+            elif token.startswith("--output="):
+                value = token.split("=", 1)[1]
+                index += 1
+            elif token.startswith("-o") and token != "-o":
+                value = token[2:]
+                index += 1
+            else:
+                index += 1
+            if value and is_mcp_json(value):
+                targets.append(value)
     return targets
 
 
