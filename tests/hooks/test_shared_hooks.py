@@ -989,6 +989,17 @@ class SharedHookTests(unittest.TestCase):
         self.assertEqual(code, 0, stderr)
         self.assert_allowed(decision)
 
+        code, decision, stderr = run_hook(
+            "mcp-secret-scan.py",
+            command_payload(
+                "cat <<'EOF'; echo '{}' > .mcp.json\n"
+                "sk-ant-abcdefghijklmnopqrstuvwxyz\n"
+                "EOF"
+            ),
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assert_allowed(decision)
+
     def test_mcp_secret_scan_blocks_unknown_bash_mcp_writes_and_redacts_paths(self) -> None:
         code, decision, stderr = run_hook(
             "mcp-secret-scan.py",
@@ -1027,6 +1038,9 @@ class SharedHookTests(unittest.TestCase):
             "EOF",
             "bash >| .mcp.json <<'EOF'\n"
             "printf '%s%s\\n' 'sk-ant-' 'abcdefghijklmnopqrstuvwxyz'\n"
+            "EOF",
+            "MCP_TOKEN=sk-ant-abcdefghijklmnopqrstuvwxyz; cat > .mcp.json <<EOF\n"
+            '{"apiKey":"$MCP_TOKEN"}\n'
             "EOF",
         )
         for command in commands:

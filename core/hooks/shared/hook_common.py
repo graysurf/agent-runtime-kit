@@ -686,7 +686,7 @@ def normalize_command_separators(command: str) -> str:
     return "".join(out)
 
 
-def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
+def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int, bool]:
     """Read a here-doc delimiter word starting at ``index``.
 
     Returns the *unquoted* delimiter (the form bash compares the closing line
@@ -694,12 +694,14 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
     delimiter are stripped, matching bash.
     """
     out: list[str] = []
+    quoted = False
     length = len(line)
     while index < length:
         char = line[index]
         if char in (" ", "\t", "<", ">", "|", "&", ";", "(", ")"):
             break
         if char == "$" and index + 1 < length and line[index + 1] in ("'", '"'):
+            quoted = True
             quote = line[index + 1]
             index += 2
             while index < length and line[index] != quote:
@@ -712,6 +714,7 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
             index += 1  # skip closing quote
             continue
         if char in ("'", '"'):
+            quoted = True
             quote = char
             index += 1
             while index < length and line[index] != quote:
@@ -720,12 +723,13 @@ def _parse_heredoc_delimiter(line: str, index: int) -> tuple[str, int]:
             index += 1  # skip closing quote
             continue
         if char == "\\" and index + 1 < length:
+            quoted = True
             out.append(line[index + 1])
             index += 2
             continue
         out.append(char)
         index += 1
-    return "".join(out), index
+    return "".join(out), index, quoted
 
 
 SHELL_HEREDOC_EXECUTORS = {"bash", "sh", "dash", "ksh", "zsh"}
@@ -1102,7 +1106,7 @@ def _heredoc_body_is_executed_by_shell(
     return cursor >= len(invocation)  # no script-file operand -> stdin is the script
 
 
-def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
+def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool, bool, int]]:
     """Return here-doc operators on a shell logical line, in order.
 
     Ignores `<<<` (here-string, which takes a word not a body), a `<<` inside
@@ -1110,10 +1114,11 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
     shift), so those never start spurious body skipping.
 
     The third tuple member is true when the body is script content executed by a
-    shell command such as ``bash <<EOF``. Such bodies must stay visible to the
-    validation matcher; inert data bodies such as ``cat <<EOF`` are stripped.
+    shell command such as ``bash <<EOF``. The fourth member records whether the
+    delimiter word was quoted, which disables body expansion for inert
+    here-docs. The final member is the redirection operator start index.
     """
-    result: list[tuple[str, bool, bool]] = []
+    result: list[tuple[str, bool, bool, bool, int]] = []
     index = 0
     length = len(line)
     quote: str | None = None
@@ -1172,13 +1177,17 @@ def _heredoc_delimiters_on_line(line: str) -> list[tuple[str, bool, bool]]:
                 cursor += 1
             while cursor < length and line[cursor] in (" ", "\t"):
                 cursor += 1
-            delimiter, cursor = _parse_heredoc_delimiter(line, cursor)
+            delimiter, cursor, delimiter_quoted = _parse_heredoc_delimiter(
+                line, cursor
+            )
             if delimiter:
                 result.append(
                     (
                         delimiter,
                         strip_tabs,
                         _heredoc_body_is_executed_by_shell(line, op_start, fd),
+                        delimiter_quoted,
+                        op_start,
                     )
                 )
             index = cursor
@@ -1225,9 +1234,13 @@ def strip_heredoc_bodies(command: str) -> str:
 
         logical_scan_parts.append(line)
         logical_line = "".join(logical_scan_parts)
-        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
-            logical_line
-        ):
+        for (
+            delimiter,
+            strip_tabs,
+            preserve_body,
+            _delimiter_quoted,
+            _op_start,
+        ) in _heredoc_delimiters_on_line(logical_line):
             pending.append((delimiter, strip_tabs, preserve_body, []))
         kept.extend(logical_raw_lines)
         logical_scan_parts = []
@@ -1553,21 +1566,42 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
         return []
     writes: list[tuple[str, str]] = []
     lines = command.split("\n")
-    pending: list[tuple[str, bool, bool, list[str], list[str], list[str]]] = []
+    pending: list[tuple[str, bool, bool, bool, list[str], list[str], list[str]]] = []
     logical_scan_parts: list[str] = []
+
+    def inspected_heredoc_content(
+        body_text: str, *, preserve_body: bool, delimiter_quoted: bool
+    ) -> str:
+        if preserve_body:
+            return ""
+        if not delimiter_quoted and re.search(r"[$`]", body_text):
+            return ""
+        return body_text
+
     for raw in lines:
         line = raw.rstrip("\r")
         if pending:
-            delimiter, strip_tabs, preserve_body, targets, opaque_targets, body = pending[
-                0
-            ]
+            (
+                delimiter,
+                strip_tabs,
+                preserve_body,
+                delimiter_quoted,
+                targets,
+                opaque_targets,
+                body,
+            ) = pending[0]
             candidate = line.lstrip("\t") if strip_tabs else line
             if candidate == delimiter:
                 body_text = "\n".join(body)
                 if preserve_body:
                     writes.extend(_bash_write_operations(body_text, depth=depth + 1))
+                inspected_content = inspected_heredoc_content(
+                    body_text,
+                    preserve_body=preserve_body,
+                    delimiter_quoted=delimiter_quoted,
+                )
                 for target in targets:
-                    writes.append((target, "" if preserve_body else body_text))
+                    writes.append((target, inspected_content))
                 for target in opaque_targets:
                     writes.append((target, ""))
                 pending.pop(0)
@@ -1581,22 +1615,33 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
 
         logical_scan_parts.append(line)
         logical_line = "".join(logical_scan_parts)
-        targets = []
-        opaque_targets = []
-        for tokens in simple_commands(logical_line):
-            targets.extend(bash_write_targets_from_tokens(tokens))
-            opaque_targets.extend(_opaque_output_redirect_targets(tokens))
-        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
-            logical_line
-        ):
+        for (
+            delimiter,
+            strip_tabs,
+            preserve_body,
+            delimiter_quoted,
+            op_start,
+        ) in _heredoc_delimiters_on_line(logical_line):
+            tokens = _simple_command_spanning(logical_line, op_start)
+            targets = bash_write_targets_from_tokens(tokens)
+            opaque_targets = _opaque_output_redirect_targets(tokens)
             pending.append(
-                (delimiter, strip_tabs, preserve_body, targets, opaque_targets, [])
+                (
+                    delimiter,
+                    strip_tabs,
+                    preserve_body,
+                    delimiter_quoted,
+                    targets,
+                    opaque_targets,
+                    [],
+                )
             )
         logical_scan_parts = []
     for (
         _delimiter,
         _strip_tabs,
         preserve_body,
+        delimiter_quoted,
         targets,
         opaque_targets,
         body,
@@ -1604,8 +1649,13 @@ def _record_heredoc_bash_writes(command: str, depth: int) -> list[tuple[str, str
         body_text = "\n".join(body)
         if preserve_body:
             writes.extend(_bash_write_operations(body_text, depth=depth + 1))
+        inspected_content = inspected_heredoc_content(
+            body_text,
+            preserve_body=preserve_body,
+            delimiter_quoted=delimiter_quoted,
+        )
         for target in targets:
-            writes.append((target, "" if preserve_body else body_text))
+            writes.append((target, inspected_content))
         for target in opaque_targets:
             writes.append((target, ""))
     return writes

@@ -357,9 +357,13 @@ def shell_heredoc_bypasses_forge_cli_wrapper(command: str) -> bool:
 
         logical_scan_parts.append(line)
         logical_line = "".join(logical_scan_parts)
-        for delimiter, strip_tabs, preserve_body in _heredoc_delimiters_on_line(
-            logical_line
-        ):
+        for (
+            delimiter,
+            strip_tabs,
+            preserve_body,
+            _delimiter_quoted,
+            _op_start,
+        ) in _heredoc_delimiters_on_line(logical_line):
             pending.append((delimiter, strip_tabs, preserve_body, []))
         logical_scan_parts = []
     for _delimiter, _strip_tabs, preserve_body, body in pending:
