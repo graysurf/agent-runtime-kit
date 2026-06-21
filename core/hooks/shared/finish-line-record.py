@@ -7,8 +7,8 @@ contract has run since code was last edited:
 
 - a `<stem>.dirty` marker, refreshed when a non-Markdown file under the repo is
   edited (Write/Edit/MultiEdit/NotebookEdit/apply_patch);
-- a `<stem>.cmd<i>.ran` marker per declared validation command in each
-  contract, refreshed when a Bash command invokes that command.
+- a `<stem>[.<product>].cmd<i>.ran` marker per declared validation command in
+  each contract, refreshed when a Bash command invokes that command.
 
 The recorder NEVER blocks; it only writes markers. It no-ops outside a git repo,
 in a repo that declares no AGENT_DOCS.toml, or when no intent declares a

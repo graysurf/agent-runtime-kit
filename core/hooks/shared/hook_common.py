@@ -525,21 +525,31 @@ def project_dev_validation_contract(repo_root: str) -> dict[str, Any] | None:
 
 
 def validation_marker_set(repo_root: str, marker: str) -> dict[str, str]:
-    """Derive the marker file paths for a repo from the contract `marker`."""
+    """Derive marker file paths for a repo from the contract `marker`.
+
+    The dirty marker is shared across products so one product can notice code
+    edits made from another runtime. Per-command run markers are product-scoped
+    when the active runtime product is known, preventing one product's
+    validation command from satisfying another product's contract.
+    """
     rel = marker.strip().lstrip("/")
     rel_dir = os.path.dirname(rel) or "."
     stem = os.path.splitext(os.path.basename(rel))[0] or "project-dev"
     abs_dir = os.path.join(repo_root, rel_dir)
+    product = _runtime_product()
+    command_stem = f"{stem}.{product}" if product else stem
     return {
         "dir": abs_dir,
         "ok": os.path.join(repo_root, rel),
         "dirty": os.path.join(abs_dir, f"{stem}.dirty"),
         "stem": stem,
+        "command_stem": command_stem,
     }
 
 
 def command_ran_marker(marker_set: Mapping[str, str], index: int) -> str:
-    return os.path.join(marker_set["dir"], f"{marker_set['stem']}.cmd{index}.ran")
+    stem = marker_set.get("command_stem") or marker_set["stem"]
+    return os.path.join(marker_set["dir"], f"{stem}.cmd{index}.ran")
 
 
 SHELL_SEPARATOR_TOKENS = {";", "&&", "||", "|", "(", ")"}

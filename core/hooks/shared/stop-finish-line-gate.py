@@ -4,9 +4,9 @@ not run since.
 
 Reads the repo's declared validation contracts (commands + marker) via
 agent-docs. When any `<stem>.dirty` marker (written by finish-line-record.py on
-a code edit) is newer than a per-command `<stem>.cmd<i>.ran` marker, that
-declared validation has not run since the last edit, so the stop is blocked
-with the outstanding commands. A waiver or suppress env releases it.
+a code edit) is newer than a per-command `<stem>[.<product>].cmd<i>.ran` marker,
+that declared validation has not run since the last edit, so the stop is
+blocked with the outstanding commands. A waiver or suppress env releases it.
 
 This is the finish-line enforcement point (plan [D12]): mechanism-flexible but
 never silently skippable. The same shared script is wired into the Stop event

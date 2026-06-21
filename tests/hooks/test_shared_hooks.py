@@ -2214,6 +2214,76 @@ exit 65
             self.assertEqual(code, 0, stderr)
             self.assert_blocked(decision, "claude.sh")
 
+    def test_finish_line_command_marker_does_not_cross_product(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._init_contract_repo(tmp)
+            home = repo / "home"
+            home.mkdir()
+            bin_dir = repo / "bin"
+            bin_dir.mkdir()
+            self._write_fake_agent_docs(
+                bin_dir,
+                """#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "$args" == *"preflight --help"* ]]; then
+  printf '%s\n' '      --require-declared-intent'
+  printf '%s\n' '      --product <PRODUCT>'
+  exit 0
+fi
+if [[ "$args" == *"list --format json"* ]]; then
+  printf '%s\n' '{"intents":["project-dev"]}'
+  exit 0
+fi
+if [[ "$args" == *"preflight"* && "$args" == *"--intent project-dev"* ]]; then
+  if [[ "$args" != *"--require-declared-intent"* ]]; then
+    echo "missing declared-intent guard" >&2
+    exit 64
+  fi
+  if [[ "$args" == *"--product codex"* ]]; then
+    printf '%s\n' '{"intent":"project-dev","documents":[],"validation":{"context":"project-dev","declared":true,"commands":["bash codex.sh"],"marker":".cache/agent-validation/project-dev.ok"}}'
+    exit 0
+  fi
+  if [[ "$args" == *"--product claude"* ]]; then
+    printf '%s\n' '{"intent":"project-dev","documents":[],"validation":{"context":"project-dev","declared":true,"commands":["bash claude.sh"],"marker":".cache/agent-validation/project-dev.ok"}}'
+    exit 0
+  fi
+  exit 64
+fi
+exit 65
+""",
+            )
+            base_env = {
+                "AGENT_RUNTIME_DOCS_HOME": str(repo),
+                "HOME": str(home),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                write_payload("src/lib.rs", "fn main() {}\n"),
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_PRODUCT": "codex"},
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, _, stderr = run_hook(
+                "finish-line-record.py",
+                command_payload("bash codex.sh"),
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_PRODUCT": "codex"},
+            )
+            self.assertEqual(code, 0, stderr)
+
+            code, decision, stderr = run_hook(
+                "stop-finish-line-gate.py",
+                {},
+                cwd=repo,
+                env={**base_env, "AGENT_RUNTIME_PRODUCT": "claude"},
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assert_blocked(decision, "claude.sh")
+
     def test_finish_line_invalidates_contract_cache_after_agent_docs_upgrade(
         self,
     ) -> None:
