@@ -13,7 +13,7 @@ Prereqs:
 - `agent-runtime` and `forge-cli >=1.11.2` are installed from the released
   nils-cli package and available on `PATH`.
 - Shared provider, branch, body, and label rules in
-  `core/skills/pr/pr-lifecycle/README.md` are satisfied.
+  `references/pr-lifecycle.md` are satisfied.
 - The source branch has been pushed and has an upstream tracking branch.
 - The working tree contains only the intended changes, or unrelated changes are
   isolated from the PR/MR scope.
@@ -142,8 +142,8 @@ fails closed with `test_first_evidence_required`.
    (all six kinds render; pass `--issues-file` to carry non-closing
    `Refs #<issue>` references as an `## Issues` section). Do not hand-write
    the section scaffolding or derive the title/body from `git log -1`.
-4. Select labels before provider mutation; use
-   `core/skills/pr/pr-lifecycle/README.md` for the shared taxonomy rule.
+4. Select labels before provider mutation; use `references/pr-lifecycle.md`
+   for the shared taxonomy rule.
 5. If `manifests/forge-labels.yaml` exists, validate labels with the
    appropriate `forge-cli label` surface before the first live PR/MR mutation.
 6. Run `forge-cli --provider "$PROVIDER" --dry-run --format json pr create ...`

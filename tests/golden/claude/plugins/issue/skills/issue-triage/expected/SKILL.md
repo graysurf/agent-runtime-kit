@@ -23,7 +23,7 @@ Prereqs:
 - For implementation handoff, the normal implementation, issue follow-up, or
   PR/MR workflow is available.
 - Shared close/comment rules in
-  `core/skills/issue/issue-lifecycle/README.md` are known for any handoff.
+  `../issue-follow-up/references/issue-lifecycle.md` are known for any handoff.
 
 Inputs:
 
@@ -132,4 +132,4 @@ state, or implement the selected issue unless the user explicitly asks for that
 next step.
 
 Shared rules for follow-up comments and closure live in
-`core/skills/issue/issue-lifecycle/README.md`.
+`../issue-follow-up/references/issue-lifecycle.md`.

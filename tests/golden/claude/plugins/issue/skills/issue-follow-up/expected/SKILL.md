@@ -20,7 +20,7 @@ Prereqs:
 - `forge-cli >=1.11.2` is installed from the released nils-cli package and
   available on `PATH`.
 - Shared label, comment, and close rules in
-  `core/skills/issue/issue-lifecycle/README.md` are satisfied.
+  `references/issue-lifecycle.md` are satisfied.
 - Existing issue number or URL is known for follow-up mode; otherwise use open
   mode.
 - For implementation handoff, the appropriate implementation, PR/MR, or
@@ -92,8 +92,7 @@ Use when the user discovered a problem and wants a durable issue.
    If only a local screenshot path is available, include the path plus a short
    visual summary. Do not create unrelated repo artifacts just to host an image
    unless the user asks.
-3. Select labels before mutation using
-   `core/skills/issue/issue-lifecycle/README.md`.
+3. Select labels before mutation using `references/issue-lifecycle.md`.
 4. If the target repo has the shared catalog, run the matching
    `forge-cli label audit|ensure` command before live mutation.
 5. Open the issue through `forge-cli`:

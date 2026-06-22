@@ -452,6 +452,70 @@ def audit_skill_body_shape(skill_id: str, source: str) -> None:
             last_canonical_name = heading
 
 
+def audit_rendered_lifecycle_reference_packaging(root: Path) -> None:
+    source_only_refs = re.compile(
+        r"`(core/skills/(?:pr/pr-lifecycle|issue/issue-lifecycle)/README\.md)`"
+    )
+    packaged_lifecycle_refs = re.compile(
+        r"`((?:\.\./[a-z0-9-]+/)?references/(?:pr-lifecycle|issue-lifecycle)\.md)`"
+    )
+    packaged_refs = [
+        (
+            "PR/MR lifecycle",
+            root / "core" / "skills" / "pr" / "pr-lifecycle" / "README.md",
+            root / "core" / "skills" / "pr" / "create-pr" / "references" / "pr-lifecycle.md",
+            Path("plugins/pr/skills/create-pr/references/pr-lifecycle.md"),
+        ),
+        (
+            "issue lifecycle",
+            root / "core" / "skills" / "issue" / "issue-lifecycle" / "README.md",
+            root / "core" / "skills" / "issue" / "issue-follow-up" / "references" / "issue-lifecycle.md",
+            Path("plugins/issue/skills/issue-follow-up/references/issue-lifecycle.md"),
+        ),
+    ]
+    for label, canonical, source_packaged, rendered_rel in packaged_refs:
+        if not source_packaged.is_file():
+            fail(f"{label} packaged reference missing: {source_packaged.relative_to(root)}")
+        if read(source_packaged) != read(canonical):
+            fail(
+                f"{label} packaged reference drifted from canonical source: "
+                f"{source_packaged.relative_to(root)} != {canonical.relative_to(root)}"
+            )
+        for product in ("codex", "claude"):
+            rendered = root / "build" / product / rendered_rel
+            if not rendered.is_file():
+                fail(f"{label} rendered reference missing: {rendered.relative_to(root)}")
+            if read(rendered) != read(canonical):
+                fail(
+                    f"{label} rendered reference drifted from canonical source: "
+                    f"{rendered.relative_to(root)} != {canonical.relative_to(root)}"
+                )
+
+    for product in ("codex", "claude"):
+        for path in sorted((root / "build" / product / "plugins").glob("*/skills/*/SKILL.md")):
+            text = read(path)
+            for match in source_only_refs.finditer(text):
+                rel = path.relative_to(root)
+                fail(
+                    f"{rel} references source-only lifecycle doc {match.group(1)!r}; "
+                    "rendered skills must point at packaged references/ files"
+                )
+            for match in packaged_lifecycle_refs.finditer(text):
+                target = (path.parent / match.group(1)).resolve()
+                try:
+                    target.relative_to(root.resolve())
+                except ValueError:
+                    fail(
+                        f"{path.relative_to(root)} lifecycle reference escapes repo: "
+                        f"{match.group(1)!r}"
+                    )
+                if not target.is_file():
+                    fail(
+                        f"{path.relative_to(root)} lifecycle reference is not packaged: "
+                        f"{match.group(1)!r}"
+                    )
+
+
 def shape_skill_id_from_path(path: Path) -> tuple[str, str] | None:
     try:
         rel = path.resolve().relative_to(ROOT)
@@ -739,6 +803,8 @@ def validate_repo() -> None:
         fail(f"missing lifecycle exact-only reminder entries: {sorted(expected_exact - exact)}")
     if "skill-governance" in exact:
         fail("skill-governance is a repo governance tool, not a user-facing skill")
+
+    audit_rendered_lifecycle_reference_packaging(ROOT)
 
     count = validate_counts(ROOT)
     print(
