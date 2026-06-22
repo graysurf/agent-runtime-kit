@@ -1,10 +1,9 @@
 ---
 name: review-thread-cleanup
 description: >
-  Drive a PR/MR review-thread sweep to convergence on open, merged, or closed
-  PRs/MRs — discover unresolved threads, triage each against the shared
-  convergence policy, then resolve, reply, or defer through `forge-cli pr
-  review-threads`.
+  Drive a review-thread sweep to convergence on open, merged, or closed
+  PRs/MRs: triage each unresolved thread per the shared convergence policy,
+  then resolve, reply, or defer via `forge-cli pr review-threads`.
 ---
 
 # Review Thread Cleanup
@@ -55,10 +54,10 @@ Outputs:
 
 Failure modes:
 
-- A thread is left unresolved with no disposition. On an open PR, `forge-cli pr
-  merge` then fails closed on `unresolved_review_threads` (by design); on an
-  already-merged or closed PR there is **no** such backstop, so a silent skip is
-  unrecoverable — the final `list` re-run is the only convergence check.
+- A thread is left unresolved with no disposition. On an open PR/MR, `forge-cli
+  pr merge` then fails closed on `unresolved_review_threads` (by design); on an
+  already-merged or closed PR/MR there is **no** such backstop, so a silent skip
+  is unrecoverable — the final `list` re-run is the only convergence check.
 - `accepted` is used to silence an unverified finding without a recorded
   rationale — the policy forbids this.
 - A `major` / high-risk finding is resolved without escalation — the policy
