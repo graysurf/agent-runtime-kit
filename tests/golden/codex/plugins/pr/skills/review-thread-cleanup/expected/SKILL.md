@@ -136,4 +136,4 @@ adapter) supplies the candidate PR set and calls this skill per PR. If a future
 need wants structured cross-PR sweep state, extract that into released
 `nils-cli` first and call it from here.
 
-Shared rules: `core/skills/pr/pr-lifecycle/README.md`.
+Shared rules: `../create-pr/references/pr-lifecycle.md`.

@@ -18,7 +18,7 @@ Prereqs:
   existing-PR adoption in `pr deliver` needs 1.1.0. Linked issue closeout
   relies on the unified terminal task-row contract in `plan-issue` 1.1.0.
 - Shared provider, branch, body, and label rules in
-  `core/skills/pr/pr-lifecycle/README.md` are satisfied.
+  `../create-pr/references/pr-lifecycle.md` are satisfied.
 - The working tree contains only the intended delivery changes.
 - Local validation and review findings have been resolved before merge.
 
@@ -275,7 +275,7 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    use `Refs #<issue>` until `record close` has passed.
 3. Render the PR/MR body with `agent-runtime pr-body render`.
 4. Select labels before provider mutation; use
-   `core/skills/pr/pr-lifecycle/README.md` for the shared taxonomy rule.
+   `../create-pr/references/pr-lifecycle.md` for the shared taxonomy rule.
 5. If `manifests/forge-labels.yaml` exists, validate labels with the
    appropriate `forge-cli label` surface before the first live delivery.
 6. Run `forge-cli pr deliver` with selected `--label` flags,

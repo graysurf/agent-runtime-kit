@@ -34,7 +34,7 @@ Prereqs:
   label plus the shared `type::` / `area::` / `severity::` / `state::` taxonomy
   exist there (mirrored from `manifests/forge-labels.yaml`).
 - Shared issue label/comment/close rules in
-  `core/skills/issue/issue-lifecycle/README.md` are satisfied.
+  `../issue-follow-up/references/issue-lifecycle.md` are satisfied.
 
 Inputs:
 

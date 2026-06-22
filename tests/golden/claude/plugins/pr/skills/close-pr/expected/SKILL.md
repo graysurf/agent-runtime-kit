@@ -15,7 +15,7 @@ Prereqs:
   (`unresolved_review_threads`) and task-list (`unchecked_task_items`)
   fail-closed gates.
 - Shared provider and issue-backed merge rules in
-  `core/skills/pr/pr-lifecycle/README.md` are satisfied.
+  `../create-pr/references/pr-lifecycle.md` are satisfied.
 - The target PR/MR number is known.
 - Required validation, review findings, and issue-backed completion gates have
   been resolved before merge.
@@ -136,4 +136,4 @@ mandatory delivery gate unless the user asked for review; end-to-end
 `deliver-pr` owns that mandatory gate and calls this close surface only after
 review has passed or been dispositioned.
 
-Shared rules: `core/skills/pr/pr-lifecycle/README.md`.
+Shared rules: `../create-pr/references/pr-lifecycle.md`.
