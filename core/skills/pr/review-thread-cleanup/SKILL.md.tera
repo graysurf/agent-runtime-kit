@@ -1,9 +1,10 @@
 ---
 name: review-thread-cleanup
 description: >
-  Drive a PR/MR review-thread sweep to convergence — discover unresolved
-  threads, triage each against the shared convergence policy, then resolve,
-  reply, or defer through `forge-cli pr review-threads`.
+  Drive a PR/MR review-thread sweep to convergence on open, merged, or closed
+  PRs/MRs — discover unresolved threads, triage each against the shared
+  convergence policy, then resolve, reply, or defer through `forge-cli pr
+  review-threads`.
 ---
 
 # Review Thread Cleanup
@@ -32,8 +33,14 @@ Inputs:
 - Provider: `github` or `gitlab` (let `forge-cli` detect from the remote, or
   pass `--provider`). The read surface is provider-aware; the write surfaces are
   GitHub-only in v1.
-- PR/MR number, and — for a write action — the thread node id (`PRRT_…`) from
-  the `list` envelope.
+- PR/MR number, in **any state** — open, merged, or closed. Candidacy is the
+  presence of unresolved threads, not the PR/MR's open status: async bot
+  reviewers routinely post (and leave unresolved) threads minutes after a PR/MR
+  merges or closes, so a merged or closed PR/MR with `data.unresolved > 0` is as
+  much a sweep target as an open one. `review-threads list` and the `resolve` /
+  `reply` mutations operate on the thread nodes, which persist across the PR/MR
+  lifecycle — do not skip a PR/MR just because it is no longer open.
+- For a write action, the thread node id (`PRRT_…`) from the `list` envelope.
 - A disposition per thread chosen from the convergence policy's triage table
   (`fix` / `stale` / `follow_up` / `accepted`), plus any reply note.
 
@@ -48,8 +55,10 @@ Outputs:
 
 Failure modes:
 
-- A thread is left unresolved with no disposition; `forge-cli pr merge` then
-  fails closed on `unresolved_review_threads` (by design).
+- A thread is left unresolved with no disposition. On an open PR, `forge-cli pr
+  merge` then fails closed on `unresolved_review_threads` (by design); on an
+  already-merged or closed PR there is **no** such backstop, so a silent skip is
+  unrecoverable — the final `list` re-run is the only convergence check.
 - `accepted` is used to silence an unverified finding without a recorded
   rationale — the policy forbids this.
 - A `major` / high-risk finding is resolved without escalation — the policy
@@ -101,7 +110,10 @@ forge-cli --provider github --format json \
    the concentrate-vs-converge guidance.
 2. Run `pr review-threads list "$PR_NUMBER"` and enumerate every
    `resolved == false` thread (the envelope's normalized field; `data.unresolved`
-   is the same count). If `data.unresolved == 0`, there is nothing to sweep — stop.
+   is the same count). Do this for the PR/MR in **any** state — `list` reads the
+   thread nodes, so merged and closed PRs/MRs are swept exactly like open ones;
+   never skip a candidate because it is already merged or closed. If
+   `data.unresolved == 0`, there is nothing to sweep — stop.
 3. Triage each unresolved thread against the policy table: `fix` (repair the
    code), `stale` (already addressed / outdated), `follow_up` (defer with a
    ref), or `accepted` (won't-do with a recorded rationale). Always escalate
@@ -120,9 +132,12 @@ forge-cli --provider github --format json \
    `follow_up` / `accepted`), and rationale or follow-up ref. Link typed child
    evidence for large list outputs; do not paste raw provider payloads into the
    envelope.
-7. Hand the converged PR/MR back to the delivery / close surface
-   (`pr:deliver-pr` / `pr:close-pr`), whose `pr merge` gate confirms
-   `unresolved_review_threads == 0` mechanically.
+7. For an **open** PR/MR, hand the converged record back to the delivery / close
+   surface (`pr:deliver-pr` / `pr:close-pr`), whose `pr merge` gate confirms
+   `unresolved_review_threads == 0` mechanically. For an **already-merged or
+   closed** PR/MR there is no pending merge to gate, so the step 5 `list` re-run
+   (`data.unresolved == 0`, or a recorded `follow_up` / `accepted` stop) is the
+   convergence record — there is no downstream mechanical confirmation.
 
 ## Boundary
 
