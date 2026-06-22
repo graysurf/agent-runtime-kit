@@ -465,15 +465,17 @@ def audit_rendered_lifecycle_reference_packaging(root: Path) -> None:
             root / "core" / "skills" / "pr" / "pr-lifecycle" / "README.md",
             root / "core" / "skills" / "pr" / "create-pr" / "references" / "pr-lifecycle.md",
             Path("plugins/pr/skills/create-pr/references/pr-lifecycle.md"),
+            Path("plugins/pr/skills/create-pr/expected/references/pr-lifecycle.md"),
         ),
         (
             "issue lifecycle",
             root / "core" / "skills" / "issue" / "issue-lifecycle" / "README.md",
             root / "core" / "skills" / "issue" / "issue-follow-up" / "references" / "issue-lifecycle.md",
             Path("plugins/issue/skills/issue-follow-up/references/issue-lifecycle.md"),
+            Path("plugins/issue/skills/issue-follow-up/expected/references/issue-lifecycle.md"),
         ),
     ]
-    for label, canonical, source_packaged, rendered_rel in packaged_refs:
+    for label, canonical, source_packaged, rendered_rel, golden_rel in packaged_refs:
         if not source_packaged.is_file():
             fail(f"{label} packaged reference missing: {source_packaged.relative_to(root)}")
         if read(source_packaged) != read(canonical):
@@ -482,6 +484,35 @@ def audit_rendered_lifecycle_reference_packaging(root: Path) -> None:
                 f"{source_packaged.relative_to(root)} != {canonical.relative_to(root)}"
             )
         for product in ("codex", "claude"):
+            golden = root / "tests" / "golden" / product / golden_rel
+            if not golden.is_file():
+                fail(f"{label} golden reference missing: {golden.relative_to(root)}")
+            if read(golden) != read(canonical):
+                fail(
+                    f"{label} golden reference drifted from canonical source: "
+                    f"{golden.relative_to(root)} != {canonical.relative_to(root)}"
+                )
+
+    source_skill_bodies = sorted((root / "core" / "skills").glob("*/*/SKILL.md.tera"))
+    golden_skill_bodies = [
+        path
+        for product in ("codex", "claude")
+        for path in sorted((root / "tests" / "golden" / product / "plugins").glob("*/skills/*/expected/SKILL.md"))
+    ]
+    for path in source_skill_bodies + golden_skill_bodies:
+        text = read(path)
+        for match in source_only_refs.finditer(text):
+            rel = path.relative_to(root)
+            fail(
+                f"{rel} references source-only lifecycle doc {match.group(1)!r}; "
+                "rendered skills must point at packaged references/ files"
+            )
+
+    for product in ("codex", "claude"):
+        plugins_root = root / "build" / product / "plugins"
+        if not plugins_root.exists():
+            continue
+        for label, canonical, _source_packaged, rendered_rel, _golden_rel in packaged_refs:
             rendered = root / "build" / product / rendered_rel
             if not rendered.is_file():
                 fail(f"{label} rendered reference missing: {rendered.relative_to(root)}")
@@ -490,9 +521,7 @@ def audit_rendered_lifecycle_reference_packaging(root: Path) -> None:
                     f"{label} rendered reference drifted from canonical source: "
                     f"{rendered.relative_to(root)} != {canonical.relative_to(root)}"
                 )
-
-    for product in ("codex", "claude"):
-        for path in sorted((root / "build" / product / "plugins").glob("*/skills/*/SKILL.md")):
+        for path in sorted(plugins_root.glob("*/skills/*/SKILL.md")):
             text = read(path)
             for match in source_only_refs.finditer(text):
                 rel = path.relative_to(root)
