@@ -218,6 +218,10 @@ a uniform shape:
 - Source: portable logic under `core/hooks/shared/`; there is no
   `core/hooks/codex/` tree today, and product-specific activation lives
   in `targets/codex/hooks/` plus the link map (`core/hooks/README.md`).
+  The Codex-only `user-prompt-agent-memory.sh` hook lives in the shared hook
+  source tree for install reuse, but is registered only by the Codex TOML block;
+  it reads `agent-memory index global` once per session and injects bounded
+  shared memory context.
 - Install mechanism: `symlinked-file` (`targets/codex/link-map.yaml`,
   `id: hooks.shared-scripts`, source `core/hooks/shared` →
   `$CODEX_HOME/hooks`).
@@ -319,6 +323,9 @@ a uniform shape:
   with hash comment markers (`targets/codex/link-map.yaml`). The
   managed-block contract preserves everything outside the marker pair
   byte-for-byte.
+  The managed UserPromptSubmit block registers `user-prompt-agent-memory.sh`
+  for Codex only, bridging the shared `agent-memory` global index into sessions
+  that lack Claude's native memory loader.
 - Acceptance lane: drift audit checks managed-block presence; hook tests
   verify the referenced shared scripts (`DEVELOPMENT.md`).
 - Support today: **shipped (managed block)**.
