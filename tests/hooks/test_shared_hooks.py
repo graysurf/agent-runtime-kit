@@ -1349,6 +1349,8 @@ class SharedHookTests(unittest.TestCase):
             assert isinstance(output, dict)
             ctx = str(output.get("additionalContext", ""))
             self.assertIn("Shared agent memory", ctx)
+            self.assertIn("candidate agent-memory update", ctx)
+            self.assertIn("Ask for explicit user approval before editing agent-memory", ctx)
             self.assertIn("Prefer managed worktrees", ctx)
             self.assertEqual(log_path.read_text(encoding="utf-8"), "index global\n")
 
@@ -1531,7 +1533,7 @@ class SharedHookTests(unittest.TestCase):
             assert isinstance(output, dict)
             ctx = str(output.get("additionalContext", ""))
             self.assertIn("content truncated to 1024 bytes", ctx)
-            self.assertLess(len(ctx.encode("utf-8")), 1600)
+            self.assertLess(len(ctx.encode("utf-8")), 2200)
 
     def _require_agent_docs(self) -> None:
         if shutil.which("agent-docs") is None:

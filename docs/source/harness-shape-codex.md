@@ -221,7 +221,10 @@ a uniform shape:
   The Codex-only `user-prompt-agent-memory.sh` hook lives in the shared hook
   source tree for install reuse, but is registered only by the Codex TOML block;
   it reads `agent-memory index global` once per session and injects bounded
-  shared memory context.
+  shared memory context. The trusted cue also tells Codex to surface stable
+  preferences, setup facts, recurring workflows, and corrections as candidate
+  `agent-memory` updates, while requiring explicit user approval before any
+  memory edit.
 - Install mechanism: `symlinked-file` (`targets/codex/link-map.yaml`,
   `id: hooks.shared-scripts`, source `core/hooks/shared` →
   `$CODEX_HOME/hooks`).
@@ -325,7 +328,8 @@ a uniform shape:
   byte-for-byte.
   The managed UserPromptSubmit block registers `user-prompt-agent-memory.sh`
   for Codex only, bridging the shared `agent-memory` global index into sessions
-  that lack Claude's native memory loader.
+  that lack Claude's native memory loader and reminding Codex to report
+  candidate memory updates before editing the backing store.
 - Acceptance lane: drift audit checks managed-block presence; hook tests
   verify the referenced shared scripts (`DEVELOPMENT.md`).
 - Support today: **shipped (managed block)**.
