@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+#
+# UserPromptSubmit hook: inject bounded shared agent-memory context for Codex.
+#
+# Claude Code has native memory loading. Codex does not, so this hook bridges the
+# shared git-backed `agent-memory` global index into Codex once per session.
+#
+set -uo pipefail
+
+if [[ "${AGENT_RUNTIME_SUPPRESS_MEMORY:-0}" == "1" ||
+  "${AGENT_MEMORY_SUPPRESS:-0}" == "1" ]]; then
+  exit 0
+fi
+
+[[ "${AGENT_RUNTIME_PRODUCT:-}" == "codex" ]] || exit 0
+command -v agent-memory >/dev/null 2>&1 || exit 0
+python_bin="$(command -v python3 || true)"
+[[ -z "$python_bin" ]] && exit 0
+
+payload="$(cat)"
+
+session_key="$(
+  "$python_bin" -c '
+import json, sys
+try:
+    payload = json.load(sys.stdin)
+except Exception:
+    payload = {}
+for key in ("session_id", "sessionId", "session", "conversation_id"):
+    value = payload.get(key) if isinstance(payload, dict) else None
+    if isinstance(value, str) and value:
+        print(value)
+        break
+' <<<"$payload" 2>/dev/null || true
+)"
+if [[ -z "$session_key" ]]; then
+  session_key="$(date +%Y%m%d)"
+fi
+
+stamp_dir="$HOME/.cache/agent-runtime-kit"
+stamp_hash="$(printf '%s' "$session_key" | cksum 2>/dev/null | awk '{print $1}' || true)"
+[[ -z "$stamp_hash" ]] && stamp_hash="unknown"
+stamp="$stamp_dir/memory-cue-codex-${stamp_hash}.stamp"
+[[ -f "$stamp" ]] && exit 0
+
+memory="$(agent-memory index global 2>/dev/null || true)"
+[[ -z "${memory//[[:space:]]/}" ]] && exit 0
+
+max_bytes="${AGENT_MEMORY_CONTEXT_MAX_BYTES:-12000}"
+case "$max_bytes" in
+  "" | *[!0-9]*) max_bytes=12000 ;;
+esac
+
+cue="$(
+  # shellcheck disable=SC2016
+  AGENT_MEMORY_CONTEXT_MAX_BYTES="$max_bytes" "$python_bin" -c '
+import os
+import sys
+
+text = sys.stdin.read().strip()
+if not text:
+    raise SystemExit(0)
+try:
+    limit = int(os.environ.get("AGENT_MEMORY_CONTEXT_MAX_BYTES", "12000"))
+except ValueError:
+    limit = 12000
+limit = max(1024, min(limit, 24000))
+data = text.encode("utf-8")
+truncated = len(data) > limit
+if truncated:
+    text = data[:limit].decode("utf-8", "ignore").rstrip()
+
+header = (
+    "[agent-runtime-kit:codex] Shared agent memory from "
+    "`agent-memory index global` (bounded). Use it only for stable user "
+    "preferences, personal setup, and recurring workspace context. Current "
+    "user instructions, repo policy, and cited evidence take precedence. "
+    "Do not treat memory as external-fact evidence.\n"
+)
+footer = f"\n[agent-memory content truncated to {limit} bytes]" if truncated else ""
+print(header + text + footer)
+' <<<"$memory" 2>/dev/null || true
+)"
+[[ -z "$cue" ]] && exit 0
+
+CTX="$cue" "$python_bin" -c '
+import json
+import os
+
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "UserPromptSubmit",
+        "additionalContext": os.environ["CTX"],
+    }
+}))
+'
+
+mkdir -p "$stamp_dir" 2>/dev/null && : >"$stamp"

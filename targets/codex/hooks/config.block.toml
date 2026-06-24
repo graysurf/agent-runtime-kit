@@ -106,6 +106,12 @@ statusMessage = "agent-runtime-kit: Remind agent-docs preflight"
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
+command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/user-prompt-agent-memory.sh\""
+timeout = 10
+statusMessage = "agent-runtime-kit: Load shared agent memory"
+
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
 command = "AGENT_RUNTIME_PRODUCT=codex \"${CODEX_HOME:-$HOME/.codex}/hooks/skill-usage-reminder.py\""
 timeout = 10
 statusMessage = "agent-runtime-kit: Remind skill-usage recording"

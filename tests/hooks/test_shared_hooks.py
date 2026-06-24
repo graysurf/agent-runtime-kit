@@ -1306,6 +1306,157 @@ class SharedHookTests(unittest.TestCase):
                 context = str(output.get("additionalContext", ""))
         self.assertNotIn("evidence-migrate", context)
 
+    def test_agent_memory_cue_injects_global_memory_once_for_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            log_path = root / "agent-memory.args"
+            agent_memory = bin_dir / "agent-memory"
+            agent_memory.write_text(
+                "#!/usr/bin/env bash\n"
+                "set -euo pipefail\n"
+                f"printf '%s\\n' \"$*\" >> {shlex.quote(str(log_path))}\n"
+                "if [[ \"$*\" == \"index global\" ]]; then\n"
+                "  printf '%s\\n' '# Global memory'\n"
+                "  printf '%s\\n' '- Prefer managed worktrees for runtime-kit work.'\n"
+                "  exit 0\n"
+                "fi\n"
+                "exit 64\n",
+                encoding="utf-8",
+            )
+            agent_memory.chmod(0o755)
+            home = root / "home"
+            home.mkdir()
+            env = {
+                "AGENT_RUNTIME_PRODUCT": "codex",
+                "HOME": str(home),
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            }
+
+            payload = {"session_id": "memory-cue-test", "prompt": "hello"}
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-memory.sh",
+                payload,
+                cwd=root,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            assert decision is not None
+            output = decision.get("hookSpecificOutput")
+            self.assertIsInstance(output, dict)
+            assert isinstance(output, dict)
+            ctx = str(output.get("additionalContext", ""))
+            self.assertIn("Shared agent memory", ctx)
+            self.assertIn("Prefer managed worktrees", ctx)
+            self.assertEqual(log_path.read_text(encoding="utf-8"), "index global\n")
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-memory.sh",
+                payload,
+                cwd=root,
+                env=env,
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNone(decision)
+
+    def test_agent_memory_cue_noops_outside_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            log_path = root / "agent-memory.args"
+            agent_memory = bin_dir / "agent-memory"
+            agent_memory.write_text(
+                "#!/usr/bin/env bash\n"
+                f"printf '%s\\n' \"$*\" >> {shlex.quote(str(log_path))}\n",
+                encoding="utf-8",
+            )
+            agent_memory.chmod(0o755)
+            home = root / "home"
+            home.mkdir()
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-memory.sh",
+                {"session_id": "memory-non-codex", "prompt": "hello"},
+                cwd=root,
+                env={
+                    "AGENT_RUNTIME_PRODUCT": "claude",
+                    "HOME": str(home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNone(decision)
+            self.assertFalse(log_path.exists())
+
+    def test_agent_memory_cue_noops_when_agent_memory_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            python_link = bin_dir / "python3"
+            python_link.symlink_to(Path(sys.executable))
+            home = root / "home"
+            home.mkdir()
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-memory.sh",
+                {"session_id": "memory-missing-cli", "prompt": "hello"},
+                cwd=root,
+                env={
+                    "AGENT_RUNTIME_PRODUCT": "codex",
+                    "HOME": str(home),
+                    "PATH": f"{bin_dir}{os.pathsep}/usr/bin{os.pathsep}/bin",
+                },
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNone(decision)
+
+    def test_agent_memory_cue_caps_large_memory_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            agent_memory = bin_dir / "agent-memory"
+            agent_memory.write_text(
+                "#!/usr/bin/env bash\n"
+                "set -euo pipefail\n"
+                "if [[ \"$*\" == \"index global\" ]]; then\n"
+                "  python3 - <<'PY'\n"
+                "print('x' * 2048)\n"
+                "PY\n"
+                "  exit 0\n"
+                "fi\n"
+                "exit 64\n",
+                encoding="utf-8",
+            )
+            agent_memory.chmod(0o755)
+            home = root / "home"
+            home.mkdir()
+
+            code, decision, stderr = run_shell_hook(
+                "user-prompt-agent-memory.sh",
+                {"session_id": "memory-cap-test", "prompt": "hello"},
+                cwd=root,
+                env={
+                    "AGENT_RUNTIME_PRODUCT": "codex",
+                    "AGENT_MEMORY_CONTEXT_MAX_BYTES": "1024",
+                    "HOME": str(home),
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+            self.assertEqual(code, 0, stderr)
+            self.assertIsNotNone(decision)
+            assert decision is not None
+            output = decision.get("hookSpecificOutput")
+            self.assertIsInstance(output, dict)
+            assert isinstance(output, dict)
+            ctx = str(output.get("additionalContext", ""))
+            self.assertIn("content truncated to 1024 bytes", ctx)
+            self.assertLess(len(ctx.encode("utf-8")), 1600)
+
     def _require_agent_docs(self) -> None:
         if shutil.which("agent-docs") is None:
             self.skipTest("agent-docs not on PATH")
@@ -2793,7 +2944,7 @@ exit 65
             self.assertIn("+1 more", ctx)
 
     def test_target_hook_fragments_reference_installed_shared_scripts(self) -> None:
-        expected_scripts = {
+        shared_registered_scripts = {
             "agent-scope-lock-guard.py",
             "block-direct-git-commit.py",
             "block-direct-git-worktree.py",
@@ -2811,7 +2962,10 @@ exit 65
             "stop-pre-pr-reminder.sh",
             "user-prompt-agent-docs.sh",
         }
-        for script in expected_scripts:
+        codex_only_scripts = {
+            "user-prompt-agent-memory.sh",
+        }
+        for script in shared_registered_scripts | codex_only_scripts:
             self.assertTrue((HOOK_DIR / script).is_file(), script)
 
         codex_block = (REPO_ROOT / "targets" / "codex" / "hooks" / "config.block.toml").read_text(
@@ -2820,9 +2974,12 @@ exit 65
         claude_fragment = (REPO_ROOT / "core" / "hooks" / "claude" / "settings.hooks.jsonc").read_text(
             encoding="utf-8"
         )
-        for script in expected_scripts:
+        for script in shared_registered_scripts:
             self.assertIn(f"hooks/{script}", codex_block)
             self.assertIn(f"hooks/{script}", claude_fragment)
+        for script in codex_only_scripts:
+            self.assertIn(f"hooks/{script}", codex_block)
+            self.assertNotIn(f"hooks/{script}", claude_fragment)
 
     def test_bash_scanner_hooks_registered_for_codex_and_claude(self) -> None:
         expected_scripts = {
