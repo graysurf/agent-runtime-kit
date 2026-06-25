@@ -89,8 +89,15 @@ CLI_OPTIONS_WITH_VALUE = {"-R", "--repo"}
 CLI_OPTIONS_WITH_VALUE_PREFIXES = ("--repo=",)
 GLAB_API_METHOD_FLAGS = {"-X", "--method"}
 GLAB_API_POST_PARAMETER_FLAGS = {"-F", "--field", "-f", "--raw-field", "--form"}
-MR_ENDPOINT_RE = re.compile(r"(?:^|/)merge_requests(?:$|[/?#])")
-PULLS_ENDPOINT_RE = re.compile(r"(?:^|/)repos/[^/\s]+/[^/\s]+/pulls(?:$|[/?#])")
+# Match only the create endpoint itself: the bare path, optionally with a
+# single trailing slash, at end-of-path or before a query/fragment. A "/"
+# followed by a sub-resource segment must NOT match, or sub-resource POSTs
+# (review comments, replies, reviews, reactions, MR notes) are wrongly blocked
+# as PR/MR creates (agent-runtime-kit#474). Blocking the trailing-slash form
+# (.../pulls/, .../merge_requests/) too is defense-in-depth: GitHub/GitLab 404
+# it today, but the guard must not depend on upstream routing strictness.
+MR_ENDPOINT_RE = re.compile(r"(?:^|/)merge_requests/?(?:$|[?#])")
+PULLS_ENDPOINT_RE = re.compile(r"(?:^|/)repos/[^/\s]+/[^/\s]+/pulls/?(?:$|[?#])")
 
 
 def basename(token: str) -> str:

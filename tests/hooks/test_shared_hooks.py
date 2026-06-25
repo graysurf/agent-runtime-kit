@@ -709,6 +709,79 @@ class SharedHookTests(unittest.TestCase):
                 self.assertEqual(code, 0, stderr)
                 self.assert_allowed(decision)
 
+    def test_pr_create_gate_allows_pr_mr_subresources(self) -> None:
+        # Regression for agent-runtime-kit#474: the pulls / merge_requests
+        # endpoint regexes used a trailing [/?#] class, so they over-matched the
+        # whole /pulls/... and /merge_requests/... subtree. A POST to any
+        # sub-resource (review comments, replies, reviews, reactions, notes) was
+        # wrongly blocked as a PR/MR create. Only the bare create endpoint
+        # (end-of-path, or followed by a query/fragment) must be blocked.
+        still_blocked = (
+            # GitHub PR create endpoint at end of path.
+            "gh api --method POST repos/graysurf/agent-runtime-kit/pulls "
+            "-f title=x -f head=topic -f base=main",
+            # GitHub PR create endpoint with a trailing query string.
+            "gh api --method POST 'repos/graysurf/agent-runtime-kit/pulls?per_page=1' "
+            "-f title=x -f head=topic -f base=main",
+            # GitHub PR create endpoint with a fragment (locks in the '#' half
+            # of the trailing class).
+            "gh api --method POST 'repos/graysurf/agent-runtime-kit/pulls#frag' "
+            "-f title=x -f head=topic -f base=main",
+            # GitHub PR create endpoint with a single trailing slash (a bare
+            # create form; defense-in-depth even though GitHub 404s it).
+            "gh api --method POST repos/graysurf/agent-runtime-kit/pulls/ "
+            "-f title=x -f head=topic -f base=main",
+            # GitLab MR create endpoint at end of path.
+            "glab api -X POST /projects/1/merge_requests -f title=x "
+            "-f source_branch=topic -f target_branch=main",
+            # GitLab MR create endpoint with a trailing query string (provider
+            # parity with the GitHub query-string case above).
+            "glab api -X POST '/projects/1/merge_requests?per_page=1' -f title=x "
+            "-f source_branch=topic -f target_branch=main",
+            # GitLab MR create endpoint with a single trailing slash.
+            "glab api -X POST /projects/1/merge_requests/ -f title=x "
+            "-f source_branch=topic -f target_branch=main",
+        )
+        for command in still_blocked:
+            with self.subTest(blocked=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-pr-create.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_blocked(decision, "AGENT_RUNTIME_PR_SKILL")
+
+        now_allowed = (
+            # GitHub PR review-comment reaction (the case from the report).
+            "gh api --method POST "
+            "repos/graysurf/agent-runtime-kit/pulls/comments/123/reactions "
+            "-f content=+1",
+            # GitHub PR review-comment reply.
+            "gh api --method POST "
+            "repos/graysurf/agent-runtime-kit/pulls/476/comments/9/replies "
+            "-f body=ack",
+            # GitHub PR review submission.
+            "gh api --method POST "
+            "repos/graysurf/agent-runtime-kit/pulls/476/reviews -f event=APPROVE",
+            # GitHub PR requested reviewers (another /pulls sub-resource).
+            "gh api --method POST "
+            "repos/graysurf/agent-runtime-kit/pulls/476/requested_reviewers "
+            "-f reviewers=octocat",
+            # GitLab MR note.
+            "glab api -X POST /projects/1/merge_requests/5/notes -f body=ack",
+            # GitLab MR award-emoji (reaction).
+            "glab api -X POST /projects/1/merge_requests/5/award_emoji "
+            "-f name=thumbsup",
+        )
+        for command in now_allowed:
+            with self.subTest(allowed=command):
+                code, decision, stderr = run_hook(
+                    "block-direct-pr-create.py",
+                    command_payload(command),
+                )
+                self.assertEqual(code, 0, stderr)
+                self.assert_allowed(decision)
+
     def test_block_hooks_handle_env_wrappers_and_shell_terminators(self) -> None:
         cases = (
             (
