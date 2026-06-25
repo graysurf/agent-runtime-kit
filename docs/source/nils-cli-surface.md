@@ -1,20 +1,31 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-25 (refreshed for `v1.15.0`)
+- Snapshot date: 2026-06-26 (refreshed for `v1.16.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.15.0`
+- Active `git describe --tags` output: `v1.16.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.15.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.16.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `86d4e2c`
-  (`chore(release): bump workspace crates to 1.15.0 (#944)`)
+- Head commit: `4fab9a9`
+  (`chore(release): bump cli versions to 1.16.0 (#948)`)
 - Release:
-  [`v1.15.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.15.0),
+  [`v1.16.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.16.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.16.0` is a lock-step minor over `v1.15.0`. It adds
+  `forge-cli pr review --submit-review`, which posts a native GitHub
+  pull-request review event (`#pullrequestreview-`) authored by the chosen
+  reviewer bot — mapping `--decision` to a `COMMENT` / `APPROVE` /
+  `REQUEST_CHANGES` review event — instead of an issue-style outcome comment
+  (GitHub-only; GitLab keeps the outcome-note form)
+  ([#947](https://github.com/sympoies/nils-cli/pull/947)). The review posting
+  contract and reviewer-bot wiring that consume this flag land in a separate
+  runtime-kit change, so this pin bump moves no `required_clis[]` floor — the
+  `forge-cli` floor still records the minimum currently-consumed surface and
+  the exact `pinned_tag` gate (now `v1.16.0`) covers the host.
 - `v1.15.0` is a lock-step minor over `v1.14.0`. It adds the `agent-memory`
   `check`, `add`, `list --json`/`--type`, and `search` subcommands
   ([#941](https://github.com/sympoies/nils-cli/pull/941),
