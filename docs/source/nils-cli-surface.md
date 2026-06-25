@@ -1,20 +1,27 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-21 (refreshed for `v1.14.0`)
+- Snapshot date: 2026-06-25 (refreshed for `v1.15.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.14.0`
+- Active `git describe --tags` output: `v1.15.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.14.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.15.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `b535fc4`
-  (`chore(release): bump cli versions to 1.14.0 (#936)`)
+- Head commit: `86d4e2c`
+  (`chore(release): bump workspace crates to 1.15.0 (#944)`)
 - Release:
-  [`v1.14.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.14.0),
+  [`v1.15.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.15.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.15.0` is a lock-step minor over `v1.14.0`. It adds the `agent-memory`
+  `check`, `add`, `list --json`/`--type`, and `search` subcommands
+  ([#941](https://github.com/sympoies/nils-cli/pull/941),
+  [#942](https://github.com/sympoies/nils-cli/pull/942)). Runtime-kit does not
+  consume these yet (the memory cue hook still only runs `agent-memory index
+  global`), so no `required_clis[]` floor moves — the exact `pinned_tag` gate
+  (now `v1.15.0`) covers the host.
 - `v1.14.0` is a lock-step minor over `v1.13.0`. Runtime-kit does not consume
   a new CLI flag or JSON envelope from this release, so no `required_clis[]`
   floor moves — the exact `pinned_tag` gate (now `v1.14.0`) covers the host.
