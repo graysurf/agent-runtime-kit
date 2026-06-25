@@ -122,6 +122,9 @@ if [ -n "${REVIEW_LENSES[0]:-}" ] && [ -z "${REVIEW_LENSES[1]:-}" ]; then
     testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
     maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
     performance) REVIEW_BOT_PROFILE=review-performance ;;
+    security) REVIEW_BOT_PROFILE=review-security ;;
+    api-contract) REVIEW_BOT_PROFILE=review-api-contract ;;
+    data-migration) REVIEW_BOT_PROFILE=review-data-migration ;;
     *) REVIEW_BOT_PROFILE=dobi ;;
   esac
 fi

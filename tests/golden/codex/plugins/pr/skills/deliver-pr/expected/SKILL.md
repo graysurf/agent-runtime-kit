@@ -189,9 +189,11 @@ For bot identity and issue mirroring: post a compact specialist review comment
 after each reviewer lens returns and after each focused follow-up rerun. Set the
 matching profile for that one command only when the lens is mapped:
 `red-team` -> `review-red-team`, `testing` -> `review-testing-bot`,
-`maintainability` -> `review-maintainability`, and `performance` ->
-`review-performance`. Unmapped specialist lenses use `FORGE_BOT_PROFILE=dobi`
-with `--decision comments-only`. For the final combined delivery-owner outcome,
+`maintainability` -> `review-maintainability`, `performance` ->
+`review-performance`, `security` -> `review-security`, `api-contract` ->
+`review-api-contract`, and `data-migration` -> `review-data-migration`. Any
+other or unknown lens uses `FORGE_BOT_PROFILE=dobi` with
+`--decision comments-only`. For the final combined delivery-owner outcome,
 set `FORGE_BOT_PROFILE=dobi` so `dobi-bot` authors it. When the PR/MR is linked
 to a tracking or dispatch issue and the issue number is available, add
 `--issue "$ISSUE" --mirror-issue` so the issue activity shows review progress

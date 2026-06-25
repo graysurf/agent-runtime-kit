@@ -87,6 +87,9 @@ lens:
 | `testing` | `review-testing-bot` |
 | `maintainability` | `review-maintainability` |
 | `performance` | `review-performance` |
+| `security` | `review-security` |
+| `api-contract` | `review-api-contract` |
+| `data-migration` | `review-data-migration` |
 
 Copy this resolver into shell entrypoints that need `REVIEW_BOT_PROFILE`:
 
@@ -96,14 +99,17 @@ case "$REVIEW_LENS" in
   testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
   maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
   performance) REVIEW_BOT_PROFILE=review-performance ;;
+  security) REVIEW_BOT_PROFILE=review-security ;;
+  api-contract) REVIEW_BOT_PROFILE=review-api-contract ;;
+  data-migration) REVIEW_BOT_PROFILE=review-data-migration ;;
   *) REVIEW_BOT_PROFILE=dobi ;;
 esac
 ```
 
-Unmapped specialist lenses such as `api-contract`, `security`, or
-`data-migration` still use the specialist report body and `comments-only`; they
-are authored by `dobi-bot` as owner summaries because no dedicated reviewer bot
-profile exists for those lenses.
+Every standard specialist lens now has a dedicated reviewer bot (the table
+above). Any other or unknown lens still uses the specialist report body and
+`comments-only` authored by `dobi-bot` as an owner summary — the resolver's `*`
+fallback.
 
 Do not wrap `forge-cli` with `env`, `command`, or `exec`; those forms bypass the
 local forge-cli shell wrapper that mints the GitHub App token. Pass identity
@@ -132,6 +138,9 @@ case "$REVIEW_LENS" in
   testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
   maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
   performance) REVIEW_BOT_PROFILE=review-performance ;;
+  security) REVIEW_BOT_PROFILE=review-security ;;
+  api-contract) REVIEW_BOT_PROFILE=review-api-contract ;;
+  data-migration) REVIEW_BOT_PROFILE=review-data-migration ;;
   *) REVIEW_BOT_PROFILE=dobi ;;
 esac
 
