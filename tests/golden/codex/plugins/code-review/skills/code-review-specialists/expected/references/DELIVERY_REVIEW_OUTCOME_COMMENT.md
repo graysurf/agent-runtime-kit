@@ -44,8 +44,13 @@ Use the provider-aware primitive for GitHub and GitLab. Follow
 flow, the lens-to-`FORGE_BOT_PROFILE` table, and optional issue mirroring:
 
 ```bash
+# Native review events are GitHub-only; GitLab posts an outcome note instead.
+SUBMIT_REVIEW=()
+[ "$PROVIDER" = github ] && SUBMIT_REVIEW=(--submit-review)
+
 FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
   --decision "$REVIEW_DECISION" \
+  "${SUBMIT_REVIEW[@]}" \
   --comment-file comment.md \
   --lens testing \
   --lens maintainability
@@ -53,10 +58,13 @@ FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
 
 Set `REVIEW_DECISION=approve` for `proceed-to-merge` or
 `proceed-with-accepted-residual`, and `request-changes` for `blocked`. Use
-provider repository flags when local remotes are ambiguous. The decision is
-outcome metadata for the comment; this primitive does not mutate native provider
-approval or request-changes state. Use `SPECIALIST_REVIEW_COMMENT.md` with
-`--decision comments-only` for non-decisional specialist notes.
+provider repository flags when local remotes are ambiguous. With `--submit-review`
+on GitHub the decision maps to a native pull request review event
+(`approve`→`APPROVE`, `request-changes`→`REQUEST_CHANGES`,
+`comments-only`→`COMMENT`) authored by the `dobi` reviewer bot; on GitLab the
+decision is recorded as outcome-note metadata only (no native approval state).
+Use `SPECIALIST_REVIEW_COMMENT.md` with `--decision comments-only` for
+non-decisional specialist notes.
 
 ## Required Comment Shape
 

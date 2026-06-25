@@ -61,10 +61,11 @@ For every end-to-end delivery PR or MR:
    records "no concrete findings" plus why broader lenses were not selected.
 6. For delivery gates with provider write access, the owning parent posts a
    compact specialist review comment through `forge-cli pr review` after each
-   selected lens returns. Use the lens bot profile from
-   `REVIEW_OUTCOME_POSTING_CONTRACT.md`. The reviewer subagent remains read-only
-   and does not post directly. Specialist comments report findings only; the
-   parent records final dispositions later.
+   selected lens returns — on GitHub a native `COMMENT` review event via
+   `--submit-review`. Use the lens bot profile and the provider-guarded command
+   from `REVIEW_OUTCOME_POSTING_CONTRACT.md`. The reviewer subagent remains
+   read-only and does not post directly. Specialist comments report findings
+   only; the parent records final dispositions later.
 
 ## Findings And Repair Loop
 

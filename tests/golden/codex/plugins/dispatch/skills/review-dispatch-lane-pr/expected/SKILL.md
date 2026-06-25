@@ -45,12 +45,14 @@ Outputs:
   checkpoint --live --post state,session` when the review outcome flips
   the lane back to implementation.
 - `forge-cli pr review` posts provider-visible review activity and mirrors a
-  compact progress breadcrumb to the shared dispatch issue. Optional specialist
-  progress comments use a reviewer bot profile for single mapped specialist
-  lenses, `dobi` for unmapped specialist lenses, and `--decision comments-only`;
-  final lane review outcomes set `FORGE_BOT_PROFILE=dobi`, including
-  approve/request-changes metadata.
-  It does not mutate native provider approval or request-changes state.
+  compact progress breadcrumb to the shared dispatch issue. On GitHub, pass
+  `--submit-review` so each post is a native review event (`#pullrequestreview-`):
+  specialist progress reports use a reviewer bot profile for single mapped
+  specialist lenses, `dobi` for unmapped specialist lenses, and
+  `--decision comments-only` (a `COMMENT` review event); final lane review
+  outcomes set `FORGE_BOT_PROFILE=dobi` with the decision mapped to an `APPROVE`
+  / `REQUEST_CHANGES` review event. On GitLab it posts an outcome note and does
+  not mutate native approval state.
 - `review-evidence` produces a retained findings artifact path or
   URL.
 
@@ -104,6 +106,15 @@ plan-issue --format json tracking checkpoint \
   --live \
   --post review --repair-dashboard
 
+# Native review events (#pullrequestreview-) are GitHub-only; detect the lane's
+# provider once and guard --submit-review so GitLab lanes keep the note form
+# (an empty array on any non-github / undetected provider is the safe fallback).
+SUBMIT_REVIEW=()
+if [ "$(forge-cli repo view --repo "$OWNER_REPO" --format json 2>/dev/null \
+      | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["provider"])' 2>/dev/null)" = github ]; then
+  SUBMIT_REVIEW=(--submit-review)
+fi
+
 unset REVIEW_BOT_PROFILE
 if [ -n "${REVIEW_LENSES[0]:-}" ] && [ -z "${REVIEW_LENSES[1]:-}" ]; then
   case "${REVIEW_LENSES[0]}" in
@@ -120,6 +131,7 @@ if [ -n "${REVIEW_BOT_PROFILE:-}" ] && [ -n "${SPECIALIST_REVIEW_COMMENT_FILE:-}
     forge-cli pr review "$PR_NUMBER" \
       --repo "$OWNER_REPO" \
       --decision comments-only \
+      "${SUBMIT_REVIEW[@]}" \
       --comment-file "$SPECIALIST_REVIEW_COMMENT_FILE" \
       "${FORGE_LENS_ARGS[@]}" \
       --issue "$ISSUE" \
@@ -130,6 +142,7 @@ fi
 FORGE_BOT_PROFILE=dobi forge-cli pr review "$PR_NUMBER" \
   --repo "$OWNER_REPO" \
   --decision "$DECISION" \
+  "${SUBMIT_REVIEW[@]}" \
   --comment-file "$REVIEW_COMMENT_FILE" \
   "${FORGE_LENS_ARGS[@]}" \
   --issue "$ISSUE" \

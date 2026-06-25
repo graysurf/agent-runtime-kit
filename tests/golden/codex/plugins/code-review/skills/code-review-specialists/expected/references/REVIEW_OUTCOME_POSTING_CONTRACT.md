@@ -2,7 +2,14 @@
 
 Use this contract when a review workflow needs provider-visible PR/MR review
 activity for either a single-lens specialist report or a combined delivery-owner
-outcome. `forge-cli pr review` is the only provider primitive for this path.
+outcome. `forge-cli pr review` is the only provider primitive for this path. On
+GitHub, pass `--submit-review` so each post is a native pull request review event
+(the `#pullrequestreview-` object) authored by the chosen reviewer bot, with
+`--decision` mapped to the review event: specialist reports post as `COMMENT`
+reviews and the combined delivery-owner outcome posts as an `APPROVE` /
+`REQUEST_CHANGES` review. GitLab has no equivalent single review event, so it
+omits `--submit-review` and posts an outcome note (provider parity is preserved
+by the `SUBMIT_REVIEW` guard in the snippets below).
 
 Reviewer subagents remain read-only. The owning parent, dispatch, or delivery
 workflow writes every provider-visible comment. Specialist review comments are
@@ -108,6 +115,15 @@ provider error instead of retrying as the user.
 
 ## Command
 
+Native review events are GitHub-only, so guard `--submit-review` on the provider
+once and reuse it in both snippets (on GitLab the array is empty and the post
+falls back to an outcome note):
+
+```bash
+SUBMIT_REVIEW=()
+[ "$PROVIDER" = github ] && SUBMIT_REVIEW=(--submit-review)
+```
+
 Single known specialist lens report:
 
 ```bash
@@ -123,6 +139,7 @@ FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" \
   forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
     --decision comments-only \
+    "${SUBMIT_REVIEW[@]}" \
     --comment-file "$REVIEW_COMMENT_FILE" \
     --lens "$REVIEW_LENS" \
     --format json
@@ -135,6 +152,7 @@ FORGE_BOT_PROFILE=dobi \
   forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
     --decision "$REVIEW_DECISION" \
+    "${SUBMIT_REVIEW[@]}" \
     --comment-file "$REVIEW_COMMENT_FILE" \
     --lens testing \
     --lens maintainability \
