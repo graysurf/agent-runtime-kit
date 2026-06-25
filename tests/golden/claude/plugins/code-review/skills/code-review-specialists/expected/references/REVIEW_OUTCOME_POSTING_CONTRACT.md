@@ -2,7 +2,14 @@
 
 Use this contract when a review workflow needs provider-visible PR/MR review
 activity for either a single-lens specialist report or a combined delivery-owner
-outcome. `forge-cli pr review` is the only provider primitive for this path.
+outcome. `forge-cli pr review` is the only provider primitive for this path. On
+GitHub, pass `--submit-review` so each post is a native pull request review event
+(the `#pullrequestreview-` object) authored by the chosen reviewer bot, with
+`--decision` mapped to the review event: specialist reports post as `COMMENT`
+reviews and the combined delivery-owner outcome posts as an `APPROVE` /
+`REQUEST_CHANGES` review. GitLab has no equivalent single review event, so it
+omits `--submit-review` and posts an outcome note (provider parity is preserved
+by the `SUBMIT_REVIEW` guard in the snippets below).
 
 Reviewer subagents remain read-only. The owning parent, dispatch, or delivery
 workflow writes every provider-visible comment. Specialist review comments are
@@ -80,6 +87,9 @@ lens:
 | `testing` | `review-testing-bot` |
 | `maintainability` | `review-maintainability` |
 | `performance` | `review-performance` |
+| `security` | `review-security` |
+| `api-contract` | `review-api-contract` |
+| `data-migration` | `review-data-migration` |
 
 Copy this resolver into shell entrypoints that need `REVIEW_BOT_PROFILE`:
 
@@ -89,14 +99,17 @@ case "$REVIEW_LENS" in
   testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
   maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
   performance) REVIEW_BOT_PROFILE=review-performance ;;
+  security) REVIEW_BOT_PROFILE=review-security ;;
+  api-contract) REVIEW_BOT_PROFILE=review-api-contract ;;
+  data-migration) REVIEW_BOT_PROFILE=review-data-migration ;;
   *) REVIEW_BOT_PROFILE=dobi ;;
 esac
 ```
 
-Unmapped specialist lenses such as `api-contract`, `security`, or
-`data-migration` still use the specialist report body and `comments-only`; they
-are authored by `dobi-bot` as owner summaries because no dedicated reviewer bot
-profile exists for those lenses.
+Every standard specialist lens now has a dedicated reviewer bot (the table
+above). Any other or unknown lens still uses the specialist report body and
+`comments-only` authored by `dobi-bot` as an owner summary — the resolver's `*`
+fallback.
 
 Do not wrap `forge-cli` with `env`, `command`, or `exec`; those forms bypass the
 local forge-cli shell wrapper that mints the GitHub App token. Pass identity
@@ -108,6 +121,15 @@ provider error instead of retrying as the user.
 
 ## Command
 
+Native review events are GitHub-only, so guard `--submit-review` on the provider
+once and reuse it in both snippets (on GitLab the array is empty and the post
+falls back to an outcome note):
+
+```bash
+SUBMIT_REVIEW=()
+[ "$PROVIDER" = github ] && SUBMIT_REVIEW=(--submit-review)
+```
+
 Single known specialist lens report:
 
 ```bash
@@ -116,6 +138,9 @@ case "$REVIEW_LENS" in
   testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
   maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
   performance) REVIEW_BOT_PROFILE=review-performance ;;
+  security) REVIEW_BOT_PROFILE=review-security ;;
+  api-contract) REVIEW_BOT_PROFILE=review-api-contract ;;
+  data-migration) REVIEW_BOT_PROFILE=review-data-migration ;;
   *) REVIEW_BOT_PROFILE=dobi ;;
 esac
 
@@ -123,6 +148,7 @@ FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" \
   forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
     --decision comments-only \
+    "${SUBMIT_REVIEW[@]}" \
     --comment-file "$REVIEW_COMMENT_FILE" \
     --lens "$REVIEW_LENS" \
     --format json
@@ -135,6 +161,7 @@ FORGE_BOT_PROFILE=dobi \
   forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
     --repo "$OWNER_REPO" \
     --decision "$REVIEW_DECISION" \
+    "${SUBMIT_REVIEW[@]}" \
     --comment-file "$REVIEW_COMMENT_FILE" \
     --lens testing \
     --lens maintainability \

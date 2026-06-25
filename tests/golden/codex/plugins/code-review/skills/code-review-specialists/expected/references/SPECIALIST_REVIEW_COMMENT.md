@@ -8,8 +8,11 @@ exists, or `FORGE_BOT_PROFILE=dobi` for unmapped specialist lenses.
 This is not a delivery decision. It reports what one specialist lens found or
 verified. The parent/main agent owns repair, tradeoff decisions, and final
 delivery disposition in `DELIVERY_REVIEW_OUTCOME_COMMENT.md`.
-Post specialist review comments with `--decision comments-only`; the lens verdict
-inside the body carries the specialist result.
+Post specialist review comments with `--decision comments-only` — on GitHub add
+`--submit-review` so the report posts as a native `COMMENT` review event
+(`#pullrequestreview-`) authored by the mapped reviewer bot; on GitLab it posts
+an outcome note. The lens verdict inside the body carries the specialist result.
+See `REVIEW_OUTCOME_POSTING_CONTRACT.md` for the provider-guarded command.
 
 ## Timing
 
