@@ -7,9 +7,13 @@ GitHub, pass `--submit-review` so each post is a native pull request review even
 (the `#pullrequestreview-` object) authored by the chosen reviewer bot, with
 `--decision` mapped to the review event: specialist reports post as `COMMENT`
 reviews and the combined delivery-owner outcome posts as an `APPROVE` /
-`REQUEST_CHANGES` review. GitLab has no equivalent single review event, so it
-omits `--submit-review` and posts an outcome note (provider parity is preserved
-by the `SUBMIT_REVIEW` guard in the snippets below).
+`REQUEST_CHANGES` review. On GitHub, actionable findings that need owner
+changes should be passed as `--thread-file` so they become native, resolvable
+review threads under the same review event; clean or informational reviews omit
+`--thread-file` and keep the summary-only review body. GitLab has no equivalent
+single review event or resolvable-thread creation surface, so it omits
+`--submit-review` and `--thread-file` and posts an outcome note (provider parity
+is preserved by the guards in the snippets below).
 
 Reviewer subagents remain read-only. The owning parent, dispatch, or delivery
 workflow writes every provider-visible comment. Specialist review comments are
@@ -17,6 +21,36 @@ pre-disposition `comments-only` reports posted after one lens returns. Combined
 delivery-owner outcomes are post-disposition comments posted after the owner has
 synthesized findings, decided repairs or tradeoffs, and chosen the final review
 decision.
+
+## Actionable Finding Threads
+
+Use `--thread-file` only for concrete, actionable findings that require a code,
+doc, test, or config change and can be resolved after the owner handles them.
+Do not create threads for pass/no-finding reports, summary-only approvals,
+informational notes, accepted residual risks, or already-repaired follow-up
+summaries. Those stay in the review body.
+
+The thread file is a JSON array. Each item must include `path` and `body`; add
+`line` for line-level comments, or omit it for a file-level thread. Optional
+fields are `side`, `startLine`, `startSide`, and `subjectType`. Keep bodies
+compact and specific enough that the owner can fix and then resolve the thread:
+
+```json
+[
+  {
+    "path": "src/lib.rs",
+    "line": 42,
+    "body": "This branch can leave the pending review behind if submit fails. Add cleanup coverage for the final submit step."
+  }
+]
+```
+
+`forge-cli` validates this file before provider mutation, caps it at 256 KiB
+and 50 threads, caps each path at 1024 bytes and each body at 16 KiB, applies
+the local-path / escaped-control privacy guards, and rejects invalid input with
+`invalid_review_thread_spec`. If a thread or submit mutation fails after the
+pending GitHub review is created, `forge-cli` attempts to delete that pending
+review before returning the backend error.
 
 ## Posting order is non-negotiable
 
@@ -65,6 +99,9 @@ combined delivery-owner outcome records final dispositions.
 - `REVIEW_COMMENT_FILE`: compact comment body. Use
   `SPECIALIST_REVIEW_COMMENT.md` for specialist reports and
   `DELIVERY_REVIEW_OUTCOME_COMMENT.md` for combined owner outcomes.
+- Optional `REVIEW_THREAD_FILE`: GitHub-only JSON array of actionable findings
+  to create as resolvable review threads. Omit this when there are no requested
+  changes or when posting to GitLab.
 - `REVIEW_LENS`: the single specialist lens for a specialist review comment.
   For combined owner outcomes, pass repeated `--lens` flags from the selected
   lens list.
@@ -121,13 +158,18 @@ provider error instead of retrying as the user.
 
 ## Command
 
-Native review events are GitHub-only, so guard `--submit-review` on the provider
-once and reuse it in both snippets (on GitLab the array is empty and the post
-falls back to an outcome note):
+Native review events and `--thread-file` are GitHub-only. Guard
+`--submit-review` and `--thread-file` on the provider once and reuse the arrays
+in the snippets (on GitLab both arrays are empty and the post falls back to an
+outcome note):
 
 ```bash
 SUBMIT_REVIEW=()
+THREAD_FILE_ARGS=()
 [ "$PROVIDER" = github ] && SUBMIT_REVIEW=(--submit-review)
+if [ "$PROVIDER" = github ] && [ -n "${REVIEW_THREAD_FILE:-}" ]; then
+  THREAD_FILE_ARGS=(--thread-file "$REVIEW_THREAD_FILE")
+fi
 ```
 
 Single known specialist lens report:
@@ -149,6 +191,7 @@ FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" \
     --repo "$OWNER_REPO" \
     --decision comments-only \
     "${SUBMIT_REVIEW[@]}" \
+    "${THREAD_FILE_ARGS[@]}" \
     --comment-file "$REVIEW_COMMENT_FILE" \
     --lens "$REVIEW_LENS" \
     --format json

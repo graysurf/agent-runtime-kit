@@ -12,6 +12,9 @@ Provider posting ownership, bot identity, and optional issue mirroring are
 canonical in `references/REVIEW_OUTCOME_POSTING_CONTRACT.md`.
 Single-lens reviewer bot progress comments use
 `references/SPECIALIST_REVIEW_COMMENT.md` instead.
+Resolvable GitHub review threads for actionable findings are attached to the
+specialist progress comments that first surface those findings, not to the final
+combined approval summary.
 
 ## Ownership
 
@@ -64,7 +67,8 @@ on GitHub the decision maps to a native pull request review event
 `comments-only`→`COMMENT`) authored by the `dobi` reviewer bot; on GitLab the
 decision is recorded as outcome-note metadata only (no native approval state).
 Use `SPECIALIST_REVIEW_COMMENT.md` with `--decision comments-only` for
-non-decisional specialist notes.
+non-decisional specialist notes, adding `--thread-file` only when that note
+surfaces actionable findings that need owner changes.
 
 ## Required Comment Shape
 

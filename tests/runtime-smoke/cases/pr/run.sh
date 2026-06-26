@@ -329,7 +329,10 @@ run_close_gitlab_probe() {
 run_deliver_github_probe() {
   local workspace="$PR_WORKSPACE/deliver-github"
   local body="$PR_ARTIFACTS_DIR/deliver-github-body.md"
+  local review_body="$PR_ARTIFACTS_DIR/deliver-github-review.md"
+  local review_threads="$PR_ARTIFACTS_DIR/deliver-github-review-threads.json"
   local out="$PR_ARTIFACTS_DIR/deliver-github.json"
+  local provider_review_out="$PR_ARTIFACTS_DIR/deliver-github-provider-review.json"
   local review_out="$PR_ARTIFACTS_DIR/deliver-github-specialist-scope.json"
   require_pr_bin forge-cli || return 1
   mkdir -p "$workspace"
@@ -370,6 +373,22 @@ run_deliver_github_probe() {
     "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
   grep -q 'role=session' \
     "$REPO_ROOT/core/skills/pr/deliver-pr/SKILL.md.tera"
+  printf 'Runtime smoke deliver-pr specialist review.\n' >"$review_body"
+  printf '[{"path":"pr-fixture.txt","line":1,"body":"Runtime smoke deliver-pr actionable finding thread."}]\n' >"$review_threads"
+  (
+    cd "$workspace"
+    forge-cli --provider github --repo graysurf/agent-runtime-kit \
+      --dry-run --format json \
+      pr review 123 \
+      --decision comments-only \
+      --submit-review \
+      --thread-file "$review_threads" \
+      --comment-file "$review_body" \
+      --lens testing
+  ) >"$provider_review_out" 2>&1
+  grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$provider_review_out"
+  grep -q '"decision":"comments-only"' "$provider_review_out"
+  grep -q '"planned_review_threads"' "$provider_review_out"
 }
 
 run_deliver_gitlab_probe() {

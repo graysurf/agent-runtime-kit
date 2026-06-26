@@ -11,7 +11,7 @@ description: >
 Prereqs:
 
 - Profile: `dispatch`.
-- CLI floors: `plan-issue >=1.0.13`, `forge-cli >=1.13.0`,
+- CLI floors: `plan-issue >=1.0.13`, `forge-cli >=1.17.0`,
   `review-evidence`.
 - Issue precondition: the shared dispatch issue exists and the lane PR
   has been created by `execute-dispatch-lane` /
@@ -32,7 +32,8 @@ Inputs:
 - Reviewer decision (`approve` / `request-changes` /
   `comments-only`), `REVIEW_LENSES` array, finding dispositions, final
   `REVIEW_COMMENT_FILE`, optional `SPECIALIST_REVIEW_COMMENT_FILE` for one
-  specialist-lens progress report, and the retained-evidence path produced by
+  specialist-lens progress report, optional GitHub `REVIEW_THREAD_FILE` for
+  actionable findings, and the retained-evidence path produced by
   `review-evidence`.
 
 Outputs:
@@ -49,9 +50,12 @@ Outputs:
   `--submit-review` so each post is a native review event (`#pullrequestreview-`):
   specialist progress reports use a reviewer bot profile for single mapped
   specialist lenses, `dobi` for unmapped specialist lenses, and
-  `--decision comments-only` (a `COMMENT` review event); final lane review
-  outcomes set `FORGE_BOT_PROFILE=dobi` with the decision mapped to an `APPROVE`
-  / `REQUEST_CHANGES` review event. On GitLab it posts an outcome note and does
+  `--decision comments-only` (a `COMMENT` review event). Actionable GitHub
+  findings that require lane-owner changes should also pass `--thread-file` on
+  the first post that surfaces them, so they become resolvable review threads;
+  clean or informational reports omit it. Final lane review outcomes set
+  `FORGE_BOT_PROFILE=dobi` with the decision mapped to an `APPROVE` /
+  `REQUEST_CHANGES` review event. On GitLab it posts an outcome note and does
   not mutate native approval state.
 - `review-evidence` produces a retained findings artifact path or
   URL.
@@ -110,9 +114,13 @@ plan-issue --format json tracking checkpoint \
 # provider once and guard --submit-review so GitLab lanes keep the note form
 # (an empty array on any non-github / undetected provider is the safe fallback).
 SUBMIT_REVIEW=()
+THREAD_FILE_ARGS=()
 if [ "$(forge-cli repo view --repo "$OWNER_REPO" --format json 2>/dev/null \
       | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["provider"])' 2>/dev/null)" = github ]; then
   SUBMIT_REVIEW=(--submit-review)
+  if [ -n "${REVIEW_THREAD_FILE:-}" ]; then
+    THREAD_FILE_ARGS=(--thread-file "$REVIEW_THREAD_FILE")
+  fi
 fi
 
 unset REVIEW_BOT_PROFILE
@@ -135,6 +143,7 @@ if [ -n "${REVIEW_BOT_PROFILE:-}" ] && [ -n "${SPECIALIST_REVIEW_COMMENT_FILE:-}
       --repo "$OWNER_REPO" \
       --decision comments-only \
       "${SUBMIT_REVIEW[@]}" \
+      "${THREAD_FILE_ARGS[@]}" \
       --comment-file "$SPECIALIST_REVIEW_COMMENT_FILE" \
       "${FORGE_LENS_ARGS[@]}" \
       --issue "$ISSUE" \
@@ -172,7 +181,8 @@ FORGE_BOT_PROFILE=dobi forge-cli pr review "$PR_NUMBER" \
    subagent, owns provider writes. When exactly one specialist lens is present
    and `SPECIALIST_REVIEW_COMMENT_FILE` is available, post that specialist
    progress report with the mapped reviewer bot profile or `dobi` for unmapped
-   lenses, and `--decision comments-only`. Then post the final lane review
+   lenses, and `--decision comments-only`; include `--thread-file` only when
+   that report surfaces actionable GitHub findings. Then post the final lane review
    outcome with `FORGE_BOT_PROFILE=dobi`; this is the only dispatch post that
    carries approve/request-changes outcome metadata.
 6. **Read-back** — confirm the dispatch dashboard reflects the lane

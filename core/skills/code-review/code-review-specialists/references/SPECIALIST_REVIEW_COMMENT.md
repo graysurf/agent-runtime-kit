@@ -12,7 +12,11 @@ Post specialist review comments with `--decision comments-only` — on GitHub ad
 `--submit-review` so the report posts as a native `COMMENT` review event
 (`#pullrequestreview-`) authored by the mapped reviewer bot; on GitLab it posts
 an outcome note. The lens verdict inside the body carries the specialist result.
-See `REVIEW_OUTCOME_POSTING_CONTRACT.md` for the provider-guarded command.
+When the specialist found actionable items that require owner changes, GitHub
+posts should include `--thread-file` so those findings become resolvable review
+threads. When the specialist found nothing to change, omit `--thread-file` and
+post only the summary review body. See `REVIEW_OUTCOME_POSTING_CONTRACT.md` for
+the provider-guarded command.
 
 ## Timing
 
@@ -22,6 +26,9 @@ See `REVIEW_OUTCOME_POSTING_CONTRACT.md` for the provider-guarded command.
 - If the lens reports findings, repair and commit in the owning workflow, rerun
   focused validation and that lens, then post a follow-up specialist review
   comment for the rerun.
+- Create GitHub review threads only for actionable findings in the first report
+  that surfaces them. Follow-up pass comments should normally omit
+  `--thread-file` and resolve the existing threads after the repair is verified.
 - Keep comments compact: summarize the lens result and link or cite evidence
   instead of pasting raw subagent output.
 
