@@ -1,4 +1,4 @@
-# forge-cli pr review-threads surface gaps (dry-run not dry; list first-comment-only)
+# forge-cli PR review-thread surface gaps
 
 ## Status
 
@@ -9,8 +9,8 @@
 
 ## Signal
 
-`forge-cli` v1.9.1 `pr review-threads` (the surface the shared
-`review-thread-cleanup` skill drives) has two gaps a thread-sweep agent hits:
+`forge-cli` review-thread surfaces have gaps a PR delivery or thread-sweep
+agent can hit:
 
 1. `pr review-threads list --dry-run` is NOT dry — it issues a live `gh`
    PR-view call before the dry-run plan branch, so it depends on network /
@@ -19,12 +19,23 @@
 2. The `pr review-threads list` JSON carries only each thread's first comment
    (author / body / url) — not later replies or the diff hunk — so triage that
    depends on a reply or the hunk needs a separate fetch.
+3. `pr review --submit-review --thread-file` can return a low-level
+   `software_error` when a requested line-level thread is not actually
+   threadable by GitHub (observed with a line outside the PR diff hunk). The
+   GraphQL mutation returned `thread: null`, and the CLI reported
+   "github review-thread response is missing an expected field" instead of a
+   local validation or actionable provider error.
 
 ## Evidence
 
 - Raw record: not captured (manual diagnosis, 2026-06-16).
 - Evidence: `evidence/review-threads-dryrun-repro.md` (dry-run live-call repro).
+- Evidence: `evidence/review-thread-null-response.md` (`--thread-file` line
+  anchor outside the diff hunk returns `thread: null` / `software_error` in
+  `forge-cli` v1.17.0; file-level retry succeeds).
 - Version: `forge-cli` v1.9.1.
+- Later observation: `forge-cli` v1.17.0 still has the `--thread-file` null
+  response failure shape.
 - Repro (gap 1): `forge-cli --provider github --repo graysurf/agent-runtime-kit
   --dry-run --format json pr review-threads list 9999999` returns a live
   GraphQL error ("Could not resolve to a PullRequest 9999999"), while
@@ -41,9 +52,11 @@
 ## Impact
 
 A "deterministic" runtime-smoke probe over `list --dry-run` fails closed on a
-host without network / `gh` auth / a live PR; and an agent triaging threads off
-the `list` payload alone can disposition on incomplete evidence (missing replies
-or diff hunks).
+host without network / `gh` auth / a live PR; an agent triaging threads off the
+`list` payload alone can disposition on incomplete evidence (missing replies or
+diff hunks); and an agent posting actionable review findings can lose time to a
+non-actionable `software_error` when a line-level thread anchor is invalid for
+GitHub's review-thread mutation.
 
 ## Current Workaround
 
@@ -55,15 +68,21 @@ or diff hunks).
   PR diff).
 - Filter on the normalized `resolved` / `outdated` envelope fields, not the raw
   GraphQL `isResolved` / `isOutdated`.
+- For `pr review --thread-file`, use file-level threads for cross-hunk findings
+  and line-level threads only for changed diff lines until the CLI reports
+  out-of-diff anchors explicitly.
 
 ## Promotion Criteria
 
-Promote/close when nils-cli#887 (dry-run honored for `list`) and #888 (incl.
-replies/hunks in the `list` payload) land in a `forge-cli` release and the
+Promote/close when nils-cli#887 (dry-run honored for `list`), #888 (incl.
+replies/hunks in the `list` payload), and the `--thread-file` invalid-anchor /
+null-thread response path are fixed in a `forge-cli` release and the
 agent-runtime-kit nils-cli pin is bumped.
 
 ## Next Action
 
 Track upstream via #887 / #888. On the next `forge-cli` release: bump the
 agent-runtime-kit nils-cli pin, restore the dropped `list` dry-run smoke probe,
-and re-add the read-surface coverage claim in `acceptance-matrix.yaml`.
+re-add the read-surface coverage claim in `acceptance-matrix.yaml`, and add a
+validation case that an out-of-diff `--thread-file` line produces an actionable
+error or is prevalidated before provider mutation.
