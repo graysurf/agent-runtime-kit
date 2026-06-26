@@ -32,6 +32,10 @@ Prereqs:
   specialist review comments through `forge-cli pr review`; reviewer
   subagents never post directly. Specialist comments use `comments-only`; final
   delivery decisions belong to the owning workflow.
+  When a specialist reports actionable findings and the provider is GitHub, the
+  owning workflow should attach `--thread-file` to the first specialist post so
+  each finding becomes a resolvable review thread. No-finding and informational
+  reports omit it.
 
 Inputs:
 
@@ -118,7 +122,10 @@ a finding is work-progress and evidence, not a closing summary. See
    unavailable or blocked, state the fallback reason and review the lenses inline.
    When an owning delivery workflow has provider write access, have it post one
    compact specialist review comment for each returned lens before repair work
-   starts. The parent uses the bot-profile selection from
+   starts. For actionable findings on GitHub, have it attach a
+   `REVIEW_THREAD_FILE` to that first specialist post so the finding opens as a
+   provider-resolvable review thread; clean reviews and follow-up pass summaries
+   stay summary-only. The parent uses the bot-profile selection from
    `REVIEW_OUTCOME_POSTING_CONTRACT.md`: reviewer bot for mapped lenses and
    `FORGE_BOT_PROFILE=dobi` for unmapped specialist lenses. The reviewer subagent
    stays read-only.

@@ -20,14 +20,14 @@ schema_version: 1
 
 nils_cli:
   # Tag `agent-runtime --version` must report, exactly (major.minor.patch).
-  pinned_tag: "v1.16.0"
+  pinned_tag: "v1.17.0"
   # Release artifact SHA256 pins consumed by docker/build.sh and the GHCR
   # publish workflow. Keep these in lock-step with pinned_tag so the Docker
   # image build verifies nils-cli against an in-repo digest, not only the
   # release sidecar downloaded from the same server.
   release_sha256:
-    linux_amd64: "a3913a91a9b2bd644936a393b2cec7744a5f9239f5ecea390411c645d65b85e2"
-    linux_arm64: "fdcb687d47ad5d14f7cda54870a45d92f74f857b55da50d36a7d7cb81b777f38"
+    linux_amd64: "b7f08b6d5828ff986c0d8f6bbd2708854a4aefda3ffebed40bac8847bfad84db"
+    linux_arm64: "b5fda11b5bc4ce54bc670bbb300a5c71c7ce02b7dd3f16bd960c223d0c226832"
 
 # Optional per-binary floors for the downstream-consumed CLIs. nils-cli
 # ships every crate in lock-step, so the exact `pinned_tag` above is the
@@ -40,8 +40,8 @@ required_clis:
     min: "1.1.0"
   - bin: plan-tooling     # ledger-update / ledger-sync + exec-state-sync repair
     min: "1.0.1"
-  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces + provider payload privacy gate + GitLab MR check/merge API path + review-thread read surface and merge gate + task-list read surface and merge gate + existing-PR adoption in pr deliver + config-gated test-first evidence gate (--test-first-evidence + [test_first].require, layered global config) + pr review-threads list/resolve/reply subcommand group (resolve/reply are GitHub-only write surfaces) + fork-safe remote-derived --repo targeting for provider ops + pr review outcome posting with optional issue mirror
-    min: "1.13.0"
+  - bin: forge-cli        # pr/issue lifecycle + label list/audit/ensure surfaces + provider payload privacy gate + GitLab MR check/merge API path + review-thread read surface and merge gate + task-list read surface and merge gate + existing-PR adoption in pr deliver + config-gated test-first evidence gate (--test-first-evidence + [test_first].require, layered global config) + pr review-threads list/resolve/reply subcommand group (resolve/reply are GitHub-only write surfaces) + fork-safe remote-derived --repo targeting for provider ops + pr review outcome posting with optional issue mirror + GitHub pr review --thread-file for actionable resolvable review findings
+    min: "1.17.0"
   - bin: plan-archive     # discover / migrate / refresh / query
     min: "0.25.5"
   - bin: agent-docs       # data-driven catalog + declared-intent preflight guard + product-scoped document/validation filtering (`--product`) with `agent-docs.preflight.v2`

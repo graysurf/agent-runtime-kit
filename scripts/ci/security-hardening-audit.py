@@ -52,6 +52,11 @@ def pin_value(text: str, key: str) -> str | None:
     return match.group(1) if match else None
 
 
+def pinned_tag_value(text: str) -> str | None:
+    match = re.search(r'^\s*pinned_tag:\s*"([^"]+)"\s*$', text, re.MULTILINE)
+    return match.group(1) if match else None
+
+
 def arg_value(text: str, key: str) -> str | None:
     match = re.search(rf"^\s*ARG\s+{re.escape(key)}=([0-9a-f]{{64}})\s*$", text, re.MULTILINE)
     return match.group(1) if match else None
@@ -116,6 +121,13 @@ def check_dockerfile(errors: list[str]) -> None:
             fail(errors, f"docker/Dockerfile missing 64-hex ARG {arg}")
 
     pin_text = read("docs/source/nils-cli-pin.yaml")
+    expected_nils_cli_version = pinned_tag_value(pin_text)
+    docker_nils_cli_version = arg_text_value(dockerfile, "NILS_CLI_VERSION")
+    if expected_nils_cli_version and docker_nils_cli_version != expected_nils_cli_version:
+        fail(
+            errors,
+            "docker/Dockerfile NILS_CLI_VERSION default does not match docs/source/nils-cli-pin.yaml",
+        )
     manifest_pairs = {
         "NILS_CLI_SHA256_AMD64": pin_value(pin_text, "linux_amd64"),
         "NILS_CLI_SHA256_ARM64": pin_value(pin_text, "linux_arm64"),

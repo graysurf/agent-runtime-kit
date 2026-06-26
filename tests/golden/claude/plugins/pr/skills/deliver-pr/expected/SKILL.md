@@ -10,7 +10,7 @@ description: >
 
 Prereqs:
 
-- `agent-runtime`, `forge-cli >=1.13.0`, `plan-issue >=1.1.0`, and
+- `agent-runtime`, `forge-cli >=1.17.0`, `plan-issue >=1.1.0`, and
   `review-specialists` are installed from the released nils-cli package and
   available on `PATH`. The `code-review-pre-merge-gate` workflow uses
   `review-specialists`; the review-thread sweep and merge gate need
@@ -54,8 +54,11 @@ Outputs:
   (native `COMMENT` review events on GitHub via `--submit-review`, outcome notes
   on GitLab). Mapped lenses use their reviewer bot profile; unmapped specialist
   lenses use `FORGE_BOT_PROFILE=dobi`. These use `comments-only` and report
-  findings and evidence only. If a linked tracking or dispatch issue is present,
-  mirror the compact review URL breadcrumb to that issue.
+  findings and evidence only. On GitHub, actionable findings that require owner
+  changes are also passed through `--thread-file` so the owning agent can fix and
+  resolve them; no-finding reports omit `--thread-file` and stay summary-only.
+  If a linked tracking or dispatch issue is present, mirror the compact review
+  URL breadcrumb to that issue.
 - A delivery review outcome posted to the PR/MR before merge through
   `forge-cli pr review` (a native `APPROVE` / `REQUEST_CHANGES` review event on
   GitHub via `--submit-review`); combined owner outcomes set
@@ -198,6 +201,10 @@ set `FORGE_BOT_PROFILE=dobi` so `dobi-bot` authors it. When the PR/MR is linked
 to a tracking or dispatch issue and the issue number is available, add
 `--issue "$ISSUE" --mirror-issue` so the issue activity shows review progress
 without duplicating full outcome bodies.
+When the specialist report has actionable GitHub findings, include
+`--thread-file "$REVIEW_THREAD_FILE"` on the first specialist review post that
+surfaces those findings. Omit `--thread-file` for clean reviews, informational
+notes, follow-up pass summaries, and the final combined approval outcome.
 
 Immediately before the merge call, sweep provider review threads. Bot
 reviewers post asynchronously — often minutes after PR creation — so the sweep
@@ -300,7 +307,9 @@ Use `profile=tracking` for lightweight plan-tracking issues and
    subagents never call the provider. Post the moment each lens returns — before
    the repair in step 9, never batched after it; the comment is the finding the
    step-9 fix responds to, so it must exist first (see
-   `REVIEW_OUTCOME_POSTING_CONTRACT.md`, posting order).
+   `REVIEW_OUTCOME_POSTING_CONTRACT.md`, posting order). On GitHub, attach
+   `--thread-file` for actionable findings so the fix can close a native review
+   thread; summary-only reviews omit it.
 9. Repair concrete findings in this delivery workflow, then rerun validation,
    checks, and affected review lenses. Post each focused follow-up specialist
    review comment with the same bot-profile selection before continuing.

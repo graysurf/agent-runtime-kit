@@ -1028,6 +1028,8 @@ run_deliver_tracking_issue_probe() {
 run_dispatch_pr_review_probe() {
   local verify_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-verify.json"
   local review_body="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-review.md"
+  local review_threads="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-threads.json"
+  local specialist_provider_review_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-specialist-provider-review.json"
   local provider_review_out="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-provider-review.json"
   local review_md="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr.md"
   local review_payload="$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-payload.json"
@@ -1043,10 +1045,20 @@ run_dispatch_pr_review_probe() {
     "$specialist_out"
   write_review_evidence "$DISPATCH_ARTIFACTS_DIR/review-dispatch-lane-pr-evidence" "$verify_out"
   printf 'Runtime smoke review evidence.\n' >"$review_body"
+  printf '[{"path":"dispatch-fixture.txt","line":1,"body":"Runtime smoke actionable finding thread."}]\n' >"$review_threads"
+  forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    pr review 123 \
+    --decision comments-only \
+    --submit-review \
+    --thread-file "$review_threads" \
+    --comment-file "$review_body" \
+    --lens testing >"$specialist_provider_review_out" 2>&1
   forge-cli --provider github --repo graysurf/agent-runtime-kit \
     --dry-run --format json \
     pr review 123 \
     --decision approve \
+    --submit-review \
     --comment-file "$review_body" \
     --lens testing \
     --lens maintainability \
@@ -1065,8 +1077,12 @@ run_dispatch_pr_review_probe() {
 
   grep -q '"schema_version": "cli.review-evidence.verify.v1"' "$verify_out"
   grep -q '"suggested_specialists"' "$specialist_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$specialist_provider_review_out"
+  grep -q '"decision":"comments-only"' "$specialist_provider_review_out"
+  grep -q '"planned_review_threads"' "$specialist_provider_review_out"
   grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$provider_review_out"
   grep -q '"decision":"approve"' "$provider_review_out"
+  grep -q '"planned_review_threads":0' "$provider_review_out"
   grep -q '"mirror_issue":true' "$provider_review_out"
   grep -q 'plan-issue.record.post.v2' "$review_out"
   grep -q 'Decision: approve' "$review_out"
