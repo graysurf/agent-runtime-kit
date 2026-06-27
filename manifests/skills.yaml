@@ -20,7 +20,7 @@ skills:
         name: daily-brief
         render_to: plugins/reporting/skills/daily-brief/SKILL.md
     required_clis:
-      agent-out: ">=0.13.0"
+      agent-out: ">=1.19.2"
       git-scope: ">=0.13.0"
     state_out_mode: runtime
 
@@ -36,7 +36,7 @@ skills:
         render_to: plugins/reporting/skills/project-retro/SKILL.md
     required_clis:
       repo-retro: ">=0.13.0"
-      agent-out: ">=0.13.0"
+      agent-out: ">=1.19.2"
     state_out_mode: runtime
 
   - id: reporting.topic-radar
@@ -52,7 +52,7 @@ skills:
         render_to: plugins/reporting/skills/topic-radar/SKILL.md
         path_override: plugins/reporting/skills/topic-radar
     required_clis:
-      agent-out: ">=0.13.0"
+      agent-out: ">=1.19.2"
     state_out_mode: runtime
 
   - id: meta.agent-docs
