@@ -33,7 +33,7 @@ Scope rules:
   `min_version_effective_from`: **2026-07-09**; probe: `claude --version`
   (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Claude
-  surface) ships inside nils-cli; pinned snapshot **v1.19.1**
+  surface) ships inside nils-cli; pinned snapshot **v1.19.2**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
   Released subcommands consumed today: `render`, `install`, `uninstall`,
   `doctor`, `audit-drift`, `gc-backups`, `restore-backups`,
@@ -42,7 +42,7 @@ Scope rules:
   project-script dispatcher skills so repository-owned `.agents/scripts/*`
   commands run through explicit `.envrc` / `.env` handling.
 - Per-skill nils-cli floors come from `manifests/skills.yaml`
-  `required_clis` (e.g. `agent-out: ">=0.13.0"`,
+  `required_clis` (e.g. `agent-out: ">=1.19.2"`,
   `agent-docs: ">=0.16.0"`, `agent-run: ">=0.20.0"`). These gate skill
   bodies, not the harness load path.
 
@@ -295,7 +295,7 @@ a uniform shape:
 | 11 | `statusLine` | no | — | n/a | n/a |
 | 12 | MCP servers | no | — | n/a | n/a |
 | 13 | Heuristic system | yes | shared policy root | 2.1.145 | v1.8.0 (heuristic-inbox) |
-| 14 | `state_home` | yes | env var + `agent-out` allocation | 2.1.145 | v0.17.5 (`agent-out >=0.13.0` floor in skills.yaml) |
+| 14 | `state_home` | yes | env var + `agent-out` allocation | 2.1.145 | v1.19.2 (`agent-out >=1.19.2` floor for rendered `path-for` skill instructions) |
 
 Status legend:
 
