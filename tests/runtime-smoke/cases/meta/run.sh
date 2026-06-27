@@ -86,8 +86,12 @@ run_home_prompt_render_probe() {
 
 run_agent_out_probe() {
   local out="$META_ARTIFACTS_DIR/agent-out.json"
+  local cleanup_plan="$META_ARTIFACTS_DIR/agent-out.cleanup-plan.json"
+  local cleanup_apply="$META_ARTIFACTS_DIR/agent-out.cleanup-apply.json"
+  local cleanup_bad_digest="$META_ARTIFACTS_DIR/agent-out.cleanup-bad-digest.json"
+  local cleanup_bad_digest_stderr="$META_ARTIFACTS_DIR/agent-out.cleanup-bad-digest.stderr"
   local agent_home="$TMP_ROOT/meta-agent-home"
-  local path physical_agent_home physical_path
+  local path physical_agent_home physical_path cleanup_digest
   require_meta_bin agent-out || return 1
   mkdir -p "$agent_home"
   (
@@ -111,6 +115,94 @@ run_agent_out_probe() {
       return 1
       ;;
   esac
+
+  mkdir -p "$agent_home/out/nils-versions/v-old" "$agent_home/out/loose-debug" "$agent_home/out/late-debug"
+  printf 'old cache\n' >"$agent_home/out/nils-versions/v-old/file.txt"
+  printf 'debug artifact\n' >"$agent_home/out/loose-debug/file.txt"
+  printf 'late debug artifact\n' >"$agent_home/out/late-debug/file.txt"
+
+  (
+    cd "$META_WORKSPACE"
+    AGENT_HOME="$agent_home" agent-out cleanup plan \
+      --agent-home "$agent_home" \
+      --format json
+  ) >"$cleanup_plan" 2>&1
+  cleanup_digest="$(
+    python3 - "$cleanup_plan" <<'PY'
+import json
+import sys
+
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["schema_version"] == "cli.agent-out.cleanup.plan.v1"
+assert doc["ok"] is True
+result = doc["result"]
+items = {item["name"]: item for item in result["items"]}
+assert items["nils-versions"]["category"] == "cache"
+assert items["nils-versions"]["action"] == "delete"
+assert items["loose-debug"]["category"] == "top-level-noncanonical"
+assert items["loose-debug"]["action"] == "delete"
+assert items["late-debug"]["category"] == "top-level-noncanonical"
+assert items["late-debug"]["action"] == "delete"
+print(result["plan_digest"])
+PY
+  )"
+
+  if (
+    cd "$META_WORKSPACE"
+    AGENT_HOME="$agent_home" agent-out cleanup apply \
+      --agent-home "$agent_home" \
+      --plan-file "$cleanup_plan" \
+      --confirm-digest "sha256:not-the-plan" \
+      --format json
+  ) >"$cleanup_bad_digest" 2>"$cleanup_bad_digest_stderr"; then
+    echo "runtime-smoke meta: cleanup apply accepted a mismatched plan digest" >&2
+    return 1
+  fi
+  python3 - "$cleanup_bad_digest" <<'PY'
+import json
+import sys
+
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["ok"] is False
+assert doc["error"]["code"] == "cleanup-digest-mismatch"
+PY
+  test -e "$agent_home/out/nils-versions"
+  test -e "$agent_home/out/loose-debug"
+  test -e "$agent_home/out/late-debug"
+
+  printf '{}\n' >"$agent_home/out/late-debug/skill-usage.record.json"
+  (
+    cd "$META_WORKSPACE"
+    AGENT_HOME="$agent_home" agent-out cleanup apply \
+      --agent-home "$agent_home" \
+      --plan-file "$cleanup_plan" \
+      --confirm-digest "$cleanup_digest" \
+      --format json
+  ) >"$cleanup_apply" 2>&1
+  python3 - "$cleanup_apply" <<'PY'
+import json
+import sys
+
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["schema_version"] == "cli.agent-out.cleanup.apply.v1"
+assert doc["ok"] is True
+result = doc["result"]
+assert result["applied"] is True
+assert result["summary"]["deleted"] == 2
+assert result["summary"]["skipped"] == 1
+statuses = {entry["status"] for entry in result["entries"]}
+assert statuses == {"deleted", "skipped"}
+skipped = [
+    entry for entry in result["entries"]
+    if entry["status"] == "skipped" and entry["path"].endswith("/late-debug")
+]
+assert len(skipped) == 1
+assert skipped[0]["reason"] == "evidence marker appeared after the plan was created"
+PY
+  test ! -e "$agent_home/out/nils-versions"
+  test ! -e "$agent_home/out/loose-debug"
+  test -e "$agent_home/out/late-debug/skill-usage.record.json"
+  test -d "$path"
 }
 
 run_agent_scope_lock_probe() {
@@ -1759,7 +1851,7 @@ PY
 failures=0
 record_case "meta.agent-docs" "project-dev docs preflight passed from fixture workspace" run_agent_docs_probe
 record_case "meta.home-prompt-render" "home prompt render isolates Codex-only delegation and product sentinel text" run_home_prompt_render_probe
-record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe
+record_case "meta.agent-out" "agent-out allocated a temp project path and applied a reviewed cleanup plan" run_agent_out_probe
 record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe
 record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap
 record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy
