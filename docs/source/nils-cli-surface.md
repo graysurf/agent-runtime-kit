@@ -1,20 +1,40 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-27 (refreshed for `v1.18.6`)
+- Snapshot date: 2026-06-27 (refreshed for `v1.18.8`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.18.6`
+- Active `git describe --tags` output: `v1.18.8`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.18.6`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.18.8`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `69dee36`
-  (`chore(release): bump cli versions to 1.18.6 (#969)`)
+- Head commit: `d8ba9fd`
+  (`chore(release): bump cli versions to 1.18.8 (#978)`)
 - Release:
-  [`v1.18.6`](https://github.com/sympoies/nils-cli/releases/tag/v1.18.6),
+  [`v1.18.8`](https://github.com/sympoies/nils-cli/releases/tag/v1.18.8),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.18.8` advances the runtime-kit host pin from `v1.18.6` through the
+  prompt-segment stale-cache recovery releases. Runtime-kit does not consume a
+  new CLI flag or JSON envelope from this range, so no `required_clis[]` floor
+  moves; the exact `pinned_tag` gate now covers host alignment with `v1.18.8`.
+  Consumer-visible changes:
+  - `codex-cli prompt-segment` now retries target auth after a rate-limit HTTP
+    401 when `CODEX_AUTO_REFRESH_ENABLED` is enabled, suppresses auth-refresh
+    chatter in prompt output, and detaches the Unix background refresh worker
+    from the prompt shell process group so Starship shell teardown does not
+    kill cache writeback
+    ([#972](https://github.com/sympoies/nils-cli/pull/972),
+    [#976](https://github.com/sympoies/nils-cli/pull/976)). This restores
+    stale prompt rendering as a one-prompt event: the stale render schedules a
+    background refresh, and a later prompt can read the fresh cache.
+  - `forge-cli pr review validate` adds additive preflight coverage for review
+    summaries, thread-file shape, and GitHub diff coordinates
+    ([#973](https://github.com/sympoies/nils-cli/pull/973)). Runtime-kit still
+    consumes the native review `--thread-file` posting surface introduced in
+    `v1.17.0`; it does not consume the new validate subcommand, so the
+    `forge-cli` floor stays at `>= 1.17.0`.
 - `v1.18.6` advances the runtime-kit host pin from `v1.17.0` through the
   `v1.18.x` Codex auth hardening releases. Runtime-kit does not consume a new
   CLI flag or JSON envelope from this range, so no `required_clis[]` floor
