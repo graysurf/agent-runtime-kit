@@ -1,20 +1,41 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-27 (refreshed for `v1.17.0`)
+- Snapshot date: 2026-06-27 (refreshed for `v1.18.6`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.17.0`
+- Active `git describe --tags` output: `v1.18.6`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.17.0`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.18.6`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `766d3d9`
-  (`chore(release): bump cli versions to 1.17.0 (#952)`)
+- Head commit: `69dee36`
+  (`chore(release): bump cli versions to 1.18.6 (#969)`)
 - Release:
-  [`v1.17.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.17.0),
+  [`v1.18.6`](https://github.com/sympoies/nils-cli/releases/tag/v1.18.6),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.18.6` advances the runtime-kit host pin from `v1.17.0` through the
+  `v1.18.x` Codex auth hardening releases. Runtime-kit does not consume a new
+  CLI flag or JSON envelope from this range, so no `required_clis[]` floor
+  moves; the exact `pinned_tag` gate now covers host alignment with `v1.18.6`.
+  Consumer-visible changes:
+  - `codex-cli` remote auth sync is now target-aware for the active auth file
+    or secret-file target before falling back to `CODEX_AUTH_REMOTE_NAME`,
+    rate-limit 401 retries use access-only remote exports, and `codex-cli
+    agent` preflights remote auth before invoking the upstream `codex exec`
+    ([#953](https://github.com/sympoies/nils-cli/pull/953),
+    [#956](https://github.com/sympoies/nils-cli/pull/956),
+    [#959](https://github.com/sympoies/nils-cli/pull/959),
+    [#965](https://github.com/sympoies/nils-cli/pull/965),
+    [#968](https://github.com/sympoies/nils-cli/pull/968)). This supports
+    background prompt/rate-limit sync for active stale tokens without changing
+    runtime-kit templates or golden render outputs.
+  - `forge-cli pr review` classifies GitHub native review HTTP 422 responses
+    as typed actionable errors while preserving backend detail
+    ([#962](https://github.com/sympoies/nils-cli/pull/962)). Runtime-kit
+    already consumes the native review/thread-file surface from `v1.17.0`; this
+    release hardens failure reporting only.
 - `v1.17.0` is a lock-step minor over `v1.16.0`. Runtime-kit now consumes the
   GitHub-only `forge-cli pr review --thread-file` surface for actionable review
   findings ([#951](https://github.com/sympoies/nils-cli/pull/951)). With
