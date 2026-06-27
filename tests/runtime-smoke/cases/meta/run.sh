@@ -88,6 +88,8 @@ run_agent_out_probe() {
   local out="$META_ARTIFACTS_DIR/agent-out.json"
   local cleanup_plan="$META_ARTIFACTS_DIR/agent-out.cleanup-plan.json"
   local cleanup_apply="$META_ARTIFACTS_DIR/agent-out.cleanup-apply.json"
+  local cleanup_bad_digest="$META_ARTIFACTS_DIR/agent-out.cleanup-bad-digest.json"
+  local cleanup_bad_digest_stderr="$META_ARTIFACTS_DIR/agent-out.cleanup-bad-digest.stderr"
   local agent_home="$TMP_ROOT/meta-agent-home"
   local path physical_agent_home physical_path cleanup_digest
   require_meta_bin agent-out || return 1
@@ -114,9 +116,10 @@ run_agent_out_probe() {
       ;;
   esac
 
-  mkdir -p "$agent_home/out/nils-versions/v-old" "$agent_home/out/loose-debug"
+  mkdir -p "$agent_home/out/nils-versions/v-old" "$agent_home/out/loose-debug" "$agent_home/out/late-debug"
   printf 'old cache\n' >"$agent_home/out/nils-versions/v-old/file.txt"
   printf 'debug artifact\n' >"$agent_home/out/loose-debug/file.txt"
+  printf 'late debug artifact\n' >"$agent_home/out/late-debug/file.txt"
 
   (
     cd "$META_WORKSPACE"
@@ -138,10 +141,36 @@ assert items["nils-versions"]["category"] == "cache"
 assert items["nils-versions"]["action"] == "delete"
 assert items["loose-debug"]["category"] == "top-level-noncanonical"
 assert items["loose-debug"]["action"] == "delete"
+assert items["late-debug"]["category"] == "top-level-noncanonical"
+assert items["late-debug"]["action"] == "delete"
 print(result["plan_digest"])
 PY
   )"
 
+  if (
+    cd "$META_WORKSPACE"
+    AGENT_HOME="$agent_home" agent-out cleanup apply \
+      --agent-home "$agent_home" \
+      --plan-file "$cleanup_plan" \
+      --confirm-digest "sha256:not-the-plan" \
+      --format json
+  ) >"$cleanup_bad_digest" 2>"$cleanup_bad_digest_stderr"; then
+    echo "runtime-smoke meta: cleanup apply accepted a mismatched plan digest" >&2
+    return 1
+  fi
+  python3 - "$cleanup_bad_digest" <<'PY'
+import json
+import sys
+
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["ok"] is False
+assert doc["error"]["code"] == "cleanup-digest-mismatch"
+PY
+  test -e "$agent_home/out/nils-versions"
+  test -e "$agent_home/out/loose-debug"
+  test -e "$agent_home/out/late-debug"
+
+  printf '{}\n' >"$agent_home/out/late-debug/skill-usage.record.json"
   (
     cd "$META_WORKSPACE"
     AGENT_HOME="$agent_home" agent-out cleanup apply \
@@ -160,11 +189,20 @@ assert doc["ok"] is True
 result = doc["result"]
 assert result["applied"] is True
 assert result["summary"]["deleted"] == 2
+assert result["summary"]["skipped"] == 1
 statuses = {entry["status"] for entry in result["entries"]}
-assert statuses == {"deleted"}
+assert statuses == {"deleted", "skipped"}
+skipped = [
+    entry for entry in result["entries"]
+    if entry["status"] == "skipped" and entry["path"].endswith("/late-debug")
+]
+assert len(skipped) == 1
+assert skipped[0]["reason"] == "evidence marker appeared after the plan was created"
 PY
   test ! -e "$agent_home/out/nils-versions"
   test ! -e "$agent_home/out/loose-debug"
+  test -e "$agent_home/out/late-debug/skill-usage.record.json"
+  test -d "$path"
 }
 
 run_agent_scope_lock_probe() {

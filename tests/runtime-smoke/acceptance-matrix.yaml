@@ -47,9 +47,9 @@ cases:
     mode: deterministic
     fixture_workspace: tests/runtime-smoke/workspaces/basic-repo
     setup: create temp output root
-    invocation: agent-out project allocation plus cleanup plan/apply in temp output root
+    invocation: agent-out project allocation plus digest-gated cleanup plan/apply in temp output root
     expected_exit_code: 0
-    expected_artifacts: temp output path and cleanup plan/apply JSON
+    expected_artifacts: temp output path, cleanup plan/apply JSON, bad-digest rejection JSON, and retained-marker skip
     cleanup: temp-output-only
     expected_disposition: pass
     skip_policy: none
