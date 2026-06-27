@@ -1,25 +1,26 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-27 (refreshed for `v1.18.8`)
+- Snapshot date: 2026-06-27 (refreshed for `v1.19.1`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.18.8`
+- Active `git describe --tags` output: `v1.19.1`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.18.8`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.19.1`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `d8ba9fd`
-  (`chore(release): bump cli versions to 1.18.8 (#978)`)
+- Head commit: `b51d2f8`
+  (`chore(release): bump cli versions to 1.19.1 (#979)`)
 - Release:
-  [`v1.18.8`](https://github.com/sympoies/nils-cli/releases/tag/v1.18.8),
+  [`v1.19.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.19.1),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
-- `v1.18.8` advances the runtime-kit host pin from `v1.18.6` through the
-  prompt-segment stale-cache recovery releases. Runtime-kit does not consume a
-  new CLI flag or JSON envelope from this range, so no `required_clis[]` floor
-  moves; the exact `pinned_tag` gate now covers host alignment with `v1.18.8`.
-  Consumer-visible changes:
+- `v1.19.1` advances the runtime-kit host pin from `v1.18.8` and restores a
+  monotonic released host baseline after the `v1.19.0` / `v1.18.8` release
+  ordering overlap. The CLI surface diff from `v1.18.8` to `v1.19.1` is
+  release metadata only, so no `required_clis[]` floor moves; the exact
+  `pinned_tag` gate now covers host alignment with `v1.19.1`. Consumer-visible
+  changes retained by this pin:
   - `codex-cli prompt-segment` now retries target auth after a rate-limit HTTP
     401 when `CODEX_AUTO_REFRESH_ENABLED` is enabled, suppresses auth-refresh
     chatter in prompt output, and detaches the Unix background refresh worker
