@@ -86,8 +86,10 @@ run_home_prompt_render_probe() {
 
 run_agent_out_probe() {
   local out="$META_ARTIFACTS_DIR/agent-out.json"
+  local cleanup_plan="$META_ARTIFACTS_DIR/agent-out.cleanup-plan.json"
+  local cleanup_apply="$META_ARTIFACTS_DIR/agent-out.cleanup-apply.json"
   local agent_home="$TMP_ROOT/meta-agent-home"
-  local path physical_agent_home physical_path
+  local path physical_agent_home physical_path cleanup_digest
   require_meta_bin agent-out || return 1
   mkdir -p "$agent_home"
   (
@@ -111,6 +113,58 @@ run_agent_out_probe() {
       return 1
       ;;
   esac
+
+  mkdir -p "$agent_home/out/nils-versions/v-old" "$agent_home/out/loose-debug"
+  printf 'old cache\n' >"$agent_home/out/nils-versions/v-old/file.txt"
+  printf 'debug artifact\n' >"$agent_home/out/loose-debug/file.txt"
+
+  (
+    cd "$META_WORKSPACE"
+    AGENT_HOME="$agent_home" agent-out cleanup plan \
+      --agent-home "$agent_home" \
+      --format json
+  ) >"$cleanup_plan" 2>&1
+  cleanup_digest="$(
+    python3 - "$cleanup_plan" <<'PY'
+import json
+import sys
+
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["schema_version"] == "cli.agent-out.cleanup.plan.v1"
+assert doc["ok"] is True
+result = doc["result"]
+items = {item["name"]: item for item in result["items"]}
+assert items["nils-versions"]["category"] == "cache"
+assert items["nils-versions"]["action"] == "delete"
+assert items["loose-debug"]["category"] == "top-level-noncanonical"
+assert items["loose-debug"]["action"] == "delete"
+print(result["plan_digest"])
+PY
+  )"
+
+  (
+    cd "$META_WORKSPACE"
+    AGENT_HOME="$agent_home" agent-out cleanup apply \
+      --agent-home "$agent_home" \
+      --plan-file "$cleanup_plan" \
+      --confirm-digest "$cleanup_digest" \
+      --format json
+  ) >"$cleanup_apply" 2>&1
+  python3 - "$cleanup_apply" <<'PY'
+import json
+import sys
+
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+assert doc["schema_version"] == "cli.agent-out.cleanup.apply.v1"
+assert doc["ok"] is True
+result = doc["result"]
+assert result["applied"] is True
+assert result["summary"]["deleted"] == 2
+statuses = {entry["status"] for entry in result["entries"]}
+assert statuses == {"deleted"}
+PY
+  test ! -e "$agent_home/out/nils-versions"
+  test ! -e "$agent_home/out/loose-debug"
 }
 
 run_agent_scope_lock_probe() {
@@ -1759,7 +1813,7 @@ PY
 failures=0
 record_case "meta.agent-docs" "project-dev docs preflight passed from fixture workspace" run_agent_docs_probe
 record_case "meta.home-prompt-render" "home prompt render isolates Codex-only delegation and product sentinel text" run_home_prompt_render_probe
-record_case "meta.agent-out" "agent-out wrote under temp AGENT_HOME" run_agent_out_probe
+record_case "meta.agent-out" "agent-out allocated a temp project path and applied a reviewed cleanup plan" run_agent_out_probe
 record_case "meta.agent-scope-lock" "scope lock create and validate passed in temp git workspace" run_agent_scope_lock_probe
 record_case "meta.bootstrap" "project-local bootstrap shim executed fixture script" run_project_local_shim_probe bootstrap
 record_case "meta.deploy" "project-local deploy shim executed fixture script" run_project_local_shim_probe deploy

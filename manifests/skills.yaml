@@ -80,7 +80,7 @@ skills:
         name: agent-out
         render_to: plugins/meta/skills/agent-out/SKILL.md
     required_clis:
-      agent-out: ">=0.16.0"
+      agent-out: ">=1.19.3"
     state_out_mode: runtime
 
   - id: meta.bootstrap
