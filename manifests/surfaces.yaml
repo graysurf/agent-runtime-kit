@@ -541,7 +541,7 @@ surfaces:
         source_artifacts:
           - "manifests/runtime-roots.yaml codex block"
         min_product: "0.130.0"
-        min_nils_cli: "v0.17.5"
+        min_nils_cli: "v1.19.2"
         acceptance:
           - kind: ci
             note: "gate 5 (drift), gate 7 (doctor `block=0`)"
@@ -559,7 +559,7 @@ surfaces:
         source_artifacts:
           - "manifests/runtime-roots.yaml claude block"
         min_product: "2.1.145"
-        min_nils_cli: "v0.17.5"
+        min_nils_cli: "v1.19.2"
         acceptance:
           - kind: ci
             note: "gate 5 (drift), gate 7 (doctor `block=0`)"

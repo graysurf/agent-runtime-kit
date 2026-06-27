@@ -366,7 +366,7 @@ a uniform shape:
 | 11 | `statusLine` / `settings.json` | not-applicable | — | n/a | n/a |
 | 12 | MCP servers | no | — | n/a | n/a |
 | 13 | Heuristic system | yes | shared policy root | 0.130.0 | v1.8.0 (heuristic-inbox) |
-| 14 | `state_home` | yes | env var + `agent-out` allocation | 0.130.0 | v0.17.5 (`path-for` introduced at `>=1.19.2`; reviewed cleanup plan/apply is skill-specific in `meta.agent-out`) |
+| 14 | `state_home` | yes | env var + `agent-out` allocation | 0.130.0 | v1.19.2 (`path-for`; reviewed cleanup plan/apply is skill-specific in `meta.agent-out`) |
 | 15 | `$CODEX_HOME/skills/<d>/<s>/` | not-applicable | retired; plugin-scoped discovery is row 5 | n/a | n/a |
 | 16 | `config.toml` hook managed block | yes | managed-block sync | 0.130.0 | v0.17.5 |
 | 17 | prompt-mode delegation policy | yes | Codex-only block loaded via rendered home prompt | 0.130.0 | v1.12.1 |
