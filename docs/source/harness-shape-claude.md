@@ -295,7 +295,7 @@ a uniform shape:
 | 11 | `statusLine` | no | — | n/a | n/a |
 | 12 | MCP servers | no | — | n/a | n/a |
 | 13 | Heuristic system | yes | shared policy root | 2.1.145 | v1.8.0 (heuristic-inbox) |
-| 14 | `state_home` | yes | env var + `agent-out` allocation | 2.1.145 | v0.17.5 (`path-for` introduced at `>=1.19.2`; reviewed cleanup plan/apply is skill-specific in `meta.agent-out`) |
+| 14 | `state_home` | yes | env var + `agent-out` allocation | 2.1.145 | v1.19.2 (`path-for`; reviewed cleanup plan/apply is skill-specific in `meta.agent-out`) |
 
 Status legend:
 
