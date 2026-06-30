@@ -115,6 +115,48 @@ inventory. Track repo-scoped third-party license obligations in
 
 ---
 
+## External data fetching and MCP browser servers
+
+Agents reach external data through an escalation ladder. Prefer the cheapest
+rung that works and climb only when it fails:
+
+1. **Built-in `WebSearch` / `WebFetch`** (Claude Code native; Codex web search
+   when enabled) — the default for documentation, API references, package
+   versions, and general lookups. No setup, no key.
+2. **Firecrawl MCP** (`npx -y firecrawl-mcp`) — when the built-in fetch cannot
+   render a JS/SPA page, or you want LLM-ready Markdown and full-content search
+   instead of snippets. Cloud scrape/search API; requires `FIRECRAWL_API_KEY`.
+3. **Playwright MCP** (`npx @playwright/mcp@latest`) — when the task needs a
+   real, scriptable browser: interactive flows, forms, or a logged-in session.
+   Runs a local Chromium; no key. For login, reuse an existing signed-in browser
+   profile rather than automating credentials.
+4. **Heavy anti-bot / CAPTCHA** — do not fight Cloudflare-class protection from a
+   headless agent browser. Route it to a dedicated headed-browser crawl
+   environment (for example, a real Chrome under a virtual display) instead.
+
+The cloud browser-automation services (Browser Use, Browserbase) and the
+scrape/search API (Firecrawl) are reached over MCP or an API key, not installed
+as Homebrew formulas, so they are intentionally absent from
+`manifests/cli-tools.yaml`.
+
+### MCP server credentials
+
+MCP server configuration is per-user and out of scope for this repo's managed
+surfaces (the secret boundary); the `mcp-secret-scan` hook blocks secrets
+written into `.mcp.json` or Bash-authored MCP config. Keep API keys out of
+version control and out of the config file itself:
+
+- **Claude Code** — `.mcp.json` and `~/.claude.json` expand `${VAR}` at server
+  launch, so store the placeholder, not the secret:
+  `"env": { "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}" }`.
+- **Codex** — `config.toml` does **not** expand `${VAR}`. Forward a named
+  variable from Codex's local environment with `env_vars`, which passes it to the
+  server without writing the value into the file: `env_vars = ["FIRECRAWL_API_KEY"]`.
+- Source the variable from your secrets store or shell environment; never paste
+  the literal key into a tracked or scanned file.
+
+---
+
 ## Agent workflow helpers
 
 These are nils-cli binaries shipped through `brew install sympoies/tap/nils-cli`,
