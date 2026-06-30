@@ -12,12 +12,18 @@
 - It is git-managed in `agent-runtime-kit` and loaded through
   `$HOME/.claude/CLAUDE.md`, which should symlink to
   `build/claude/AGENT_HOME.md`.
+{% elif product == "hermes" %}
+- It is git-managed in `agent-runtime-kit` and loaded through Hermes's
+  project context system (SOUL.md, .hermes.md, or AGENTS.md from cwd).
+- The rendered `build/hermes/AGENT_HOME.md` can be copied to
+  `~/.hermes/skills/development-policy/SKILL.md` for on-demand loading.
 {% else %}
 - It is git-managed in `agent-runtime-kit` and can render product-specific
   home prompts for:
   - `$CODEX_HOME/AGENTS.md` (normally `$HOME/.codex/AGENTS.md`)
   - `$HOME/.claude/CLAUDE.md`
-  Both should symlink to the matching rendered home prompt under
+  - `~/.hermes/skills/` (Hermes skill tree)
+  Each should symlink to the matching rendered home prompt under
   `build/<product>/AGENT_HOME.md`.
 {% endif %}
 {% if product == "codex" %}
@@ -26,6 +32,10 @@
 {% elif product == "claude" %}
 - The filename is intentionally not `CLAUDE.md`, so this source repo can also
   keep project-local policy without double-loading the same defaults.
+{% elif product == "hermes" %}
+- The filename is intentionally not `SOUL.md` or `.hermes.md`, so this source
+  repo can also keep project-local policy without double-loading the same
+  defaults. Hermes loads AGENTS.md/.hermes.md from cwd independently.
 {% else %}
 - The filename is intentionally not `AGENTS.md` or `CLAUDE.md`, so this source
   repo can also keep project-local policy without double-loading the same
@@ -36,6 +46,8 @@
   or directory `AGENTS.md` can override or extend it.
 {% elif product == "claude" %}
   or directory `CLAUDE.md` can override or extend it.
+{% elif product == "hermes" %}
+  or directory `AGENTS.md` / `.hermes.md` can override or extend it.
 {% else %}
   or directory `AGENTS.md` / `CLAUDE.md` can override or extend it.
 {% endif %}
@@ -77,6 +89,10 @@
   inherit the active managed docs-home. For manual `agent-docs` checks in this
   checkout, use the source checkout as docs-home. Do not use the `AGENT_HOME`
   environment variable as docs-home — that is the `agent-out` artifact root.
+{% elif product == "hermes" %}
+- Hermes does not have an agent-docs or hook system. To inspect a repo's
+  declared docs, use `read_file` to open AGENT_DOCS.toml or project docs.
+- For validation, use the project's declared CI commands via terminal tool.
 {% else %}
 - Repo-owned hooks pass this runtime-kit source checkout as docs-home only when
   the active repo is the runtime-kit source checkout; other project catalogs

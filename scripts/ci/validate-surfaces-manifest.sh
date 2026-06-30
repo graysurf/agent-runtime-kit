@@ -2,9 +2,9 @@
 # Validate the SUPPORT_MATRIX surface registry shape.
 #
 # This focused smoke check covers the schema constraints that matter for
-# `agent-runtime render --target support-matrix`: 17 canonical surfaces, both
-# products present, typed acceptance entries, exactly one command/note per
-# entry, and exit-status-only success predicates.
+# `agent-runtime render --target support-matrix`: 17 canonical surfaces, all
+# three products (codex, claude, hermes) present, typed acceptance entries,
+# exactly one command/note per entry, and exit-status-only success predicates.
 #
 # It also resolves every `source_manifest` provenance citation: each entry must
 # be `path` or `path#anchor` (the legacy `path:Lstart-Lend` line-number form is
@@ -176,7 +176,7 @@ begin
     ordinals[ordinal] = true
 
     products = surface["products"]
-    fail_with("#{id}: products must contain codex and claude only") unless products.is_a?(Hash) && products.keys.sort == %w[claude codex]
+    fail_with("#{id}: products must contain codex, claude, and hermes only") unless products.is_a?(Hash) && products.keys.sort == %w[claude codex hermes]
     products.each do |product, details|
       context = "#{id}.#{product}"
       fail_with("#{context}: details must be a mapping") unless details.is_a?(Hash)

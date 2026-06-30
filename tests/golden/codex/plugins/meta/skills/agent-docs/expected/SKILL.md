@@ -20,8 +20,9 @@ the two non-agent-facing jobs plus catalog management.
 Prereqs:
 
 - `agent-docs` is installed from the released nils-cli package and on `PATH`.
-- docs-home is derived from the install symlink (`~/.claude/CLAUDE.md` /
-  `~/.codex/AGENTS.md`); pass `--docs-home` only to override it.
+- docs-home is derived from the install symlink
+  (`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md` / `$HERMES_HOME/skills`);
+  pass `--docs-home` only to override it.
 - Project work runs from the target repository root unless `--project-path` is
   supplied.
 

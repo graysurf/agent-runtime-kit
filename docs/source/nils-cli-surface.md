@@ -1,20 +1,26 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-06-27 (refreshed for `v1.19.3`)
+- Snapshot date: 2026-06-30 (refreshed for `v1.20.0`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.19.3`
+- Active `git describe --tags` output: `v1.20.0`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.19.3`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.20.0`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `03b3980`
-  (`chore(release): bump cli versions to 1.19.3 (#989)`)
+- Head commit: `4f3b3f8`
+  (`chore(release): bump cli versions to 1.20.0 (#992)`)
 - Release:
-  [`v1.19.3`](https://github.com/sympoies/nils-cli/releases/tag/v1.19.3),
+  [`v1.20.0`](https://github.com/sympoies/nils-cli/releases/tag/v1.20.0),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.20.0` advances the runtime-kit host pin from `v1.19.3` and adds **hermes**
+  as a third render product target: `agent-runtime render --product hermes`,
+  `render --target support-matrix` with a hermes column, and `doctor` /
+  `list-skills` / `gc-backups` product handling (sympoies/nils-cli#991). The
+  surfaces / skills / runtime-roots / product-capabilities deserializers accept
+  a `hermes` product key; `surfaces` keeps it optional, the others require it.
 - `v1.19.3` advances the runtime-kit host pin from `v1.19.2` and adds the
   reviewed `agent-out cleanup plan/apply` workflow for cleaning stale
   `agent-out` data without deleting retained evidence or project artifacts by

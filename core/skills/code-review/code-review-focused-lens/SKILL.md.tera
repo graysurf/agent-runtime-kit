@@ -21,11 +21,18 @@ Prereqs:
 - The requested lens or lenses are explicit before review begins.
 - Keep this workflow read-only: it does not fix code, post PR/MR comments,
   merge, close issues, or write provider state.
+{% if product == "hermes" -%}
+- Dispatch the matching managed `reviewer-<lens>` subagents whenever the active
+  host exposes subagent dispatch. Use `delegate_task` when it is available to
+  dispatch the requested reviewers; inline review is only the fallback when
+  dispatch is unavailable or blocked, and the fallback must be stated.
+{%- else -%}
 - Dispatch the matching managed `reviewer-<lens>` subagents whenever the active
   host exposes subagent dispatch. In Codex sessions, if
   `multi_agent_v1.spawn_agent` or an equivalent dispatch tool is exposed, Codex
   must dispatch the requested reviewers; inline review is only the fallback when
   dispatch is unavailable or blocked, and the fallback must be stated.
+{%- endif %}
 
 Inputs:
 
@@ -78,12 +85,20 @@ review-specialists merge --input focused-findings.jsonl --summary-out focused-re
 2. Establish the review target and base ref. For a PR/MR, use the actual
    PR/MR base or merge-base.
 3. Run `review-specialists scope` with the forced lens flags.
+{% if product == "hermes" -%}
+4. Dispatch the matching managed reviewer subagent for each requested lens
+   (`reviewer-testing`, `reviewer-security`, `reviewer-performance`,
+   `reviewer-data-migration`, `reviewer-api-contract`,
+   `reviewer-maintainability`, or `reviewer-red-team`) whenever subagent
+   dispatch is available. Use `delegate_task` when it is available.
+{%- else -%}
 4. Dispatch the matching managed reviewer subagent for each requested lens
    (`reviewer-testing`, `reviewer-security`, `reviewer-performance`,
    `reviewer-data-migration`, `reviewer-api-contract`,
    `reviewer-maintainability`, or `reviewer-red-team`) whenever subagent
    dispatch is available. In Codex, use `multi_agent_v1.spawn_agent` when it is
    available.
+{%- endif %}
 5. If dispatch is unavailable or blocked, state the fallback reason, read only
    the relevant prompt files under
    `skills/code-review/code-review-specialists/references/specialists/`, and run

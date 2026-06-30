@@ -55,7 +55,7 @@ heuristic-inbox ingest-evidence "$root/error-inbox/<slug>" --from validation.md
 
 ## Workflow
 
-1. Resolve the shared root explicitly. Do not rely on cwd when the case should be shared across Codex and Claude.
+1. Resolve the shared root explicitly. Do not rely on cwd when the case should be shared across Codex, Claude, and Hermes.
 2. Verify the target case before changing it.
 3. Use `new` only for curated findings that need durable follow-up.
 4. Use `set-status` with a link when promoting, resolving, or deferring a case.

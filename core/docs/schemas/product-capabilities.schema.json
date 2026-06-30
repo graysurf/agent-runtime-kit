@@ -13,12 +13,13 @@
     },
     "products": {
       "type": "object",
-      "description": "Capability blocks keyed by product. Both `codex` and `claude` are required.",
+      "description": "Capability blocks keyed by product. `codex`, `claude`, and `hermes` are required.",
       "additionalProperties": false,
-      "required": ["codex", "claude"],
+      "required": ["codex", "claude", "hermes"],
       "properties": {
         "codex": { "$ref": "#/$defs/product" },
-        "claude": { "$ref": "#/$defs/product" }
+        "claude": { "$ref": "#/$defs/product" },
+        "hermes": { "$ref": "#/$defs/product" }
       }
     },
     "plugin_manifest_diff": {

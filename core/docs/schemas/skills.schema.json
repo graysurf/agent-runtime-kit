@@ -41,11 +41,12 @@
         },
         "products": {
           "type": "object",
-          "description": "Per-product render configuration. Each entry maps a supported product (`codex` / `claude`) to its product-native name and rendered output path.",
+          "description": "Per-product render configuration. Each entry maps a supported product (`codex` / `claude` / `hermes`) to its product-native name and rendered output path.",
           "additionalProperties": false,
           "properties": {
             "codex": { "$ref": "#/$defs/productRender" },
-            "claude": { "$ref": "#/$defs/productRender" }
+            "claude": { "$ref": "#/$defs/productRender" },
+            "hermes": { "$ref": "#/$defs/productRender" }
           }
         },
         "required_clis": {

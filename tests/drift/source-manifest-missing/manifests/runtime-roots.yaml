@@ -22,3 +22,11 @@ products:
     version_probe: "claude --version"
 
 # audit-drift: <TBD: pin during Phase 1>
+  hermes:
+    live_home: "$HOME/.hermes"
+    docs_home: "$HOME/.hermes"
+    state_home: "${HERMES_HOME:-$HOME/.hermes}"
+    min_version: "0.17.0"
+    recommended_version: "0.17.0"
+    min_version_effective_from: "2026-06-30"
+    version_probe: "hermes --version"

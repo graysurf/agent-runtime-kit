@@ -58,10 +58,11 @@
         "products": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["codex", "claude"],
+          "required": ["codex", "claude", "hermes"],
           "properties": {
             "codex": { "$ref": "#/$defs/productSurface" },
-            "claude": { "$ref": "#/$defs/productSurface" }
+            "claude": { "$ref": "#/$defs/productSurface" },
+            "hermes": { "$ref": "#/$defs/productSurface" }
           }
         }
       }
