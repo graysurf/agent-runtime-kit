@@ -1299,8 +1299,16 @@ account_prune_skipped() {
 
   if [ "$skipped" -gt 0 ]; then
     PRUNE_SKIPPED_TOTAL=$((PRUNE_SKIPPED_TOTAL + skipped))
+    # Hermes installs into ~/.hermes/skills/<domain>/ — the same directories that
+    # already hold Hermes's own (non-kit) skills — so its skipped candidates are
+    # expected foreign content, not retired kit skills. Word the per-path line
+    # accordingly so the operator is never told to delete a Hermes-native skill.
+    local phrase="left stale candidate for review"
+    if [ "$product" = "hermes" ]; then
+      phrase="left non-kit-managed path untouched"
+    fi
     printf '%s\n' "$json" |
-      sed -n 's/.*"rel_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/  ? prune-stale left stale candidate for review (product='"$product"'): \1/p'
+      sed -n 's/.*"rel_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/  ? prune-stale '"$phrase"' (product='"$product"'): \1/p'
   fi
 }
 
@@ -1562,7 +1570,18 @@ print_summary() {
   log "summary: synced surfaces for $(product_label); mode=$mode; prune=$prune_status; doctor=$doctor_status; codex prompt-input=$CODEX_PROMPT_STATUS; codex plugins=$CODEX_PLUGIN_STATUS; claude plugins=$CLAUDE_PLUGIN_STATUS; home-prompt=$HOME_PROMPT_STATUS"
 
   if [ "$prune_status" = "review-needed" ]; then
-    log "note: prune-stale could not auto-remove $PRUNE_SKIPPED_TOTAL stale candidate(s) (real files / non-empty managed dirs). Review the paths above and remove any retired managed skill directories by hand. Tracked in core/policies/heuristic-system/error-inbox/sync-runtime-surfaces-prune-stale-dir-gap."
+    case "$PRODUCT" in
+      hermes | both)
+        # Hermes shares its skill domain directories between kit-managed and its
+        # own native skills, so prune-stale always reports the native ones as
+        # skipped. They are NOT retired kit skills — removing them would delete
+        # Hermes's own skills.
+        log "note: prune-stale left $PRUNE_SKIPPED_TOTAL path(s) it does not own (real files / non-empty dirs that are not kit-owned symlinks); they were left untouched. For Hermes these are normally its own skills sharing a domain directory with the kit's — do NOT remove them. Only a codex/claude path above (if any) may be a retired kit skill worth removing by hand. Background: heuristic-system case sync-runtime-surfaces-prune-stale-dir-gap (archived)."
+        ;;
+      *)
+        log "note: prune-stale left $PRUNE_SKIPPED_TOTAL path(s) it does not own (real files / non-empty dirs that are not kit-owned symlinks); they were left untouched. Review the paths above and remove any retired managed skill directory by hand. Background: heuristic-system case sync-runtime-surfaces-prune-stale-dir-gap (archived)."
+        ;;
+    esac
   fi
 }
 

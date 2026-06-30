@@ -1119,6 +1119,47 @@ run_sync_runtime_surfaces_prune_review_reporting_probe() {
     ! grep -q "prune=ok" "$out"
 }
 
+# Hermes shares its skill domain directories between kit-managed and its own
+# native skills, so prune-stale always reports the native ones as skipped. The
+# sync must surface them with neutral, non-destructive wording so an operator is
+# never told to delete a Hermes-native skill (the codex/claude "remove ... by
+# hand" imperative must NOT appear for hermes).
+run_sync_runtime_surfaces_prune_review_hermes_wording_probe() {
+  local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.prune-review-hermes.txt"
+  local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
+
+  # shellcheck disable=SC1090,SC2034
+  (
+    SYNC_RUNTIME_SURFACES_LIB=1 . "$script"
+    set +e
+    APPLY=1
+    PRODUCT=hermes
+    PRUNE_SKIPPED_TOTAL=0
+    account_prune_skipped hermes '{
+  "schema_version": "cli.agent-runtime.prune-stale.v1",
+  "ok": true,
+  "data": {
+    "skipped": 2,
+    "changes": 0,
+    "records": [
+      { "kind": "skipped-non-empty-directory", "rel_path": "skills/media/gif-search" },
+      { "kind": "skipped-regular-file", "rel_path": "skills/media/gif-search/SKILL.md" }
+    ]
+  }
+}'
+    echo "PRUNE_SKIPPED_TOTAL=$PRUNE_SKIPPED_TOTAL"
+    print_summary
+  ) >"$out" 2>&1
+
+  grep -q "PRUNE_SKIPPED_TOTAL=2" "$out" &&
+    grep -q "prune-stale left non-kit-managed path untouched (product=hermes)" "$out" &&
+    grep -q "gif-search" "$out" &&
+    grep -q "prune=review-needed" "$out" &&
+    grep -q "do NOT remove them" "$out" &&
+    ! grep -q "Review the paths above and remove any retired managed skill directory by hand" "$out" &&
+    ! grep -q "prune=ok" "$out"
+}
+
 run_sync_runtime_surfaces_claude_settings_hooks_probe() {
   local out="$META_ARTIFACTS_DIR/sync-runtime-surfaces.claude-settings-hooks.txt"
   local script="$REPO_ROOT/scripts/sync-runtime-surfaces.sh"
@@ -1884,6 +1925,7 @@ record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces apply refuses li
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces prune fixture removes stale owned surfaces only" run_sync_runtime_surfaces_prune_fixture_probe
 record_case "meta.sync-runtime-surfaces" "prune-stale skips retired recursive-file managed skill directory (upstream gap characterization)" run_sync_runtime_surfaces_prune_recursive_stale_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces reports prune=review-needed when prune-stale leaves stale candidates" run_sync_runtime_surfaces_prune_review_reporting_probe
+record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces uses neutral non-destructive wording for hermes prune-skipped paths" run_sync_runtime_surfaces_prune_review_hermes_wording_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces merges Claude settings hooks without dropping custom hooks" run_sync_runtime_surfaces_claude_settings_hooks_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces materializes and installs Claude plugins for skill visibility" run_sync_runtime_surfaces_claude_plugin_registry_probe
 record_case "meta.sync-runtime-surfaces" "sync-runtime-surfaces ships Codex marketplace entries with required policy metadata" run_sync_runtime_surfaces_codex_marketplace_shape_probe
