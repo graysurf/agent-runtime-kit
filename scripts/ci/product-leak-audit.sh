@@ -13,9 +13,10 @@ usage() {
   cat <<'USAGE'
 Usage: bash scripts/ci/product-leak-audit.sh [--self-test]
 
-Scans rendered/loaded Codex and Claude artifacts for foreign product sentinels
-(`Claude` / `CLAUDE_` in Codex artifacts, `Codex` / `CODEX_` in Claude
-artifacts), allowing only documented entries in scripts/ci/product-leak-allow.yaml.
+Scans rendered/loaded Codex, Claude, and Hermes artifacts for foreign product
+sentinels (each product's artifacts must not name either of the other two, e.g.
+`Claude` / `CLAUDE_` / `Hermes` / `HERMES_` in Codex artifacts), allowing only
+documented entries in scripts/ci/product-leak-allow.yaml.
 USAGE
 }
 
@@ -52,15 +53,20 @@ repo = Path(sys.argv[1]).resolve()
 allow_file = Path(sys.argv[2]).resolve()
 extra_args = sys.argv[3:]
 
+# Each product's loaded artifacts must not name a foreign product. With three
+# products, "foreign" is the other two; documented cross-product prose is
+# allowlisted in scripts/ci/product-leak-allow.yaml.
+_CODEX = ("Codex", re.compile(r"\bCodex\b"))
+_CODEX_ENV = ("CODEX_", re.compile(r"CODEX_"))
+_CLAUDE = ("Claude", re.compile(r"\bClaude\b"))
+_CLAUDE_ENV = ("CLAUDE_", re.compile(r"CLAUDE_"))
+_HERMES = ("Hermes", re.compile(r"\bHermes\b"))
+_HERMES_ENV = ("HERMES_", re.compile(r"HERMES_"))
+
 SENTINELS = {
-    "codex": [
-        ("Claude", re.compile(r"\bClaude\b")),
-        ("CLAUDE_", re.compile(r"CLAUDE_")),
-    ],
-    "claude": [
-        ("Codex", re.compile(r"\bCodex\b")),
-        ("CODEX_", re.compile(r"CODEX_")),
-    ],
+    "codex": [_CLAUDE, _CLAUDE_ENV, _HERMES, _HERMES_ENV],
+    "claude": [_CODEX, _CODEX_ENV, _HERMES, _HERMES_ENV],
+    "hermes": [_CODEX, _CODEX_ENV, _CLAUDE, _CLAUDE_ENV],
 }
 
 
@@ -101,7 +107,7 @@ def parse_allow(path: Path) -> list[dict[str, str]]:
                     f"product-leak-audit: allow entry {idx} missing {required}"
                 )
         product = entry.get("product", "any")
-        if product not in {"any", "codex", "claude"}:
+        if product not in {"any", "codex", "claude", "hermes"}:
             raise SystemExit(
                 f"product-leak-audit: allow entry {idx} has invalid product={product!r}"
             )
@@ -132,9 +138,9 @@ def add_tree(files: list[Path], path: Path) -> None:
 
 
 def product_files() -> dict[str, list[Path]]:
-    files: dict[str, list[Path]] = {"codex": [], "claude": []}
+    files: dict[str, list[Path]] = {"codex": [], "claude": [], "hermes": []}
 
-    for product in ("codex", "claude"):
+    for product in ("codex", "claude", "hermes"):
         add_existing(files[product], repo / "build" / product / "AGENT_HOME.md")
         add_tree(files[product], repo / "build" / product / "plugins")
         add_tree(files[product], repo / "build" / product / "agents")
@@ -146,6 +152,10 @@ def product_files() -> dict[str, list[Path]]:
     add_tree(files["claude"], repo / "targets/claude/plugins")
     add_tree(files["claude"], repo / "targets/claude/commands")
     add_tree(files["claude"], repo / "targets/claude/scripts")
+
+    # Hermes has no marketplace, agents tree, commands, or scripts; its loaded
+    # surface is the rendered home prompt + skills plus the plugin manifests.
+    add_tree(files["hermes"], repo / "targets/hermes/plugins")
 
     for raw in extra_args:
         if ":" not in raw:

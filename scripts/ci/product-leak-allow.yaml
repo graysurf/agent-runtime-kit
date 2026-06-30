@@ -33,8 +33,10 @@ allow:
     reason: Project-local removal describes the Claude bridge surface it may inspect.
   - product: codex
     path: build/codex/plugins/meta/skills/heuristic-inbox/SKILL.md
-    sentinel: Claude
-    reason: Heuristic-system records are intentionally shared across runtime products.
+    reason: Heuristic-system records are intentionally shared across Codex, Claude, and Hermes.
+  - product: codex
+    path: build/codex/plugins/meta/skills/agent-docs/SKILL.md
+    reason: agent-docs documents the per-product home conventions (~/.claude, ~/.codex, $HERMES_HOME).
 
   - product: claude
     path: build/claude/plugins/code-review/skills/code-review-*.md
@@ -57,5 +59,31 @@ allow:
     reason: Project setup explicitly refuses global runtime-home mutation for either product.
   - product: claude
     path: build/claude/plugins/meta/skills/heuristic-inbox/SKILL.md
-    sentinel: Codex
-    reason: Heuristic-system records are intentionally shared across runtime products.
+    reason: Heuristic-system records are intentionally shared across Codex, Claude, and Hermes.
+  - product: claude
+    path: build/claude/plugins/meta/skills/agent-docs/SKILL.md
+    reason: agent-docs documents the per-product home conventions (~/.claude, ~/.codex, $HERMES_HOME).
+
+  # Hermes sees both Codex and Claude as foreign; these meta skills are
+  # cross-product capability prose that intentionally name the other products.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/sync-runtime-surfaces/SKILL.md
+    reason: This skill operates on all runtime homes and reports each product's plugin registry.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/setup-project/SKILL.md
+    reason: Project setup explicitly refuses global runtime-home mutation for any product.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/create-project-skill/SKILL.md
+    reason: Project-local skill scaffolding documents the Codex source layout and Claude bridge.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/create-project-skill/scripts/create-project-skill.sh
+    reason: The helper writes project-local Codex/Claude bridge comments when requested.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/remove-project-skill/SKILL.md
+    reason: Project-local removal describes the Codex/Claude bridge surfaces it may inspect.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/nils-cli-bump/SKILL.md
+    reason: The bump skill references refreshing every product surface after a host upgrade.
+  - product: hermes
+    path: build/hermes/plugins/meta/skills/heuristic-inbox/SKILL.md
+    reason: Heuristic-system records are intentionally shared across Codex, Claude, and Hermes.

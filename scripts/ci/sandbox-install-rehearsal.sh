@@ -96,6 +96,10 @@ extract_agent_names() {
 
 run_product() {
   local product="$1"
+  # Whether this product installs reviewer subagents (`agents-tree`). Hermes
+  # ships none (subagent-definitions is not-applicable), so it is invoked with
+  # 0 and must produce zero agent surfaces.
+  local expect_agents="${2:-1}"
   local expected="tests/sandbox/${product}/expected-skills.txt"
   local live_home="$TMP_ROOT/${product}-home"
   local state_home="$TMP_ROOT/state/${product}"
@@ -139,10 +143,22 @@ run_product() {
 
   # Reviewer subagent surfaces: the `agents-tree` link-map entry installs one
   # file per reviewer agent into the product home `agents/` dir.
-  local expected_agents="tests/sandbox/${product}/expected-agents.txt"
   local observed_agents="$TMP_ROOT/${product}.observed-agents.txt"
-  validate_expected_file "$expected_agents"
   extract_agent_names "$dry_run_output" "$observed_agents"
+
+  if [ "$expect_agents" = "0" ]; then
+    # Products without an `agents-tree` (e.g. Hermes) must install no reviewer
+    # agents; a surface appearing here is an unexpected regression.
+    if [ -s "$observed_agents" ]; then
+      echo "sandbox-install-rehearsal.sh: $product ships no reviewer agents but the dry-run installed:" >&2
+      cat "$observed_agents" >&2
+      exit 1
+    fi
+    return 0
+  fi
+
+  local expected_agents="tests/sandbox/${product}/expected-agents.txt"
+  validate_expected_file "$expected_agents"
   if [ ! -s "$observed_agents" ]; then
     echo "sandbox-install-rehearsal.sh: no reviewer agent surfaces found in dry-run output for $product" >&2
     cat "$dry_run_output" >&2
@@ -159,5 +175,6 @@ require_bin agent-runtime
 
 run_product claude
 run_product codex
+run_product hermes 0
 
 echo "sandbox-install-rehearsal.sh: OK"
