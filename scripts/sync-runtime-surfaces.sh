@@ -46,7 +46,7 @@ commands without mutating runtime homes. Pass --apply to run the commands.
 Options:
   --apply
       Execute the refresh. Without this flag, commands are printed only.
-  --product codex|claude|both
+  --product codex|claude|hermes|both
       Limit the refresh to one product. Default: both.
   --source-root PATH
       Use a specific agent-runtime-kit checkout. Defaults to this script's
@@ -180,7 +180,7 @@ parse_args() {
   done
 
   case "$PRODUCT" in
-    codex | claude | both) ;;
+    codex | claude | hermes | both) ;;
     *)
       err "invalid --product value: $PRODUCT (expected codex|claude|both)"
       exit 2
@@ -289,9 +289,11 @@ selected_products() {
   case "$PRODUCT" in
     codex) printf '%s\n' codex ;;
     claude) printf '%s\n' claude ;;
+    hermes) printf '%s\n' hermes ;;
     both)
       printf '%s\n' codex
       printf '%s\n' claude
+      printf '%s\n' hermes
       ;;
   esac
 }
@@ -300,14 +302,15 @@ product_label() {
   case "$PRODUCT" in
     codex) printf '%s\n' codex ;;
     claude) printf '%s\n' claude ;;
-    both) printf '%s\n' codex+claude ;;
+    hermes) printf '%s\n' hermes ;;
+    both) printf '%s\n' codex+claude+hermes ;;
   esac
 }
 
 selected_includes_codex() {
   case "$PRODUCT" in
     codex | both) return 0 ;;
-    claude) return 1 ;;
+    claude | hermes) return 1 ;;
   esac
 }
 
@@ -315,6 +318,7 @@ product_live_home() {
   case "$1" in
     claude) printf '%s\n' "$HOME/.claude" ;;
     codex) printf '%s\n' "${CODEX_HOME:-$HOME/.codex}" ;;
+    hermes) printf '%s\n' "${HERMES_HOME:-$HOME/.hermes}" ;;
     *)
       err "unknown product: $1"
       exit 2
@@ -327,6 +331,7 @@ product_state_home() {
   case "$1" in
     claude) printf '%s\n' "${CLAUDE_KIT_STATE_HOME:-$state_root/claude}" ;;
     codex) printf '%s\n' "${CODEX_AGENT_STATE_HOME:-$state_root/codex}" ;;
+    hermes) printf '%s\n' "${HERMES_HOME:-$HOME/.hermes}" ;;
     *)
       err "unknown product: $1"
       exit 2
@@ -340,7 +345,7 @@ agent_home_raw_source() {
 
 agent_home_source() {
   case "$1" in
-    claude | codex) printf '%s\n' "$SOURCE_ROOT/build/$1/AGENT_HOME.md" ;;
+    claude | codex | hermes) printf '%s\n' "$SOURCE_ROOT/build/$1/AGENT_HOME.md" ;;
     neutral) printf '%s\n' "$SOURCE_ROOT/build/neutral/AGENT_HOME.md" ;;
     *)
       err "unknown product: $1"
@@ -353,6 +358,7 @@ product_home_prompt_path() {
   case "$1" in
     claude) printf '%s\n' "$HOME/.claude/CLAUDE.md" ;;
     codex) printf '%s\n' "${CODEX_HOME:-$HOME/.codex}/AGENTS.md" ;;
+    hermes) printf '%s\n' "${HERMES_HOME:-$HOME/.hermes}/skills/development-policy/SKILL.md" ;;
     *)
       err "unknown product: $1"
       exit 2
@@ -1263,6 +1269,9 @@ sync_product_activation() {
       live_home="$(product_live_home "$product")"
       state_home="$(product_state_home "$product")"
       sync_codex_plugin_registry "$live_home" "$state_home"
+      ;;
+    hermes)
+      log "hermes: no plugin registry to sync; skills are copied directly to ~/.hermes/skills/"
       ;;
     *)
       err "unknown product: $product"

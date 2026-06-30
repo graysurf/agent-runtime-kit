@@ -118,7 +118,7 @@ bash scripts/ci/all.sh                                 # Position 2 now aligned
    `harness-shape-claude.md`, and the `nils-cli` surface row in the `README.md`
    "Version baseline" table.
 7. Apply every needs-rewrite migration in the consumer it touches, then
-   re-render goldens (`agent-runtime render --product codex|claude
+   re-render goldens (`agent-runtime render --product codex|claude|hermes
    --update-golden`) and run `scripts/ci/skill-governance-audit.sh`.
 8. Run `scripts/ci/all.sh`. Position 2 must now report aligned, and Position 14
    (`version-baseline-audit.py check`) must be green — it fails closed if any

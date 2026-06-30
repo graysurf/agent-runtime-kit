@@ -44,15 +44,18 @@ NILS_SURFACE = "docs/source/nils-cli-surface.md"
 HARNESS = {
     "codex": "docs/source/harness-shape-codex.md",
     "claude": "docs/source/harness-shape-claude.md",
+    "hermes": "docs/source/harness-shape-hermes.md",
 }
 
 # Map a product key to how it is labelled in the README table row.
 README_PRODUCT_LABEL = {
     "codex": "Codex CLI",
     "claude": "Claude Code",
+    "hermes": "Hermes Agent",
 }
 
-# npm package per product, for the advisory `report` mode.
+# npm package per product, for the advisory `report` mode. Hermes has no npm
+# distribution, so it is excluded from the npm availability probe below.
 NPM_PACKAGE = {
     "codex": "@openai/codex",
     "claude": "@anthropic-ai/claude-code",
@@ -78,7 +81,7 @@ def runtime_roots_floor():
     """Return {product: {min, recommended, effective}} from runtime-roots."""
     text = _read(RUNTIME_ROOTS)
     out = {}
-    for product in ("codex", "claude"):
+    for product in ("codex", "claude", "hermes"):
         # Scope to the product's block: from `  <product>:` to the next
         # top-level-ish `  <key>:` product or end of file.
         block = re.search(
@@ -203,7 +206,7 @@ def run_check() -> Result:
     readme = readme_rows()
 
     # Product floor: runtime-roots is the source of truth.
-    for product in ("codex", "claude"):
+    for product in ("codex", "claude", "hermes"):
         truth = roots[product]
         rd_floor, rd_eff = readme[product]
         hs = harness_values(product)
@@ -225,7 +228,7 @@ def run_check() -> Result:
     res.expect("nils-pin.readme", pin, readme["nils"], "readme")
     res.expect("nils-pin.surface-describe", pin, surface_describe(), "nils-cli-surface")
     res.expect("nils-pin.surface-prose", pin, surface_pinned_tag(), "nils-cli-surface-prose")
-    for product in ("codex", "claude"):
+    for product in ("codex", "claude", "hermes"):
         res.expect(
             "nils-pin.harness-%s" % product,
             pin,

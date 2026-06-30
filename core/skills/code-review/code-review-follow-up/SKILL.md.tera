@@ -23,12 +23,20 @@ Prereqs:
   available.
 - Keep this workflow read-only: it does not fix code, post PR/MR comments,
   merge, close issues, or write provider state.
+{% if product == "hermes" -%}
+- When affected specialist lenses need to rerun, dispatch the matching managed
+  `reviewer-<lens>` subagents whenever the active host exposes subagent
+  dispatch. Use `delegate_task` when it is available to dispatch the affected
+  reviewers; inline reruns are only the fallback when dispatch is unavailable or
+  blocked, and the fallback must be stated.
+{%- else -%}
 - When affected specialist lenses need to rerun, dispatch the matching managed
   `reviewer-<lens>` subagents whenever the active host exposes subagent
   dispatch. In Codex sessions, if `multi_agent_v1.spawn_agent` or an equivalent
   dispatch tool is exposed, Codex must dispatch the affected reviewers; inline
   reruns are only the fallback when dispatch is unavailable or blocked, and the
   fallback must be stated.
+{%- endif %}
 
 Inputs:
 

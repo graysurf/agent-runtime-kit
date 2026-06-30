@@ -20,12 +20,21 @@ Prereqs:
   running scope detection.
 - Keep this workflow read-only: it does not auto-fix code, merge, close PRs/MRs,
   open/close issues, or post live provider comments.
+{% if product == "hermes" -%}
+- Dispatch the managed read-only `reviewer-<lens>` subagents for the selected
+  lenses whenever the active host exposes subagent dispatch. Use `delegate_task`
+  when it is available to dispatch the selected reviewers; inline lens execution
+  is only the fallback when dispatch is unavailable or blocked, and the fallback
+  must be stated. The parent agent owns lens selection, dispatch, validation,
+  and merge.
+{%- else -%}
 - Dispatch the managed read-only `reviewer-<lens>` subagents for the selected
   lenses whenever the active host exposes subagent dispatch. In Codex sessions,
   if `multi_agent_v1.spawn_agent` or an equivalent dispatch tool is exposed,
   Codex must dispatch the selected reviewers; inline lens execution is only the
   fallback when dispatch is unavailable or blocked, and the fallback must be
   stated. The parent agent owns lens selection, dispatch, validation, and merge.
+{%- endif %}
 - Use `review-dispatch-lane-pr` for PR decision actions and `review-evidence` only
   when findings need a retained evidence record.
 
@@ -113,11 +122,27 @@ after fixes.
    - Consider `data-migration` for migration, schema, or data transform changes.
    - Consider `api-contract` for route, controller, API schema, OpenAPI,
      GraphQL, or protocol changes.
+{% if product == "hermes" -%}
+5. Select the matching managed reviewer subagents for the chosen lenses
+   (`reviewer-testing`, `reviewer-maintainability`, `reviewer-security`,
+   `reviewer-performance`, `reviewer-data-migration`, `reviewer-api-contract`),
+   available through the managed reviewer subagent index.
+{%- else -%}
 5. Select the matching managed reviewer subagents for the chosen lenses
    (`reviewer-testing`, `reviewer-maintainability`, `reviewer-security`,
    `reviewer-performance`, `reviewer-data-migration`, `reviewer-api-contract`),
    installed at `~/.codex/agents/reviewer-<lens>.toml` and
    `~/.claude/agents/reviewer-<lens>.md`.
+{%- endif %}
+{% if product == "hermes" -%}
+6. Dispatch the selected read-only reviewer subagents one per lens, handing each
+   the base ref and scope; each inspects read-only and returns JSONL findings for
+   its lens. Use `delegate_task` when it is available. If dispatch is unavailable
+   or blocked, state the fallback reason and run the same lenses inline by
+   reading the prompt from `references/specialists/`. You stay the parent: you
+   own base-ref selection, lens selection, dispatch, fallback justification, and
+   the validation/merge steps below.
+{%- else -%}
 6. Dispatch the selected read-only reviewer subagents one per lens, handing each
    the base ref and scope; each inspects read-only and returns JSONL findings for
    its lens. In Codex, use `multi_agent_v1.spawn_agent` when it is available.
@@ -125,6 +150,7 @@ after fixes.
    same lenses inline by reading the prompt from `references/specialists/`. You
    stay the parent: you own base-ref selection, lens selection, dispatch,
    fallback justification, and the validation/merge steps below.
+{%- endif %}
 7. Collect each subagent's JSONL findings (or the inline equivalent) following
    `references/SPECIALIST_REVIEW_CONTRACT.md`. Treat malformed JSONL, missing
    required fields, unsupported severities, or absent evidence anchors as a

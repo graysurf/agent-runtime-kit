@@ -57,6 +57,11 @@
               "type": "string",
               "description": "Path to `.claude-plugin/plugin.json` under `targets/claude/`.",
               "minLength": 1
+            },
+            "hermes": {
+              "type": "string",
+              "description": "Path to `.hermes-plugin/plugin.json` under `targets/hermes/`. Metadata-only; Hermes discovers skills from the filesystem and does not load `plugin.json` at runtime.",
+              "minLength": 1
             }
           }
         },

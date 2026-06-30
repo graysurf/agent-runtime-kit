@@ -1,0 +1,5 @@
+{
+  "name": "issue",
+  "version": "0.1.0",
+  "description": "Issue lifecycle skills — issue-triage, issue-follow-up, report-plan-issue-finding for GitHub/GitLab issue management."
+}

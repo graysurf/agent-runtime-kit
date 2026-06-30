@@ -140,9 +140,9 @@ items = {item["name"]: item for item in result["items"]}
 assert items["nils-versions"]["category"] == "cache"
 assert items["nils-versions"]["action"] == "delete"
 assert items["loose-debug"]["category"] == "top-level-noncanonical"
-assert items["loose-debug"]["action"] == "delete"
+assert items["loose-debug"]["action"] == "needs-policy"
 assert items["late-debug"]["category"] == "top-level-noncanonical"
-assert items["late-debug"]["action"] == "delete"
+assert items["late-debug"]["action"] == "needs-policy"
 print(result["plan_digest"])
 PY
   )"
@@ -170,7 +170,6 @@ PY
   test -e "$agent_home/out/loose-debug"
   test -e "$agent_home/out/late-debug"
 
-  printf '{}\n' >"$agent_home/out/late-debug/skill-usage.record.json"
   (
     cd "$META_WORKSPACE"
     AGENT_HOME="$agent_home" agent-out cleanup apply \
@@ -188,20 +187,24 @@ assert doc["schema_version"] == "cli.agent-out.cleanup.apply.v1"
 assert doc["ok"] is True
 result = doc["result"]
 assert result["applied"] is True
-assert result["summary"]["deleted"] == 2
-assert result["summary"]["skipped"] == 1
+# nils-cli >= v1.20.0 (sympoies/nils-cli#990) hardened cleanup apply: only
+# delete-action entries (the nils-versions cache) are removed automatically;
+# top-level-noncanonical dirs are `needs-policy` and survive apply until a
+# human records a policy decision, so neither loose-debug nor late-debug is
+# touched here.
+assert result["summary"]["deleted"] == 1
+assert result["summary"]["skipped"] == 0
 statuses = {entry["status"] for entry in result["entries"]}
-assert statuses == {"deleted", "skipped"}
-skipped = [
+assert statuses == {"deleted"}
+deleted = [
     entry for entry in result["entries"]
-    if entry["status"] == "skipped" and entry["path"].endswith("/late-debug")
+    if entry["status"] == "deleted" and entry["path"].endswith("/nils-versions")
 ]
-assert len(skipped) == 1
-assert skipped[0]["reason"] == "evidence marker appeared after the plan was created"
+assert len(deleted) == 1
 PY
   test ! -e "$agent_home/out/nils-versions"
-  test ! -e "$agent_home/out/loose-debug"
-  test -e "$agent_home/out/late-debug/skill-usage.record.json"
+  test -e "$agent_home/out/loose-debug"
+  test -e "$agent_home/out/late-debug"
   test -d "$path"
 }
 

@@ -68,6 +68,7 @@ bash scripts/ci/skill-governance-audit.sh --update-counts
 bash scripts/ci/skill-governance-audit.sh
 agent-runtime render --product codex --update-golden
 agent-runtime render --product claude --update-golden
+agent-runtime render --product hermes --update-golden
 bash scripts/ci/sandbox-install-rehearsal.sh
 bash tests/runtime-smoke/run.sh --mode deterministic --domain "$domain"
 ```

@@ -18,6 +18,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/reporting/.codex-plugin/plugin.json
       claude: targets/claude/plugins/reporting/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/reporting/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: meta
@@ -50,6 +51,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/meta/.codex-plugin/plugin.json
       claude: targets/claude/plugins/meta/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/meta/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: media
@@ -60,6 +62,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/media/.codex-plugin/plugin.json
       claude: targets/claude/plugins/media/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/media/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: browser
@@ -70,6 +73,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/browser/.codex-plugin/plugin.json
       claude: targets/claude/plugins/browser/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/browser/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: conversation
@@ -85,6 +89,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/conversation/.codex-plugin/plugin.json
       claude: targets/claude/plugins/conversation/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/conversation/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: evidence
@@ -99,6 +104,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/evidence/.codex-plugin/plugin.json
       claude: targets/claude/plugins/evidence/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/evidence/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: issue
@@ -110,6 +116,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/issue/.codex-plugin/plugin.json
       claude: targets/claude/plugins/issue/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/issue/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: code-review
@@ -123,6 +130,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/code-review/.codex-plugin/plugin.json
       claude: targets/claude/plugins/code-review/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/code-review/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: pr
@@ -136,6 +144,7 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/pr/.codex-plugin/plugin.json
       claude: targets/claude/plugins/pr/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/pr/.hermes-plugin/plugin.json
     install_policy: always
 
   - id: dispatch
@@ -152,4 +161,5 @@ plugins:
     product_manifests:
       codex: targets/codex/plugins/dispatch/.codex-plugin/plugin.json
       claude: targets/claude/plugins/dispatch/.claude-plugin/plugin.json
+      hermes: targets/hermes/plugins/dispatch/.hermes-plugin/plugin.json
     install_policy: always

@@ -65,6 +65,25 @@ surfaces:
           - "docs/source/harness-shape-claude.md#1-home-scope-prompt-claudemd"
           - AGENT_HOME.md
 
+      hermes:
+        state: shipped
+        mechanism: "`agent-runtime render --target home-prompt --product hermes` writes `build/hermes/AGENT_HOME.md`; `sync-runtime-surfaces.sh --apply --product hermes` copies it to `~/.hermes/skills/development-policy/SKILL.md` (the user's `SOUL.md` references it and is never overwritten)"
+        source_artifacts:
+          - "AGENT_HOME.md"
+          - "build/hermes/AGENT_HOME.md"
+          - "scripts/sync-runtime-surfaces.sh"
+        min_product: "0.17.0"
+        min_nils_cli: "v1.20.0"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#1-home-scope-prompt-soulmd-development-policy-skill"
+          - "AGENT_HOME.md"
   - id: project-prompt
     ordinal: 2
     name: "project prompt (`./AGENTS.md` / `./CLAUDE.md`)"
@@ -105,6 +124,23 @@ surfaces:
           - "docs/source/harness-shape-claude.md#2-project-scope-prompt-claudemd"
           - AGENTS.md
 
+      hermes:
+        state: shipped
+        mechanism: "Hermes auto-loads `AGENTS.md` or `.hermes.md` from the working directory up to the git root"
+        source_artifacts:
+          - "AGENTS.md"
+        min_product: "0.17.0"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#2-project-scope-prompt-agentsmd-hermesmd"
+          - "AGENTS.md"
   - id: plugin-manifest
     ordinal: 3
     name: "plugin manifest (`.codex-plugin` / `.claude-plugin` `plugin.json`)"
@@ -146,6 +182,23 @@ surfaces:
           - manifests/product-capabilities.yaml
           - targets/claude/link-map.yaml
 
+      hermes:
+        state: shipped
+        mechanism: "`plugin-manifest-copy` per plugin into `~/.hermes/plugins/<domain>/.hermes-plugin/plugin.json`; Hermes discovery is filesystem-based and does not load plugin.json at runtime"
+        source_artifacts:
+          - "targets/hermes/plugins/<domain>/.hermes-plugin/plugin.json"
+        min_product: "0.17.0"
+        min_nils_cli: "v1.20.0"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#3-plugin-manifest-hermes-pluginpluginjson"
+          - "targets/hermes/link-map.yaml"
   - id: plugin-marketplace
     ordinal: 4
     name: "plugin marketplace (`.claude-plugin/marketplace.json`)"
@@ -190,6 +243,21 @@ surfaces:
           - manifests/product-capabilities.yaml
           - targets/claude/link-map.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "Hermes has no plugin marketplace concept; skills are standalone SKILL.md files"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#4-plugin-marketplace"
   - id: plugin-scoped-skill-discovery
     ordinal: 5
     name: "plugin-scoped skill discovery (`plugins/<p>/skills/<s>/`)"
@@ -232,6 +300,21 @@ surfaces:
           - manifests/product-capabilities.yaml
           - targets/claude/link-map.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "Hermes discovers skills from `~/.hermes/skills/<domain>/<skill>/`, not a Claude-style `plugins/<p>/skills/` tree (see the local skill root surface)"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#5-plugin-scoped-skill-discovery-pluginspskillss"
   - id: slash-command-files
     ordinal: 6
     name: "slash command files (`commands/<n>.md`)"
@@ -269,6 +352,21 @@ surfaces:
           - "docs/source/harness-shape-claude.md#6-slash-command-files-commandsnamemd-outside-skills"
           - targets/claude/link-map.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "runtime-kit ships no Hermes slash-command files; Hermes invokes skills by name against the discovered skill tree"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#6-slash-command-files-commandsnamemd"
   - id: subagent-definitions
     ordinal: 7
     name: "subagent definitions (`agents/<n>.md`)"
@@ -310,6 +408,21 @@ surfaces:
           - manifests/agents.yaml
           - targets/claude/link-map.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "Hermes subagent dispatch uses the `delegate_task` tool, not file-based agent definitions"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#7-subagent-definitions-agentsnamemd"
   - id: hook-scripts
     ordinal: 8
     name: "hook scripts (`hooks/<n>.*`)"
@@ -349,6 +462,21 @@ surfaces:
           - "docs/source/harness-shape-claude.md#8-hook-scripts-hooksname"
           - targets/claude/link-map.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "runtime-kit does not render Hermes hook scripts; Hermes manages its approval/hook configuration natively under `~/.hermes`"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#8-hook-scripts-hooksname"
   - id: hook-settings-json
     ordinal: 9
     name: "hook registration via `settings.json` block"
@@ -387,6 +515,21 @@ surfaces:
           - "docs/source/harness-shape-claude.md#9-hook-registration-settingsjson-hooks-block"
           - manifests/runtime-roots.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "`settings.json` hook registration is a Claude-specific primitive"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#9-hook-registration-settingsjson-block"
   - id: output-styles
     ordinal: 10
     name: "output styles (`output-styles/<n>.md`)"
@@ -422,6 +565,21 @@ surfaces:
         source_manifest:
           - "docs/source/harness-shape-claude.md#10-output-styles-output-stylesnamemd"
 
+      hermes:
+        state: not-applicable
+        mechanism: "output styles are a Claude-specific primitive; the kit ships none for Hermes"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#10-output-styles-output-stylesnamemd"
   - id: status-line
     ordinal: 11
     name: "status line (`statusLine` in `settings.json`)"
@@ -457,6 +615,21 @@ surfaces:
         source_manifest:
           - "docs/source/harness-shape-claude.md#11-status-line-statusline-in-settingsjson"
 
+      hermes:
+        state: not-applicable
+        mechanism: "the `statusLine` setting is a Claude-specific primitive"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#11-status-line"
   - id: mcp-servers
     ordinal: 12
     name: "MCP servers (per-user MCP config)"
@@ -492,6 +665,21 @@ surfaces:
         source_manifest:
           - "docs/source/harness-shape-claude.md#12-mcp-servers-per-user-mcp-config"
 
+      hermes:
+        state: not-shipped
+        mechanism: "Hermes supports MCP natively, but the runtime-kit ships no Hermes MCP server configuration today"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#12-mcp-servers-per-user-mcp-config"
   - id: heuristic-system
     ordinal: 13
     name: "heuristic system (curated retained records)"
@@ -531,6 +719,23 @@ surfaces:
           - "docs/source/harness-shape-claude.md#13-heuristic-system-curated-retained-records"
           - core/policies/heuristic-system/
 
+      hermes:
+        state: shipped
+        mechanism: "shared policy root; Hermes references `core/policies/heuristic-system/` through SOUL.md and the rendered skills"
+        source_artifacts:
+          - "core/policies/heuristic-system/"
+        min_product: "0.17.0"
+        min_nils_cli: "v1.20.0"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#13-heuristic-system-curated-retained-records"
+          - "core/policies/heuristic-system/HEURISTIC_SYSTEM.md"
   - id: runtime-state
     ordinal: 14
     name: "runtime state (`state_home`)"
@@ -572,6 +777,23 @@ surfaces:
           - manifests/runtime-roots.yaml
           - manifests/product-capabilities.yaml
 
+      hermes:
+        state: shipped
+        mechanism: "`HERMES_HOME` env var or the default `~/.hermes`"
+        source_artifacts:
+          - "manifests/runtime-roots.yaml"
+        min_product: "0.17.0"
+        min_nils_cli: "v1.20.0"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#14-runtime-state-statehome"
+          - "manifests/runtime-roots.yaml#hermes"
   - id: codex-local-skill-root
     ordinal: 15
     name: "Codex local skill root (`$CODEX_HOME/skills/<d>/<s>/`)"
@@ -610,6 +832,23 @@ surfaces:
           - "docs/source/harness-shape-claude.md#5-plugin-scoped-skills-pluginskillsskillskillmd"
           - manifests/product-capabilities.yaml
 
+      hermes:
+        state: shipped
+        mechanism: "recursive `symlinked-file` copy of each plugin's rendered skills tree into `~/.hermes/skills/<domain>/<skill>/SKILL.md` (Hermes's filesystem skill discovery)"
+        source_artifacts:
+          - "targets/hermes/link-map.yaml"
+        min_product: "0.17.0"
+        min_nils_cli: "v1.20.0"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#15-local-skill-root-hermesskillsdomainskillskillmd"
+          - "targets/hermes/link-map.yaml"
   - id: codex-hook-registration
     ordinal: 16
     name: "Codex hook registration (`config.toml` managed block)"
@@ -648,6 +887,21 @@ surfaces:
           - "docs/source/harness-shape-claude.md#9-hook-registration-settingsjson-hooks-block"
           - manifests/runtime-roots.yaml
 
+      hermes:
+        state: not-applicable
+        mechanism: "the Codex `config.toml` managed block is a Codex-specific primitive"
+        source_artifacts: []
+        min_product: "n/a"
+        min_nils_cli: "n/a"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#16-codex-hook-registration-configtoml-managed-block"
   - id: prompt-mode-delegation-policy
     ordinal: 17
     name: "prompt-mode delegation policy (`AGENT_HOME.md`)"
@@ -686,3 +940,21 @@ surfaces:
         source_manifest:
           - "docs/source/harness-shape-claude.md#1-home-scope-prompt-claudemd"
           - AGENT_HOME.md
+      hermes:
+        state: shipped
+        mechanism: "the rendered `AGENT_HOME.md` delegation guidance routes through Hermes's `delegate_task` tool"
+        source_artifacts:
+          - "AGENT_HOME.md"
+          - "build/hermes/AGENT_HOME.md"
+        min_product: "0.17.0"
+        min_nils_cli: "v1.20.0"
+        acceptance:
+          - kind: ci
+            note: "--"
+            descriptive_only: true
+          - kind: live
+            note: "--"
+            descriptive_only: true
+        source_manifest:
+          - "docs/source/harness-shape-hermes.md#17-prompt-mode-delegation-policy-agenthomemd"
+          - "AGENT_HOME.md"

@@ -103,13 +103,15 @@ banner 3 "agent-runtime render --target home-prompt + --product codex"
 agent-runtime render --target home-prompt
 agent-runtime render --target home-prompt --product codex
 agent-runtime render --target home-prompt --product claude
+agent-runtime render --target home-prompt --product hermes
 agent-runtime render --product codex
 
 # -----------------------------------------------------------------------------
 # Position 4 — render claude
 # -----------------------------------------------------------------------------
-banner 4 "agent-runtime render --product claude"
+banner 4 "agent-runtime render --product claude + --product hermes"
 agent-runtime render --product claude
+agent-runtime render --product hermes
 
 # -----------------------------------------------------------------------------
 # Position 5 — render shared support matrix
@@ -124,8 +126,10 @@ banner 6 "git diff --exit-code tests/golden/ (after --update-golden refresh)"
 agent-runtime render --target home-prompt >/dev/null
 agent-runtime render --target home-prompt --product codex >/dev/null
 agent-runtime render --target home-prompt --product claude >/dev/null
+agent-runtime render --target home-prompt --product hermes >/dev/null
 agent-runtime render --product codex --update-golden >/dev/null
 agent-runtime render --product claude --update-golden >/dev/null
+agent-runtime render --product hermes --update-golden >/dev/null
 agent-runtime render --target support-matrix --update-golden >/dev/null
 git diff --exit-code -- tests/golden/
 
