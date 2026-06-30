@@ -34,11 +34,12 @@ Scope rules:
   `min_version_effective_from`: **2026-06-30**; probe:
   `hermes --version` (`manifests/runtime-roots.yaml`).
 - `agent-runtime` orchestration binary (renders / installs the Hermes surface)
-  ships inside nils-cli; pinned snapshot **v1.20.0**
+  ships inside nils-cli; pinned snapshot **v1.20.1**
   (`docs/source/nils-cli-surface.md`, `docs/source/nils-cli-pin.yaml`).
-  Hermes support was introduced in nils-cli v1.20.0: `render --product hermes`,
-  `render --target support-matrix` with a hermes column, `install` /
-  `doctor` / `list-skills` product handling, and `gc-backups` coverage.
+  Hermes support was introduced in nils-cli v1.20.0 (`render --product hermes`,
+  `render --target support-matrix` with a hermes column, `install` / `doctor`
+  product handling, and `gc-backups` coverage) and completed in v1.20.1
+  (`list-skills` and `prune-stale` product handling).
 - Per-skill nils-cli floors come from `manifests/skills.yaml` `required_clis`
   and gate skill bodies, identical to the codex / claude render of the same
   shared skill source.

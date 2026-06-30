@@ -12,109 +12,109 @@ entries:
   - id: reporting.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/reporting/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/reporting/.hermes-plugin/plugin.json
+    destination: plugins/reporting/.hermes-plugin/plugin.json
 
   - id: reporting.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/reporting/skills
-    destination: .hermes/skills/reporting
+    destination: skills/reporting
     recursive: true
 
   - id: meta.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/meta/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/meta/.hermes-plugin/plugin.json
+    destination: plugins/meta/.hermes-plugin/plugin.json
 
   - id: meta.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/meta/skills
-    destination: .hermes/skills/meta
+    destination: skills/meta
     recursive: true
 
   - id: media.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/media/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/media/.hermes-plugin/plugin.json
+    destination: plugins/media/.hermes-plugin/plugin.json
 
   - id: media.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/media/skills
-    destination: .hermes/skills/media
+    destination: skills/media
     recursive: true
 
   - id: browser.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/browser/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/browser/.hermes-plugin/plugin.json
+    destination: plugins/browser/.hermes-plugin/plugin.json
 
   - id: browser.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/browser/skills
-    destination: .hermes/skills/browser
+    destination: skills/browser
     recursive: true
 
   - id: conversation.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/conversation/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/conversation/.hermes-plugin/plugin.json
+    destination: plugins/conversation/.hermes-plugin/plugin.json
 
   - id: conversation.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/conversation/skills
-    destination: .hermes/skills/conversation
+    destination: skills/conversation
     recursive: true
 
   - id: evidence.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/evidence/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/evidence/.hermes-plugin/plugin.json
+    destination: plugins/evidence/.hermes-plugin/plugin.json
 
   - id: evidence.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/evidence/skills
-    destination: .hermes/skills/evidence
+    destination: skills/evidence
     recursive: true
 
   - id: issue.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/issue/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/issue/.hermes-plugin/plugin.json
+    destination: plugins/issue/.hermes-plugin/plugin.json
 
   - id: issue.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/issue/skills
-    destination: .hermes/skills/issue
+    destination: skills/issue
     recursive: true
 
   - id: code-review.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/code-review/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/code-review/.hermes-plugin/plugin.json
+    destination: plugins/code-review/.hermes-plugin/plugin.json
 
   - id: code-review.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/code-review/skills
-    destination: .hermes/skills/code-review
+    destination: skills/code-review
     recursive: true
 
   - id: pr.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/pr/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/pr/.hermes-plugin/plugin.json
+    destination: plugins/pr/.hermes-plugin/plugin.json
 
   - id: pr.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/pr/skills
-    destination: .hermes/skills/pr
+    destination: skills/pr
     recursive: true
 
   - id: dispatch.plugin-manifest
     kind: plugin-manifest-copy
     source: targets/hermes/plugins/dispatch/.hermes-plugin/plugin.json
-    destination: .hermes/plugins/dispatch/.hermes-plugin/plugin.json
+    destination: plugins/dispatch/.hermes-plugin/plugin.json
 
   - id: dispatch.skills-tree
     kind: symlinked-file
     source: build/hermes/plugins/dispatch/skills
-    destination: .hermes/skills/dispatch
+    destination: skills/dispatch
     recursive: true
