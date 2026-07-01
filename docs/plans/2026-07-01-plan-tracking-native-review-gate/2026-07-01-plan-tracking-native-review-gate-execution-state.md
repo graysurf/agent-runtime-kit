@@ -3,7 +3,7 @@
 ## Execution State
 
 - Source document: docs/plans/2026-07-01-plan-tracking-native-review-gate/2026-07-01-plan-tracking-native-review-gate-plan.md
-- Tracking issue: tbd
+- Tracking issue: <https://github.com/graysurf/agent-runtime-kit/issues/491>
 - Current sprint: Sprint 1 (not started)
 - Status: ready-to-start
 - Branch: feat/plan-tracking-native-review-gate
