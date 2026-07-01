@@ -30,9 +30,10 @@ Inputs:
 - Optional `LINKED_PR` when a PR already exists and should be verified
   instead of created.
 - Approval evidence for the later close-ready probe.
-- Review-gate artifacts: `DELIVERY_REVIEW_OUTCOME` (combined outcome body),
-  optional per-lens `SPECIALIST_REVIEW_COMMENT_FILE`, and optional GitHub
-  `REVIEW_THREAD_FILE` for actionable findings.
+- Review-gate artifacts: per-lens `REVIEW_LENS`,
+  `SPECIALIST_REVIEW_COMMENT_FILE`, optional GitHub `REVIEW_THREAD_FILE` for
+  actionable findings, `REVIEW_DECISION`, and `DELIVERY_REVIEW_OUTCOME`
+  (combined outcome body).
 - `REVIEW_OUTCOME_COMMENT`: the native review event URL produced by
   `forge-cli pr review --submit-review` (or a retained evidence path).
   `REVIEW_FINDINGS_JSON` is optional and contains finding rows when findings
@@ -123,6 +124,32 @@ review-specialists scope --base "$BASE_REF" --testing --maintainability --format
 # COMMENT per lens with its reviewer bot profile as each lens returns, then the
 # combined APPROVE/REQUEST_CHANGES outcome as dobi.
 SUBMIT_REVIEW=(); [ "$PROVIDER" = github ] && SUBMIT_REVIEW=(--submit-review)
+
+# Repeat this specialist block once for each returned lens: testing,
+# maintainability, plus any risk lens selected by code-review-pre-merge-gate.
+THREAD_FILE_ARGS=()
+if [ "$PROVIDER" = github ] && [ -n "${REVIEW_THREAD_FILE:-}" ]; then
+  THREAD_FILE_ARGS=(--thread-file "$REVIEW_THREAD_FILE")
+fi
+case "$REVIEW_LENS" in
+  red-team) REVIEW_BOT_PROFILE=review-red-team ;;
+  testing) REVIEW_BOT_PROFILE=review-testing-bot ;;
+  maintainability) REVIEW_BOT_PROFILE=review-maintainability ;;
+  performance) REVIEW_BOT_PROFILE=review-performance ;;
+  security) REVIEW_BOT_PROFILE=review-security ;;
+  api-contract) REVIEW_BOT_PROFILE=review-api-contract ;;
+  data-migration) REVIEW_BOT_PROFILE=review-data-migration ;;
+  *) REVIEW_BOT_PROFILE=dobi ;;
+esac
+FORGE_BOT_PROFILE="$REVIEW_BOT_PROFILE" forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
+  --repo "$OWNER_REPO" \
+  --decision comments-only \
+  "${SUBMIT_REVIEW[@]}" \
+  "${THREAD_FILE_ARGS[@]}" \
+  --comment-file "$SPECIALIST_REVIEW_COMMENT_FILE" \
+  --lens "$REVIEW_LENS" \
+  --issue "$ISSUE" --mirror-issue --format json
+
 FORGE_BOT_PROFILE=dobi forge-cli --provider "$PROVIDER" pr review "$PR_NUMBER" \
   --repo "$OWNER_REPO" \
   --decision "$REVIEW_DECISION" \

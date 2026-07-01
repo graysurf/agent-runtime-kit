@@ -979,7 +979,7 @@ skills:
     required_clis:
       plan-tooling: ">=1.0.1"
       plan-issue: ">=1.0.13"
-      forge-cli: ">=1.11.2"
+      forge-cli: ">=1.17.0"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime
@@ -1037,7 +1037,7 @@ skills:
     required_clis:
       plan-tooling: ">=1.0.1"
       plan-issue: ">=1.0.13"
-      forge-cli: ">=1.11.2"
+      forge-cli: ">=1.17.0"
       review-evidence: ">=0.16.0"
       review-specialists: ">=0.17.1"
     state_out_mode: runtime

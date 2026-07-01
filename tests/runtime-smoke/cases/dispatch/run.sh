@@ -976,6 +976,11 @@ run_deliver_tracking_issue_probe() {
   local validation_md="$DISPATCH_ARTIFACTS_DIR/deliver-validation.md"
   local validation_payload="$DISPATCH_ARTIFACTS_DIR/deliver-validation-payload.json"
   local validation_out="$DISPATCH_ARTIFACTS_DIR/deliver-validation-comment.json"
+  local review_body="$DISPATCH_ARTIFACTS_DIR/deliver-tracking-review.md"
+  local review_threads="$DISPATCH_ARTIFACTS_DIR/deliver-tracking-review-threads.json"
+  local testing_review_out="$DISPATCH_ARTIFACTS_DIR/deliver-tracking-testing-review.json"
+  local maintainability_review_out="$DISPATCH_ARTIFACTS_DIR/deliver-tracking-maintainability-review.json"
+  local final_review_out="$DISPATCH_ARTIFACTS_DIR/deliver-tracking-final-review.json"
   local specialist_out="$DISPATCH_ARTIFACTS_DIR/deliver-specialist-scope.json"
   require_dispatch_bin plan-tooling || return 1
   require_dispatch_bin plan-issue || return 1
@@ -991,6 +996,37 @@ run_deliver_tracking_issue_probe() {
   forge-cli --provider github --repo graysurf/agent-runtime-kit \
     --dry-run --format json \
     pr checks 123 >"$checks_out" 2>&1
+  printf 'Runtime smoke specialist review.\n' >"$review_body"
+  printf '[{"path":"dispatch-fixture.txt","line":1,"body":"Runtime smoke actionable finding thread."}]\n' >"$review_threads"
+  FORGE_BOT_PROFILE=review-testing-bot forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    pr review 123 \
+    --decision comments-only \
+    --submit-review \
+    --thread-file "$review_threads" \
+    --comment-file "$review_body" \
+    --lens testing \
+    --issue 1 \
+    --mirror-issue >"$testing_review_out" 2>&1
+  FORGE_BOT_PROFILE=review-maintainability forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    pr review 123 \
+    --decision comments-only \
+    --submit-review \
+    --comment-file "$review_body" \
+    --lens maintainability \
+    --issue 1 \
+    --mirror-issue >"$maintainability_review_out" 2>&1
+  FORGE_BOT_PROFILE=dobi forge-cli --provider github --repo graysurf/agent-runtime-kit \
+    --dry-run --format json \
+    pr review 123 \
+    --decision approve \
+    --submit-review \
+    --comment-file "$review_body" \
+    --lens testing \
+    --lens maintainability \
+    --issue 1 \
+    --mirror-issue >"$final_review_out" 2>&1
   write_record_content "$session_md" tracking
   write_session_payload "$session_payload"
   plan-issue record post \
@@ -1018,6 +1054,21 @@ run_deliver_tracking_issue_probe() {
   grep -q '"maintainability"' "$specialist_out"
   grep -q '"testing"' "$specialist_out"
   grep -q '"schema_version":"cli.forge-cli.pr.checks.v1"' "$checks_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$testing_review_out"
+  grep -q '"decision":"comments-only"' "$testing_review_out"
+  grep -q '"lenses":\["testing"\]' "$testing_review_out"
+  grep -q '"planned_review_threads":1' "$testing_review_out"
+  grep -q '"mirror_issue":true' "$testing_review_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$maintainability_review_out"
+  grep -q '"decision":"comments-only"' "$maintainability_review_out"
+  grep -q '"lenses":\["maintainability"\]' "$maintainability_review_out"
+  grep -q '"planned_review_threads":0' "$maintainability_review_out"
+  grep -q '"mirror_issue":true' "$maintainability_review_out"
+  grep -q '"schema_version":"cli.forge-cli.pr.review.v1"' "$final_review_out"
+  grep -q '"decision":"approve"' "$final_review_out"
+  grep -q '"lenses":\["testing","maintainability"\]' "$final_review_out"
+  grep -q '"planned_review_threads":0' "$final_review_out"
+  grep -q '"mirror_issue":true' "$final_review_out"
   grep -q 'plan-issue.record.post.v2' "$session_out"
   grep -q 'Execution Session' "$session_out"
   grep -q 'plan-issue.record.post.v2' "$validation_out"
@@ -1149,7 +1200,7 @@ record_case "dispatch.plan-tracking-closeout-gate-happy-path" "tracking checkpoi
 record_case "dispatch.plan-tracking-closeout-gate-ledger-pending" "tracking close-ready raises one ledger-rows-pending blocker per stuck row when bundle resolves to a ledger with pending/in-progress rows" run_tracking_closeout_gate_ledger_pending_probe
 record_case "dispatch.plan-tracking-closeout-gate-ledger-clean" "tracking close-ready returns ready=true with no ledger blocker when every ledger row is done with non-empty evidence" run_tracking_closeout_gate_ledger_clean_probe
 record_case "dispatch.execute-plan-tracking-issue" "tracking audit and forge-cli pr view dry-run probes passed" run_execute_from_tracking_issue_probe
-record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, review-evidence, forge-cli checks, and tracking validation post probes passed" run_deliver_tracking_issue_probe
+record_case "dispatch.deliver-plan-tracking-issue" "review-specialists, per-lens provider reviews, final review, checks, and tracking validation probes passed" run_deliver_tracking_issue_probe
 record_case "dispatch.review-dispatch-lane-pr" "review-specialists, review evidence, PR review outcome, and dispatch review post probes passed" run_dispatch_pr_review_probe
 record_case "dispatch.execute-dispatch-lane" "execute dispatch lane PR create and dispatch session post probes passed" run_dispatch_subagent_pr_probe
 
