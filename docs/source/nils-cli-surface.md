@@ -1,20 +1,27 @@
 # nils-cli Surface Snapshot
 
-- Snapshot date: 2026-07-01 (refreshed for `v1.20.1`)
+- Snapshot date: 2026-07-01 (refreshed for `v1.20.5`)
 - Source repo: [`sympoies/nils-cli`](https://github.com/sympoies/nils-cli) (main)
 - Source command: `ls crates/` and `bash scripts/workspace-bins.sh` in the
   `sympoies/nils-cli` release worktree
-- Active `git describe --tags` output: `v1.20.1`
+- Active `git describe --tags` output: `v1.20.5`
 - Machine-readable pin for the CI gate: `docs/source/nils-cli-pin.yaml`
-  (`pinned_tag: v1.20.1`), consumed by `scripts/ci/all.sh` Position 2 via
+  (`pinned_tag: v1.20.5`), consumed by `scripts/ci/all.sh` Position 2 via
   `agent-runtime doctor --class version-alignment`. Keep that `pinned_tag`
   and the `Active git describe --tags output:` line above in lock-step.
-- Head commit: `32268ef`
-  (`chore(release): bump cli versions to 1.20.1 (#994)`)
+- Head commit: `ad992ab`
+  (`chore(release): bump cli versions to 1.20.5 (#1003)`)
 - Release:
-  [`v1.20.1`](https://github.com/sympoies/nils-cli/releases/tag/v1.20.1),
+  [`v1.20.5`](https://github.com/sympoies/nils-cli/releases/tag/v1.20.5),
   Homebrew tap formula at `Formula/nils-cli.rb` on `sympoies/homebrew-tap`
   `main`
+- `v1.20.5` advances the runtime-kit host pin from `v1.20.1`, folding in the
+  `v1.20.2`–`v1.20.5` releases. The headline change is `git-cli` dynamic
+  worktree completion via `CompleteEnv` (sympoies/nils-cli#999, #1002); the rest
+  are routine cli version bumps and dependency / licensing housekeeping. No
+  runtime-kit-consumed surface (flags or JSON envelopes) changed: the `v1.20.5`
+  render output is byte-identical to `v1.20.1` (zero golden churn) and no
+  `required_clis[]` floor moved.
 - `v1.20.1` advances the runtime-kit host pin from `v1.20.0`. It completes the
   hermes product target across the remaining subcommands —
   `list-skills --product hermes` and `prune-stale --product hermes` previously
